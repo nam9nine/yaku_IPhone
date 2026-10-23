@@ -1,4 +1,5 @@
 import { useSystemGesture } from '../shell/useSystemGesture';
+import { HomeIndicator } from './HomeIndicator';
 export function SystemEdges({
   active,
   onControl,
@@ -35,18 +36,15 @@ export function SystemEdges({
 }
 export function HomeGestures({
   active,
-  onHome,
   onSwitcher,
   onQuickSwitch,
 }: {
   active: boolean;
-  onHome: () => void;
   onSwitcher: () => void;
   onQuickSwitch: (direction: 'previous' | 'next') => void;
 }) {
   const bottom = useSystemGesture('bottom', active, (result) => {
-    if (result === 'home') onHome();
-    else if (result === 'switcher') onSwitcher();
+    if (result === 'home' || result === 'switcher') onSwitcher();
     else if (result === 'previous' || result === 'next') onQuickSwitch(result);
   });
   return (
@@ -54,7 +52,10 @@ export function HomeGestures({
       className="home-system-bottom"
       data-testid="home-system-gesture"
       aria-hidden="true"
+      style={{ transform: `translateY(${-Math.min(bottom.offset * 0.2, 36)}px)` }}
       {...bottom.handlers}
-    />
+    >
+      <HomeIndicator />
+    </div>
   );
 }

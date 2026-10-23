@@ -68,10 +68,25 @@ async function expectInsideViewport(locator: Locator, width: number, bottom: num
   }
 }
 
-test('잠금 해제 후 홈으로 포커스를 옮기고 다시 잠글 수 있다', async ({ page }) => {
+test('잠금 해제 후 홈으로 포커스를 옮기고 숨겨진 키보드 보조 조작으로 다시 잠근다', async ({
+  page,
+}) => {
   await openHome(page);
   await expect(page.getByRole('heading', { name: '홈 화면', exact: true })).toBeFocused();
-  await page.getByRole('button', { name: '다시 잠그기' }).tap();
+  const home = page.getByTestId('home-screen');
+  for (const name of ['제어 센터 열기', '최근 앱 열기', '다시 잠그기']) {
+    const control = home.getByRole('button', { name, exact: true });
+    await expect(control).toHaveCSS('width', '1px');
+    await expect(control).toHaveCSS('height', '1px');
+    await expect(control).toHaveCSS('clip-path', 'inset(50%)');
+  }
+  const lock = home.getByRole('button', { name: '다시 잠그기', exact: true });
+  await page.keyboard.press('Tab');
+  await lock.focus();
+  await expect(lock).toBeFocused();
+  await expect(lock).toHaveCSS('clip-path', 'none');
+  await expect(lock).toHaveCSS('height', '44px');
+  await page.keyboard.press('Enter');
   await expect(page.getByTestId('lock-screen')).toBeVisible();
   await expect(page.getByTestId('home-screen')).toBeHidden();
   await page.getByRole('button', { name: '잠금 해제', exact: true }).tap();
@@ -284,7 +299,7 @@ test('높이 600과 합성 safe area에서 Dock을 보존하고 마지막 앱까
   );
   await settings.tap();
   await expect(page.getByTestId('settings-app')).toBeVisible();
-  await page.getByRole('button', { name: '홈으로 돌아가기' }).tap();
+  await page.keyboard.press('Alt+Home');
   await expect(settings).toBeFocused();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
   await page.screenshot({ path: test.info().outputPath('home-short.png') });
@@ -371,7 +386,7 @@ test('글자 200%에서도 달력의 요일·날짜·일정 안내가 서로 겹
   await revealSettings(page);
   await settings.tap();
   await expect(page.getByTestId('settings-app')).toBeVisible();
-  await page.getByRole('button', { name: '홈으로 돌아가기' }).tap();
+  await page.keyboard.press('Alt+Home');
   await expect(settings).toBeFocused();
 });
 

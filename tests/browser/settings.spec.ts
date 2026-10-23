@@ -75,7 +75,7 @@ test('저장이 거부되어도 현재 세션의 설정 조작과 앱 재진입�
   });
   await openSettings(page);
   await page.getByRole('switch', { name: '에어플레인 모드' }).check();
-  await tapPaged(page.getByRole('button', { name: '홈으로 돌아가기' }));
+  await page.keyboard.press('Alt+Home');
   await expect(page.getByTestId('settings-app')).toBeHidden();
   await launchSettings(page);
   await expect(page.getByRole('switch', { name: '에어플레인 모드' })).toBeChecked();
@@ -104,7 +104,7 @@ test('설정 상세 화면과 가로 페이지를 유지하고 목록 복귀 시
   await revealPagedControl(page.getByRole('radio', { name: '더 크게 130%' }).locator('..'));
   const position = await content.getAttribute('data-page');
   expect(Number(position)).toBeGreaterThan(1);
-  await tapPaged(page.getByRole('button', { name: '홈으로 돌아가기' }));
+  await page.keyboard.press('Alt+Home');
   await expect(page.getByTestId('settings-app')).toBeHidden();
   await launchSettings(page);
   await expect(page.getByRole('heading', { name: '화면 모드', exact: true })).toBeFocused();
@@ -181,7 +181,7 @@ test('선택한 배경은 홈과 잠금 화면에 적용되고 밝기 조절은 
   await tapPaged(page.getByRole('button', { name: '배경화면', exact: true }));
   await checkPaged(page.getByRole('radio', { name: '슬레이트', exact: true }));
   await expect(shell).toHaveAttribute('data-wallpaper', 'solid');
-  await tapPaged(page.getByRole('button', { name: '홈으로 돌아가기' }));
+  await page.keyboard.press('Alt+Home');
   await expect(page.getByTestId('settings-app')).toBeHidden();
   await expect(page.locator('.mobile-shell-wallpaper img')).toBeHidden();
   const surfaceColors = await page
@@ -190,7 +190,8 @@ test('선택한 배경은 홈과 잠금 화면에 적용되고 밝기 조절은 
       elements.map((element) => getComputedStyle(element).backgroundColor),
     );
   expect(surfaceColors).toContain('rgb(51, 65, 85)');
-  await tapPaged(page.getByRole('button', { name: '다시 잠그기' }));
+  await page.getByRole('button', { name: '다시 잠그기', exact: true }).focus();
+  await page.keyboard.press('Enter');
   await expect(page.getByTestId('lock-screen')).toBeVisible();
   await expect(shell).toHaveAttribute('data-wallpaper', 'solid');
   await expect(page.locator('.mobile-shell-foreground')).toBeHidden();
@@ -198,7 +199,7 @@ test('선택한 배경은 홈과 잠금 화면에 적용되고 밝기 조절은 
   await launchSettings(page);
   await checkPaged(page.getByRole('radio', { name: '기본', exact: true }));
   await expect(shell).toHaveAttribute('data-wallpaper', 'default');
-  await tapPaged(page.getByRole('button', { name: '홈으로 돌아가기' }));
+  await page.keyboard.press('Alt+Home');
   await expect(page.locator('.mobile-shell-wallpaper img')).toBeVisible();
 });
 
@@ -217,7 +218,7 @@ test('동작 줄이기를 전역에 적용하며 기기의 reduced motion을 끌
       ),
     )
     .toBe(0);
-  await tapPaged(page.getByRole('button', { name: '홈으로 돌아가기' }));
+  await page.keyboard.press('Alt+Home');
   await launchSettings(page);
   expect(
     await page.evaluate(
@@ -233,7 +234,7 @@ test('동작 줄이기를 전역에 적용하며 기기의 reduced motion을 끌
   await expect(shell).toHaveAttribute('data-reduced-motion', 'false');
 });
 
-test('밝기 슬라이더와 본문 드래그는 홈 복귀 제스처로 처리하지 않는다', async ({ page }) => {
+test('밝기 슬라이더와 본문 드래그는 최근 앱을 열지 않는다', async ({ page }) => {
   await openSettings(page);
   await tapPaged(page.getByRole('button', { name: '디스플레이 및 밝기', exact: true }));
   const slider = page.getByRole('slider', { name: '화면 밝기' });
@@ -248,6 +249,7 @@ test('밝기 슬라이더와 본문 드래그는 홈 복귀 제스처로 처리�
   const app = page.getByTestId('settings-app');
   await expect(app).toBeVisible();
   await expect(app).toHaveAttribute('data-dragging', 'false');
+  await expect(page.getByTestId('system-switcher')).toHaveCount(0);
   const content = (await page.getByTestId('settings-content').boundingBox())!;
   const x = content.x + content.width / 2;
   await page.mouse.move(x, content.y + content.height * 0.8);
@@ -256,7 +258,8 @@ test('밝기 슬라이더와 본문 드래그는 홈 복귀 제스처로 처리�
   await page.mouse.up();
   await expect(app).toBeVisible();
   await expect(app).toHaveAttribute('data-dragging', 'false');
-  await tapPaged(page.getByRole('button', { name: '홈으로 돌아가기' }));
+  await expect(page.getByTestId('system-switcher')).toHaveCount(0);
+  await page.keyboard.press('Alt+Home');
   await expect(app).toBeHidden();
 });
 
@@ -265,7 +268,7 @@ for (const size of [
   { width: 390, height: 844 },
   { width: 430, height: 932 },
 ]) {
-  test(`설정 목록과 하단 홈 제어를 잘림 없이 사용한다 ${size.width}x${size.height}`, async ({
+  test(`설정 목록과 홈 인디케이터를 보존하고 키보드 보조 조작은 포커스할 때 표시한다 ${size.width}x${size.height}`, async ({
     page,
   }) => {
     await page.setViewportSize(size);
@@ -284,11 +287,38 @@ for (const size of [
       expect(box.y).toBeGreaterThanOrEqual(content.y - 1);
       expect(box.y + box.height).toBeLessThanOrEqual(content.y + content.height + 1);
     }
-    const home = (await page.getByRole('button', { name: '홈으로 돌아가기' }).boundingBox())!;
-    expect(home.width).toBeGreaterThanOrEqual(44);
-    expect(home.height).toBeGreaterThanOrEqual(44);
-    expect(home.y + home.height).toBeLessThanOrEqual(size.height);
+    const gesture = page.getByTestId('settings-home-gesture');
+    const gestureBounds = (await gesture.boundingBox())!;
+    expect(gestureBounds.width).toBeGreaterThanOrEqual(44);
+    expect(gestureBounds.height).toBeGreaterThanOrEqual(44);
+    expect(gestureBounds.y + gestureBounds.height).toBeLessThanOrEqual(size.height);
+    expect(
+      await gesture.evaluate((element) => {
+        const bounds = element.getBoundingClientRect();
+        const target = document.elementFromPoint(
+          bounds.x + bounds.width / 2,
+          bounds.y + bounds.height / 2,
+        );
+        return target !== null && element.contains(target);
+      }),
+    ).toBe(true);
+    const home = page.getByRole('button', { name: '홈으로 돌아가기', exact: true });
+    await expect(home).toHaveCSS('width', '1px');
+    await expect(home).toHaveCSS('height', '1px');
+    await expect(home).toHaveCSS('clip-path', 'inset(50%)');
+    await page.keyboard.press('Tab');
+    await home.focus();
+    await expect(home).toBeFocused();
+    await expect(home).toHaveCSS('clip-path', 'none');
+    const focused = (await home.boundingBox())!;
+    expect(focused.height).toBeGreaterThanOrEqual(44);
+    expect(focused.x).toBeGreaterThanOrEqual(0);
+    expect(focused.x + focused.width).toBeLessThanOrEqual(size.width);
+    expect(focused.y + focused.height).toBeLessThanOrEqual(size.height);
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(size.width);
+    await page.keyboard.press('Enter');
+    await expect(page.getByTestId('settings-app')).toBeHidden();
+    await expect(page.getByRole('button', { name: '설정', exact: true })).toBeFocused();
   });
 }
 

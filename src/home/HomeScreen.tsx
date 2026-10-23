@@ -288,26 +288,11 @@ export function HomeScreen({
       </div>
 
       <div className="home-bottom-controls">
-        <button
-          className="home-system-button home-system-button--control"
-          aria-label="제어 센터 열기"
-          tabIndex={0}
-          onClick={onControl}
-        >
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M4 7h16M4 17h16M8 4v6M16 14v6" />
-          </svg>
+        <button className="system-keyboard-control" onClick={onControl}>
+          제어 센터 열기
         </button>
-        <button
-          className="home-system-button home-system-button--recent"
-          aria-label="최근 앱 열기"
-          tabIndex={0}
-          onClick={onSwitcher}
-        >
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <rect x="4" y="5" width="11" height="16" rx="2" />
-            <path d="M9 2h11v15" />
-          </svg>
+        <button className="system-keyboard-control" onClick={onSwitcher}>
+          최근 앱 열기
         </button>
         <nav className="home-page-control" aria-label="홈 화면 페이지">
           {pages.length <= 3 ? (
@@ -350,16 +335,8 @@ export function HomeScreen({
         <span className="home-sr-only" aria-live="polite">
           {page + 1} / {pages.length}페이지
         </span>
-        <button className="home-lock-button" aria-label="다시 잠그기" tabIndex={0} onClick={onLock}>
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <rect x="6" y="10" width="12" height="10" rx="3" fill="currentColor" />
-            <path
-              d="M8.5 10V7a3.5 3.5 0 0 1 7 0v3"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.7"
-            />
-          </svg>
+        <button className="system-keyboard-control" onClick={onLock}>
+          다시 잠그기
         </button>
       </div>
 

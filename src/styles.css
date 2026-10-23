@@ -140,23 +140,32 @@ body,
   top: 24px;
   width: 1px;
   height: 1px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
   clip-path: inset(50%);
   overflow: hidden;
   z-index: 11;
+  pointer-events: auto;
 }
-.system-keyboard-control:focus-visible {
+.system-keyboard-control:is(:focus, :active) {
   width: auto;
   height: 44px;
+  padding: 8px 12px;
   clip-path: none;
   background: #1c1c1e;
   color: white;
 }
 .home-system-bottom {
   position: fixed;
-  left: 60px;
-  right: 60px;
+  left: 0;
+  right: 0;
   bottom: var(--safe-area-bottom);
-  height: 24px;
+  height: 28px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 8px;
   z-index: 4;
   touch-action: pinch-zoom;
 }
@@ -177,4 +186,15 @@ body,
 .mobile-shell:has(.system-panel) .mobile-shell-wallpaper,
 .mobile-shell:has(.system-panel) .mobile-shell-foreground {
   filter: blur(20px);
+}
+.mobile-shell:has(.system-panel--notifications) .base-screens {
+  visibility: hidden;
+}
+.mobile-shell:has(.system-panel--notifications) .mobile-shell-wallpaper {
+  filter: none;
+}
+.system-panel--notifications .system-panel-backdrop {
+  background: rgb(0 0 0 / 12%);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }

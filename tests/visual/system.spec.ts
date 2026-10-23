@@ -29,7 +29,7 @@ for (const [width, height] of [
     await start(page, width, height);
     await page.locator('[data-launch-app=settings]').tap();
     await page.locator('[data-settings-page=wifi]').tap();
-    await page.getByRole('button', { name: '홈으로 돌아가기' }).tap();
+    await page.keyboard.press('Alt+Home');
     await page.locator('[data-launch-app=safari]').tap();
     await page.getByRole('button', { name: '시작 안내', exact: true }).tap();
     await page.keyboard.press('Alt+a');
@@ -44,5 +44,17 @@ for (const [kind, key] of [
     await start(page, 390, 844);
     await page.keyboard.press(`Alt+${key}`);
     await capture(page, `${kind}-390x844.png`);
+  });
+}
+
+for (const group of [1, 2, 3]) {
+  test(`제어 센터 큰 글자 200% 360x420 ${group}그룹`, async ({ page }) => {
+    await start(page, 360, 420);
+    await page.evaluate(() => {
+      document.documentElement.style.fontSize = '200%';
+    });
+    await page.keyboard.press('Alt+c');
+    await page.getByRole('button', { name: `제어 센터 ${group}페이지`, exact: true }).tap();
+    await capture(page, `control-large-${group}-360x420.png`);
   });
 }

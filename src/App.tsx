@@ -1,4 +1,4 @@
-import { useEffect, useReducer } from 'react';
+import { useEffect, useReducer, useState } from 'react';
 import { MobileShell } from './components/MobileShell';
 import { LockScreen } from './lock/LockScreen';
 import { HomeScreen } from './home/HomeScreen';
@@ -20,6 +20,7 @@ import { SystemPanels } from './system/SystemPanels';
 import './shell/appearance.css';
 
 export function App() {
+  const [controls, setControls] = useState({ volume: 50, rotation: false, silent: false });
   const [state, dispatch] = useReducer(shellReducer, initialShellState);
   const { preferences, setPreferences, storageUnavailable } = useDevicePreferences();
   const appearance = useAppearance(preferences);
@@ -99,7 +100,6 @@ export function App() {
             />
             <HomeGestures
               active={!state.locked && !state.activeApp && !state.panel}
-              onHome={() => dispatch({ type: 'home' })}
               onSwitcher={() => showPanel('switcher')}
               onQuickSwitch={(direction) => dispatch({ type: 'quick-switch', direction })}
             />
@@ -142,6 +142,8 @@ export function App() {
       )}
       {state.panel && (
         <SystemPanels
+          controls={controls}
+          onControls={setControls}
           kind={state.panel}
           recent={state.visited}
           activeApp={state.activeApp}
@@ -149,7 +151,9 @@ export function App() {
           onPreferences={setPreferences}
           onSelectApp={openApp}
           onCloseApp={(app) => dispatch({ type: 'close-app', app })}
-          onDismiss={() => dispatch({ type: 'dismiss-panel' })}
+          onDismiss={() =>
+            dispatch({ type: state.panel === 'switcher' ? 'home' : 'dismiss-panel' })
+          }
           getPreview={(app) => document.querySelector<HTMLElement>(`[data-app-window="${app}"]`)}
           viewport={viewport}
         />

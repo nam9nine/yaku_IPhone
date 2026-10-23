@@ -117,7 +117,7 @@ for (const size of [
     await accessibility.tap();
     await expect(page.getByRole('heading', { name: '손쉬운 사용', exact: true })).toBeVisible();
 
-    await page.getByRole('button', { name: '홈으로 돌아가기', exact: true }).tap();
+    await page.keyboard.press('Alt+Home');
     await page.getByRole('button', { name: 'Safari', exact: true }).tap();
     await enterAddress(page, 'https://yaku.test/guide');
     await expectNoVerticalClip(safariBody(page));
@@ -153,7 +153,7 @@ test('200% 글자와 짧은 높이에서도 설정 조작과 Safari 마지막 �
   await revealWithPages(settingsBody(page), solid.locator('..'), '설정 내용 다음 페이지');
   await solid.check();
   await expect(solid).toBeChecked();
-  await page.getByRole('button', { name: '홈으로 돌아가기', exact: true }).tap();
+  await page.keyboard.press('Alt+Home');
   await page.getByRole('button', { name: 'Safari', exact: true }).tap();
   await page.evaluate(() => {
     document.documentElement.style.fontSize = '32px';
@@ -213,7 +213,7 @@ test('Safari 본문 가로 이동과 양쪽 가장자리 방문 기록을 구분
   await edgeSwipe(page, page.locator('.safari-app'), 'forward');
   await expect(address(page)).toHaveText('yaku.test/example');
   await edgeSwipe(page, page.locator('.safari-app'), 'back');
-  await page.getByRole('button', { name: '홈으로 돌아가기', exact: true }).tap();
+  await page.keyboard.press('Alt+Home');
   await page.getByRole('button', { name: 'Safari', exact: true }).tap();
   await expect(address(page)).toHaveText('yaku.test/guide');
   await expect(safariBody(page)).toHaveAttribute('data-page', '2');

@@ -47,25 +47,26 @@ test('상단의 시작 위치가 제어 센터와 알림 센터를 구분하고 
   await expect(page.getByTestId('settings-app')).toBeVisible();
   await expect(page.getByRole('switch', { name: '에어플레인 모드', exact: true })).toBeChecked();
   await drag(page, page.getByTestId('notification-edge'), 0, 120);
-  await expect(page.getByText('알림이 없어요')).toBeVisible();
+  await expect(page.getByText('이전 알림 없음')).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(page.getByTestId('system-notifications')).toHaveCount(0);
 });
 
-test('짧은 하단 상승은 홈이고 멈춘 상승은 최근 앱이며 재진입 상태가 유지된다', async ({ page }) => {
+test('홈 인디케이터를 빠르게 올리거나 멈춘 뒤 놓으면 최근 앱이 열리고 앱 상태를 유지한다', async ({
+  page,
+}) => {
   await ready(page);
   await open(page, 'settings');
   await page.locator('[data-settings-page=wifi]').tap();
-  await drag(page, page.getByTestId('settings-home-gesture'), 0, -140);
-  await expect(page.getByTestId('settings-app')).toBeHidden();
-  await recent(page);
+  await drag(page, page.getByTestId('settings-home-gesture').locator('.home-indicator'), 0, -140);
+  await expect(page.getByTestId('system-switcher')).toBeVisible();
   await page.getByRole('button', { name: '설정 앱으로 전환', exact: true }).tap();
   await expect(page.getByRole('heading', { name: 'Wi-Fi', exact: true })).toBeVisible();
-  await page.getByRole('button', { name: '홈으로 돌아가기' }).tap();
+  await page.keyboard.press('Alt+Home');
   await open(page, 'safari');
   await page.getByRole('button', { name: '시작 안내', exact: true }).tap();
   await recent(page);
-  await page.getByRole('button', { name: '다음 최근 앱 페이지' }).tap();
+  await drag(page, page.getByRole('button', { name: 'Safari 앱으로 전환', exact: true }), -110, 0);
   await page.getByRole('button', { name: '설정 앱으로 전환', exact: true }).tap();
   await expect(page.getByRole('heading', { name: 'Wi-Fi', exact: true })).toBeVisible();
 });
@@ -76,7 +77,7 @@ test('하단 좌우는 최근 앱을 왕복하고 카드 위로 닫기는 해당
   await ready(page);
   await open(page, 'settings');
   await page.locator('[data-settings-page=wifi]').tap();
-  await page.getByRole('button', { name: '홈으로 돌아가기' }).tap();
+  await page.keyboard.press('Alt+Home');
   await open(page, 'safari');
   await page.getByRole('button', { name: '시작 안내', exact: true }).tap();
   await drag(page, page.getByTestId('safari-home-gesture'), 100, 0);
@@ -90,7 +91,7 @@ test('하단 좌우는 최근 앱을 왕복하고 카드 위로 닫기는 해당
   );
   await page.getByRole('button', { name: '설정 앱으로 전환', exact: true }).tap();
   await expect(page.getByRole('heading', { name: 'Wi-Fi', exact: true })).toBeVisible();
-  await page.getByRole('button', { name: '홈으로 돌아가기' }).tap();
+  await page.keyboard.press('Alt+Home');
   await open(page, 'safari');
   await expect(page.getByRole('button', { name: '시작 안내', exact: true })).toBeVisible();
 });
@@ -196,6 +197,7 @@ test('Chromium 실제 touch와 WebKit pointer로 상단 당김과 멈춘 하단 
 });
 
 for (const [width, height, font] of [
+  [360, 320, 200],
   [360, 420, 200],
   [360, 500, 130],
   [430, 932, 100],
@@ -209,24 +211,34 @@ for (const [width, height, font] of [
     await page.keyboard.press('Alt+c');
     const panel = page.getByTestId('system-control');
     const seen = new Set<string>();
-    for (let i = 0; i < 8; i++) {
+    for (let i = 0; i < 3; i++) {
+      const numbered = panel.getByRole('button', { name: `제어 센터 ${i + 1}페이지`, exact: true });
+      if (await numbered.count()) await numbered.tap();
+      else if (i > 0) break;
       for (const control of await panel
-        .locator('.system-slide:not([inert]) button,.system-slide:not([inert]) input')
+        .locator(
+          '.cc-page:not([inert]) button:not([disabled]),.cc-page:not([inert]) input,.cc-grid--all button:not([disabled]),.cc-grid--all input',
+        )
         .all()) {
         const box = (await control.boundingBox())!;
         expect(box.x).toBeGreaterThanOrEqual(0);
         expect(box.x + box.width).toBeLessThanOrEqual(width + 1);
         expect(box.y).toBeGreaterThanOrEqual(0);
-        expect(box.y + box.height).toBeLessThanOrEqual(height - 40);
+        expect(box.y + box.height).toBeLessThanOrEqual(height - 30);
         seen.add((await control.getAttribute('aria-label'))!);
       }
-      const next = panel.getByRole('button', { name: '다음 제어 센터 페이지' });
-      if (!(await next.count()) || (await next.isDisabled())) break;
-      await next.tap();
+      const display = panel.getByRole('button', { name: '디스플레이 설정', exact: true });
+      if (await display.isVisible()) {
+        await display.tap();
+        const dark = panel.getByRole('switch', { name: '다크 모드', exact: true });
+        await expect(dark).toBeInViewport();
+        await dark.click();
+        await expect(dark).toBeChecked();
+        await panel.getByRole('button', { name: '제어 상세 닫기', exact: true }).tap();
+      }
     }
-    expect([...seen].sort()).toEqual(
-      ['에어플레인 모드', 'Wi-Fi', '셀룰러 데이터', 'Bluetooth', '화면 밝기', '다크 모드'].sort(),
-    );
+    for (const label of ['에어플레인 모드', 'Wi-Fi', '셀룰러 데이터', 'Bluetooth', '화면 밝기'])
+      expect(seen.has(label)).toBe(true);
     await panel.evaluate((el) => el.scrollBy(0, 400));
     expect(await panel.evaluate((el) => el.scrollTop)).toBe(0);
     expect(
@@ -255,14 +267,14 @@ test('홈 닫힘 애니메이션 중 패널을 열어도 오래된 완료가 패
   await page.evaluate(async () => {
     await Promise.all(document.getAnimations().map((a) => a.finished));
   });
-  await page.getByRole('button', { name: '홈으로 돌아가기' }).click();
+  await page.keyboard.press('Alt+Home');
   await page.keyboard.press('Alt+c');
   await expect(page.getByTestId('system-control')).toBeVisible();
   await page.waitForTimeout(360);
   await expect(page.getByTestId('system-control')).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(page.getByTestId('settings-app')).toBeVisible();
-  await page.getByRole('button', { name: '홈으로 돌아가기' }).tap();
+  await page.keyboard.press('Alt+Home');
   await expect(page.getByTestId('settings-app')).toBeHidden();
 });
 
@@ -285,3 +297,150 @@ for (const screen of ['lock', 'home'] as const) {
     else await expect(page.getByTestId('home-pages')).toHaveAttribute('data-page', '1');
   });
 }
+
+test('최근 앱의 카드 바깥 탭과 하단 인디케이터 상승은 홈으로 돌아간다', async ({ page }) => {
+  await ready(page);
+  await open(page, 'settings');
+  await recent(page);
+  await page.getByTestId('system-switcher').click({ position: { x: 20, y: 50 } });
+  await expect(page.getByTestId('system-switcher')).toHaveCount(0);
+  await expect(page.getByTestId('settings-app')).toBeHidden();
+  await recent(page);
+  await drag(page, page.getByTestId('system-dismiss-gesture').locator('.home-indicator'), 0, -130);
+  await expect(page.getByTestId('system-switcher')).toHaveCount(0);
+  await expect(page.getByTestId('home-screen')).toBeVisible();
+  await recent(page);
+  await page.getByRole('button', { name: '설정 앱으로 전환', exact: true }).tap();
+  await expect(page.getByTestId('settings-app')).toBeVisible();
+});
+
+for (const kind of ['control', 'switcher'] as const) {
+  test(`${kind} 하단을 조금 벗어나 놓은 뒤 다음 제스처도 즉시 동작한다`, async ({ page }) => {
+    await ready(page);
+    await open(page, 'settings');
+    await page.keyboard.press(kind === 'control' ? 'Alt+c' : 'Alt+a');
+    const handle = page.getByTestId('system-dismiss-gesture');
+    const box = (await handle.boundingBox())!;
+    const x = box.x + box.width / 2;
+    const y = box.y + 2;
+    await page.mouse.move(x, y);
+    await page.mouse.down();
+    await page.mouse.move(x, y - 6);
+    await page.mouse.up();
+    await expect(page.getByTestId(`system-${kind}`)).toBeVisible();
+    await drag(page, handle, 0, -130);
+    await expect(page.getByTestId(`system-${kind}`)).toHaveCount(0);
+    await expect(page.getByTestId('settings-app'))[
+      kind === 'control' ? 'toBeVisible' : 'toBeHidden'
+    ]();
+  });
+}
+
+test('제어 상세의 Escape는 제어 센터로 복귀하고 세로 밝기 입력은 패널을 닫지 않는다', async ({
+  page,
+}) => {
+  await ready(page);
+  await page.keyboard.press('Alt+c');
+  const panel = page.getByTestId('system-control');
+  const brightness = panel.getByRole('slider', { name: '화면 밝기', exact: true });
+  await brightness.focus();
+  await page.keyboard.press('ArrowDown');
+  await expect(brightness).toHaveValue('99');
+  await expect(panel).toBeVisible();
+  await page.getByRole('button', { name: '디스플레이 설정', exact: true }).tap();
+  await expect(panel.getByRole('region', { name: '제어 상세' })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(panel.getByRole('region', { name: '제어 상세' })).toHaveCount(0);
+  await expect(panel).toBeVisible();
+  await expect(page.getByRole('button', { name: '디스플레이 설정', exact: true })).toBeFocused();
+});
+
+test('제어 센터를 다시 열어도 체험 음량과 회전·무음 표시가 유지된다', async ({ page }) => {
+  await ready(page);
+  await page.keyboard.press('Alt+c');
+  const volume = page.getByRole('slider', { name: '체험 음량' });
+  await volume.focus();
+  await page.keyboard.press('ArrowUp');
+  await page.getByRole('button', { name: '화면 회전 잠금', exact: true }).tap();
+  await page.getByRole('button', { name: '무음 모드', exact: true }).tap();
+  await page.keyboard.press('Escape');
+  await page.keyboard.press('Alt+c');
+  await expect(volume).toHaveValue('51');
+  await expect(page.getByRole('button', { name: '화면 회전 잠금', exact: true })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  await expect(page.getByRole('button', { name: '무음 모드', exact: true })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+});
+
+test('최근 앱에서 키보드로 선택한 뒤쪽 카드와 닫기 조작이 앞으로 드러난다', async ({ page }) => {
+  await ready(page);
+  await open(page, 'settings');
+  await page.keyboard.press('Alt+Home');
+  await open(page, 'safari');
+  await page.keyboard.press('Alt+a');
+  const closeSettings = page.getByRole('button', { name: '설정 앱 닫기', exact: true });
+  for (
+    let i = 0;
+    i < 8 && !(await closeSettings.evaluate((el) => el === document.activeElement));
+    i++
+  )
+    await page.keyboard.press('Tab');
+  await expect(closeSettings).toBeFocused();
+  await expect(closeSettings.locator('..').locator('..')).toHaveAttribute('data-active', 'true');
+  await expect
+    .poll(() =>
+      closeSettings.evaluate((el) => {
+        const r = el.getBoundingClientRect();
+        return el.contains(document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2));
+      }),
+    )
+    .toBe(true);
+  await page.keyboard.press('ArrowLeft');
+  await expect(page.getByRole('button', { name: 'Safari 앱으로 전환', exact: true })).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(page.getByTestId('safari-app')).toBeVisible();
+});
+
+test('보이는 뒤쪽 카드를 누르는 도중 카드 위치가 바뀌지 않고 해당 앱을 연다', async ({ page }) => {
+  await ready(page);
+  await open(page, 'settings');
+  await page.locator('[data-settings-page=wifi]').tap();
+  await page.keyboard.press('Alt+Home');
+  await open(page, 'safari');
+  await page.keyboard.press('Alt+a');
+  const card = page.getByRole('button', { name: '설정 앱으로 전환', exact: true });
+  const before = (await card.boundingBox())!;
+  const x = 370,
+    y = before.y + 100;
+  await page.mouse.move(x, y);
+  await page.mouse.down();
+  expect((await card.boundingBox())!.x).toBe(before.x);
+  await page.mouse.up();
+  await expect(page.getByTestId('system-switcher')).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Wi-Fi', exact: true })).toBeVisible();
+});
+
+test('키보드로 드러낸 보조 버튼을 마우스로 누르는 동안 표시와 동작을 유지한다', async ({
+  page,
+}) => {
+  await ready(page);
+  await open(page, 'settings');
+  await page.keyboard.press('Alt+Home');
+  await open(page, 'safari');
+  await page.keyboard.press('Alt+a');
+  const next = page.getByRole('button', { name: '다음 최근 앱 페이지', exact: true });
+  await page.keyboard.press('Tab');
+  await next.focus();
+  const box = (await next.boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await expect(next).toHaveCSS('clip-path', 'none');
+  expect((await next.boundingBox())!.width).toBeGreaterThan(44);
+  await page.mouse.up();
+  await expect(page.getByTestId('system-switcher')).toBeVisible();
+  await expect(page.locator('[data-recent-app=settings]')).toHaveAttribute('data-active', 'true');
+});

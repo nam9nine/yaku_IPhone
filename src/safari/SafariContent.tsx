@@ -139,10 +139,10 @@ export function SafariContent({
           </div>
           <section>
             <span className="safari-step">01</span>
-            <h3>어디서든 홈으로</h3>
+            <h3>사용하던 앱으로</h3>
             <p>
-              화면 아래에서 위로 밀면 홈 화면으로 돌아가요. ‘홈으로’ 버튼으로도 같은 동작을 할 수
-              있어요.
+              하단 막대를 위로 올려 최근 앱을 확인하세요. 카드를 누르면 이어서 사용하고, 빈 배경을
+              누르면 홈으로 돌아가요.
             </p>
           </section>
           <section>

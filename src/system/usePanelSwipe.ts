@@ -7,7 +7,10 @@ interface Drag {
   y: number;
   axis: Axis | null;
   surface: HTMLElement;
+  viewport: string;
 }
+const viewportKey = () =>
+  `${window.innerWidth}:${window.innerHeight}:${window.visualViewport?.width}:${window.visualViewport?.height}`;
 
 /** A captured drag never becomes a click; interruption always returns to rest. */
 export function usePanelSwipe({
@@ -39,17 +42,28 @@ export function usePanelSwipe({
     const additionalPointer = (event: globalThis.PointerEvent) => {
       if (drag.current && event.pointerId !== drag.current.id) cancel();
     };
+    const releasedOutside = (event: globalThis.PointerEvent) => {
+      const current = drag.current;
+      if (
+        current?.id === event.pointerId &&
+        event.target instanceof Node &&
+        !current.surface.contains(event.target)
+      )
+        reset(true);
+    };
     window.addEventListener('blur', cancel);
     window.addEventListener('resize', cancel);
     window.visualViewport?.addEventListener('resize', cancel);
     document.addEventListener('visibilitychange', hidden);
     window.addEventListener('pointerdown', additionalPointer, true);
+    window.addEventListener('pointerup', releasedOutside, true);
     return () => {
       window.removeEventListener('blur', cancel);
       window.removeEventListener('resize', cancel);
       window.visualViewport?.removeEventListener('resize', cancel);
       document.removeEventListener('visibilitychange', hidden);
       window.removeEventListener('pointerdown', additionalPointer, true);
+      window.removeEventListener('pointerup', releasedOutside, true);
       const current = drag.current;
       drag.current = null;
       if (current?.surface.hasPointerCapture(current.id)) {
@@ -74,11 +88,22 @@ export function usePanelSwipe({
           y: event.clientY,
           axis: null,
           surface: event.currentTarget,
+          viewport: viewportKey(),
         };
+        // A dedicated handle must keep a release that leaves its narrow bounds.
+        // Buttons defer capture so an ordinary card tap retains its click target.
+        if (!(event.target as HTMLElement).closest('button, a')) {
+          event.preventDefault();
+          event.currentTarget.setPointerCapture(event.pointerId);
+        }
       },
       onPointerMove(event: PointerEvent<HTMLElement>) {
         const current = drag.current;
         if (!current || current.id !== event.pointerId) return;
+        if (current.viewport !== viewportKey()) {
+          reset(true);
+          return;
+        }
         const x = event.clientX - current.x;
         const y = event.clientY - current.y;
         if (!current.axis && Math.max(Math.abs(x), Math.abs(y)) >= 8) {
@@ -105,6 +130,7 @@ export function usePanelSwipe({
         const y = event.clientY - current.y;
         const axis = current.axis;
         reset(axis !== null);
+        if (current.viewport !== viewportKey()) return;
         if (axis === 'x' && Math.abs(x) >= 48 && Math.abs(x) > Math.abs(y)) {
           horizontal?.(x < 0 ? 1 : -1);
         } else if (axis === 'y' && y <= -96 && -y > Math.abs(x)) {
