@@ -11,12 +11,6 @@
   display: none;
 }
 .app-window {
-  --app-background: #f2f2f7;
-  --app-surface: #fff;
-  --app-text: #1c1c1e;
-  --app-secondary: #6c6c70;
-  --app-separator: rgb(60 60 67 / 18%);
-  --app-accent: #007aff;
   display: flex;
   flex-direction: column;
   width: min(100%, 478px);

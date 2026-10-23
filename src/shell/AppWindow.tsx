@@ -75,7 +75,11 @@ export function AppWindow({ app, active, origin, onHome, children }: Props) {
     closing.current = false;
     const bounds = node.getBoundingClientRect();
     const motion = getComputedStyle(node).getPropertyValue('--motion-settle').trim();
-    if (origin && motion !== '0ms' && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    if (
+      origin &&
+      parseFloat(motion) !== 0 &&
+      !matchMedia('(prefers-reduced-motion: reduce)').matches
+    ) {
       animation.current = node.animate(
         [
           {
@@ -113,7 +117,7 @@ export function AppWindow({ app, active, origin, onHome, children }: Props) {
       homeCallback.current();
     };
     const reduced =
-      getComputedStyle(node).getPropertyValue('--motion-settle').trim() === '0ms' ||
+      parseFloat(getComputedStyle(node).getPropertyValue('--motion-settle')) === 0 ||
       matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (!destination || reduced) {
       complete();
@@ -212,7 +216,12 @@ export function AppWindow({ app, active, origin, onHome, children }: Props) {
               <path d="m5 12 5-5 5 5" />
             </svg>
           </div>
-          <button className="app-home-button" aria-label="홈으로 돌아가기" onClick={returnHome}>
+          <button
+            tabIndex={0}
+            className="app-home-button"
+            aria-label="홈으로 돌아가기"
+            onClick={returnHome}
+          >
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="m3 11 9-8 9 8M5.5 9v11h5v-6h3v6h5V9" />
             </svg>
