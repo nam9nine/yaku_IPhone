@@ -1,4 +1,79 @@
+export const savedSearches = [
+  { query: '많은 인원 카레 재료', pageId: 'curry' },
+  { query: '바느질 매듭 안 풀리게 하는 법', pageId: 'sewing' },
+  { query: '도시락 예쁘게 담는 법', pageId: 'lunchbox' },
+] as const;
+
+export const savedArticles = {
+  curry: {
+    title: '많은 인원 카레 재료',
+    intro: '오늘 저녁, 한 냄비에 넉넉하게.',
+    sections: [
+      {
+        title: '장보기 전에',
+        body: '감자, 양파, 고기, 카레를 적어 둔다. 당근은 냉장고에 있는 것부터 쓴다.',
+      },
+      {
+        title: '아이들과 먹을 때',
+        body: '카레는 순한맛으로. 감자와 고기는 한입 크기로 썰고 충분히 익힌다.',
+      },
+      {
+        title: '마지막으로',
+        body: '밥은 넉넉하게. 각자 먹을 만큼 먼저 담고, 더 먹고 싶은 아이에게 한 번 더.',
+      },
+    ],
+  },
+  sewing: {
+    title: '바느질 매듭 안 풀리게 하는 법',
+    intro: '체육복 이름표를 다시 달기 전에.',
+    sections: [
+      { title: '시작 매듭', body: '실 끝을 작게 두 번 묶고 천의 안쪽에서 바늘을 뺀다.' },
+      {
+        title: '모서리는 한 번 더',
+        body: '이름표 모서리부터 작은 땀으로 고정한다. 실을 너무 세게 당기지 않는다.',
+      },
+      {
+        title: '마무리',
+        body: '마지막 땀 아래로 바늘을 통과시키고 작은 고리에 한 번 더 넣어 묶는다. 실 끝을 조금 남긴다.',
+      },
+    ],
+  },
+  lunchbox: {
+    title: '도시락 예쁘게 담는 법',
+    intro: '먹기 편하게. 남김없이 먹어 주면 더 좋고.',
+    sections: [
+      {
+        title: '큰 것부터',
+        body: '밥을 먼저 담고 반찬을 차례대로 놓는다. 작은 칸에는 달걀말이와 채소.',
+      },
+      { title: '색을 조금씩', body: '초록 채소와 붉은 토마토를 곁들이면 도시락이 환해진다.' },
+      {
+        title: '뚜껑을 닫기 전에',
+        body: '따뜻한 음식은 충분히 식힌다. 뚜껑이 닫히는지 확인하고 젓가락도 챙긴다.',
+      },
+    ],
+  },
+} as const;
+
 export const internalPages = [
+  {
+    id: 'curry',
+    title: savedArticles.curry.title,
+    url: 'https://yaku.test/curry',
+    description: '순한 카레를 넉넉하게 만드는 저녁 준비.',
+  },
+  {
+    id: 'sewing',
+    title: savedArticles.sewing.title,
+    url: 'https://yaku.test/sewing',
+    description: '체육복 이름표를 단단하게 달아 두기.',
+  },
+  {
+    id: 'lunchbox',
+    title: savedArticles.lunchbox.title,
+    url: 'https://yaku.test/lunchbox',
+    description: '아이들의 도시락을 담는 작은 요령.',
+  },
   {
     id: 'guide',
     title: '시작 안내',
@@ -83,7 +158,7 @@ export function resolveAddress(input: string): AddressResult {
     );
     if (!match || url.port || url.search || url.hash) {
       return {
-        error: '이 주소의 예제 페이지를 찾을 수 없습니다. 시작 안내나 예제 페이지를 열어보세요.',
+        error: '저장된 페이지를 찾을 수 없습니다. 시작 페이지에서 검색 기록을 열어보세요.',
       };
     }
     return { page: { kind: 'internal', id: match.id } };

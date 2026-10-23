@@ -9,10 +9,11 @@ async function drag(page: Page, x: number, y: number, endX: number, endY: number
 
 test.beforeEach(async ({ page }) => {
   await page.goto('./');
+  await expect(page.getByTestId('lock-screen')).toBeVisible();
 });
 
 test('위로 충분히 밀면 홈으로 한 번 전환한다', async ({ page }) => {
-  await drag(page, 195, 620, 195, 420);
+  await drag(page, 195, 460, 195, 260);
   await expect(page.getByTestId('home-screen')).toBeVisible();
   await expect(page.getByTestId('lock-screen')).toHaveCount(0);
   await expect(page.getByRole('heading', { name: '홈 화면', exact: true })).toBeFocused();
@@ -22,12 +23,12 @@ test('위로 충분히 밀면 홈으로 한 번 전환한다', async ({ page }) 
 });
 
 for (const [name, x, y] of [
-  ['짧은 이동', 195, 580],
-  ['가로 이동', 320, 600],
-  ['아래 이동', 195, 700],
+  ['짧은 이동', 195, 420],
+  ['가로 이동', 320, 460],
+  ['아래 이동', 195, 540],
 ] as const) {
   test(`${name}은 잠금을 유지한다`, async ({ page }) => {
-    await drag(page, 195, 620, x, y);
+    await drag(page, 195, 460, x, y);
     await expect(page.getByTestId('lock-screen')).toBeVisible();
     await expect(page.locator('.lock-clock-group')).toHaveCSS(
       'transform',
@@ -38,15 +39,15 @@ for (const [name, x, y] of [
 
 for (const event of ['pointercancel', 'lostpointercapture']) {
   test(`${event} 후에 잠금으로 복귀하고 다시 해제할 수 있다`, async ({ page }) => {
-    await page.mouse.move(195, 620);
+    await page.mouse.move(195, 460);
     await page.mouse.down();
-    await page.mouse.move(195, 480);
+    await page.mouse.move(195, 320);
     await page
       .getByTestId('lock-screen')
       .dispatchEvent(event, { pointerId: 1, isPrimary: true, pointerType: 'mouse' });
     await page.mouse.up();
     await expect(page.getByTestId('lock-screen')).toBeVisible();
-    await drag(page, 195, 620, 195, 420);
+    await drag(page, 195, 460, 195, 260);
     await expect(page.getByTestId('home-screen')).toBeVisible();
   });
 }
@@ -64,7 +65,7 @@ test('바로가기는 실제 기기 권한을 사용하지 않고 안내한다',
   await expect(page.getByRole('status')).toContainText('사용할 수 없어요');
   await expect(page.getByTestId('lock-screen')).toBeVisible();
   await page.getByRole('button', { name: '카메라 안내' }).click();
-  await expect(page.getByRole('status')).toContainText('준비 중');
+  await expect(page.getByRole('status')).toHaveText('카메라 권한을 사용하지 않는 웹 체험입니다.');
 });
 
 for (const distance of [40, 180]) {
@@ -93,9 +94,9 @@ test('모바일 입력으로 위로 쓸어올려 해제한다', async ({ page, b
     const client = await page.context().newCDPSession(page);
     await client.send('Input.dispatchTouchEvent', {
       type: 'touchStart',
-      touchPoints: [{ x: 195, y: 620 }],
+      touchPoints: [{ x: 195, y: 460 }],
     });
-    for (let y = 600; y >= 420; y -= 20)
+    for (let y = 440; y >= 260; y -= 20)
       await client.send('Input.dispatchTouchEvent', {
         type: 'touchMove',
         touchPoints: [{ x: 195, y }],
@@ -104,7 +105,7 @@ test('모바일 입력으로 위로 쓸어올려 해제한다', async ({ page, b
     await client.detach();
   } else {
     // Desktop WebKit has no CDP touch-drag API; pointer input checks the same handler.
-    await drag(page, 195, 620, 195, 420);
+    await drag(page, 195, 460, 195, 260);
   }
   await expect(page.getByTestId('home-screen')).toBeVisible();
 });

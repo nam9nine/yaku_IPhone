@@ -1,6 +1,7 @@
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { useViewport } from '../shell/useViewport';
 import type { DevicePreferences } from '../settings/preferences';
+import { getWallpaper } from '../day/media';
 
 export function MobileShell({
   children,
@@ -14,23 +15,45 @@ export function MobileShell({
   appearance: { theme: 'light' | 'dark'; reduceMotion: boolean };
 }) {
   const viewport = useViewport();
+  const wallpaper = getWallpaper(preferences.wallpaper);
+  const position = preferences.wallpaperPositions?.[preferences.wallpaper];
   return (
     <main
       className="mobile-shell"
-      style={{ height: viewport.height, top: viewport.top }}
-      aria-label="yaku iPhone"
+      style={
+        {
+          height: viewport.height,
+          top: viewport.top,
+          left: viewport.left,
+          width: viewport.width,
+          '--phone-top': `${viewport.top}px`,
+          '--phone-left': `${viewport.left}px`,
+          '--phone-width': `${viewport.width}px`,
+          '--phone-height': `${viewport.height}px`,
+        } as CSSProperties
+      }
+      aria-label="키류의 iPhone"
+      data-framed={viewport.framed}
+      data-locked={foreground}
       data-theme={appearance.theme}
       data-wallpaper={preferences.wallpaper}
       data-reduced-motion={appearance.reduceMotion}
     >
-      <div className="mobile-shell-wallpaper" aria-hidden="true">
-        <img src={`${import.meta.env.BASE_URL}wallpapers/silver-fold.svg`} alt="" />
+      <div
+        className="mobile-shell-wallpaper"
+        aria-hidden="true"
+        data-landscape={wallpaper.landscape || undefined}
+        style={{ '--wallpaper-image': `url("${wallpaper.src}")` } as CSSProperties}
+      >
+        <img
+          src={wallpaper.src}
+          alt=""
+          style={{
+            objectPosition: position ? `${position.x}% ${position.y}%` : wallpaper.position,
+            ...(wallpaper.landscape && position ? { top: `${32 + (position.y - 50) / 4}%` } : {}),
+          }}
+        />
       </div>
-      {foreground && (
-        <div className="mobile-shell-foreground" aria-hidden="true">
-          <img src={`${import.meta.env.BASE_URL}wallpapers/silver-fold-front.svg`} alt="" />
-        </div>
-      )}
       <div className="mobile-shell-content">{children}</div>
       <div
         className="brightness-overlay"

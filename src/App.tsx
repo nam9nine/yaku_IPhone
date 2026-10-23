@@ -15,7 +15,7 @@ import { useDevicePreferences } from './settings/useDevicePreferences';
 import { useAppearance } from './shell/useAppearance';
 import { useViewport } from './shell/useViewport';
 import { SafariApp } from './safari/SafariApp';
-import { isOnline } from './settings/preferences';
+import { defaultPreferences, isOnline, type DevicePreferences } from './settings/preferences';
 import { SystemEdges, HomeGestures } from './system/SystemEdges';
 import { SystemPanels } from './system/SystemPanels';
 import './shell/appearance.css';
@@ -23,11 +23,30 @@ import { ContactsApp } from './story/ContactsApp';
 import { MessagesApp } from './story/MessagesApp';
 import { NotesApp } from './story/NotesApp';
 import { PhotosApp } from './story/PhotosApp';
+import { PhoneApp } from './story/PhoneApp';
+import { DayProvider, useDay } from './day/DayContext';
+import { RemindersApp } from './day/RemindersApp';
+import { CalendarApp } from './day/CalendarApp';
+import { DayNotification } from './components/DayNotification';
+import { resetStoryStorage } from './story/useStoredState';
 
 const getPreview = (app: RunnableApp) =>
   document.querySelector<HTMLElement>(`[data-app-window="${app}"]`);
 
 export function App() {
+  return (
+    <DayProvider>
+      <PhoneSession />
+    </DayProvider>
+  );
+}
+
+function PhoneSession() {
+  const day = useDay();
+  const [epoch, setEpoch] = useState(0);
+  const [note, setNote] = useState<string | null>(null);
+  const [photo, setPhoto] = useState<string | null>(null);
+  const [settingsEntry, setSettingsEntry] = useState<{ page: 'demo'; key: number } | null>(null);
   const [conversation, setConversation] = useState<string | null>(null);
   const [controls, setControls] = useState({ volume: 50, rotation: false, silent: false });
   const [state, dispatch] = useReducer(shellReducer, initialShellState);
@@ -43,12 +62,33 @@ export function App() {
     const rect = document
       .querySelector(`[data-launch-app="${app}"] .app-icon`)
       ?.getBoundingClientRect();
+    if (state.locked) dispatch({ type: 'unlock' });
     dispatch({
       type: 'open',
       app,
       origin:
         entry ?? (rect ? { x: rect.x, y: rect.y, width: rect.width, height: rect.height } : null),
     });
+  }
+  function openNote(id: string) {
+    setNote(id);
+    openApp('notes');
+  }
+  function openHaruka() {
+    setConversation('haruka');
+    openApp('messages');
+  }
+  function resetPhone() {
+    day.reset();
+    resetStoryStorage();
+    setPreferences({ ...defaultPreferences });
+    setConversation(null);
+    setNote(null);
+    setPhoto(null);
+    setSettingsEntry(null);
+    for (const app of state.visited) dispatch({ type: 'close-app', app });
+    dispatch({ type: 'lock' });
+    setEpoch((value) => value + 1);
   }
   useEffect(() => {
     if (state.locked || state.activeApp || state.panel) return;
@@ -98,6 +138,13 @@ export function App() {
             active={!state.panel}
             onUnlock={() => dispatch({ type: 'unlock' })}
             autoFocus={state.hasUnlocked}
+            onMessage={openHaruka}
+            onCalendar={() => openApp('calendar')}
+            onReminders={() => openApp('reminders')}
+            onWeather={() => {
+              setSettingsEntry({ page: 'demo', key: Date.now() });
+              openApp('settings');
+            }}
           />
         )}
         {state.hasUnlocked && (
@@ -108,12 +155,17 @@ export function App() {
             aria-hidden={state.locked || !!state.activeApp}
           >
             <HomeScreen
+              key={epoch}
               active={!state.locked && !state.activeApp && !state.panel}
               onLock={() => dispatch({ type: 'lock' })}
               onOpenApp={(app, origin) => dispatch({ type: 'open', app, origin })}
               onSearch={() => showPanel('search')}
               onControl={() => showPanel('control')}
               onSwitcher={() => showPanel('switcher')}
+              onPhoto={(id) => {
+                setPhoto(id);
+                openApp('photos');
+              }}
             />
             <HomeGestures
               active={!state.locked && !state.activeApp && !state.panel}
@@ -125,7 +177,7 @@ export function App() {
       </div>
       {state.visited.map((app) => (
         <AppWindow
-          key={app}
+          key={`${epoch}-${app}`}
           app={app}
           active={!state.locked && state.activeApp === app}
           interactive={!state.locked && state.activeApp === app && !state.panel}
@@ -142,7 +194,9 @@ export function App() {
               preferences={preferences}
               onChange={setPreferences}
               active={!state.locked && state.activeApp === app && !state.panel}
-              storageUnavailable={storageUnavailable}
+              storageUnavailable={storageUnavailable || day.storageUnavailable}
+              onReset={resetPhone}
+              requestedPage={settingsEntry}
             />
           ) : app === 'safari' ? (
             <SafariApp
@@ -163,11 +217,41 @@ export function App() {
               selected={conversation}
               onSelect={setConversation}
               online={isOnline(preferences)}
+              onOpenNote={openNote}
             />
           ) : app === 'notes' ? (
-            <NotesApp active={!state.locked && state.activeApp === app && !state.panel} />
+            <NotesApp
+              active={!state.locked && state.activeApp === app && !state.panel}
+              selected={note}
+              onSelect={setNote}
+            />
+          ) : app === 'reminders' ? (
+            <RemindersApp
+              active={!state.locked && state.activeApp === app && !state.panel}
+              onOpenNote={openNote}
+            />
+          ) : app === 'calendar' ? (
+            <CalendarApp
+              active={!state.locked && state.activeApp === app && !state.panel}
+              onOpenNote={openNote}
+            />
+          ) : app === 'phone' ? (
+            <PhoneApp
+              active={!state.locked && state.activeApp === app && !state.panel}
+              onMessage={(id) => {
+                setConversation(id);
+                openApp('messages');
+              }}
+            />
           ) : (
-            <PhotosApp active={!state.locked && state.activeApp === app && !state.panel} />
+            <PhotosApp
+              active={!state.locked && state.activeApp === app && !state.panel}
+              selected={photo}
+              onSelect={setPhoto}
+              onWallpaper={(id) =>
+                setPreferences({ ...preferences, wallpaper: id as DevicePreferences['wallpaper'] })
+              }
+            />
           )}
         </AppWindow>
       ))}
@@ -195,8 +279,32 @@ export function App() {
           }
           getPreview={getPreview}
           viewport={viewport}
+          notifications={<DayNotification onOpen={openHaruka} />}
         />
       )}
+      {!state.locked &&
+        !state.panel &&
+        day.state.missedCall &&
+        !day.state.missedCallRead &&
+        state.activeApp !== 'phone' && (
+          <aside className="missed-call-banner" aria-label="부재중 전화 알림">
+            <button
+              onClick={() => {
+                day.dispatch({ type: 'read-call' });
+                openApp('phone');
+              }}
+            >
+              <strong>마지마 형님</strong>
+              <span>부재중 전화</span>
+            </button>
+            <button
+              aria-label="부재중 전화 알림 닫기"
+              onClick={() => day.dispatch({ type: 'read-call' })}
+            >
+              ×
+            </button>
+          </aside>
+        )}
     </MobileShell>
   );
 }

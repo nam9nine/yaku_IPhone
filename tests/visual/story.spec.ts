@@ -14,11 +14,14 @@ for (const size of [
     'note',
     'photos',
     'photo',
+    'reminders',
+    'calendar',
+    'phone',
   ] as const) {
     test(`키류 ${scene} ${size.width}`, async ({ page }) => {
       await page.setViewportSize(size);
       await page.emulateMedia({ reducedMotion: 'reduce', colorScheme: 'light' });
-      await page.clock.setFixedTime(new Date('2026-10-24T09:41:00+09:00'));
+      await page.clock.setFixedTime(new Date('2026-10-24T16:40:00+09:00'));
       await page.goto('./');
       await page.getByRole('button', { name: '잠금 해제', exact: true }).tap();
       const app =
@@ -35,9 +38,9 @@ for (const size of [
       if (scene === 'profile')
         await page.getByRole('button', { name: '사와무라 하루카', exact: true }).tap();
       if (scene === 'thread') await page.locator('[data-conversation=haruka]').tap();
-      if (scene === 'note') await page.locator('[data-note-id=shopping]').tap();
+      if (scene === 'note') await page.locator('[data-note-id=curry]').tap();
       if (scene === 'photo')
-        await page.getByRole('button', { name: '나팔꽃에서', exact: true }).tap();
+        await page.getByRole('button', { name: '나팔꽃의 식사 시간', exact: true }).tap();
       await page.evaluate(async () => {
         await document.fonts.ready;
         await Promise.all([...document.images].map((img) => img.decode()));

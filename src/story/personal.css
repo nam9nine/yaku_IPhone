@@ -580,3 +580,54 @@
   min-width: 90px;
   font-size: 0.75em;
 }
+
+.notes-app h2.note-title {
+  margin: 0;
+}
+.day-curry-list li label {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  cursor: pointer;
+}
+.day-curry-list li[data-done='true'] label span {
+  color: var(--app-secondary);
+  text-decoration: line-through;
+}
+.day-curry-list .day-carrot {
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  color: var(--app-secondary);
+}
+.day-carrot-mark {
+  display: grid;
+  place-items: center;
+  width: 23px;
+  height: 23px;
+  border-radius: 50%;
+  color: white;
+  background: var(--personal-note-accent);
+  font-size: 0.875rem;
+}
+.day-note-comment,
+.day-note-author {
+  margin: 0 0 24px;
+  color: var(--app-secondary);
+  font-size: 0.8125rem;
+  line-height: 1.6;
+}
+.day-note-comment {
+  padding-left: 35px;
+}
+.day-note-ending {
+  margin: 20px 0;
+  line-height: 1.6;
+}
+.day-note-completed,
+.day-note-footer {
+  color: var(--app-secondary);
+  font-size: 0.8125rem;
+}

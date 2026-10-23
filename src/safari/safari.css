@@ -808,3 +808,62 @@
     padding: 12px;
   }
 }
+
+.safari-saved-history {
+  margin-bottom: 30px;
+}
+.safari-saved-history ul {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+  border-radius: 14px;
+  background: var(--safari-surface);
+}
+.safari-saved-history li + li {
+  border-top: 1px solid var(--safari-separator);
+}
+.safari-saved-history button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 54px;
+  padding: 13px 14px;
+  text-align: left;
+  background: none;
+  font-size: 0.875em;
+}
+.safari-saved-history button > span {
+  flex: 1;
+  min-width: 0;
+}
+.safari-saved-history svg {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  color: var(--safari-secondary);
+}
+.safari-saved-history li {
+  break-inside: avoid;
+}
+.safari-saved-article .safari-article-body {
+  padding: 24px;
+}
+.safari-saved-article h2 {
+  font-size: 1.75em;
+  line-height: 1.35;
+  letter-spacing: -0.04em;
+}
+.safari-saved-article .safari-site-header span:first-child {
+  font-size: 1em;
+  letter-spacing: -0.03em;
+}
+.safari-saved-article h3 {
+  font-size: 1.125em;
+}
+.safari-saved-article section {
+  margin: 22px 0;
+}
+.safari-saved-article footer {
+  margin-top: 20px;
+}

@@ -5,6 +5,9 @@ export const appNames = {
   messages: '메시지',
   notes: '메모',
   photos: '사진',
+  phone: '전화',
+  reminders: '미리 알림',
+  calendar: '캘린더',
 } as const;
 export type RunnableApp = keyof typeof appNames;
 export function isRunnableApp(id: string): id is RunnableApp {

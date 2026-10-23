@@ -1,8 +1,23 @@
 import { expect, type Page } from '@playwright/test';
 export async function launchHomeApp(
   page: Page,
-  app: 'settings' | 'safari' | 'contacts' | 'messages' | 'notes' | 'photos',
+  app:
+    | 'settings'
+    | 'safari'
+    | 'contacts'
+    | 'messages'
+    | 'notes'
+    | 'photos'
+    | 'reminders'
+    | 'calendar'
+    | 'phone',
 ) {
+  if (app === 'contacts') {
+    await page.keyboard.press('Alt+s');
+    await page.getByRole('textbox', { name: '앱 검색' }).fill('연락처');
+    await page.getByRole('button', { name: '연락처', exact: true }).tap();
+    return;
+  }
   const icon = page.locator(`[data-launch-app=${app}]`);
   await page.evaluate(
     () =>

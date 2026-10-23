@@ -1,0 +1,45 @@
+/* Supplemental photo content styles; keep the existing phone's navigation and controls. */
+.photo-caption {
+  flex: 0 0 auto;
+  max-height: 30%;
+  padding: 10px 22px 6px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  text-align: center;
+}
+.photo-caption p {
+  margin: 0 0 6px;
+  white-space: pre-line;
+  font-size: 0.875em;
+  line-height: 1.45;
+}
+.photo-caption small {
+  display: block;
+  color: var(--app-secondary);
+  font-size: 0.6875em;
+  line-height: 1.5;
+}
+.photo-wallpaper-action {
+  display: block;
+  min-height: 44px;
+  margin: 2px auto 0;
+  padding: 8px 10px;
+  border: 0;
+  color: var(--app-accent) !important;
+  background: none;
+  font-size: 0.875em !important;
+}
+.photo-wallpaper-notice {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--app-secondary);
+  font-size: 0.75em;
+  line-height: 1.4;
+}
+@media (max-height: 550px) {
+  .photo-caption {
+    max-height: 35%;
+    padding-top: 4px;
+    padding-bottom: 2px;
+  }
+}

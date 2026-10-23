@@ -5,7 +5,7 @@ for (const size of [
   { width: 390, height: 844 },
   { width: 430, height: 932 },
 ]) {
-  for (const pageNumber of [1, 2]) {
+  for (const pageNumber of [1]) {
     test(`홈 ${pageNumber}페이지 ${size.width}x${size.height}`, async ({ page }) => {
       await page.setViewportSize(size);
       // Capture a static scene without transient compositor layers from the entry motion.

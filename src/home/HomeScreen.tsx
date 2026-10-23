@@ -6,6 +6,8 @@ import { isHorizontalGesture, pageAfterGesture, type PageGesture } from './pageG
 import './home.css';
 import { homeLayout } from './homeLayout';
 import { isRunnableApp, type LaunchRect, type RunnableApp } from '../shell/session';
+import { dayPhotos } from '../day/media';
+import { useDay } from '../day/DayContext';
 
 export function HomeScreen({
   onLock,
@@ -14,15 +16,19 @@ export function HomeScreen({
   onSearch,
   onControl,
   onSwitcher,
+  onPhoto,
 }: {
   onLock: () => void;
   active?: boolean;
   onSearch: () => void;
   onControl: () => void;
   onSwitcher: () => void;
+  onPhoto: (id: string) => void;
   onOpenApp?: (app: RunnableApp, origin: LaunchRect) => void;
 }) {
   const date = useDisplayDate();
+  const { shoppingDone } = useDay();
+  const widgetPhoto = dayPhotos[shoppingDone ? 1 : 0];
   const day = String(Number(date.isoDate.slice(-2)));
   const weekday = date.label.split(' ').at(-1) ?? '';
   const [selectedPage, setPage] = useState(0);
@@ -254,31 +260,18 @@ export function HomeScreen({
                     className="home-widget-button"
                     aria-label="사진 위젯"
                     tabIndex={0}
-                    onClick={() => setNotice('사진 앱은 곧 만나요')}
+                    onClick={() => onPhoto(widgetPhoto.id)}
                   >
                     <span className="home-widget home-photo-widget">
                       <img
-                        src={`${import.meta.env.BASE_URL}widgets/mountain.png`}
-                        alt="햇빛이 비치는 바위 능선과 멀리 펼쳐진 산"
+                        src={widgetPhoto.src}
+                        alt={widgetPhoto.title}
                         width="1254"
                         height="1254"
                         draggable="false"
                       />
                     </span>
                     <span className="home-app-label">사진</span>
-                  </button>
-                  <button
-                    className="home-widget-button"
-                    aria-label={`캘린더 위젯, ${date.label}, 일정 없음`}
-                    tabIndex={0}
-                    onClick={() => setNotice('캘린더 앱은 곧 만나요')}
-                  >
-                    <span className="home-widget home-calendar-widget" aria-hidden="true">
-                      <span className="home-calendar-weekday">{weekday}</span>
-                      <span className="home-calendar-day">{day}</span>
-                      <span className="home-calendar-empty">오늘은 일정이 없어요</span>
-                    </span>
-                    <span className="home-app-label">캘린더</span>
                   </button>
                 </div>
               )}

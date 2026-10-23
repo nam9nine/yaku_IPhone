@@ -45,6 +45,7 @@ export function AppWindow({
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const closing = useRef(false);
   const generation = useRef(0);
+  const hasPresented = useRef(false);
   const bottom = useSystemGesture('bottom', interactive, (result, gesture) => {
     if (result === 'home') returnHome(gesture);
     else if (result === 'switcher') onSwitcher(card.current ? rectOf(card.current) : undefined);
@@ -97,7 +98,16 @@ export function AppWindow({
         duration: motion.settle,
         easing: 'linear',
       });
+    } else if (!hasPresented.current && !reducedMotion(node)) {
+      animation.current = node.animate(
+        [
+          { transform: 'translateY(18px) scale(0.98)', opacity: 0 },
+          { transform: 'none', opacity: 1 },
+        ],
+        { duration: motion.settle, easing: 'ease-out' },
+      );
     }
+    hasPresented.current = true;
     node.querySelector<HTMLElement>('[data-app-title]')?.focus({ preventScroll: true });
     return () => {
       generation.current += 1;
@@ -181,7 +191,13 @@ export function AppWindow({
       data-parked={parked}
       inert={!interactive}
       aria-hidden={!interactive}
-      style={{ top: viewport.top, height: viewport.height }}
+      style={{
+        top: viewport.top,
+        left: viewport.left,
+        right: 'auto',
+        width: viewport.width,
+        height: viewport.height,
+      }}
     >
       {active && (drag > 0 || closing.current) && (
         <div className="gesture-stage" aria-hidden="true" inert style={{ width }}>

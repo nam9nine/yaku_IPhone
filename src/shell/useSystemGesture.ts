@@ -17,6 +17,8 @@ export function useSystemGesture(
   const dimensions = useRef('');
   const viewportKey = () =>
     `${window.innerWidth}:${window.innerHeight}:${window.visualViewport?.width}:${window.visualViewport?.height}`;
+  const localY = (y: number) =>
+    y - (surface.current?.closest('.mobile-shell')?.getBoundingClientRect().top ?? 0);
   const suppress = useRef(false);
   const frame = useRef<number | null>(null);
   const pending = useRef(0);
@@ -73,7 +75,7 @@ export function useSystemGesture(
   function finish(event: PointerEvent<HTMLElement>, cancelled: boolean) {
     const current = gesture.current;
     if (!current || current.pointerId !== event.pointerId) return;
-    const final = moveSystemGesture(current, event.clientX, event.clientY, event.timeStamp);
+    const final = moveSystemGesture(current, event.clientX, localY(event.clientY), event.timeStamp);
     suppress.current ||= Math.hypot(final.x, final.y) > 8;
     // Resize notifications can arrive after pointerup. Compare the viewport itself
     // so a release during that interval cannot complete an old gesture.
@@ -101,15 +103,15 @@ export function useSystemGesture(
         gesture.current = {
           pointerId: event.pointerId,
           startX: event.clientX,
-          startY: event.clientY,
+          startY: localY(event.clientY),
           x: 0,
           y: 0,
           lastX: event.clientX,
-          lastY: event.clientY,
+          lastY: localY(event.clientY),
           movedAt: event.timeStamp,
           startedAt: event.timeStamp,
           motionStartedAt: null,
-          samples: [{ y: event.clientY, time: event.timeStamp }],
+          samples: [{ y: localY(event.clientY), time: event.timeStamp }],
         };
         event.currentTarget.setPointerCapture(event.pointerId);
       },
@@ -121,7 +123,12 @@ export function useSystemGesture(
           return;
         }
         event.preventDefault();
-        const next = moveSystemGesture(current, event.clientX, event.clientY, event.timeStamp);
+        const next = moveSystemGesture(
+          current,
+          event.clientX,
+          localY(event.clientY),
+          event.timeStamp,
+        );
         gesture.current = next;
         if (Math.hypot(next.x, next.y) > 8) suppress.current = true;
         queueOffset(kind === 'bottom' ? Math.max(0, -next.y) : Math.max(0, next.y));

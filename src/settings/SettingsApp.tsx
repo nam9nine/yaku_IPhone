@@ -1,8 +1,9 @@
-import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { useLayoutEffect, useRef, useState, type ReactNode, type CSSProperties } from 'react';
 import { setAirplaneMode, type DevicePreferences } from './preferences';
 import { SettingsIcon, type SettingsIconName } from './SettingsIcon';
 import { useEdgeNavigation } from '../navigation/EdgeNavigation';
 import './settings.css';
+import { getWallpaper, wallpaperChoices } from '../day/media';
 
 type SettingsPage =
   | 'main'
@@ -12,7 +13,8 @@ type SettingsPage =
   | 'appearance'
   | 'brightness'
   | 'wallpaper'
-  | 'accessibility';
+  | 'accessibility'
+  | 'demo';
 const pageTitles: Record<SettingsPage, string> = {
   main: '설정',
   wifi: 'Wi-Fi',
@@ -22,6 +24,7 @@ const pageTitles: Record<SettingsPage, string> = {
   brightness: '디스플레이 및 밝기',
   wallpaper: '배경화면',
   accessibility: '손쉬운 사용',
+  demo: '데모 안내',
 };
 
 function Chevron() {
@@ -86,13 +89,28 @@ export function SettingsApp({
   onChange,
   active,
   storageUnavailable = false,
+  onReset,
+  requestedPage = null,
 }: {
   preferences: DevicePreferences;
   onChange: (next: DevicePreferences) => void;
   active: boolean;
   storageUnavailable?: boolean;
+  onReset: () => void;
+  requestedPage?: { page: 'demo'; key: number } | null;
 }) {
-  const [history, setHistory] = useState<SettingsPage[]>(['main']);
+  const [history, setHistory] = useState<SettingsPage[]>(
+    requestedPage ? ['main', 'demo'] : ['main'],
+  );
+  const [lastRequest, setLastRequest] = useState(requestedPage);
+  if (lastRequest !== requestedPage) {
+    setLastRequest(requestedPage);
+    if (requestedPage) setHistory(['main', requestedPage.page]);
+  }
+  const resetDialog = useRef<HTMLDialogElement>(null);
+  useLayoutEffect(() => {
+    if (!active) resetDialog.current?.close();
+  }, [active]);
   const page = history[history.length - 1];
   const title = useRef<HTMLHeadingElement>(null);
   const positions = useRef<Partial<Record<SettingsPage, number>>>({});
@@ -141,7 +159,7 @@ export function SettingsApp({
         data-settings-page={next}
         onClick={() => navigate(next)}
       >
-        <SettingsIcon name={next} />
+        <SettingsIcon name={next === 'demo' ? 'accessibility' : next} />
         <span className="settings-row-label">{pageTitles[next]}</span>
         {value && <span className="settings-row-value">{value}</span>}
         <Chevron />
@@ -188,6 +206,10 @@ export function SettingsApp({
         )}
         {page === 'main' && (
           <>
+            <div className="settings-device">
+              <strong>키류의 iPhone</strong>
+              <span>나팔꽃 · ASAGAO_HOME</span>
+            </div>
             <Group label="연결">
               <SwitchRow
                 icon="airplane"
@@ -205,6 +227,15 @@ export function SettingsApp({
               {destination('brightness')}
               {destination('wallpaper')}
               {destination('accessibility')}
+              {destination('demo')}
+            </Group>
+            <Group>
+              <button
+                className="settings-row settings-reset"
+                onClick={() => resetDialog.current?.showModal()}
+              >
+                처음 상태로 되돌리기
+              </button>
             </Group>
           </>
         )}
@@ -218,6 +249,15 @@ export function SettingsApp({
                 onChange={(value) => update('wifi', value)}
               />
             </Group>
+            {preferences.wifi && (
+              <Group>
+                <div className="settings-row">
+                  <span className="settings-check">✓</span>
+                  <span>ASAGAO_HOME</span>
+                  <span className="settings-row-value">연결됨</span>
+                </div>
+              </Group>
+            )}
             <p className="settings-footnote">
               이 웹 체험의 Wi-Fi 연결을 켜거나 끕니다. 에어플레인 모드에서도 Wi-Fi를 켤 수 있습니다.
             </p>
@@ -247,6 +287,7 @@ export function SettingsApp({
                 onChange={(value) => update('cellular', value)}
               />
             </Group>
+            <p className="settings-footnote">라라라 모바일 · 이 웹 체험의 가상 통신사 표시</p>
             <p className="settings-footnote">
               {preferences.airplane
                 ? '에어플레인 모드를 끄면 이전 셀룰러 설정이 다시 적용됩니다.'
@@ -363,12 +404,18 @@ export function SettingsApp({
             <fieldset className="settings-choice-fieldset">
               <legend>잠금 화면과 홈 화면</legend>
               <div className="settings-wallpaper-options">
-                {(
-                  [
-                    { value: 'default', label: '기본' },
-                    { value: 'solid', label: '슬레이트' },
-                  ] as const
-                ).map(({ value, label }) => (
+                {[
+                  ...wallpaperChoices.map((choice) => ({
+                    value: choice.id,
+                    label:
+                      choice.id === 'default'
+                        ? '기본'
+                        : choice.id === 'drawing'
+                          ? '아이들이 그린 그림'
+                          : '저녁 바다',
+                  })),
+                  { value: 'solid' as const, label: '슬레이트' },
+                ].map(({ value, label }) => (
                   <label className="settings-preview-choice" key={value}>
                     <input
                       tabIndex={0}
@@ -376,15 +423,13 @@ export function SettingsApp({
                       name="wallpaper"
                       value={value}
                       checked={preferences.wallpaper === value}
-                      onChange={() => update('wallpaper', value)}
+                      onChange={() => update('wallpaper', value as DevicePreferences['wallpaper'])}
                     />
                     <span
                       className={`settings-wallpaper-preview settings-wallpaper-preview--${value}`}
                       aria-hidden="true"
                     >
-                      {value === 'default' && (
-                        <img src={`${import.meta.env.BASE_URL}wallpapers/silver-fold.svg`} alt="" />
-                      )}
+                      {value !== 'solid' && <img src={getWallpaper(value).src} alt="" />}
                     </span>
                     <span>{label}</span>
                     <span className="settings-choice-mark" aria-hidden="true">
@@ -394,7 +439,102 @@ export function SettingsApp({
                 ))}
               </div>
             </fieldset>
+            {preferences.wallpaper !== 'solid' && (
+              <>
+                <p className="settings-footnote">
+                  현재 배경: {getWallpaper(preferences.wallpaper).title}
+                  {getWallpaper(preferences.wallpaper).placeholder
+                    ? ' · 교체 가능한 임시 이미지'
+                    : ''}
+                </p>
+                <div
+                  className="settings-crop-preview"
+                  data-landscape={getWallpaper(preferences.wallpaper).landscape || undefined}
+                  style={
+                    {
+                      '--wallpaper-image': `url("${getWallpaper(preferences.wallpaper).src}")`,
+                    } as CSSProperties
+                  }
+                >
+                  <img
+                    src={getWallpaper(preferences.wallpaper).src}
+                    alt="배경 위치 미리보기"
+                    style={{
+                      objectPosition: `${preferences.wallpaperPositions?.[preferences.wallpaper]?.x ?? 50}% ${preferences.wallpaperPositions?.[preferences.wallpaper]?.y ?? 50}%`,
+                      ...(getWallpaper(preferences.wallpaper).landscape
+                        ? {
+                            top: `${32 + ((preferences.wallpaperPositions?.[preferences.wallpaper]?.y ?? 50) - 50) / 4}%`,
+                          }
+                        : {}),
+                    }}
+                  />
+                  <span>16:40</span>
+                </div>
+                {(['x', 'y'] as const).map((axis) => (
+                  <label className="settings-crop-control" key={axis}>
+                    {axis === 'x' ? '사진 가로 위치' : '사진 세로 위치'}
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      aria-label={axis === 'x' ? '사진 가로 위치' : '사진 세로 위치'}
+                      value={preferences.wallpaperPositions?.[preferences.wallpaper]?.[axis] ?? 50}
+                      onChange={(event) =>
+                        update('wallpaperPositions', {
+                          ...preferences.wallpaperPositions,
+                          [preferences.wallpaper]: {
+                            x: preferences.wallpaperPositions?.[preferences.wallpaper]?.x ?? 50,
+                            y: preferences.wallpaperPositions?.[preferences.wallpaper]?.y ?? 50,
+                            [axis]: Number(event.target.value),
+                          },
+                        })
+                      }
+                    />
+                  </label>
+                ))}
+              </>
+            )}
           </>
+        )}
+
+        {page === 'demo' && (
+          <article className="settings-demo">
+            <h2>
+              키류의 iPhone
+              <br />
+              나팔꽃의 평범한 하루
+            </h2>
+            <p>하루카가 화면을 정리해 준, 키류의 개인 휴대폰을 살펴보는 팬메이드 웹 체험입니다.</p>
+            <h3>토요일 오후 4:40</h3>
+            <p>
+              2026년 10월 24일 토요일 16:40을 가상 시각으로 사용합니다. 날씨 27°도 가상
+              데이터입니다. 방문 시간과 관계없이 직접 조작하며 이야기를 볼 수 있습니다.
+            </p>
+            <h3>이 휴대폰에 담긴 것</h3>
+            <p>
+              대사·메모·일정과 ASAGAO_HOME은 창작 설정입니다. 현대 iPhone으로 재해석했으며 원작의
+              정확한 연도나 공식 대사를 재현한다고 주장하지 않습니다.
+            </p>
+            <p>
+              이미지의 출처는 사진 상세에서 확인할 수 있습니다. 게임 이미지의 권리는 SEGA에 있으며
+              이 휴대폰의 대사·사진 설명·일정은 팬 창작입니다.
+            </p>
+            <h3>이 웹사이트 안에서만</h3>
+            <p>
+              실제 통화·SMS·기기 설정 변경은 하지 않습니다. 카메라·마이크·위치·연락처 권한을
+              요청하지 않으며 음원·음성·로그인·AI API를 사용하지 않습니다.
+            </p>
+            <p>
+              체크한 항목, 읽음과 선택한 배경은 이 브라우저에 저장됩니다. 저장이 차단되어도 현재
+              접속 중에는 이용할 수 있습니다.
+            </p>
+            <button
+              className="settings-row settings-reset"
+              onClick={() => resetDialog.current?.showModal()}
+            >
+              처음 상태로 되돌리기
+            </button>
+          </article>
         )}
 
         {page === 'accessibility' && (
@@ -423,6 +563,22 @@ export function SettingsApp({
           </>
         )}
       </div>
+      <dialog ref={resetDialog} className="settings-reset-dialog" aria-labelledby="reset-title">
+        <h2 id="reset-title">처음 상태로 되돌릴까요?</h2>
+        <p>메모, 체크한 항목, 메시지 읽음, 사진 즐겨찾기와 배경 설정이 처음 상태로 돌아갑니다.</p>
+        <div>
+          <button onClick={() => resetDialog.current?.close()}>취소</button>
+          <button
+            className="settings-reset"
+            onClick={() => {
+              resetDialog.current?.close();
+              onReset();
+            }}
+          >
+            초기화
+          </button>
+        </div>
+      </dialog>
     </section>
   );
 }
