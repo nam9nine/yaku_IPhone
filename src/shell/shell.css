@@ -8,10 +8,14 @@
   justify-items: center;
   pointer-events: none;
 }
+.app-host[data-parked='true'] {
+  visibility: hidden;
+}
 .app-host[hidden] {
   display: none;
 }
 .app-window {
+  position: relative;
   display: flex;
   flex-direction: column;
   width: min(100%, 478px);
@@ -21,16 +25,32 @@
   padding: var(--safe-area-top) var(--safe-area-right) 0 var(--safe-area-left);
   background: var(--app-background);
   color: var(--app-text);
+  text-align: start;
   transform-origin: top left;
   overflow: clip;
   pointer-events: auto;
   transition:
-    transform var(--motion-short) var(--ease-standard),
+    transform var(--motion-settle) var(--ease-standard),
     border-radius var(--motion-short);
+}
+.gesture-stage {
+  position: absolute;
+  inset-block: 0;
+  pointer-events: none;
+}
+.gesture-stage-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgb(26 24 33 / 23%);
+}
+.gesture-previous-card {
+  bottom: calc(11% + 34px);
+}
+.gesture-current-title {
+  position: absolute;
 }
 .app-window[data-dragging='true'] {
   transition: none;
-  transform-origin: center;
 }
 .app-body {
   display: flex;

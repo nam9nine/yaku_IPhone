@@ -401,8 +401,10 @@ test('페이지 메뉴가 열려 있어도 키보드 홈 복귀와 인디케이�
   await tapPaged(safari(page).getByRole('button', { name: '페이지 메뉴', exact: true }));
   await expect(safari(page).getByRole('dialog')).toBeVisible();
   await goHome(page);
-  await launchSafari(page);
+  await page.getByRole('button', { name: 'Safari', exact: true }).tap();
   await expect(safari(page).getByRole('dialog')).toBeVisible();
+  // A preserved modal owns focus when the app reopens; the app heading must not steal it.
+  await expect(safari(page).getByRole('dialog').getByRole('button').first()).toBeFocused();
   await page.keyboard.press('Escape');
   await expect(safari(page).getByRole('dialog')).toHaveCount(0);
   await expect(
@@ -415,6 +417,7 @@ test('페이지 메뉴가 열려 있어도 키보드 홈 복귀와 인디케이�
   await page.mouse.move(x, y);
   await page.mouse.down();
   await page.mouse.move(x, y - 130, { steps: 8 });
+  await page.waitForTimeout(180);
   await page.mouse.up();
   await expect(page.getByTestId('system-switcher')).toBeVisible();
   await page.getByRole('button', { name: 'Safari 앱으로 전환', exact: true }).tap();

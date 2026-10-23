@@ -231,7 +231,7 @@ export function MessagesApp({
             <p className="message-local-note">이 폰 안에 저장되는 대화</p>
             {thread.map((message, index) => (
               <div
-                className={`message-line${message.outgoing ? ' message-line--outgoing' : ''}`}
+                className={`message-line${message.outgoing ? ' message-line--outgoing' : ''}${index === thread.length - 1 || thread[index + 1]?.outgoing !== message.outgoing ? ' message-line--tail' : ''}`}
                 key={message.id}
               >
                 <p className="message-bubble">{message.text}</p>

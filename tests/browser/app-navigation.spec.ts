@@ -213,6 +213,7 @@ test('Safari 본문 가로 이동과 양쪽 가장자리 방문 기록을 구분
   await edgeSwipe(page, page.locator('.safari-app'), 'forward');
   await expect(address(page)).toHaveText('yaku.test/example');
   await edgeSwipe(page, page.locator('.safari-app'), 'back');
+  await expect(address(page)).toHaveText('yaku.test/guide');
   await page.keyboard.press('Alt+Home');
   await page.getByRole('button', { name: 'Safari', exact: true }).tap();
   await expect(address(page)).toHaveText('yaku.test/guide');
@@ -484,3 +485,128 @@ test('설정의 실제 세로 입력과 가장자리 뒤로는 목록 위치와 
   await expect(content).toHaveJSProperty('scrollTop', offset);
   expect(await page.evaluate(() => window.scrollY)).toBe(0);
 });
+
+test('한 단계 뒤로 화면은 손가락을 따라오고 짧은 입력은 원래 위치로 복귀한다', async ({
+  page,
+}, testInfo) => {
+  await openApp(page, '설정');
+  const app = page.locator('.settings-app');
+  await page.getByRole('button', { name: 'Wi-Fi 켬', exact: true }).tap();
+  const rect = (await app.boundingBox())!;
+  await page.mouse.move(rect.x + 20, rect.y + 190);
+  await page.mouse.down();
+  await page.mouse.move(rect.x + 62, rect.y + 192, { steps: 6 });
+  await expect(app).toHaveAttribute('data-edge-motion', 'dragging');
+  expect(
+    await app
+      .locator(':scope > header')
+      .evaluate((el) => parseFloat(getComputedStyle(el).translate)),
+  ).toBeCloseTo(42);
+  await testInfo.attach('edge-drag-follow', {
+    body: await page.screenshot(),
+    contentType: 'image/png',
+  });
+  await page.mouse.up();
+  await expect(page.getByRole('heading', { name: 'Wi-Fi', exact: true })).toBeVisible();
+  await expect(app).not.toHaveAttribute('data-edge-motion');
+  await expect(app).toHaveCSS('translate', 'none');
+  await edgeSwipe(page, app, 'back');
+  await expect(page.getByRole('heading', { name: '설정', exact: true })).toBeVisible();
+  await expect(app).not.toHaveAttribute('data-edge-motion');
+  await edgeSwipe(page, app, 'back');
+  await expect(app).not.toHaveAttribute('data-edge-motion');
+});
+
+test('뒤로 정착 중 반복 입력은 중복 pop 없이 한 단계만 이동한다', async ({ page }) => {
+  await openApp(page, '설정');
+  await page.getByRole('button', { name: '손쉬운 사용', exact: true }).tap();
+  await page.getByRole('button', { name: '텍스트 크기', exact: true }).tap();
+  const app = page.locator('.settings-app');
+  await edgeSwipe(page, app, 'back');
+  await page.keyboard.press('Escape');
+  await app.dispatchEvent('pointerdown', {
+    isPrimary: true,
+    button: 0,
+    pointerId: 99,
+    clientX: 20,
+    clientY: 190,
+  });
+  await app.dispatchEvent('pointerup', { pointerId: 99, clientX: 120, clientY: 190 });
+  await expect(page.getByRole('heading', { name: '손쉬운 사용', exact: true })).toBeVisible();
+  await expect(app).not.toHaveAttribute('data-edge-motion');
+  await page.keyboard.press('Alt+Home');
+  await expect(page.getByTestId('settings-app')).toBeHidden();
+  await launchHomeApp(page, 'settings');
+  await expect(page.getByRole('heading', { name: '손쉬운 사용', exact: true })).toBeVisible();
+});
+
+test('뒤로 정착 중 홈으로 나가면 늦은 탐색 콜백이 재진입 화면을 바꾸지 않는다', async ({
+  page,
+}) => {
+  await openApp(page, '설정');
+  await page.getByRole('button', { name: 'Wi-Fi 켬', exact: true }).tap();
+  const app = page.locator('.settings-app');
+  await edgeSwipe(page, app, 'back');
+  await page.keyboard.press('Alt+Home');
+  await expect(page.getByTestId('settings-app')).toBeHidden();
+  await launchHomeApp(page, 'settings');
+  await expect(page.getByRole('heading', { name: 'Wi-Fi', exact: true })).toBeVisible();
+  await expect(app).not.toHaveAttribute('data-edge-motion');
+});
+
+test('뒤로 정착 중 실제 하단 바를 빠르게 올리면 홈 복귀 후에도 기존 화면을 유지한다', async ({
+  page,
+}) => {
+  await openApp(page, '설정');
+  await page.getByRole('button', { name: 'Wi-Fi 켬', exact: true }).tap();
+  const app = page.locator('.settings-app');
+  const bar = (await page.getByTestId('settings-home-gesture').boundingBox())!;
+  const x = bar.x + bar.width / 2;
+  const y = bar.y + bar.height / 2;
+  await edgeSwipe(page, app, 'back');
+  await expect(app).toHaveAttribute('data-edge-motion', 'leaving');
+  await page.mouse.move(x, y);
+  await page.mouse.down();
+  await page.mouse.move(x, y - 150, { steps: 3 });
+  await page.mouse.up();
+  await expect(page.getByTestId('system-switcher')).toHaveCount(0);
+  await expect(page.getByTestId('settings-app')).toBeHidden();
+  await launchHomeApp(page, 'settings');
+  await expect(page.getByRole('heading', { name: 'Wi-Fi', exact: true })).toBeVisible();
+  await expect(app).not.toHaveAttribute('data-edge-motion');
+});
+
+test('동작 줄이기에서는 화면을 끌지 않으며 뒤로 탐색 결과는 유지한다', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await openApp(page, '설정');
+  await page.getByRole('button', { name: 'Wi-Fi 켬', exact: true }).tap();
+  const app = page.locator('.settings-app');
+  const rect = (await app.boundingBox())!;
+  await page.mouse.move(rect.x + 20, rect.y + 190);
+  await page.mouse.down();
+  await page.mouse.move(rect.x + 120, rect.y + 190, { steps: 8 });
+  await expect(app).toHaveCSS('translate', 'none');
+  await page.mouse.up();
+  await expect(page.getByRole('heading', { name: '설정', exact: true })).toBeVisible();
+  await expect(app).not.toHaveAttribute('data-edge-motion');
+});
+
+for (const interruption of ['resize', 'control'] as const) {
+  test(`완료 모션 도중 ${interruption}는 지연된 뒤로 탐색을 취소한다`, async ({ page }) => {
+    await openApp(page, '설정');
+    await page.getByRole('button', { name: 'Wi-Fi 켬', exact: true }).tap();
+    const app = page.locator('.settings-app');
+    await edgeSwipe(page, app, 'back');
+    if (interruption === 'resize') {
+      await page.setViewportSize({ width: 360, height: 800 });
+    } else {
+      await page.keyboard.press('Alt+c');
+      await expect(page.getByRole('dialog', { name: '제어 센터', exact: true })).toBeVisible();
+      await page.keyboard.press('Escape');
+    }
+    await expect(app).not.toHaveAttribute('data-edge-motion');
+    await expect(page.getByRole('heading', { name: 'Wi-Fi', exact: true })).toBeVisible();
+    await edgeSwipe(page, app, 'back');
+    await expect(page.getByRole('heading', { name: '설정', exact: true })).toBeVisible();
+  });
+}

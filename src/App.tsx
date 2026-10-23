@@ -8,6 +8,7 @@ import {
   shellReducer,
   type RunnableApp,
   type SystemPanel,
+  type LaunchRect,
 } from './shell/session';
 import { SettingsApp } from './settings/SettingsApp';
 import { useDevicePreferences } from './settings/useDevicePreferences';
@@ -23,6 +24,9 @@ import { MessagesApp } from './story/MessagesApp';
 import { NotesApp } from './story/NotesApp';
 import { PhotosApp } from './story/PhotosApp';
 
+const getPreview = (app: RunnableApp) =>
+  document.querySelector<HTMLElement>(`[data-app-window="${app}"]`);
+
 export function App() {
   const [conversation, setConversation] = useState<string | null>(null);
   const [controls, setControls] = useState({ volume: 50, rotation: false, silent: false });
@@ -30,15 +34,20 @@ export function App() {
   const { preferences, setPreferences, storageUnavailable } = useDevicePreferences();
   const appearance = useAppearance(preferences);
   const viewport = useViewport();
-  const showPanel = (panel: SystemPanel) => dispatch({ type: 'panel', panel });
-  function openApp(app: RunnableApp) {
+  const [switcherEntry, setSwitcherEntry] = useState<LaunchRect | null>(null);
+  const showPanel = (panel: SystemPanel, entry?: LaunchRect) => {
+    setSwitcherEntry(entry ?? null);
+    dispatch({ type: 'panel', panel });
+  };
+  function openApp(app: RunnableApp, entry?: LaunchRect) {
     const rect = document
       .querySelector(`[data-launch-app="${app}"] .app-icon`)
       ?.getBoundingClientRect();
     dispatch({
       type: 'open',
       app,
-      origin: rect ? { x: rect.x, y: rect.y, width: rect.width, height: rect.height } : null,
+      origin:
+        entry ?? (rect ? { x: rect.x, y: rect.y, width: rect.width, height: rect.height } : null),
     });
   }
   useEffect(() => {
@@ -60,19 +69,22 @@ export function App() {
       if (state.panel) return;
       if (event.altKey && event.key.toLowerCase() === 'c') {
         event.preventDefault();
-        dispatch({ type: 'panel', panel: 'control' });
+        showPanel('control');
       }
       if (event.altKey && event.key.toLowerCase() === 'n') {
         event.preventDefault();
-        dispatch({ type: 'panel', panel: 'notifications' });
+        showPanel('notifications');
       }
       if (!state.locked && !state.activeApp && event.altKey && event.key.toLowerCase() === 's') {
         event.preventDefault();
-        dispatch({ type: 'panel', panel: 'search' });
+        showPanel('search');
       }
       if (!state.locked && event.altKey && event.key.toLowerCase() === 'a') {
         event.preventDefault();
-        dispatch({ type: 'panel', panel: 'switcher' });
+        showPanel(
+          'switcher',
+          state.activeApp ? getPreview(state.activeApp)?.getBoundingClientRect() : undefined,
+        );
       }
     };
     window.addEventListener('keydown', shortcuts);
@@ -117,10 +129,12 @@ export function App() {
           app={app}
           active={!state.locked && state.activeApp === app}
           interactive={!state.locked && state.activeApp === app && !state.panel}
+          parked={state.panel === 'switcher'}
+          previousApp={state.visited.find((candidate) => candidate !== app)}
           origin={state.activeApp === app ? state.origin : null}
           onHome={() => dispatch({ type: 'home' })}
           onControl={() => showPanel('control')}
-          onSwitcher={() => showPanel('switcher')}
+          onSwitcher={(entry) => showPanel('switcher', entry)}
           onQuickSwitch={(direction) => dispatch({ type: 'quick-switch', direction })}
         >
           {app === 'settings' ? (
@@ -171,6 +185,7 @@ export function App() {
           kind={state.panel}
           recent={state.visited}
           activeApp={state.activeApp}
+          entry={switcherEntry}
           preferences={preferences}
           onPreferences={setPreferences}
           onSelectApp={openApp}
@@ -178,7 +193,7 @@ export function App() {
           onDismiss={() =>
             dispatch({ type: state.panel === 'switcher' ? 'home' : 'dismiss-panel' })
           }
-          getPreview={(app) => document.querySelector<HTMLElement>(`[data-app-window="${app}"]`)}
+          getPreview={getPreview}
           viewport={viewport}
         />
       )}

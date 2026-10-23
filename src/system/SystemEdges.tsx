@@ -44,7 +44,7 @@ export function HomeGestures({
   onQuickSwitch: (direction: 'previous' | 'next') => void;
 }) {
   const bottom = useSystemGesture('bottom', active, (result) => {
-    if (result === 'home' || result === 'switcher') onSwitcher();
+    if (result === 'switcher') onSwitcher();
     else if (result === 'previous' || result === 'next') onQuickSwitch(result);
   });
   return (

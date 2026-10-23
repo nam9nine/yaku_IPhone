@@ -66,3 +66,14 @@
   text-align: center;
   font-variant-numeric: tabular-nums;
 }
+
+/* Pointer-following page movement changes only compositor properties. The actual
+   previous route is rendered on completion; no duplicate page pretends to be it. */
+[data-edge-motion] > * {
+  will-change: translate, opacity;
+  user-select: none;
+  -webkit-user-select: none;
+}
+[data-edge-motion='leaving'] {
+  pointer-events: none;
+}

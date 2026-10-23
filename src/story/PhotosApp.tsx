@@ -14,8 +14,8 @@ function PhotoIcon({ name }: { name: 'back' | 'next' | 'heart' | 'grid' | 'colle
             back: 'm14 5-7 7 7 7',
             next: 'm10 5 7 7-7 7',
             heart: 'M12 21 3.5 13A5.5 5.5 0 0 1 12 6a5.5 5.5 0 0 1 8.5 7Z',
-            grid: 'M3 3h7v7H3ZM14 3h7v7h-7ZM3 14h7v7H3ZM14 14h7v7h-7Z',
-            collections: 'M6 7V3h15v14h-4M3 7h14v14H3Z',
+            grid: 'M5 4V2h15M3 7V5h17M3 8h18v13H3ZM3 18l5-5 4 4 3-3 6 6M15 11h.01',
+            collections: 'M6 2h12M4 5h16M3 8h18v13H3Z',
           }[name]
         }
         fill="none"

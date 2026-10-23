@@ -53,6 +53,21 @@ export function AppSnapshot({
       borderRadius: '0',
     });
     container.append(clone);
+    // DOM cloning does not copy a live form value or an element's scroll offset.
+    // A card must show exactly the place the user was reading.
+    const sources = [source, ...source.querySelectorAll<HTMLElement>('*')];
+    const copies = [clone, ...clone.querySelectorAll<HTMLElement>('*')];
+    sources.forEach((original, index) => {
+      const copy = copies[index];
+      copy.scrollTop = original.scrollTop;
+      copy.scrollLeft = original.scrollLeft;
+      if (original instanceof HTMLInputElement && copy instanceof HTMLInputElement) {
+        copy.value = original.value;
+        copy.checked = original.checked;
+      } else if (original instanceof HTMLTextAreaElement && copy instanceof HTMLTextAreaElement) {
+        copy.value = original.value;
+      }
+    });
     const resize = () => {
       const scale = Math.min(container.clientWidth / width, container.clientHeight / height);
       clone.style.transform = `translateX(${(container.clientWidth - width * scale) / 2}px) scale(${scale})`;

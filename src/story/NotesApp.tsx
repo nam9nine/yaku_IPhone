@@ -71,6 +71,17 @@ export function NotesApp({ active }: { active: boolean }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [currentDate, setCurrentDate] = useState(() => new Date());
+  useEffect(() => {
+    if (!active) return;
+    const refreshDate = () => setCurrentDate(new Date());
+    const frame = requestAnimationFrame(refreshDate);
+    const timer = window.setInterval(refreshDate, 60_000);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.clearInterval(timer);
+    };
+  }, [active]);
   const selected = notes.find((note) => note.id === selectedId);
   const root = useRef<HTMLElement>(null);
   const heading = useRef<HTMLHeadingElement>(null);
@@ -172,11 +183,30 @@ export function NotesApp({ active }: { active: boolean }) {
     });
   }
 
-  const filtered = notes.filter((note) =>
-    `${note.title} ${note.body} ${note.checklist.map((item) => item.text).join(' ')}`
-      .toLocaleLowerCase('ko')
-      .includes(query.trim().toLocaleLowerCase('ko')),
-  );
+  const filtered = notes
+    .filter((note) =>
+      `${note.title} ${note.body} ${note.checklist.map((item) => item.text).join(' ')}`
+        .toLocaleLowerCase('ko')
+        .includes(query.trim().toLocaleLowerCase('ko')),
+    )
+    .sort((left, right) => Date.parse(right.updatedAt) - Date.parse(left.updatedAt));
+  const day = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' });
+  const today = day.format(currentDate);
+  const groupLabel = (note: Note) => {
+    const date = day.format(new Date(note.updatedAt));
+    const daysAgo = (Date.parse(today) - Date.parse(date)) / 86_400_000;
+    if (daysAgo === 0) return '오늘';
+    if (daysAgo === 1) return '어제';
+    if (daysAgo >= 2 && daysAgo <= 7) return '이전 7일';
+    if (daysAgo >= 8 && daysAgo <= 30) return '이전 30일';
+    return new Intl.DateTimeFormat('ko-KR', {
+      timeZone: 'Asia/Seoul',
+      ...(date.slice(0, 4) === today.slice(0, 4)
+        ? { month: 'long' as const }
+        : { year: 'numeric' as const }),
+    }).format(new Date(note.updatedAt));
+  };
+  const groups = [...new Set(filtered.map(groupLabel))];
 
   const keyboard = useEffectEvent((event: KeyboardEvent) => {
     if (active && event.key === 'Escape' && selected && !confirmDelete) {
@@ -219,9 +249,12 @@ export function NotesApp({ active }: { active: boolean }) {
             </button>
           </>
         ) : (
-          <h1 ref={heading} data-app-title tabIndex={-1}>
-            메모
-          </h1>
+          <div>
+            <h1 ref={heading} data-app-title tabIndex={-1}>
+              메모
+            </h1>
+            <p className="notes-count">{notes.length}개의 메모</p>
+          </div>
         )}
       </header>
       {unavailable && (
@@ -239,37 +272,41 @@ export function NotesApp({ active }: { active: boolean }) {
       >
         {!selected ? (
           <>
-            <label className="personal-search">
-              <NoteIcon name="search" />
-              <input
-                type="search"
-                aria-label="메모 검색"
-                placeholder="검색"
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-              />
-            </label>
-            <div className="notes-list">
-              {filtered.map((note) => (
-                <button
-                  key={note.id}
-                  className="notes-row"
-                  data-note-id={note.id}
-                  onClick={() => {
-                    pendingFocus.current = 'heading';
-                    setSelectedId(note.id);
-                    if (scroll.current) scroll.current.scrollTop = 0;
-                  }}
-                >
-                  <strong>{noteTitle(note)}</strong>
-                  <span>
-                    {note.body.split('\n').find(Boolean) ||
-                      note.checklist.find((item) => item.text)?.text ||
-                      '추가 텍스트 없음'}
-                  </span>
-                </button>
-              ))}
-            </div>
+            {groups.map((group) => (
+              <section className="notes-group" key={group} aria-label={group}>
+                <h2>{group}</h2>
+                <div className="notes-list">
+                  {filtered
+                    .filter((note) => groupLabel(note) === group)
+                    .map((note) => (
+                      <button
+                        key={note.id}
+                        className="notes-row"
+                        data-note-id={note.id}
+                        onClick={() => {
+                          pendingFocus.current = 'heading';
+                          setSelectedId(note.id);
+                          if (scroll.current) scroll.current.scrollTop = 0;
+                        }}
+                      >
+                        <strong>{noteTitle(note)}</strong>
+                        <span>
+                          <time dateTime={note.updatedAt}>
+                            {new Intl.DateTimeFormat('ko-KR', {
+                              timeZone: 'Asia/Seoul',
+                              hour: 'numeric',
+                              minute: '2-digit',
+                            }).format(new Date(note.updatedAt))}
+                          </time>{' '}
+                          {note.body.split('\n').find(Boolean) ||
+                            note.checklist.find((item) => item.text)?.text ||
+                            '추가 텍스트 없음'}
+                        </span>
+                      </button>
+                    ))}
+                </div>
+              </section>
+            ))}
             {!filtered.length && (
               <div className="personal-empty">
                 <h2>{query ? '검색 결과 없음' : '메모 없음'}</h2>
@@ -352,7 +389,16 @@ export function NotesApp({ active }: { active: boolean }) {
             </button>
           </div>
         ) : (
-          <span className="notes-count">{notes.length}개의 메모</span>
+          <label className="personal-search">
+            <NoteIcon name="search" />
+            <input
+              type="search"
+              aria-label="메모 검색"
+              placeholder="검색"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+            />
+          </label>
         )}
         <button className="personal-round" aria-label="새로운 메모" onClick={createNote}>
           <NoteIcon name="compose" />
