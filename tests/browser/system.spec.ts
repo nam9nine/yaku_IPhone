@@ -47,7 +47,7 @@ test('상단의 시작 위치가 제어 센터와 알림 센터를 구분하고 
   await expect(page.getByTestId('settings-app')).toBeVisible();
   await expect(page.getByRole('switch', { name: '에어플레인 모드', exact: true })).toBeChecked();
   await drag(page, page.getByTestId('notification-edge'), 0, 120);
-  await expect(page.getByText('이전 알림 없음')).toBeVisible();
+  await expect(page.getByRole('button', { name: '하루카의 메시지 알림 열기' })).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(page.getByTestId('system-notifications')).toHaveCount(0);
 });

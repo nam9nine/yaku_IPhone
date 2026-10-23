@@ -7,6 +7,7 @@ import {
   useState,
   useSyncExternalStore,
   type CSSProperties,
+  type ReactNode,
 } from 'react';
 import { AppIcon } from '../home/AppIcon';
 import { useDisplayDate } from '../display/useDisplayDate';
@@ -34,7 +35,8 @@ export interface SystemPanelsProps {
   onCloseApp: (app: RunnableApp) => void;
   onDismiss: () => void;
   getPreview: (app: RunnableApp) => HTMLElement | null;
-  viewport: { width: number; height: number };
+  viewport: { width: number; height: number; top?: number; left?: number };
+  notifications?: ReactNode;
 }
 
 const titles: Record<SystemPanelKind, string> = {
@@ -425,7 +427,12 @@ export function SystemPanels(props: SystemPanelsProps) {
       data-gesture-entry={kind === 'switcher' && !!props.entry}
       data-compact={viewport.height < 620 * fontScale}
       data-tiny={viewport.height < 440 * fontScale}
-      style={{ height: viewport.height, top: window.visualViewport?.offsetTop ?? 0 }}
+      style={{
+        height: viewport.height,
+        top: viewport.top ?? 0,
+        left: viewport.left ?? 0,
+        width: viewport.width,
+      }}
     >
       <button
         type="button"
@@ -505,7 +512,12 @@ export function SystemPanels(props: SystemPanelsProps) {
               entry={props.entry}
             />
           )}
-          {kind === 'notifications' && <Notifications />}
+          {kind === 'notifications' && (
+            <>
+              <Notifications />
+              {props.notifications}
+            </>
+          )}
           {kind === 'search' && <AppSearch onSelectApp={selectApp} />}
         </div>
         <footer className="system-panel-footer">

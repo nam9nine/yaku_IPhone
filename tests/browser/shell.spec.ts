@@ -98,6 +98,7 @@ test('홈 페이지와 포커스가 유지되고 비활성 앱은 입력에서 �
   await expect(settings).toBeFocused();
   await expect(page.getByTestId('home-pages')).toHaveAttribute('data-page', homePage!);
   expect(await page.getByTestId('home-pages').evaluate((el) => el.scrollTop)).toBe(0);
+  await page.setViewportSize({ width: 390, height: 400 });
   await page.getByRole('button', { name: '2페이지로 이동' }).tap();
   await open(page, 'safari');
   await expect(page.getByRole('heading', { name: '설정', exact: true })).toHaveCount(0);
@@ -157,14 +158,18 @@ test('브라우저별 정지한 터치와 빠른 포인터가 최근 앱과 홈�
   await expect(page.getByTestId('settings-app')).toBeHidden();
 });
 
-test('다른 홈 페이지에서 다시 잠금을 해제하면 표시 중인 홈 제목에 포커스한다', async ({ page }) => {
+test('실행 아이콘이 다른 페이지에 있으면 다시 잠금 해제할 때 홈 제목에 포커스한다', async ({
+  page,
+}) => {
   await home(page);
   await open(page);
   await page.keyboard.press('Alt+Home');
+  await page.setViewportSize({ width: 390, height: 400 });
   await page.getByRole('button', { name: '2페이지로 이동' }).tap();
+  await page.getByRole('button', { name: '1페이지로 이동' }).tap();
   await page.getByRole('button', { name: '다시 잠그기', exact: true }).focus();
   await page.keyboard.press('Enter');
   await page.getByRole('button', { name: '잠금 해제', exact: true }).tap();
-  await expect(page.getByTestId('home-pages')).toHaveAttribute('data-page', '2');
+  await expect(page.getByTestId('home-pages')).toHaveAttribute('data-page', '1');
   await expect(page.locator('[data-home-title]')).toBeFocused();
 });

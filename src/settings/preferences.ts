@@ -5,7 +5,18 @@ export interface DevicePreferences {
   bluetooth: boolean;
   theme: 'system' | 'light' | 'dark';
   brightness: number;
-  wallpaper: 'default' | 'solid';
+  wallpaper:
+    | 'default'
+    | 'solid'
+    | 'drawing'
+    | 'sea'
+    | 'mealtime'
+    | 'family-drawing'
+    | 'lunchbox'
+    | 'lunchbox-blur'
+    | 'sprout-garden'
+    | 'evening-sea';
+  wallpaperPositions?: Record<string, { x: number; y: number }>;
   textScale: 100 | 115 | 130;
   reduceMotion: boolean;
 }
@@ -47,9 +58,54 @@ export function parsePreferences(value: unknown): DevicePreferences | null {
     !Number.isInteger(candidate.brightness) ||
     candidate.brightness < 50 ||
     candidate.brightness > 100 ||
-    (candidate.wallpaper !== 'default' && candidate.wallpaper !== 'solid') ||
+    typeof candidate.wallpaper !== 'string' ||
+    ![
+      'default',
+      'solid',
+      'drawing',
+      'sea',
+      'mealtime',
+      'family-drawing',
+      'lunchbox',
+      'lunchbox-blur',
+      'sprout-garden',
+      'evening-sea',
+    ].includes(candidate.wallpaper) ||
     (candidate.textScale !== 100 && candidate.textScale !== 115 && candidate.textScale !== 130) ||
     typeof candidate.reduceMotion !== 'boolean'
+  )
+    return null;
+  const positions = candidate.wallpaperPositions;
+  if (
+    positions !== undefined &&
+    (!positions ||
+      typeof positions !== 'object' ||
+      Array.isArray(positions) ||
+      Object.entries(positions).some(
+        ([key, value]) =>
+          ![
+            'default',
+            'drawing',
+            'sea',
+            'mealtime',
+            'family-drawing',
+            'lunchbox',
+            'lunchbox-blur',
+            'sprout-garden',
+            'evening-sea',
+            'solid',
+          ].includes(key) ||
+          !value ||
+          typeof value !== 'object' ||
+          typeof value.x !== 'number' ||
+          typeof value.y !== 'number' ||
+          !Number.isFinite(value.x) ||
+          !Number.isFinite(value.y) ||
+          value.x < 0 ||
+          value.x > 100 ||
+          value.y < 0 ||
+          value.y > 100,
+      ))
   )
     return null;
   return {
@@ -60,6 +116,9 @@ export function parsePreferences(value: unknown): DevicePreferences | null {
     theme: candidate.theme as DevicePreferences['theme'],
     brightness: candidate.brightness,
     wallpaper: candidate.wallpaper as DevicePreferences['wallpaper'],
+    ...(positions
+      ? { wallpaperPositions: positions as DevicePreferences['wallpaperPositions'] }
+      : {}),
     textScale: candidate.textScale as DevicePreferences['textScale'],
     reduceMotion: candidate.reduceMotion,
   };

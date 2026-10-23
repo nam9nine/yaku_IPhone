@@ -1,9 +1,10 @@
 import { useEffect, useEffectEvent, useLayoutEffect, useRef, useState } from 'react';
 import { useEdgeNavigation } from '../navigation/EdgeNavigation';
 import { useHorizontalGesture } from '../navigation/useHorizontalGesture';
-import { photos } from './data';
+import { dayPhotos as photos } from '../day/media';
 import { useStoredState } from './useStoredState';
 import './personal.css';
+import './photos18.css';
 
 function PhotoIcon({ name }: { name: 'back' | 'next' | 'heart' | 'grid' | 'collections' }) {
   return (
@@ -28,7 +29,17 @@ function PhotoIcon({ name }: { name: 'back' | 'next' | 'heart' | 'grid' | 'colle
   );
 }
 
-export function PhotosApp({ active }: { active: boolean }) {
+export function PhotosApp({
+  active,
+  selected: selectedId,
+  onSelect,
+  onWallpaper,
+}: {
+  active: boolean;
+  selected: string | null;
+  onSelect: (id: string | null) => void;
+  onWallpaper: (photoId: string) => void;
+}) {
   const [favorites, setFavorites, unavailable] = useStoredState<string[]>(
     'photo-favorites',
     [],
@@ -39,8 +50,8 @@ export function PhotosApp({ active }: { active: boolean }) {
   );
   const [tab, setTab] = useState<'library' | 'collections'>('library');
   const [favoriteOnly, setFavoriteOnly] = useState(false);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [viewIds, setViewIds] = useState<string[]>([]);
+  const [viewIds, setViewIds] = useState<string[]>(photos.map((photo) => photo.id));
+  const [wallpaperNotice, setWallpaperNotice] = useState<string | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);
   const root = useRef<HTMLElement>(null);
   const scroll = useRef<HTMLDivElement>(null);
@@ -48,7 +59,10 @@ export function PhotosApp({ active }: { active: boolean }) {
   const pendingFocus = useRef(false);
   const returnId = useRef<string | null>(null);
   const selected = photos.find((photo) => photo.id === selectedId);
-  const currentIndex = selectedId ? viewIds.indexOf(selectedId) : -1;
+  // A home widget may open a photo outside the currently filtered collection.
+  const browsingIds =
+    selectedId && !viewIds.includes(selectedId) ? photos.map((photo) => photo.id) : viewIds;
+  const currentIndex = selectedId ? browsingIds.indexOf(selectedId) : -1;
   const visible = favoriteOnly ? photos.filter((photo) => favorites.includes(photo.id)) : photos;
   const isGrid = tab === 'library' || favoriteOnly;
   const key = favoriteOnly ? 'favorites' : 'library';
@@ -70,13 +84,17 @@ export function PhotosApp({ active }: { active: boolean }) {
     pendingFocus.current = true;
     if (selected) {
       returnId.current = selected.id;
-      setSelectedId(null);
+      setWallpaperNotice(null);
+      onSelect(null);
     } else if (favoriteOnly) setFavoriteOnly(false);
   }
   const edge = useEdgeNavigation({ active, onBack: selected || favoriteOnly ? back : undefined });
   function navigate(direction: 'previous' | 'next') {
-    const next = viewIds[currentIndex + (direction === 'next' ? 1 : -1)];
-    if (next) setSelectedId(next);
+    const next = browsingIds[currentIndex + (direction === 'next' ? 1 : -1)];
+    if (next) {
+      setWallpaperNotice(null);
+      onSelect(next);
+    }
   }
   const browse = useHorizontalGesture({
     active: active && !!selected,
@@ -145,19 +163,62 @@ export function PhotosApp({ active }: { active: boolean }) {
       {selected ? (
         <>
           <div className="photo-viewer" data-testid="photo-viewer" {...browse}>
-            <img src={selected.src} alt={selected.title} draggable={false} />
+            <img
+              src={selected.src}
+              alt={selected.title}
+              draggable={false}
+              className={selected.blur ? 'photo-soft-shot' : undefined}
+            />
+          </div>
+          <div className="photo-caption" aria-label="사진 정보">
+            <p>{selected.caption}</p>
+            <small>{selected.sourceLabel ?? '임시 이미지 · 교체 가능한 창작 일러스트'}</small>
+            {selected.sourceUrl && (
+              <small className="photo-attribution">
+                <a href={selected.sourceUrl} target="_blank" rel="noreferrer noopener">
+                  원본 출처
+                </a>
+                {selected.licenseUrl && (
+                  <a href={selected.licenseUrl} target="_blank" rel="noreferrer noopener">
+                    이용 조건
+                  </a>
+                )}
+              </small>
+            )}
+            <button
+              className="photo-wallpaper-action"
+              onClick={() => {
+                onWallpaper(selected.id);
+                setWallpaperNotice(selected.id);
+              }}
+            >
+              배경화면으로 설정
+            </button>
+            {wallpaperNotice === selected.id && (
+              <span className="photo-wallpaper-notice" role="status">
+                이 웹사이트의 잠금·홈 배경으로 설정했어요.
+              </span>
+            )}
           </div>
           <div className="photo-filmstrip" aria-label="사진 빠르게 보기">
-            {viewIds.map((id) => {
+            {browsingIds.map((id) => {
               const photo = photos.find((item) => item.id === id);
               return photo ? (
                 <button
                   key={id}
                   aria-label={`${photo.title} 보기`}
                   aria-current={id === selectedId ? 'true' : undefined}
-                  onClick={() => setSelectedId(id)}
+                  onClick={() => {
+                    setWallpaperNotice(null);
+                    onSelect(id);
+                  }}
                 >
-                  <img src={photo.src} alt="" draggable={false} />
+                  <img
+                    src={photo.src}
+                    alt=""
+                    style={{ objectPosition: photo.position }}
+                    draggable={false}
+                  />
                 </button>
               ) : null;
             })}
@@ -188,7 +249,7 @@ export function PhotosApp({ active }: { active: boolean }) {
             <button
               className="personal-round"
               aria-label="다음 사진"
-              disabled={currentIndex >= viewIds.length - 1}
+              disabled={currentIndex >= browsingIds.length - 1}
               onClick={() => navigate('next')}
             >
               <PhotoIcon name="next" />
@@ -217,10 +278,16 @@ export function PhotosApp({ active }: { active: boolean }) {
                       onClick={() => {
                         setViewIds(visible.map((item) => item.id));
                         pendingFocus.current = true;
-                        setSelectedId(photo.id);
+                        setWallpaperNotice(null);
+                        onSelect(photo.id);
                       }}
                     >
-                      <img src={photo.src} alt="" draggable={false} />
+                      <img
+                        src={photo.src}
+                        alt=""
+                        style={{ objectPosition: photo.position }}
+                        draggable={false}
+                      />
                       {favorites.includes(photo.id) && (
                         <span className="photo-tile-favorite" aria-label="즐겨찾기">
                           <PhotoIcon name="heart" />

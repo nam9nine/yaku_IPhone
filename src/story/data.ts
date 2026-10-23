@@ -6,7 +6,7 @@ export const contacts = [
     shortName: '다이고',
     relation: '동성회 6대 회장',
     about: '동성회를 맡긴 사람. 혼자 짐을 짊어지지 않았으면 한다.',
-    portrait: asset('daigo.jpg'),
+    portrait: `${import.meta.env.BASE_URL}story/daigo.jpg`,
   },
   {
     id: 'majima',
@@ -14,7 +14,7 @@ export const contacts = [
     shortName: '마지마',
     relation: '마지마 형님',
     about: '시마노의 광견. 어디서든 나를 찾아내는 사람.',
-    portrait: asset('majima.jpg'),
+    portrait: `${import.meta.env.BASE_URL}story/majima.jpg`,
   },
   {
     id: 'mine',
@@ -22,7 +22,7 @@ export const contacts = [
     shortName: '미네',
     relation: '백봉회 회장',
     about: '다이고를 지탱하는 사람. 말보다 행동을 지켜보자.',
-    portrait: asset('mine.jpg'),
+    portrait: `${import.meta.env.BASE_URL}story/mine.jpg`,
   },
   {
     id: 'saejima',
@@ -30,7 +30,7 @@ export const contacts = [
     shortName: '사에지마',
     relation: '사에지마조 조장',
     about: '의리를 잊지 않는 사나이. 마지마 형님의 형제.',
-    portrait: asset('saejima.png'),
+    portrait: `${import.meta.env.BASE_URL}story/saejima.png`,
   },
   {
     id: 'haruka',
@@ -38,7 +38,7 @@ export const contacts = [
     shortName: '하루카',
     relation: '나팔꽃 · 가족',
     about: '언제나 아이들을 챙겨 준다. 고맙다는 말을 더 해야겠다.',
-    portrait: asset('haruka.jpg'),
+    portrait: `${import.meta.env.BASE_URL}story/haruka.jpg`,
   },
 ] as const;
 export interface StoryMessage {

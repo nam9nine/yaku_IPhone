@@ -1,4 +1,4 @@
-import { internalPages, searchPages, type SafariPage } from './pages';
+import { internalPages, savedArticles, savedSearches, searchPages, type SafariPage } from './pages';
 import { SafariIcon } from './SafariIcon';
 
 export function SafariContent({
@@ -17,44 +17,42 @@ export function SafariContent({
           <SafariIcon name="compass" />
           <h2>시작 페이지</h2>
         </div>
-        <section aria-label="둘러보기">
-          <h3>둘러보기</h3>
-          <div className="safari-quick-links">
-            {internalPages.map((item) => (
-              <button
-                tabIndex={0}
-                key={item.id}
-                onClick={() => visit({ kind: 'internal', id: item.id })}
-              >
-                <span className={`safari-site-tile safari-site-tile-${item.id}`}>
-                  <SafariIcon name={item.id === 'guide' ? 'compass' : 'globe'} />
-                </span>
-                <span>{item.title}</span>
-              </button>
+        <section className="safari-saved-history" aria-label="저장된 검색 기록">
+          <h3>최근 검색</h3>
+          <ul>
+            {savedSearches.map((item) => (
+              <li key={item.pageId}>
+                <button onClick={() => visit({ kind: 'search', query: item.query })}>
+                  <SafariIcon name="search" />
+                  <span>{item.query}</span>
+                  <SafariIcon name="arrow" />
+                </button>
+              </li>
             ))}
+          </ul>
+        </section>
+        <section aria-label="둘러보기">
+          <h3>저장된 페이지</h3>
+          <div className="safari-quick-links">
+            {internalPages
+              .filter((item) => item.id === 'guide' || item.id === 'example')
+              .map((item) => (
+                <button
+                  tabIndex={0}
+                  key={item.id}
+                  onClick={() => visit({ kind: 'internal', id: item.id })}
+                >
+                  <span className={`safari-site-tile safari-site-tile-${item.id}`}>
+                    <SafariIcon name={item.id === 'guide' ? 'compass' : 'globe'} />
+                  </span>
+                  <span>{item.title}</span>
+                </button>
+              ))}
           </div>
         </section>
-        <section className="safari-start-card">
-          <span className="safari-eyebrow">YAKU</span>
-          <h3>
-            익숙한 곳에서,
-            <br />
-            새로운 시작.
-          </h3>
-          <p>
-            두 개의 작은 페이지를 둘러보세요.
-            <br />
-            아래 주소 막대에서 제목으로 찾을 수도 있어요.
-          </p>
-          <button
-            tabIndex={0}
-            className="safari-text-link"
-            onClick={() => visit({ kind: 'internal', id: 'guide' })}
-          >
-            시작 안내 열기 <SafariIcon name="arrow" />
-          </button>
-        </section>
-        <p className="safari-start-note">외부 웹 주소는 기기의 브라우저에서 열 수 있어요.</p>
+        <p className="safari-start-note">
+          저장된 검색 기록과 가상 페이지입니다. 실제 인터넷 검색은 하지 않습니다.
+        </p>
       </div>
     );
   }
@@ -81,7 +79,7 @@ export function SafariContent({
           <div className="safari-empty">
             <SafariIcon name="search" />
             <h3>일치하는 페이지가 없어요</h3>
-            <p>‘시작 안내’ 또는 ‘예제 페이지’를 검색해 보세요.</p>
+            <p>‘카레’, ‘바느질’, ‘도시락’을 검색해 보세요.</p>
           </div>
         )}
         <button tabIndex={0} className="safari-text-link" onClick={() => visit({ kind: 'start' })}>
@@ -111,6 +109,31 @@ export function SafariContent({
         </a>
         <p className="safari-secondary">새 탭 또는 새 창에서 열립니다.</p>
       </div>
+    );
+  }
+  if (page.id in savedArticles) {
+    const article = savedArticles[page.id as keyof typeof savedArticles];
+    return (
+      <article className="safari-article safari-saved-article">
+        <header className="safari-site-header">
+          <span>생활의 메모</span>
+          <span>저장한 페이지</span>
+        </header>
+        <div className="safari-article-body">
+          <h2>{article.title}</h2>
+          <p className="safari-lead">{article.intro}</p>
+          {article.sections.map((section) => (
+            <section key={section.title}>
+              <h3>{section.title}</h3>
+              <p>{section.body}</p>
+            </section>
+          ))}
+          <button className="safari-text-link" onClick={() => visit({ kind: 'start' })}>
+            검색 기록으로 돌아가기 <SafariIcon name="arrow" />
+          </button>
+          <footer>팬메이드 창작 페이지 · 실제 웹사이트나 인터넷 검색 결과가 아닙니다.</footer>
+        </div>
+      </article>
     );
   }
   if (page.id === 'guide') {

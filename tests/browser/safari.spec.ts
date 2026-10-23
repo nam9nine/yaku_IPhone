@@ -371,8 +371,12 @@ for (const size of [
 
 test('키보드로 페이지와 주소 입력을 열고 Alt+Home으로 복귀한다', async ({ page }) => {
   await openSafari(page);
-  await page.keyboard.press('Tab');
-  await expect(safari(page).getByRole('button', { name: '시작 안내', exact: true })).toBeFocused();
+  const guide = safari(page).getByRole('button', { name: '시작 안내', exact: true });
+  for (let step = 0; step < 8; step++) {
+    await page.keyboard.press('Tab');
+    if (await guide.evaluate((el) => el === document.activeElement)) break;
+  }
+  await expect(guide).toBeFocused();
   await page.keyboard.press('Enter');
   await expect(addressDisplay(page)).toHaveText('yaku.test/guide');
   await page.keyboard.press('Alt+Home');

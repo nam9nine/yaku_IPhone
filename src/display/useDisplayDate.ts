@@ -1,32 +1,7 @@
-import { useEffect, useState } from 'react';
 import { getDisplayDate } from './date';
 
+export const DEMO_DATE = '2026-10-24T16:40:00+09:00';
 export function useDisplayDate() {
-  const [date, setDate] = useState(() => getDisplayDate(new Date()));
-
-  useEffect(() => {
-    let timer: number;
-    const schedule = () => {
-      timer = window.setTimeout(
-        () => {
-          setDate(getDisplayDate(new Date()));
-          schedule();
-        },
-        60_000 - (Date.now() % 60_000),
-      );
-    };
-    const resume = () => {
-      window.clearTimeout(timer);
-      setDate(getDisplayDate(new Date()));
-      schedule();
-    };
-    schedule();
-    document.addEventListener('visibilitychange', resume);
-    return () => {
-      window.clearTimeout(timer);
-      document.removeEventListener('visibilitychange', resume);
-    };
-  }, []);
-
-  return date;
+  // A fictional Saturday. Story actions, never the visitor's wall clock, advance events.
+  return getDisplayDate(new Date(DEMO_DATE));
 }

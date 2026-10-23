@@ -478,6 +478,9 @@ test('설정의 실제 세로 입력과 가장자리 뒤로는 목록 위치와 
     }
   }
   await expect.poll(() => content.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
+  // New device/demo rows make the target lower. Its native reveal position is the
+  // position to restore when returning from the detail screen.
+  await page.getByRole('button', { name: '손쉬운 사용', exact: true }).scrollIntoViewIfNeeded();
   const offset = await content.evaluate((el) => el.scrollTop);
   await page.getByRole('button', { name: '손쉬운 사용', exact: true }).tap();
   await edgeSwipe(page, page.locator('.settings-app'), 'back');

@@ -1,0 +1,67 @@
+[
+  {
+    "localPath": "public/asagao/sprout-garden.jpg",
+    "title": "File:Vegetable garden 1.JPG",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Vegetable_garden_1.JPG",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/3c/Vegetable_garden_1.JPG/1280px-Vegetable_garden_1.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "sha256": "deccba494d1bef6f53cb513ffd63a2e49b88ec51fc903081376a628be96d731c",
+    "bytes": 707330,
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "artist": "P199",
+    "credit": "<span class=\"int-own-work\" lang=\"en\">Own work</span>",
+    "description": "Detail of vegetable garden. Tomato in foreground; kale, peppers, and zucchini in the middle; onions in the back.",
+    "date": "2015-07",
+    "retrievedOn": "2026-10-24",
+    "modifications": "Unmodified Wikimedia server-provided 1280px thumbnail; no local pixel edit/re-encode. CSS crop/display; second bento scene uses CSS blur.",
+    "original": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/3/3c/Vegetable_garden_1.JPG",
+      "sha256": "c2560192e24e41e5012de807b8a550314d483e782ab00d2ff5fcde1738f0d3cb",
+      "bytes": 2889575
+    },
+    "version": "Wikimedia 1280px server thumbnail"
+  },
+  {
+    "localPath": "public/asagao/lunchbox.jpg",
+    "title": "File:Coronation Bento - Taro 2026-02-11.jpg",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Coronation_Bento_-_Taro_2026-02-11.jpg",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/89/Coronation_Bento_-_Taro_2026-02-11.jpg/1280px-Coronation_Bento_-_Taro_2026-02-11.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "sha256": "ad138c037d89212284c11914d9a9aa481f177389cabb4564d6fde1e1f5614993",
+    "bytes": 340473,
+    "license": "CC0",
+    "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "artist": "Andy Li",
+    "credit": "<span class=\"int-own-work\" lang=\"en\">Own work</span>",
+    "description": "Description on menu: \"Deep fried king prawn in a light crispy batter served with edamame, beansprouts, salmon sashimi, roll sushi, prawn &amp; salmon sushi with sushi roll, crispy chicken karaage, chicken yakitori, Japanese rice served with miso soup\"",
+    "date": "2026-02-11 19:43:16",
+    "retrievedOn": "2026-10-24",
+    "modifications": "Unmodified Wikimedia server-provided 1280px thumbnail; no local pixel edit/re-encode. CSS crop/display; second bento scene uses CSS blur.",
+    "original": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/8/89/Coronation_Bento_-_Taro_2026-02-11.jpg",
+      "sha256": "71d4e71844b254f17d57b38137e2faeb486f245fa8cb08a9e14bf398eba32472",
+      "bytes": 7609827
+    },
+    "version": "Wikimedia 1280px server thumbnail"
+  },
+  {
+    "title": "File:Tudumari-no-hama Iriomote Island Japan01bs4440.jpg",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Tudumari-no-hama_Iriomote_Island_Japan01bs4440.jpg",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/00/Tudumari-no-hama_Iriomote_Island_Japan01bs4440.jpg/1280px-Tudumari-no-hama_Iriomote_Island_Japan01bs4440.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "license": "CC BY 2.5",
+    "licenseUrl": "https://creativecommons.org/licenses/by/2.5",
+    "artist": "663highland",
+    "description": "<b>Tudumari-no-hama</b> ( <b>Tsukigahama Beach</b> ) in <a href=\"https://en.wikipedia.org/wiki/Iriomote_Island\" class=\"extiw\" title=\"en:Iriomote Island\">Iriomote Island</a>, <a href=\"//commons.wikimedia.org/wiki/Taketomi_Town\" class=\"mw-redirect\" title=\"Taketomi Town\">Taketomi Town</a>, <a href=\"//commons.wikimedia.org/wiki/Okinawa_Prefecture\" class=\"mw-redirect\" title=\"Okinawa Prefecture\">Okinawa Prefecture</a>, <a href=\"//commons.wikimedia.org/wiki/Japan\" class=\"mw-redirect\" title=\"Japan\">Japan</a>.",
+    "downloadStatus": "downloaded",
+    "localPath": "public/asagao/evening-sea.jpg",
+    "sha256": "c6f0415ee95afcfd45f2f72d6825a19b0b4e0de09f54291cb0fe787d1f93b031",
+    "bytes": 190975,
+    "retrievedOn": "2026-10-24",
+    "modifications": "Unmodified Wikimedia server-provided 1280px thumbnail; no local pixel edit/re-encode. CSS crop/display; second bento scene uses CSS blur.",
+    "original": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/0/00/Tudumari-no-hama_Iriomote_Island_Japan01bs4440.jpg",
+      "sha256": "a645bda5af7a747feeefec8698b8d82de29c22d4756264fe380d7b8574022829",
+      "bytes": 7490561
+    },
+    "version": "Wikimedia 1280px server thumbnail"
+  }
+]

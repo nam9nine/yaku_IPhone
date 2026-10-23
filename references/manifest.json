@@ -1749,6 +1749,384 @@
       ],
       "commitSha": "ca52622410198ea2922de935943aef1e3bba4080",
       "localExtractedPath": "references/local/real-device/FluidInterfaceKit"
+    },
+    {
+      "id": "apple-ios18-lock",
+      "type": "official-document",
+      "sourceUrl": "https://support.apple.com/guide/iphone/access-features-from-the-lock-screen-iphcd5c65ccf/18.0/ios/18.0",
+      "version": "iOS 18.0; page metadata verified",
+      "retrievedOn": "2026-10-24",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "Apple copyrighted user guide. Local visual reference only; no app redistribution permission established."
+      },
+      "purpose": "Supplementary app structure and widget reference. Existing iOS 27 visual direction retained by latest user instruction; not an iOS 18 reskin.",
+      "keyPaths": [
+        "references/local/asagao/apple18-lock.html",
+        "references/local/asagao/apple18-lock-1.png",
+        "references/local/asagao/apple18-lock-2.png"
+      ],
+      "artifacts": [
+        {
+          "role": "html",
+          "url": "https://support.apple.com/guide/iphone/access-features-from-the-lock-screen-iphcd5c65ccf/18.0/ios/18.0",
+          "localPath": "references/local/asagao/apple18-lock.html",
+          "sha256": "bf330f98187c2c0d6bb33d25df6c9bf98281abcd6b65424060132a7c09e95873",
+          "bytes": 1398806
+        },
+        {
+          "role": "image",
+          "url": "https://help.apple.com/assets/683A54F5227CBBDB98051B96/683A54FC545676DF600F97D4/en_US/f80b1e5e3be8eae21ccf73bf3bb0cd22.png",
+          "localPath": "references/local/asagao/apple18-lock-1.png",
+          "sha256": "49e2f65d2c18f7a44097483f6162f6ebf26fb9232c42d4ffdb500395bde29c21",
+          "bytes": 363877
+        },
+        {
+          "role": "image",
+          "url": "https://help.apple.com/assets/683A54F5227CBBDB98051B96/683A54FC545676DF600F97D4/en_US/52ad4e741213c2423fcae691fc252e8f.png",
+          "localPath": "references/local/asagao/apple18-lock-2.png",
+          "sha256": "62a1c74f8b608fcce51e42d99f7516bf10742d102d682987c47b27dc8314441d",
+          "bytes": 612817
+        }
+      ]
+    },
+    {
+      "id": "apple-ios18-widgets",
+      "type": "official-document",
+      "sourceUrl": "https://support.apple.com/guide/iphone/create-a-custom-lock-screen-iph4d0e6c351/18.0/ios/18.0",
+      "version": "iOS 18.0; page metadata verified",
+      "retrievedOn": "2026-10-24",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "Apple copyrighted user guide. Local visual reference only; no app redistribution permission established."
+      },
+      "purpose": "Supplementary app structure and widget reference. Existing iOS 27 visual direction retained by latest user instruction; not an iOS 18 reskin.",
+      "keyPaths": [
+        "references/local/asagao/apple18-widgets.html",
+        "references/local/asagao/apple18-widgets-1.png",
+        "references/local/asagao/apple18-widgets-2.png",
+        "references/local/asagao/apple18-widgets-3.png",
+        "references/local/asagao/apple18-widgets-4.png",
+        "references/local/asagao/apple18-widgets-5.png"
+      ],
+      "artifacts": [
+        {
+          "role": "html",
+          "url": "https://support.apple.com/guide/iphone/create-a-custom-lock-screen-iph4d0e6c351/18.0/ios/18.0",
+          "localPath": "references/local/asagao/apple18-widgets.html",
+          "sha256": "d41f38b90fa32105fd1320078b1333680697b18568163e53cdf1f91e832a1a35",
+          "bytes": 1408544
+        },
+        {
+          "role": "image",
+          "url": "https://help.apple.com/assets/683A54F5227CBBDB98051B96/683A54FC545676DF600F97D4/en_US/79ce7773c4ff5b3f142e9bd9e3561af0.png",
+          "localPath": "references/local/asagao/apple18-widgets-1.png",
+          "sha256": "5dca7f6d1c64aa412831403141e5bcd906ec0f33bcbc6934e076ea0466111220",
+          "bytes": 551687
+        },
+        {
+          "role": "image",
+          "url": "https://help.apple.com/assets/683A54F5227CBBDB98051B96/683A54FC545676DF600F97D4/en_US/4dce60a71b8d9948f7a18c30914b8b78.png",
+          "localPath": "references/local/asagao/apple18-widgets-2.png",
+          "sha256": "5b4c5f098376a96ceacb6b496b618956954772150d83ef9fdfe805fa432cc00d",
+          "bytes": 383587
+        },
+        {
+          "role": "image",
+          "url": "https://help.apple.com/assets/683A54F5227CBBDB98051B96/683A54FC545676DF600F97D4/en_US/4240f9f103dca558a5b9dae007d43901.png",
+          "localPath": "references/local/asagao/apple18-widgets-3.png",
+          "sha256": "d879e7de91d51fd81f837891bc09387d654f03c377686fd9828d32d2175db625",
+          "bytes": 388086
+        },
+        {
+          "role": "image",
+          "url": "https://help.apple.com/assets/683A54F5227CBBDB98051B96/683A54FC545676DF600F97D4/en_US/6953278d2704731a98f38471ac43ef60.png",
+          "localPath": "references/local/asagao/apple18-widgets-4.png",
+          "sha256": "db0ac094be3b573179729ce0d972469bb183b80cab9a9eee2c01b86b2036c3d9",
+          "bytes": 398397
+        },
+        {
+          "role": "image",
+          "url": "https://help.apple.com/assets/683A54F5227CBBDB98051B96/683A54FC545676DF600F97D4/en_US/cf98b967c50887c0e554c63f41216332.png",
+          "localPath": "references/local/asagao/apple18-widgets-5.png",
+          "sha256": "1c27d1116b11f72f852c807356a3e0851fcab74055c3ad0e5b85cfa600d859e0",
+          "bytes": 330397
+        }
+      ]
+    },
+    {
+      "id": "apple-ios18-notes",
+      "type": "official-document",
+      "sourceUrl": "https://support.apple.com/guide/iphone/create-and-format-notes-iph1ac0b3a2/18.0/ios/18.0",
+      "version": "iOS 18.0; page metadata verified",
+      "retrievedOn": "2026-10-24",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "Apple copyrighted user guide. Local visual reference only; no app redistribution permission established."
+      },
+      "purpose": "Supplementary app structure and widget reference. Existing iOS 27 visual direction retained by latest user instruction; not an iOS 18 reskin.",
+      "keyPaths": [
+        "references/local/asagao/apple18-notes.html",
+        "references/local/asagao/apple18-notes-1.png",
+        "references/local/asagao/apple18-notes-2.png"
+      ],
+      "artifacts": [
+        {
+          "role": "html",
+          "url": "https://support.apple.com/guide/iphone/create-and-format-notes-iph1ac0b3a2/18.0/ios/18.0",
+          "localPath": "references/local/asagao/apple18-notes.html",
+          "sha256": "0048786b37de87e60600cd6f57048738825b42abd6027eb5a70d9dac2bb5a068",
+          "bytes": 1397607
+        },
+        {
+          "role": "image",
+          "url": "https://help.apple.com/assets/683A54F5227CBBDB98051B96/683A54FC545676DF600F97D4/en_US/c597f9ce47d9aeae2fd52e79c332ec50.png",
+          "localPath": "references/local/asagao/apple18-notes-1.png",
+          "sha256": "fb7e5878cbcb2e44f61bc001507a30f900656d268538ded19d1716860504eab2",
+          "bytes": 456755
+        },
+        {
+          "role": "image",
+          "url": "https://help.apple.com/assets/683A54F5227CBBDB98051B96/683A54FC545676DF600F97D4/en_US/f8f765907903fd2836d60b4ac70e7025.png",
+          "localPath": "references/local/asagao/apple18-notes-2.png",
+          "sha256": "6bd45c86b56eea3efe24376acfc8316befe97fa5c6152c3f8e8508198c2aacef",
+          "bytes": 257914
+        }
+      ]
+    },
+    {
+      "id": "apple-ios18-reminders",
+      "type": "official-document",
+      "sourceUrl": "https://support.apple.com/guide/iphone/set-reminders-iph88463e18/18.0/ios/18.0",
+      "version": "iOS 18.0; page metadata verified",
+      "retrievedOn": "2026-10-24",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "Apple copyrighted user guide. Local visual reference only; no app redistribution permission established."
+      },
+      "purpose": "Supplementary app structure and widget reference. Existing iOS 27 visual direction retained by latest user instruction; not an iOS 18 reskin.",
+      "keyPaths": [
+        "references/local/asagao/apple18-reminders.html",
+        "references/local/asagao/apple18-reminders-1.png"
+      ],
+      "artifacts": [
+        {
+          "role": "html",
+          "url": "https://support.apple.com/guide/iphone/set-reminders-iph88463e18/18.0/ios/18.0",
+          "localPath": "references/local/asagao/apple18-reminders.html",
+          "sha256": "a95891dc82d8d1651b08f2abdb3cf56890d19356f99568a317d10353c3be2156",
+          "bytes": 1394996
+        },
+        {
+          "role": "image",
+          "url": "https://help.apple.com/assets/683A54F5227CBBDB98051B96/683A54FC545676DF600F97D4/en_US/16b2d60485aace8ce25a665760f21d35.png",
+          "localPath": "references/local/asagao/apple18-reminders-1.png",
+          "sha256": "535b0cae0945c9fa2d0a4e8b407fd0dff9d366f61d189f6495a07137a6b6aa1e",
+          "bytes": 138271
+        }
+      ]
+    },
+    {
+      "id": "apple-ios18-photos",
+      "type": "official-document",
+      "sourceUrl": "https://support.apple.com/guide/iphone/view-photos-and-videos-iph3d267610/18.0/ios/18.0",
+      "version": "iOS 18.0; page metadata verified",
+      "retrievedOn": "2026-10-24",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "Apple copyrighted user guide. Local visual reference only; no app redistribution permission established."
+      },
+      "purpose": "Supplementary app structure and widget reference. Existing iOS 27 visual direction retained by latest user instruction; not an iOS 18 reskin.",
+      "keyPaths": [
+        "references/local/asagao/apple18-photos.html",
+        "references/local/asagao/apple18-photos-1.png",
+        "references/local/asagao/apple18-photos-2.png",
+        "references/local/asagao/apple18-photos-3.png",
+        "references/local/asagao/apple18-photos-4.png"
+      ],
+      "artifacts": [
+        {
+          "role": "html",
+          "url": "https://support.apple.com/guide/iphone/view-photos-and-videos-iph3d267610/18.0/ios/18.0",
+          "localPath": "references/local/asagao/apple18-photos.html",
+          "sha256": "6a5192fc2612f97768578a812974c9322e7c8f7fc0362be7136e49023b4b0f9c",
+          "bytes": 1398689
+        },
+        {
+          "role": "image",
+          "url": "https://help.apple.com/assets/683A54F5227CBBDB98051B96/683A54FC545676DF600F97D4/en_US/c3b992d4ceb983140180930b19c7a637.png",
+          "localPath": "references/local/asagao/apple18-photos-1.png",
+          "sha256": "5a6939aa7bf11a0a548b33abfdffc116e29d73a8cc2722e59df4bcdbc1d75f22",
+          "bytes": 640637
+        },
+        {
+          "role": "image",
+          "url": "https://help.apple.com/assets/683A54F5227CBBDB98051B96/683A54FC545676DF600F97D4/en_US/b1b52144d1170dcfb0150c4c402e6669.png",
+          "localPath": "references/local/asagao/apple18-photos-2.png",
+          "sha256": "bc3b42c2d789d778956b35f32b96e976b52ab693236038b90273c7a288bf0afe",
+          "bytes": 573779
+        },
+        {
+          "role": "image",
+          "url": "https://help.apple.com/assets/683A54F5227CBBDB98051B96/683A54FC545676DF600F97D4/en_US/853d0fa0a8bfd953296db90a8b6b2b51.png",
+          "localPath": "references/local/asagao/apple18-photos-3.png",
+          "sha256": "24075d67f5dedcdb7d614bf6826246424280521380d73a64cd7eab097310c3d6",
+          "bytes": 900653
+        },
+        {
+          "role": "image",
+          "url": "https://help.apple.com/assets/683A54F5227CBBDB98051B96/683A54FC545676DF600F97D4/en_US/ea679ea3d4b94928139e0c1a4259cfaa.png",
+          "localPath": "references/local/asagao/apple18-photos-4.png",
+          "sha256": "09336e67bdb0968219def8516320f598d0873095f3a7c09f9007999b0785d81a",
+          "bytes": 672991
+        }
+      ]
+    },
+    {
+      "id": "apple-ios18-phone",
+      "type": "official-document",
+      "sourceUrl": "https://support.apple.com/guide/iphone/make-a-call-iph3c993cbc/18.0/ios/18.0",
+      "version": "iOS 18.0; page metadata verified",
+      "retrievedOn": "2026-10-24",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "Apple copyrighted user guide. Local visual reference only; no app redistribution permission established."
+      },
+      "purpose": "Supplementary app structure and widget reference. Existing iOS 27 visual direction retained by latest user instruction; not an iOS 18 reskin.",
+      "keyPaths": [
+        "references/local/asagao/apple18-phone.html",
+        "references/local/asagao/apple18-phone-1.png"
+      ],
+      "artifacts": [
+        {
+          "role": "html",
+          "url": "https://support.apple.com/guide/iphone/make-a-call-iph3c993cbc/18.0/ios/18.0",
+          "localPath": "references/local/asagao/apple18-phone.html",
+          "sha256": "d4aa7d913b27c9d0aa90d03d0c2b1a3c3d60cbd2d89c715da8612f6fade1f966",
+          "bytes": 1401761
+        },
+        {
+          "role": "image",
+          "url": "https://help.apple.com/assets/683A54F5227CBBDB98051B96/683A54FC545676DF600F97D4/en_US/a9e207f2a9550478bdf3aa0626084883.png",
+          "localPath": "references/local/asagao/apple18-phone-1.png",
+          "sha256": "2b148260bd4813298297ef1d4b92c2ba1483e55189dc0bdf3c1f5741b668aea4",
+          "bytes": 112205
+        }
+      ]
+    },
+    {
+      "id": "apple-ios18-messages",
+      "type": "official-document",
+      "sourceUrl": "https://support.apple.com/guide/iphone/send-and-reply-to-messages-iph82fb73ba3/18.0/ios/18.0",
+      "version": "iOS 18.0; page metadata verified",
+      "retrievedOn": "2026-10-24",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "Apple copyrighted user guide. Local visual reference only; no app redistribution permission established."
+      },
+      "purpose": "Supplementary app structure and widget reference. Existing iOS 27 visual direction retained by latest user instruction; not an iOS 18 reskin.",
+      "keyPaths": [
+        "references/local/asagao/apple18-messages.html",
+        "references/local/asagao/apple18-messages-1.png",
+        "references/local/asagao/apple18-messages-2.png",
+        "references/local/asagao/apple18-messages-3.png"
+      ],
+      "artifacts": [
+        {
+          "role": "html",
+          "url": "https://support.apple.com/guide/iphone/send-and-reply-to-messages-iph82fb73ba3/18.0/ios/18.0",
+          "localPath": "references/local/asagao/apple18-messages.html",
+          "sha256": "de1659d6e6469759e9385f48ace6ca90eec19d44014a9d9e42bded02eac24a4d",
+          "bytes": 1407550
+        },
+        {
+          "role": "image",
+          "url": "https://help.apple.com/assets/683A54F5227CBBDB98051B96/683A54FC545676DF600F97D4/en_US/c2457c9588d367a0bcd438de7a912b67.png",
+          "localPath": "references/local/asagao/apple18-messages-1.png",
+          "sha256": "348c906aaf2c2216e984f7cb2e1b51bd86c7c89096bdc7deb74796fa41fa8e14",
+          "bytes": 216627
+        },
+        {
+          "role": "image",
+          "url": "https://help.apple.com/assets/683A54F5227CBBDB98051B96/683A54FC545676DF600F97D4/en_US/c91c99ce238846456cbb5e18d7b7b368.png",
+          "localPath": "references/local/asagao/apple18-messages-2.png",
+          "sha256": "6dd272331e1b7b28eaeda5ec3130fc1f6bacb67cfff92470a45f6569f7d175de",
+          "bytes": 134552
+        },
+        {
+          "role": "image",
+          "url": "https://help.apple.com/assets/683A54F5227CBBDB98051B96/683A54FC545676DF600F97D4/en_US/17f572900c34a4d6153ab658e9066306.png",
+          "localPath": "references/local/asagao/apple18-messages-3.png",
+          "sha256": "0ef81191a84c4d21c07a5872458b9b2ed65b733078da181796753ce8593a5d54",
+          "bytes": 448084
+        }
+      ]
+    },
+    {
+      "id": "apple-ios18-contacts",
+      "type": "official-document",
+      "sourceUrl": "https://support.apple.com/guide/iphone/add-and-use-contact-information-iph3e0ca2db/18.0/ios/18.0",
+      "version": "iOS 18.0; page metadata verified",
+      "retrievedOn": "2026-10-24",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "Apple copyrighted user guide. Local visual reference only; no app redistribution permission established."
+      },
+      "purpose": "Supplementary app structure and widget reference. Existing iOS 27 visual direction retained by latest user instruction; not an iOS 18 reskin.",
+      "keyPaths": ["references/local/asagao/apple18-contacts.html"],
+      "artifacts": [
+        {
+          "role": "html",
+          "url": "https://support.apple.com/guide/iphone/add-and-use-contact-information-iph3e0ca2db/18.0/ios/18.0",
+          "localPath": "references/local/asagao/apple18-contacts.html",
+          "sha256": "b32b2c7023a81bc85b988325d318856a147fc56d2358efc37069c90e80dca8e9",
+          "bytes": 1397649
+        }
+      ]
+    },
+    {
+      "id": "apple-ios18-recents",
+      "type": "official-document",
+      "sourceUrl": "https://support.apple.com/guide/iphone/view-and-delete-the-call-history-iph21d1e1f56/18.0/ios/18.0",
+      "version": "iOS 18.0; page metadata verified",
+      "retrievedOn": "2026-10-24",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "Apple copyrighted user guide. Local visual reference only; no app redistribution permission established."
+      },
+      "purpose": "Supplementary app structure and widget reference. Existing iOS 27 visual direction retained by latest user instruction; not an iOS 18 reskin.",
+      "keyPaths": ["references/local/asagao/apple18-recents.html"],
+      "artifacts": [
+        {
+          "role": "html",
+          "url": "https://support.apple.com/guide/iphone/view-and-delete-the-call-history-iph21d1e1f56/18.0/ios/18.0",
+          "localPath": "references/local/asagao/apple18-recents.html",
+          "sha256": "078ea09de07c6b6392e8c281fde5e0fbfbec7c67b637dd32c09c54c7e67f0293",
+          "bytes": 1392417
+        }
+      ]
+    },
+    {
+      "id": "apple-ios18-notifications",
+      "type": "official-document",
+      "sourceUrl": "https://support.apple.com/guide/iphone/view-and-respond-to-notifications-iph6534c01bc/18.0/ios/18.0",
+      "version": "iOS 18.0; page metadata verified",
+      "retrievedOn": "2026-10-24",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "Apple copyrighted user guide. Local visual reference only; no app redistribution permission established."
+      },
+      "purpose": "Supplementary app structure and widget reference. Existing iOS 27 visual direction retained by latest user instruction; not an iOS 18 reskin.",
+      "keyPaths": ["references/local/asagao/apple18-notifications.html"],
+      "artifacts": [
+        {
+          "role": "html",
+          "url": "https://support.apple.com/guide/iphone/view-and-respond-to-notifications-iph6534c01bc/18.0/ios/18.0",
+          "localPath": "references/local/asagao/apple18-notifications.html",
+          "sha256": "1f161a3bdade3db872bd1319ea5f27437014ae8694281e28fb01f2f9926cc790",
+          "bytes": 1400861
+        }
+      ]
     }
   ]
 }

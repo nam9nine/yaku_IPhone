@@ -1,10 +1,11 @@
-import { useEffect, useEffectEvent, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useEffectEvent, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useEdgeNavigation } from '../navigation/EdgeNavigation';
-import { initialNotes } from './data';
+import { dayNotes, demoDay, ingredients, type DayNote } from '../day/content';
+import { useDay } from '../day/DayContext';
 import { useStoredState } from './useStoredState';
 import './personal.css';
 
-type Note = (typeof initialNotes)[number];
+type Note = DayNote;
 
 function validNotes(value: unknown): boolean {
   return (
@@ -19,6 +20,8 @@ function validNotes(value: unknown): boolean {
       const item = note as Record<string, unknown>;
       return (
         typeof item.id === 'string' &&
+        item.id !== 'curry' &&
+        (item.author === undefined || typeof item.author === 'string') &&
         typeof item.title === 'string' &&
         typeof item.body === 'string' &&
         typeof item.updatedAt === 'string' &&
@@ -66,22 +69,25 @@ function NoteIcon({ name }: { name: 'back' | 'compose' | 'trash' | 'checklist' |
   );
 }
 
-export function NotesApp({ active }: { active: boolean }) {
-  const [notes, setNotes, unavailable] = useStoredState<Note[]>('notes', initialNotes, validNotes);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+export function NotesApp({
+  active,
+  selected: selectedId,
+  onSelect,
+}: {
+  active: boolean;
+  selected: string | null;
+  onSelect: (id: string | null) => void;
+}) {
+  const { state, dispatch, shoppingDone, storageUnavailable } = useDay();
+  const [savedNotes, setNotes, unavailable] = useStoredState<Note[]>(
+    'day-notes',
+    dayNotes.filter((note) => note.id !== 'curry'),
+    validNotes,
+  );
+  const notes = useMemo(() => [dayNotes[0], ...savedNotes], [savedNotes]);
   const [query, setQuery] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [currentDate, setCurrentDate] = useState(() => new Date());
-  useEffect(() => {
-    if (!active) return;
-    const refreshDate = () => setCurrentDate(new Date());
-    const frame = requestAnimationFrame(refreshDate);
-    const timer = window.setInterval(refreshDate, 60_000);
-    return () => {
-      cancelAnimationFrame(frame);
-      window.clearInterval(timer);
-    };
-  }, [active]);
+  const currentDate = new Date(demoDay.timestamp);
   const selected = notes.find((note) => note.id === selectedId);
   const root = useRef<HTMLElement>(null);
   const heading = useRef<HTMLHeadingElement>(null);
@@ -90,9 +96,16 @@ export function NotesApp({ active }: { active: boolean }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const scroll = useRef<HTMLDivElement>(null);
   const listPosition = useRef(0);
+  const previousSelection = useRef(selectedId);
   const returnId = useRef<string | null>(null);
   const pendingFocus = useRef<'title' | 'heading' | 'item' | 'check' | null>(null);
   const noteTitle = (note: Note) => note.title.trim() || '새로운 메모';
+
+  useLayoutEffect(() => {
+    if (selectedId && selectedId !== previousSelection.current && scroll.current)
+      scroll.current.scrollTop = 0;
+    previousSelection.current = selectedId;
+  }, [selectedId]);
 
   useLayoutEffect(() => {
     if (!active || !pendingFocus.current) return;
@@ -144,7 +157,7 @@ export function NotesApp({ active }: { active: boolean }) {
     if (!selected) return;
     returnId.current = selected.id;
     pendingFocus.current = 'item';
-    setSelectedId(null);
+    onSelect(null);
     setConfirmDelete(false);
   }
   const edge = useEdgeNavigation({
@@ -153,10 +166,10 @@ export function NotesApp({ active }: { active: boolean }) {
   });
 
   function update(patch: Partial<Note>) {
-    if (!selected) return;
+    if (!selected || selected.id === 'curry') return;
     setNotes((current) =>
       current.map((note) =>
-        note.id === selected.id ? { ...note, ...patch, updatedAt: new Date().toISOString() } : note,
+        note.id === selected.id ? { ...note, ...patch, updatedAt: demoDay.timestamp } : note,
       ),
     );
   }
@@ -167,12 +180,12 @@ export function NotesApp({ active }: { active: boolean }) {
       title: '',
       body: '',
       checklist: [],
-      updatedAt: new Date().toISOString(),
+      updatedAt: demoDay.timestamp,
     };
     setNotes((current) => [note, ...current]);
     setQuery('');
     pendingFocus.current = 'title';
-    setSelectedId(note.id);
+    onSelect(note.id);
   }
 
   function addCheck() {
@@ -257,7 +270,7 @@ export function NotesApp({ active }: { active: boolean }) {
           </div>
         )}
       </header>
-      {unavailable && (
+      {(unavailable || storageUnavailable) && (
         <p className="personal-storage" role="status">
           저장 공간을 사용할 수 없어 이번 접속 중에만 유지됩니다.
         </p>
@@ -285,7 +298,7 @@ export function NotesApp({ active }: { active: boolean }) {
                         data-note-id={note.id}
                         onClick={() => {
                           pendingFocus.current = 'heading';
-                          setSelectedId(note.id);
+                          onSelect(note.id);
                           if (scroll.current) scroll.current.scrollTop = 0;
                         }}
                       >
@@ -316,78 +329,129 @@ export function NotesApp({ active }: { active: boolean }) {
           </>
         ) : (
           <article className="note-paper">
-            <input
-              ref={titleInput}
-              className="note-title"
-              aria-label="메모 제목"
-              placeholder="제목"
-              value={selected.title}
-              onChange={(event) => update({ title: event.target.value })}
-            />
-            <textarea
-              ref={bodyInput}
-              className="note-body"
-              aria-label="메모 내용"
-              placeholder="메모"
-              value={selected.body}
-              onChange={(event) => update({ body: event.target.value })}
-              rows={1}
-            />
-            <ul className="note-checklist">
-              {selected.checklist.map((item, index) => (
-                <li key={item.id} data-done={item.done}>
-                  <input
-                    type="checkbox"
-                    aria-label={`${item.text || `항목 ${index + 1}`} 완료`}
-                    checked={item.done}
-                    onChange={(event) =>
-                      update({
-                        checklist: selected.checklist.map((entry) =>
-                          entry.id === item.id ? { ...entry, done: event.target.checked } : entry,
-                        ),
-                      })
-                    }
-                  />
-                  <input
-                    type="text"
-                    aria-label={`체크리스트 항목 ${index + 1}`}
-                    placeholder="목록 항목"
-                    value={item.text}
-                    onChange={(event) =>
-                      update({
-                        checklist: selected.checklist.map((entry) =>
-                          entry.id === item.id ? { ...entry, text: event.target.value } : entry,
-                        ),
-                      })
-                    }
-                  />
-                  <button
-                    className="note-remove-check"
-                    aria-label={`${item.text || `항목 ${index + 1}`} 항목 삭제`}
-                    onClick={() =>
-                      update({
-                        checklist: selected.checklist.filter((entry) => entry.id !== item.id),
-                      })
-                    }
-                  >
-                    ×
-                  </button>
-                </li>
-              ))}
-            </ul>
+            {selected.id === 'curry' ? (
+              <>
+                <h2 className="note-title">오늘 저녁 카레</h2>
+                <ul className="note-checklist day-curry-list">
+                  {ingredients.map((item) => (
+                    <li key={item.id} data-done={state.ingredients[item.id]}>
+                      <label>
+                        <input
+                          type="checkbox"
+                          aria-label={`${item.text} 완료`}
+                          checked={state.ingredients[item.id]}
+                          onChange={(event) =>
+                            dispatch({
+                              type: 'ingredient',
+                              id: item.id,
+                              done: event.target.checked,
+                            })
+                          }
+                        />
+                        <span>{item.text}</span>
+                      </label>
+                    </li>
+                  ))}
+                  <li className="day-carrot">
+                    <span className="day-carrot-mark" aria-hidden="true">
+                      ✓
+                    </span>
+                    <s>당근</s>
+                  </li>
+                </ul>
+                <p className="day-note-comment">하루카: 냉장고에 있어요.</p>
+                <p className="day-note-ending">이번에는 너무 맵지 않게.</p>
+                {shoppingDone && (
+                  <p className="day-note-completed" role="status">
+                    저녁 장보기 완료
+                  </p>
+                )}
+              </>
+            ) : (
+              <>
+                <input
+                  ref={titleInput}
+                  className="note-title"
+                  aria-label="메모 제목"
+                  placeholder="제목"
+                  value={selected.title}
+                  onChange={(event) => update({ title: event.target.value })}
+                />
+                <textarea
+                  ref={bodyInput}
+                  className="note-body"
+                  aria-label="메모 내용"
+                  placeholder="메모"
+                  value={selected.body}
+                  onChange={(event) => update({ body: event.target.value })}
+                  rows={1}
+                />
+                <ul className="note-checklist">
+                  {selected.checklist.map((item, index) => (
+                    <li key={item.id} data-done={item.done}>
+                      <input
+                        type="checkbox"
+                        aria-label={`${item.text || `항목 ${index + 1}`} 완료`}
+                        checked={item.done}
+                        onChange={(event) =>
+                          update({
+                            checklist: selected.checklist.map((entry) =>
+                              entry.id === item.id
+                                ? { ...entry, done: event.target.checked }
+                                : entry,
+                            ),
+                          })
+                        }
+                      />
+                      <input
+                        type="text"
+                        aria-label={`체크리스트 항목 ${index + 1}`}
+                        placeholder="목록 항목"
+                        value={item.text}
+                        onChange={(event) =>
+                          update({
+                            checklist: selected.checklist.map((entry) =>
+                              entry.id === item.id ? { ...entry, text: event.target.value } : entry,
+                            ),
+                          })
+                        }
+                      />
+                      <button
+                        className="note-remove-check"
+                        aria-label={`${item.text || `항목 ${index + 1}`} 항목 삭제`}
+                        onClick={() =>
+                          update({
+                            checklist: selected.checklist.filter((entry) => entry.id !== item.id),
+                          })
+                        }
+                      >
+                        ×
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+                {selected.author && <p className="day-note-author">작성자: {selected.author}</p>}
+              </>
+            )}
           </article>
         )}
       </div>
       <footer className="personal-toolbar notes-toolbar">
         {selected ? (
-          <div className="personal-capsule">
-            <button aria-label="체크리스트 항목 추가" onClick={addCheck}>
-              <NoteIcon name="checklist" />
-            </button>
-            <button aria-label="메모 삭제" onClick={() => setConfirmDelete(true)}>
-              <NoteIcon name="trash" />
-            </button>
-          </div>
+          selected.id === 'curry' ? (
+            <span className="day-note-footer">
+              {ingredients.filter(({ id }) => state.ingredients[id]).length}/4개 완료
+            </span>
+          ) : (
+            <div className="personal-capsule">
+              <button aria-label="체크리스트 항목 추가" onClick={addCheck}>
+                <NoteIcon name="checklist" />
+              </button>
+              <button aria-label="메모 삭제" onClick={() => setConfirmDelete(true)}>
+                <NoteIcon name="trash" />
+              </button>
+            </div>
+          )
         ) : (
           <label className="personal-search">
             <NoteIcon name="search" />
@@ -423,7 +487,7 @@ export function NotesApp({ active }: { active: boolean }) {
               const id = selectedId;
               setNotes((current) => current.filter((note) => note.id !== id));
               pendingFocus.current = 'heading';
-              setSelectedId(null);
+              onSelect(null);
               setConfirmDelete(false);
             }}
           >

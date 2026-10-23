@@ -28,6 +28,25 @@ describe('device preferences', () => {
     );
   });
 
+  it('restores crop positions without requiring them in older settings', () => {
+    const positions = { default: { x: 25, y: 70 }, sea: { x: 50, y: 45 } };
+    expect(
+      parsePreferences({ ...defaultPreferences, wallpaper: 'sea', wallpaperPositions: positions }),
+    ).toMatchObject({ wallpaper: 'sea', wallpaperPositions: positions });
+  });
+
+  it.each([
+    null,
+    [],
+    { remote: { x: 50, y: 50 } },
+    { default: { x: -1, y: 50 } },
+    { sea: { x: 50, y: 101 } },
+    { sea: { x: '50', y: 40 } },
+    { sea: { x: NaN, y: 40 } },
+  ])('rejects malformed wallpaper positions: %j', (wallpaperPositions) => {
+    expect(parsePreferences({ ...defaultPreferences, wallpaperPositions })).toBeNull();
+  });
+
   it.each([
     null,
     [],

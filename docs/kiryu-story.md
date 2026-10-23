@@ -1,6 +1,6 @@
 # 키류의 폰: 스토리와 화면 근거
 
-확인일: 2026-10-24 (Asia/Seoul). 출처·원본 URL·버전·해시는 [스토리 자료 색인](../references/story-sources.json)에 기록한다. 원문과 Apple 화면은 `references/local/story/`, 실제 표시하는 SEGA 이미지 원본은 `public/story/`에 보관한다.
+확인일: 2026-10-24 (Asia/Seoul). 출처·원본 URL·버전·해시는 [스토리 자료 색인](../references/story-sources.json)에 기록한다. 원문과 Apple 화면은 `references/local/story/`에 보관한다. 아래는 최초 스토리 작업의 조사 기록이며 최신 콘텐츠·자산 선택·권리 확인 범위는 [나팔꽃의 하루](asagao-day.md)와 [이미지 기록](asagao-assets.md)이 우선한다. 사용하지 않는 기존 이미지는 `references/local/story-legacy/`로 이동했다.
 
 ## 설정의 경계
 
