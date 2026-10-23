@@ -10,7 +10,7 @@ import {
 import { AppIcon } from '../home/AppIcon';
 import { useDisplayDate } from '../display/useDisplayDate';
 import { type DevicePreferences } from '../settings/preferences';
-import type { RunnableApp } from '../shell/session';
+import { appNames, type RunnableApp } from '../shell/session';
 import { AppSnapshot } from './AppSnapshot';
 import { SystemIcon } from './SystemIcon';
 import { HomeIndicator } from './HomeIndicator';
@@ -40,8 +40,7 @@ const titles: Record<SystemPanelKind, string> = {
   notifications: '알림 센터',
   search: '검색',
 };
-const appNames: Record<RunnableApp, string> = { settings: '설정', safari: 'Safari' };
-const supportedApps: RunnableApp[] = ['settings', 'safari'];
+const supportedApps = Object.keys(appNames) as RunnableApp[];
 
 function rootFontScale() {
   return (parseFloat(getComputedStyle(document.documentElement).fontSize) || 16) / 16;

@@ -1,0 +1,551 @@
+.personal-app {
+  --personal-note-accent: #b17f00;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--app-text);
+  background: var(--app-surface);
+  font-size: 1rem;
+  touch-action: pan-y pinch-zoom;
+}
+.personal-app button,
+.personal-app input,
+.personal-app textarea {
+  font: inherit;
+}
+.personal-app button {
+  color: inherit;
+  cursor: pointer;
+}
+.personal-app button:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+.personal-app svg {
+  display: block;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 auto;
+}
+.personal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: 0 0 auto;
+  min-height: 64px;
+  gap: 12px;
+  padding: 10px 16px;
+}
+.personal-header h1 {
+  margin: 0;
+  min-width: 0;
+  font-size: 1.0625em;
+  font-weight: 600;
+  outline: none;
+}
+.personal-header--large {
+  padding-top: 26px;
+  align-items: flex-end;
+}
+.personal-header--large h1 {
+  font-size: 2.125em;
+  font-weight: 700;
+  letter-spacing: -1px;
+}
+.personal-round,
+.personal-capsule {
+  border: 1px solid var(--app-separator);
+  background: color-mix(in srgb, var(--app-surface) 86%, transparent);
+  box-shadow: 0 2px 6px rgb(0 0 0 / 3%);
+  border-radius: 100px;
+}
+.personal-round {
+  width: 46px;
+  min-width: 46px;
+  height: 46px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+}
+.personal-capsule {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px;
+}
+.personal-capsule button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: transparent;
+  min-width: 46px;
+  min-height: 42px;
+  border-radius: 100px;
+  padding: 8px 12px;
+}
+.personal-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-y pinch-zoom;
+}
+.personal-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 16px 22px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--app-background);
+  color: var(--app-secondary);
+}
+.personal-search svg {
+  width: 18px;
+  height: 18px;
+}
+.personal-search input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--app-text);
+  padding: 0;
+  font-size: 1.0625em;
+  outline-offset: 4px;
+}
+.personal-toolbar {
+  display: flex;
+  flex: 0 0 auto;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 20px;
+  min-height: 64px;
+}
+.personal-empty {
+  margin: 64px 24px;
+  text-align: center;
+  color: var(--app-secondary);
+}
+.personal-empty h2 {
+  font-size: 1.25em;
+  color: var(--app-text);
+}
+.personal-empty p {
+  line-height: 1.5;
+}
+.personal-empty svg {
+  width: 42px;
+  height: 42px;
+  margin: auto;
+}
+.personal-storage {
+  margin: 0;
+  padding: 8px 20px;
+  color: var(--app-secondary);
+  font-size: 0.75em;
+}
+.personal-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+.notes-app:not(.notes-app--detail) {
+  background: var(--app-background);
+}
+.notes-app .personal-search {
+  background: color-mix(in srgb, var(--app-secondary) 12%, transparent);
+}
+.notes-list {
+  margin: 0 16px;
+  border-radius: 12px;
+  background: var(--app-surface);
+  overflow: hidden;
+}
+.notes-row {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  gap: 5px;
+  padding: 15px 16px;
+  background: transparent;
+  border: 0;
+}
+.notes-row + .notes-row {
+  border-top: 1px solid var(--app-separator);
+}
+.notes-row strong {
+  font-size: 1.0625em;
+  font-weight: 600;
+}
+.notes-row span {
+  width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 0.9375em;
+  color: var(--app-secondary);
+}
+.notes-count {
+  flex: 1;
+  text-align: center;
+  padding-left: 46px;
+  font-size: 0.75em;
+  color: var(--app-secondary);
+}
+.notes-done {
+  min-height: 44px;
+  border: 0;
+  background: transparent;
+  font-weight: 600 !important;
+}
+.note-paper {
+  padding: 8px 24px 36px;
+}
+.note-title {
+  width: 100%;
+  border: 0;
+  padding: 7px 0 12px;
+  color: inherit;
+  background: transparent;
+  font-size: 1.625em !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.5px;
+}
+.note-body {
+  display: block;
+  width: 100%;
+  min-height: 38px;
+  resize: none;
+  overflow: hidden;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  line-height: 1.65;
+  outline-offset: 4px;
+}
+.note-checklist {
+  padding: 6px 0;
+  margin: 0;
+  list-style: none;
+}
+.note-checklist li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-height: 45px;
+}
+.note-checklist input[type='checkbox'] {
+  appearance: none;
+  width: 23px;
+  height: 23px;
+  min-width: 23px;
+  margin: 10px 0;
+  border: 1.6px solid var(--app-secondary);
+  border-radius: 50%;
+}
+.note-checklist input[type='checkbox']:checked {
+  background: var(--personal-note-accent);
+  border-color: var(--personal-note-accent);
+}
+.note-checklist input[type='checkbox']:checked::after {
+  content: '';
+  display: block;
+  width: 6px;
+  height: 11px;
+  transform: rotate(45deg);
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  margin: 2px 6px;
+}
+.note-checklist input[type='text'] {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 8px 0;
+  color: inherit;
+  border: 0;
+  background: transparent;
+}
+.note-checklist li[data-done='true'] input[type='text'] {
+  color: var(--app-secondary);
+}
+.note-remove-check {
+  min-width: 34px;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--app-secondary) !important;
+  font-size: 1.4em !important;
+}
+.personal-alert {
+  width: min(280px, calc(100% - 48px));
+  border: 0;
+  border-radius: 16px;
+  background: var(--app-background);
+  color: var(--app-text);
+  padding: 22px 0 0;
+  text-align: center;
+}
+.personal-alert::backdrop {
+  background: rgb(0 0 0 / 35%);
+}
+.personal-alert h2 {
+  padding: 0 18px;
+  margin: 0 0 8px;
+  font-size: 17px;
+}
+.personal-alert p {
+  font-size: 13px;
+  margin: 0 16px 22px;
+}
+.personal-alert > div {
+  display: flex;
+  border-top: 1px solid var(--app-separator);
+}
+.personal-alert button {
+  flex: 1;
+  border: 0;
+  min-height: 46px;
+  background: transparent;
+  color: var(--app-accent);
+}
+.personal-alert button + button {
+  border-left: 1px solid var(--app-separator);
+}
+.personal-alert .personal-destructive {
+  color: #ff3b30;
+}
+.photos-app .personal-header--large {
+  padding-bottom: 18px;
+}
+.photo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 2px;
+}
+.photo-tile {
+  position: relative;
+  display: block;
+  aspect-ratio: 1;
+  padding: 0;
+  border: 0;
+  background: var(--app-background);
+  overflow: hidden;
+}
+.photo-tile > img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+.photo-tile-favorite {
+  position: absolute;
+  left: 6px;
+  bottom: 6px;
+  color: white;
+  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 40%));
+}
+.photo-tile-favorite svg {
+  width: 15px;
+  height: 15px;
+  fill: currentColor;
+}
+.photo-tile-favorite path {
+  fill: currentColor;
+}
+.photo-count {
+  padding: 20px;
+  margin: 0;
+  text-align: center;
+  font-size: 0.875em;
+  color: var(--app-secondary);
+}
+.photos-tabs {
+  justify-content: center;
+}
+.photos-tabs button {
+  min-width: 112px;
+  gap: 8px;
+}
+.photos-tabs button[aria-pressed='true'] {
+  background: var(--app-background);
+  color: var(--app-accent);
+}
+.photos-tabs button svg {
+  width: 21px;
+  height: 21px;
+}
+.photo-collections {
+  padding: 12px 20px;
+}
+.photo-collections h2 {
+  font-size: 1.375em;
+}
+.photo-collection {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--app-background);
+  text-align: left;
+}
+.photo-collection > span:first-child {
+  color: var(--app-accent);
+}
+.photo-collection strong {
+  flex: 1;
+  font-weight: 500;
+}
+.photo-collection > span:last-of-type {
+  color: var(--app-secondary);
+}
+.photo-collection > svg {
+  width: 12px;
+  height: 18px;
+  color: var(--app-secondary);
+}
+.photo-detail-header {
+  justify-content: flex-start;
+}
+.photo-detail-header h1 {
+  flex: 1;
+  text-align: center;
+  padding-right: 58px;
+  font-size: 0.9375em;
+}
+.photo-detail-header h1 span,
+.photo-detail-header h1 small {
+  display: block;
+}
+.photo-detail-header h1 small {
+  font-size: 0.8em;
+  font-weight: 400;
+  color: var(--app-secondary);
+  margin-top: 4px;
+}
+.photo-viewer {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  touch-action: pinch-zoom;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.photo-viewer img {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+}
+.photo-filmstrip {
+  display: flex;
+  justify-content: center;
+  flex: 0 0 auto;
+  gap: 4px;
+  padding: 14px 8px 6px;
+  height: 62px;
+  overflow-x: auto;
+  touch-action: pan-x pinch-zoom;
+  scrollbar-width: none;
+}
+.photo-filmstrip button {
+  display: block;
+  min-width: 28px;
+  width: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: var(--app-background);
+  overflow: hidden;
+}
+.photo-filmstrip button[aria-current='true'] {
+  min-width: 40px;
+  outline: 2px solid var(--app-accent);
+  outline-offset: 2px;
+  margin: 0 4px;
+}
+.photo-filmstrip img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.photo-toolbar {
+  justify-content: center;
+  gap: 36px;
+}
+.photo-favorite[aria-pressed='true'] {
+  color: var(--app-accent);
+}
+.photo-favorite[aria-pressed='true'] path {
+  fill: currentColor;
+}
+.mobile-shell[data-theme='dark'] .personal-app {
+  --personal-note-accent: #ffd60a;
+}
+@media (max-height: 550px) {
+  .personal-header--large {
+    padding-top: 12px;
+  }
+  .personal-header {
+    min-height: 54px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+  }
+  .personal-toolbar {
+    padding-top: 4px;
+    padding-bottom: 4px;
+    min-height: 54px;
+  }
+  .photo-filmstrip {
+    height: 46px;
+    padding-top: 6px;
+  }
+}
+
+.photo-tile img[src$='saejima.png'] {
+  object-position: 50% 0%;
+}
+
+.photos-app {
+  position: relative;
+}
+.photos-app--library > .personal-header {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 1;
+  padding: 20px 20px 28px;
+  color: white;
+  background: linear-gradient(rgb(0 0 0 / 62%), transparent);
+  pointer-events: none;
+}
+.photos-tabs .personal-capsule button {
+  flex-direction: column;
+  gap: 3px;
+  min-width: 90px;
+  font-size: 0.75em;
+}

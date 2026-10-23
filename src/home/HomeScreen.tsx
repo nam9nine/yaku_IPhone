@@ -5,7 +5,7 @@ import { dockApps, type HomeApp } from './apps';
 import { isHorizontalGesture, pageAfterGesture, type PageGesture } from './pageGesture';
 import './home.css';
 import { homeLayout } from './homeLayout';
-import type { LaunchRect, RunnableApp } from '../shell/session';
+import { isRunnableApp, type LaunchRect, type RunnableApp } from '../shell/session';
 
 export function HomeScreen({
   onLock,
@@ -149,11 +149,12 @@ export function HomeScreen({
   }
 
   function openApp(app: HomeApp, button: HTMLButtonElement) {
-    if (onOpenApp && (app.id === 'settings' || app.id === 'safari')) {
+    const target = app.id;
+    if (onOpenApp && isRunnableApp(target)) {
       const bounds =
         button.querySelector('.app-icon')?.getBoundingClientRect() ??
         button.getBoundingClientRect();
-      onOpenApp(app.id, { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height });
+      onOpenApp(target, { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height });
       return;
     }
     setNotice(`${app.name} 앱은 곧 만나요`);

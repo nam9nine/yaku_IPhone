@@ -1,7 +1,7 @@
 import { useEffect, useEffectEvent, useRef, type ReactNode } from 'react';
 import { useSystemGesture } from './useSystemGesture';
 import { useViewport } from './useViewport';
-import type { LaunchRect, RunnableApp } from './session';
+import { appNames, type LaunchRect, type RunnableApp } from './session';
 import './shell.css';
 import { HomeIndicator } from '../system/HomeIndicator';
 
@@ -160,7 +160,7 @@ export function AppWindow({
         ref={card}
         className="app-window"
         data-app-window={app}
-        aria-label={app === 'settings' ? '설정 앱' : 'Safari 앱'}
+        aria-label={`${appNames[app]} 앱`}
         data-testid={`${app}-app`}
         data-dragging={drag > 0}
         style={

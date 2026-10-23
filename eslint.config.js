@@ -12,6 +12,7 @@ export default tseslint.config(
       '.cache/**',
       'references/upstream/**',
       'references/archives/**',
+      'references/local/**',
       'playwright-report/**',
       'test-results/**',
       'harness/local/**',

@@ -2,6 +2,7 @@ package-lock.json
 references/licenses/
 references/upstream/
 references/archives/
+references/local/
 .tooling/
 .cache/
 harness/local/

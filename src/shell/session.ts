@@ -1,4 +1,15 @@
-export type RunnableApp = 'settings' | 'safari';
+export const appNames = {
+  settings: '설정',
+  safari: 'Safari',
+  contacts: '연락처',
+  messages: '메시지',
+  notes: '메모',
+  photos: '사진',
+} as const;
+export type RunnableApp = keyof typeof appNames;
+export function isRunnableApp(id: string): id is RunnableApp {
+  return Object.hasOwn(appNames, id);
+}
 export type SystemPanel = 'control' | 'switcher' | 'notifications' | 'search';
 export interface LaunchRect {
   x: number;

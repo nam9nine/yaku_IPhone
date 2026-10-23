@@ -18,8 +18,13 @@ import { isOnline } from './settings/preferences';
 import { SystemEdges, HomeGestures } from './system/SystemEdges';
 import { SystemPanels } from './system/SystemPanels';
 import './shell/appearance.css';
+import { ContactsApp } from './story/ContactsApp';
+import { MessagesApp } from './story/MessagesApp';
+import { NotesApp } from './story/NotesApp';
+import { PhotosApp } from './story/PhotosApp';
 
 export function App() {
+  const [conversation, setConversation] = useState<string | null>(null);
   const [controls, setControls] = useState({ volume: 50, rotation: false, silent: false });
   const [state, dispatch] = useReducer(shellReducer, initialShellState);
   const { preferences, setPreferences, storageUnavailable } = useDevicePreferences();
@@ -125,11 +130,30 @@ export function App() {
               active={!state.locked && state.activeApp === app && !state.panel}
               storageUnavailable={storageUnavailable}
             />
-          ) : (
+          ) : app === 'safari' ? (
             <SafariApp
               online={isOnline(preferences)}
               active={!state.locked && state.activeApp === app && !state.panel}
             />
+          ) : app === 'contacts' ? (
+            <ContactsApp
+              active={!state.locked && state.activeApp === app && !state.panel}
+              onMessage={(id) => {
+                setConversation(id);
+                openApp('messages');
+              }}
+            />
+          ) : app === 'messages' ? (
+            <MessagesApp
+              active={!state.locked && state.activeApp === app && !state.panel}
+              selected={conversation}
+              onSelect={setConversation}
+              online={isOnline(preferences)}
+            />
+          ) : app === 'notes' ? (
+            <NotesApp active={!state.locked && state.activeApp === app && !state.panel} />
+          ) : (
+            <PhotosApp active={!state.locked && state.activeApp === app && !state.panel} />
           )}
         </AppWindow>
       ))}

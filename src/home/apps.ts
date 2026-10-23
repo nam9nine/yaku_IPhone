@@ -1,4 +1,5 @@
 export type AppId =
+  | 'contacts'
   | 'facetime'
   | 'calendar'
   | 'photos'
@@ -61,6 +62,7 @@ export const homePages: readonly (readonly HomeApp[])[] = [
     { id: 'voice', name: '음성 메모' },
     { id: 'shortcuts', name: '단축어' },
     { id: 'findmy', name: '나의 찾기' },
+    { id: 'contacts', name: '연락처' },
   ],
 ];
 
