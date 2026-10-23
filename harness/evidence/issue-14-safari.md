@@ -5,7 +5,7 @@
 - 품질: 타입·lint·포맷·단위 171개·production build·하네스 통과.
 - 브라우저: Chromium/WebKit 전체 140개 통과. 최초 실행의 WebKit 짧은 화면 2건은 resize 직후 이전 bounding box와 새 viewport를 섞어 읽는 검사 문제였다. 실패 캡처의 배치는 정상이며, 동일 evaluate에서 좌표·viewport·hit target을 읽고 안정될 때까지 poll하도록 수정한 뒤 전체 재실행했다.
 - 시각: 최초 macOS 앱 baseline 22개를 명시적으로 생성한 뒤 일반 실행에서 기존 잠금/홈을 포함한 40개 통과. 기존 18개 기준은 변경하지 않았다.
-- Linux 앱 baseline은 CI의 실제 캡처를 검토한 뒤 별도로 등록한다. 누락 중 browser/merge-gate 실패를 유지한다.
+- 최초 Linux CI `39952547517`에서 품질·동작 140개·기존 시각 18개가 통과했고 신규 22개는 기준 누락으로 실패했다. gate를 유지한 채 artifact `12500584533`의 실제 capture.png를 직접 검토하여 Linux 최초 baseline 22개를 별도로 등록했다. artifact SHA-256: `c034640323851a4d84ea52a01fc2204457a9cdc929b2e0076c6b6181af73b117`.
 
 ## 동작 검토
 
@@ -22,3 +22,7 @@ Apple의 `apple-safari-compact-image`, `apple-safari-start-image`, `apple-safari
 설정 baseline은 Issue 13에서 직접 검토한 목록과 화면 모드/큰 글자 장면을 포함한다. 기준 추가 이유는 완성된 두 앱의 후속 회귀 방지이며, 기존 기준의 차이를 덮어쓰는 갱신이 아니다.
 
 실제 iPhone Safari·소프트 키보드는 미검증이다. viewport 축소 검사는 입력과 이동/취소/홈 영역 배치만 확인한다. 공개 배포와 CI 결과는 PR/Issue에 실행 후 기록한다.
+
+## Linux 최초 기준 검토
+
+Ubuntu 24.04/Node 24.22.0/Playwright 1.64.1의 Chromium·WebKit 22장을 직접 열어 macOS 화면과 공식 자료를 비교했다. 플랫폼 기본 글꼴 때문에 한글 굵기·줄바꿈 및 WebKit 탭 주소 줄바꿈이 다르다. 앱 조작 영역·목록·큰 글자·주소 막대는 가려지지 않으며, 본문은 독립적으로 스크롤한다. macOS 기준을 Linux에 복사하지 않았고 기존 잠금/홈 기준은 두 플랫폼 모두 그대로다. 기준 추가 후 CI 회귀 결과와 최종 SHA 독립 리뷰는 PR 본문에 기록한다.
