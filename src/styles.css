@@ -198,3 +198,12 @@ body,
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
 }
+
+/* Blur stays on the fading overlay; do not leave a second blurred scene behind it. */
+.mobile-shell:has(.system-panel[data-empty-switcher='true']) .base-screens,
+.mobile-shell:has(.system-panel[data-empty-switcher='true']) .mobile-shell-wallpaper,
+.mobile-shell:has(.system-panel[data-closing='true']) .base-screens,
+.mobile-shell:has(.system-panel[data-closing='true']) .app-host,
+.mobile-shell:has(.system-panel[data-closing='true']) .mobile-shell-wallpaper {
+  filter: none;
+}

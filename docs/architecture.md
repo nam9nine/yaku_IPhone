@@ -44,7 +44,7 @@ ios27-design-system은 재질·색상·치수 참고 자료다. React 패키지�
 
 `public/wallpapers/silver-fold.svg`는 프로젝트에서 직접 작성한 SVG다. Apple 자료의 은색·샴페인 곡면과 낮은 채도를 관찰했으며 원본 이미지·경로·외부 코드를 복사하지 않았다. 잠금 화면에서는 같은 경로의 `silver-fold-front.svg`를 시계 위에 겹친다. 두 SVG의 전경 경로·gradient는 함께 변경해야 한다. 짧은 화면에서는 전경 덮개를 숨겨 콘텐츠 가독성을 지킨다. 정확한 Apple 배경 복제품은 아니다. 색은 SVG 내부 gradient에, 화면 UI 값은 CSS 토큰에 둔다.
 
-컨테이너는 `visualViewport` 높이(미지원 시 innerHeight)로 고정한다. 사용자의 세로 스크롤 금지 선택에 따라 문자가 커져 넘치는 본문은 가로 페이지로 나눈다. 네 방향 `env(safe-area-inset-*)`에 기본 여백을 더하며 고정 기기 inset을 가정하지 않는다. 문서·화면·본문의 세로 overflow를 clip하며 필요한 내용은 `PagedContent`의 CSS column과 페이지 조작으로 접근한다. 관련 기준: [MDN viewport 단위](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Values/length), [WebKit safe area 안내](https://webkit.org/blog/7929/designing-websites-for-iphone-x/).
+컨테이너는 `visualViewport` 높이(미지원 시 innerHeight)로 고정한다. 사용자의 세로 스크롤 금지 선택에 따라 문자가 커져 넘치는 본문은 가로 페이지로 나눈다. 네 방향 `env(safe-area-inset-*)`에 기본 여백을 더하며 고정 기기 inset을 가정하지 않는다. 설정 본문은 세로 스크롤 영역과 화면별 위치 ref로 관리한다. 문서·홈·Safari의 세로 overflow를 clip하며 Safari의 필요한 내용은 `PagedContent`의 CSS column과 페이지 조작으로 접근한다. 관련 기준: [MDN viewport 단위](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Values/length), [WebKit safe area 안내](https://webkit.org/blog/7929/designing-websites-for-iphone-x/).
 
 표시 날짜·시계는 브라우저 언어·시간대와 관계없이 `ko-KR` / `Asia/Seoul`로 포맷한다. 실제 분 경계에 맞춘 timeout과 탭 표시 상태 변경에서 갱신한다. 시계는 시스템 글꼴을 SVG에서 세로 확대한 웹 근사이며 Apple의 SF 폰트를 배포하지 않는다. 고정 장면은 Playwright의 `page.clock`으로 실제 앱의 시간을 주입한다. 별도 검증 화면이나 공개 URL 디버그 모드는 없다.
 

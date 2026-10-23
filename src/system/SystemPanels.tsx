@@ -254,13 +254,83 @@ export function SystemPanels(props: SystemPanelsProps) {
   const panel = useRef<HTMLDivElement>(null);
   const heading = useRef<HTMLHeadingElement>(null);
   const restoreFocus = useRef(true);
+  const exitAnimation = useRef<Animation | null>(null);
+  const exitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const closing = useRef(false);
+  useEffect(() => {
+    const node = panel.current;
+    return () => {
+      closing.current = false;
+      exitAnimation.current?.cancel();
+      if (exitTimer.current) clearTimeout(exitTimer.current);
+      if (node) {
+        delete node.dataset.closing;
+        node.style.pointerEvents = '';
+      }
+    };
+  }, [kind]);
+  function closePanel() {
+    if (closing.current) return;
+    const node = panel.current;
+    if (
+      !node ||
+      props.preferences.reduceMotion ||
+      matchMedia('(prefers-reduced-motion: reduce)').matches
+    ) {
+      onDismiss();
+      return;
+    }
+    closing.current = true;
+    node.dataset.closing = 'true';
+    node.style.pointerEvents = 'none';
+    const complete = () => {
+      if (!closing.current || !node.isConnected) return;
+      closing.current = false;
+      if (exitTimer.current) clearTimeout(exitTimer.current);
+      onDismiss();
+    };
+    exitAnimation.current = node.animate([{ opacity: 1 }, { opacity: 0 }], {
+      duration: 200,
+      easing: 'cubic-bezier(0.2, 0, 0, 1)',
+      fill: 'forwards',
+    });
+    void exitAnimation.current.finished.then(complete, () => {});
+    exitTimer.current = setTimeout(complete, 240);
+  }
   const [previous] = useState(() =>
     document.activeElement instanceof HTMLElement ? document.activeElement : null,
   );
+  const blankTap = useRef<{ id: number; x: number; y: number } | null>(null);
+  useEffect(() => {
+    const cancel = () => {
+      blankTap.current = null;
+    };
+    window.addEventListener('blur', cancel);
+    window.addEventListener('resize', cancel);
+    window.visualViewport?.addEventListener('resize', cancel);
+    document.addEventListener('visibilitychange', cancel);
+    return () => {
+      window.removeEventListener('blur', cancel);
+      window.removeEventListener('resize', cancel);
+      window.visualViewport?.removeEventListener('resize', cancel);
+      document.removeEventListener('visibilitychange', cancel);
+    };
+  }, []);
+  const isControlBackground = (target: EventTarget) =>
+    kind === 'control' &&
+    target instanceof Element &&
+    !target.closest('button, input, label, .cc-detail, .cc-slider');
   const titleId = useId();
   const fontScale = useSyncExternalStore(subscribeRootFont, rootFontScale);
-  const dismiss = useEffectEvent(onDismiss);
-  const swipe = usePanelSwipe({ upward: onDismiss });
+  const dismiss = useEffectEvent(closePanel);
+  const swipe = usePanelSwipe({ upward: closePanel });
+  const finishEmpty = useEffectEvent(onDismiss);
+  const emptySwitcher = kind === 'switcher' && props.recent.length === 0;
+  useEffect(() => {
+    if (!emptySwitcher) return;
+    const timer = window.setTimeout(() => finishEmpty(), 700);
+    return () => window.clearTimeout(timer);
+  }, [emptySwitcher]);
 
   useEffect(() => {
     const node = panel.current;
@@ -332,6 +402,7 @@ export function SystemPanels(props: SystemPanelsProps) {
       aria-modal="true"
       aria-labelledby={titleId}
       data-testid={`system-${kind}`}
+      data-empty-switcher={emptySwitcher}
       data-compact={viewport.height < 620 * fontScale}
       data-tiny={viewport.height < 440 * fontScale}
       style={{ height: viewport.height, top: window.visualViewport?.offsetTop ?? 0 }}
@@ -341,7 +412,7 @@ export function SystemPanels(props: SystemPanelsProps) {
         className="system-panel-backdrop"
         aria-label={`${titles[kind]} 배경 닫기`}
         tabIndex={-1}
-        onClick={onDismiss}
+        onClick={closePanel}
       />
       <div className="system-panel-content">
         <header className="system-panel-header">
@@ -352,7 +423,7 @@ export function SystemPanels(props: SystemPanelsProps) {
             type="button"
             className="system-keyboard-control"
             aria-label={`${titles[kind]} 닫기`}
-            onClick={onDismiss}
+            onClick={closePanel}
           >
             {titles[kind]} 닫기
           </button>
@@ -360,11 +431,38 @@ export function SystemPanels(props: SystemPanelsProps) {
         <div
           className="system-panel-body"
           key={kind}
+          onPointerDownCapture={(event) => {
+            blankTap.current =
+              event.isPrimary && event.button === 0 && isControlBackground(event.target)
+                ? { id: event.pointerId, x: event.clientX, y: event.clientY }
+                : null;
+          }}
+          onPointerMoveCapture={(event) => {
+            const start = blankTap.current;
+            if (start && Math.hypot(event.clientX - start.x, event.clientY - start.y) > 8)
+              blankTap.current = null;
+          }}
+          onPointerCancelCapture={() => {
+            blankTap.current = null;
+          }}
+          onPointerUpCapture={(event) => {
+            const start = blankTap.current;
+            blankTap.current = null;
+            if (
+              start?.id === event.pointerId &&
+              Math.hypot(event.clientX - start.x, event.clientY - start.y) <= 8
+            )
+              closePanel();
+          }}
           onClick={(event) => {
             if (
-              (event.target as HTMLElement).matches('.recent-viewport, .recent-track, .recent-apps')
+              (event.target as HTMLElement).matches(
+                '.recent-viewport, .recent-track, .recent-apps',
+              ) ||
+              (kind === 'control' &&
+                !(event.target as Element).closest('button, input, label, .cc-detail, .cc-slider'))
             )
-              onDismiss();
+              closePanel();
           }}
         >
           {kind === 'control' && (

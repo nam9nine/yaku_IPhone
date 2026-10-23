@@ -5,7 +5,10 @@ export async function revealPagedControl(target: Locator) {
   const pager = target.locator(
     'xpath=ancestor::*[contains(concat(" ", normalize-space(@class), " "), " paged-content ")][1]',
   );
-  if (!(await pager.count())) return;
+  if (!(await pager.count())) {
+    await target.scrollIntoViewIfNeeded();
+    return;
+  }
   for (let step = 0; step < 60; step += 1) {
     const position = await target.evaluate((element) => {
       const bounds = element.getBoundingClientRect();
@@ -43,6 +46,12 @@ export async function checkPaged(target: Locator) {
 }
 
 export async function firstContentPage(pager: Locator) {
+  if (await pager.evaluate((el) => el.classList.contains('settings-content'))) {
+    await pager.evaluate((el) => {
+      el.scrollTop = 0;
+    });
+    return;
+  }
   const previous = pager.getByRole('button', { name: / 이전 페이지$/ });
   while (await previous.isEnabled()) await previous.tap();
   await expect(pager).toHaveAttribute('data-page', '1');

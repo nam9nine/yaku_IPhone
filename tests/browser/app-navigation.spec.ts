@@ -33,6 +33,10 @@ async function edgeSwipe(page: Page, app: Locator, direction: 'back' | 'forward'
 }
 
 async function revealWithPages(pager: Locator, target: Locator, nextName: string) {
+  if (await pager.evaluate((el) => el.classList.contains('settings-content'))) {
+    await target.scrollIntoViewIfNeeded();
+    return;
+  }
   for (let index = 0; index < 40; index += 1) {
     if (
       await target.evaluate((element) => {
@@ -67,6 +71,10 @@ async function revealWithPages(pager: Locator, target: Locator, nextName: string
 }
 
 async function expectNoVerticalClip(pager: Locator) {
+  if (await pager.evaluate((el) => el.classList.contains('settings-content'))) {
+    await expect(pager).toHaveCSS('overflow-y', 'auto');
+    return;
+  }
   expect(
     await pager.evaluate((element) => {
       const viewport = element.querySelector('.paged-viewport')!.getBoundingClientRect();
@@ -94,9 +102,8 @@ for (const size of [
   { width: 430, height: 932 },
   { width: 360, height: 420 },
 ]) {
-  test(`설정과 Safari는 세로 이동 없이 모든 내용을 가로로 제공한다 ${size.width}x${size.height}`, async ({
+  test(`설정은 세로로 Safari는 가로로 모든 내용에 도달한다 ${size.width}x${size.height}`, async ({
     page,
-    browserName,
   }) => {
     await page.setViewportSize(size);
     await openApp(page, '설정');
@@ -104,16 +111,9 @@ for (const size of [
     await expectNoVerticalClip(settings);
     const accessibility = page.getByRole('button', { name: '손쉬운 사용', exact: true });
     await revealWithPages(settings, accessibility, '설정 내용 다음 페이지');
-    const before = await settings.getAttribute('data-page');
-    const bounds = (await settings.locator('.paged-viewport').boundingBox())!;
-    await page.mouse.move(bounds.x + bounds.width / 2, bounds.y + bounds.height * 0.65);
-    await page.mouse.down();
-    await page.mouse.move(bounds.x + bounds.width / 2, bounds.y + 10, { steps: 8 });
-    await page.mouse.up();
-    await expect(settings).toHaveAttribute('data-page', before!);
-    await expect(settings).toHaveJSProperty('scrollTop', 0);
-    if (browserName === 'chromium') await page.mouse.wheel(0, 600);
-    await expect(settings).toHaveJSProperty('scrollTop', 0);
+    await expect(settings).toHaveCSS('overflow-y', 'auto');
+    if (size.height === 420)
+      expect(await settings.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
     await accessibility.tap();
     await expect(page.getByRole('heading', { name: '손쉬운 사용', exact: true })).toBeVisible();
 
@@ -166,7 +166,7 @@ test('200% 글자와 짧은 높이에서도 설정 조작과 Safari 마지막 �
   await expect(address(page)).toHaveText('yaku.test/example');
 });
 
-test('키보드가 화면 밖 설정으로 이동하면 해당 가로 페이지를 노출한다', async ({ page }) => {
+test('키보드가 화면 밖 설정으로 이동하면 해당 행으로 세로 스크롤한다', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 420 });
   await openApp(page, '설정');
   const target = page.getByRole('button', { name: '손쉬운 사용', exact: true });
@@ -175,7 +175,7 @@ test('키보드가 화면 밖 설정으로 이동하면 해당 가로 페이지�
     if (await target.evaluate((element) => element === document.activeElement)) break;
   }
   await expect(target).toBeFocused();
-  expect(Number(await settingsBody(page).getAttribute('data-page'))).toBeGreaterThan(1);
+  expect(await settingsBody(page).evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
   await expect(target).toBeInViewport({ ratio: 1 });
   await page.keyboard.press('Enter');
   await expect(page.getByRole('heading', { name: '손쉬운 사용', exact: true })).toBeFocused();
@@ -414,4 +414,42 @@ test('작은 높이와 200% 글자에서 Safari 메뉴·탭·오류도 세로 �
   await revealWithPages(pager, close, '오류 안내 다음 페이지');
   await close.tap();
   await expect(address(page)).toHaveText('yaku.test/example');
+});
+
+test('설정의 실제 세로 입력과 가장자리 뒤로는 목록 위치와 홈 고정을 유지한다', async ({
+  page,
+  browserName,
+}) => {
+  await page.setViewportSize({ width: 360, height: 500 });
+  await openApp(page, '설정');
+  const content = settingsBody(page);
+  if (browserName === 'chromium') {
+    const client = await page.context().newCDPSession(page);
+    await client.send('Input.synthesizeScrollGesture', {
+      x: 180,
+      y: 370,
+      yDistance: -240,
+      speed: 600,
+      gestureSourceType: 'touch',
+      preventFling: true,
+    });
+    await client.detach();
+  } else {
+    for (let i = 0; i < 20; i++) {
+      await page.keyboard.press('Tab');
+      if (
+        await page
+          .getByRole('button', { name: '손쉬운 사용', exact: true })
+          .evaluate((el) => el === document.activeElement)
+      )
+        break;
+    }
+  }
+  await expect.poll(() => content.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
+  const offset = await content.evaluate((el) => el.scrollTop);
+  await page.getByRole('button', { name: '손쉬운 사용', exact: true }).tap();
+  await edgeSwipe(page, page.locator('.settings-app'), 'back');
+  await expect(page.getByRole('heading', { name: '설정', exact: true })).toBeVisible();
+  await expect(content).toHaveJSProperty('scrollTop', offset);
+  expect(await page.evaluate(() => window.scrollY)).toBe(0);
 });
