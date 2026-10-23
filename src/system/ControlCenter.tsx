@@ -476,7 +476,7 @@ export function ControlCenter({
                 {connection('cellular', '셀룰러 데이터')}
                 {connection('bluetooth', 'Bluetooth')}
               </div>
-              <p>가상 연결을 켜고 끕니다. 실제 연결은 해제되지 않습니다.</p>
+              <p>웹 안에서만 적용됩니다.</p>
             </div>
           ) : (
             <p>{detailText[detail].message}</p>

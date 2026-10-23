@@ -582,6 +582,10 @@
   grid-row: auto;
 }
 .ios-control-center[data-large-text='true'] .cc-media-title {
+  flex: 1;
+  align-self: center;
+  min-width: 0;
+  width: 100%;
   font-size: 0.8125rem;
 }
 .ios-control-center[data-large-text='true'] .cc-media-main {

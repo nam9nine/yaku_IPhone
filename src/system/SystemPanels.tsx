@@ -116,7 +116,13 @@ function RecentApps({
         onKeyDown={(event) => {
           if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
             event.preventDefault();
-            move(index + (event.key === 'ArrowRight' ? 1 : -1));
+            const next = Math.max(
+              0,
+              Math.min(recent.length - 1, index + (event.key === 'ArrowRight' ? 1 : -1)),
+            );
+            move(next);
+            const cards = event.currentTarget.querySelectorAll<HTMLButtonElement>('.recent-open');
+            cards[next]?.focus({ preventScroll: true });
           }
         }}
       >
@@ -126,6 +132,9 @@ function RecentApps({
               key={application}
               className="recent-card"
               data-recent-app={application}
+              onFocusCapture={(event) => {
+                if ((event.target as HTMLElement).matches(':focus-visible')) move(position);
+              }}
               data-active={position === index}
               data-dragging={draggedApp === application && swipe.offset.y !== 0}
               style={

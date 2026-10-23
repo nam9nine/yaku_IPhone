@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { dragTouchWithoutFling } from '../helpers/touch';
 
 async function home(page: Page) {
   await page.goto('./');
@@ -142,16 +143,9 @@ test('브라우저별 위로 밀기는 기다리지 않고 최근 앱을 연다:
   } else {
     const client = await page.context().newCDPSession(page);
     try {
-      await client.send('Input.dispatchTouchEvent', {
-        type: 'touchStart',
-        touchPoints: [{ x, y }],
-      });
-      for (let i = 1; i <= 8; i++)
-        await client.send('Input.dispatchTouchEvent', {
-          type: 'touchMove',
-          touchPoints: [{ x, y: y - i * 16 }],
-        });
-      await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+      // A physical touch drag ending at rest keeps the following card tap distinct
+      // from Linux Chromium's synthetic burst/fling cancellation tap.
+      await dragTouchWithoutFling(page, client, x, y, -128);
     } finally {
       await client.detach();
     }

@@ -146,8 +146,9 @@ body,
   clip-path: inset(50%);
   overflow: hidden;
   z-index: 11;
+  pointer-events: auto;
 }
-.system-keyboard-control:focus-visible {
+.system-keyboard-control:is(:focus, :active) {
   width: auto;
   height: 44px;
   padding: 8px 12px;

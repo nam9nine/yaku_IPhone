@@ -197,6 +197,7 @@ test('Chromium 실제 touch와 WebKit pointer로 상단 당김과 멈춘 하단 
 });
 
 for (const [width, height, font] of [
+  [360, 320, 200],
   [360, 420, 200],
   [360, 500, 130],
   [430, 932, 100],
@@ -373,4 +374,73 @@ test('제어 센터를 다시 열어도 체험 음량과 회전·무음 표시�
     'aria-pressed',
     'true',
   );
+});
+
+test('최근 앱에서 키보드로 선택한 뒤쪽 카드와 닫기 조작이 앞으로 드러난다', async ({ page }) => {
+  await ready(page);
+  await open(page, 'settings');
+  await page.keyboard.press('Alt+Home');
+  await open(page, 'safari');
+  await page.keyboard.press('Alt+a');
+  const closeSettings = page.getByRole('button', { name: '설정 앱 닫기', exact: true });
+  for (
+    let i = 0;
+    i < 8 && !(await closeSettings.evaluate((el) => el === document.activeElement));
+    i++
+  )
+    await page.keyboard.press('Tab');
+  await expect(closeSettings).toBeFocused();
+  await expect(closeSettings.locator('..').locator('..')).toHaveAttribute('data-active', 'true');
+  await expect
+    .poll(() =>
+      closeSettings.evaluate((el) => {
+        const r = el.getBoundingClientRect();
+        return el.contains(document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2));
+      }),
+    )
+    .toBe(true);
+  await page.keyboard.press('ArrowLeft');
+  await expect(page.getByRole('button', { name: 'Safari 앱으로 전환', exact: true })).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(page.getByTestId('safari-app')).toBeVisible();
+});
+
+test('보이는 뒤쪽 카드를 누르는 도중 카드 위치가 바뀌지 않고 해당 앱을 연다', async ({ page }) => {
+  await ready(page);
+  await open(page, 'settings');
+  await page.locator('[data-settings-page=wifi]').tap();
+  await page.keyboard.press('Alt+Home');
+  await open(page, 'safari');
+  await page.keyboard.press('Alt+a');
+  const card = page.getByRole('button', { name: '설정 앱으로 전환', exact: true });
+  const before = (await card.boundingBox())!;
+  const x = 370,
+    y = before.y + 100;
+  await page.mouse.move(x, y);
+  await page.mouse.down();
+  expect((await card.boundingBox())!.x).toBe(before.x);
+  await page.mouse.up();
+  await expect(page.getByTestId('system-switcher')).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Wi-Fi', exact: true })).toBeVisible();
+});
+
+test('키보드로 드러낸 보조 버튼을 마우스로 누르는 동안 표시와 동작을 유지한다', async ({
+  page,
+}) => {
+  await ready(page);
+  await open(page, 'settings');
+  await page.keyboard.press('Alt+Home');
+  await open(page, 'safari');
+  await page.keyboard.press('Alt+a');
+  const next = page.getByRole('button', { name: '다음 최근 앱 페이지', exact: true });
+  await page.keyboard.press('Tab');
+  await next.focus();
+  const box = (await next.boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await expect(next).toHaveCSS('clip-path', 'none');
+  expect((await next.boundingBox())!.width).toBeGreaterThan(44);
+  await page.mouse.up();
+  await expect(page.getByTestId('system-switcher')).toBeVisible();
+  await expect(page.locator('[data-recent-app=settings]')).toHaveAttribute('data-active', 'true');
 });
