@@ -3,6 +3,24 @@ import { join } from 'node:path';
 
 const sourcePaths = ['apt-mirrors.txt', 'sources.list.d/ubuntu.sources', 'sources.list'];
 const azureUri = /(^|[\t ])https?:\/\/azure\.archive\.ubuntu\.com\/ubuntu\/?(?=[\t \r\n]|$)/g;
+const expectedMirror = 'mirror+file:/etc/apt/apt-mirrors.txt';
+const officialArchive = /^https?:\/\/archive\.ubuntu\.com\/ubuntu\/?$/;
+
+function activeSourceUris(name, source) {
+  const uncommented = source.replace(/\r\n/g, '\n').replace(/^[\t ]*#.*(?:\n|$)/gm, '');
+  if (name === 'sources.list') {
+    return [...uncommented.matchAll(/^[\t ]*deb[\t ]+(?:\[[^\]\r\n]*\][\t ]+)?(\S+)/gm)].map(
+      (match) => match[1],
+    );
+  }
+  return uncommented.split(/\r?\n[\t ]*\r?\n/).flatMap((stanza) => {
+    const unfolded = stanza.replace(/\r?\n[\t ]+/g, ' ');
+    if (/^Enabled:[\t ]*no[\t ]*$/im.test(unfolded)) return [];
+    const types = /^Types:[\t ]*(.*)$/im.exec(unfolded)?.[1].trim().split(/\s+/) ?? [];
+    if (!types.includes('deb')) return [];
+    return /^URIs:[\t ]*(.*)$/im.exec(unfolded)?.[1].trim().split(/\s+/) ?? [];
+  });
+}
 
 export function replaceAzureMirror(source) {
   return source
@@ -15,11 +33,11 @@ export function replaceAzureMirror(source) {
 
 export function configureAptMirror(aptDirectory = '/etc/apt', log = console.log) {
   const sources = sourcePaths
-    .map((name) => join(aptDirectory, name))
-    .filter((path) => existsSync(path))
-    .map((path) => {
+    .map((name) => ({ name, path: join(aptDirectory, name) }))
+    .filter(({ path }) => existsSync(path))
+    .map(({ name, path }) => {
       const before = readFileSync(path, 'utf8');
-      return { path, before, after: replaceAzureMirror(before) };
+      return { name, path, before, after: replaceAzureMirror(before) };
     });
   if (sources.length === 0) throw new Error('Expected Ubuntu APT source files are missing.');
 
@@ -30,8 +48,24 @@ export function configureAptMirror(aptDirectory = '/etc/apt', log = console.log)
   if (/https?:\/\/azure\.archive\.ubuntu\.com(?=[/:\s]|$)/.test(activeSources)) {
     throw new Error('Unrecognized Azure APT URI; refusing a partial mirror change.');
   }
-  if (!/https:\/\/archive\.ubuntu\.com\/ubuntu\/?(?=\s|$)/.test(activeSources)) {
-    throw new Error('Official Ubuntu archive URI was not found in the APT source files.');
+  const activeUris = sources
+    .filter(({ name }) => name !== 'apt-mirrors.txt')
+    .flatMap(({ name, after }) => activeSourceUris(name, after));
+  if (activeUris.some((uri) => uri.startsWith('mirror+file:') && uri !== expectedMirror)) {
+    throw new Error('Unexpected active APT mirror file reference; refusing a partial change.');
+  }
+  const mirrorList = sources.find(({ name }) => name === 'apt-mirrors.txt')?.after ?? '';
+  const mirrorHasArchive = mirrorList
+    .split(/\r?\n/)
+    .some((line) => officialArchive.test(line.trim().split(/\s+/)[0]));
+  if (activeUris.includes(expectedMirror) && !mirrorHasArchive) {
+    throw new Error('The active APT mirror list does not contain the official Ubuntu archive.');
+  }
+  if (
+    !activeUris.some((uri) => officialArchive.test(uri)) &&
+    !activeUris.includes(expectedMirror)
+  ) {
+    throw new Error('No active Ubuntu APT source is connected to the official archive.');
   }
 
   for (const { path, before, after } of sources) {

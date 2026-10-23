@@ -69,6 +69,8 @@ describe('Ubuntu APT 미러 구성', () => {
   it('반복 실행은 이미 설정된 공식 미러를 바꾸지 않는다', () => {
     const directory = fixture({
       'apt-mirrors.txt': 'https://archive.ubuntu.com/ubuntu/\tpriority:1\n',
+      'sources.list.d/ubuntu.sources':
+        'Types: deb\nURIs: mirror+file:/etc/apt/apt-mirrors.txt\nSuites: noble\nComponents: main\n',
     });
     configureAptMirror(directory, () => {});
     const configured = readFileSync(join(directory, 'apt-mirrors.txt'), 'utf8');
@@ -91,6 +93,61 @@ describe('Ubuntu APT 미러 구성', () => {
   it('소스가 없거나 예상 미러가 없는 환경은 성공으로 처리하지 않는다', () => {
     expect(() => configureAptMirror(fixture({}), () => {})).toThrow('source files are missing');
     const directory = fixture({ 'sources.list': 'deb https://example.com/ubuntu/ noble main\n' });
-    expect(() => configureAptMirror(directory, () => {})).toThrow('archive URI was not found');
+    expect(() => configureAptMirror(directory, () => {})).toThrow('No active Ubuntu APT source');
+  });
+
+  it('미러 목록만 있거나 실제 소스가 다른 미러 파일을 참조하면 실패한다', () => {
+    const mirrors = 'http://azure.archive.ubuntu.com/ubuntu/\tpriority:1\n';
+    const orphan = fixture({ 'apt-mirrors.txt': mirrors });
+    expect(() => configureAptMirror(orphan, () => {})).toThrow('No active Ubuntu APT source');
+    expect(readFileSync(join(orphan, 'apt-mirrors.txt'), 'utf8')).toBe(mirrors);
+    for (const [path, source] of [
+      [
+        'sources.list.d/ubuntu.sources',
+        'Types: deb\nURIs: mirror+file:/etc/apt/different-mirrors.txt\nSuites: noble\n',
+      ],
+      ['sources.list', 'deb mirror+file:/etc/apt/different-mirrors.txt noble main\n'],
+    ]) {
+      const directory = fixture({ 'apt-mirrors.txt': mirrors, [path]: source });
+      expect(() => configureAptMirror(directory, () => {})).toThrow('Unexpected active APT mirror');
+      expect(readFileSync(join(directory, 'apt-mirrors.txt'), 'utf8')).toBe(mirrors);
+      expect(readFileSync(join(directory, path), 'utf8')).toBe(source);
+    }
+  });
+
+  it('주석·비활성 stanza·소스 패키지 항목을 활성 binary 저장소 연결로 오인하지 않는다', () => {
+    const directory = fixture({
+      'apt-mirrors.txt': 'https://archive.ubuntu.com/ubuntu/\tpriority:1\n',
+      'sources.list.d/ubuntu.sources':
+        '# Types: deb\n# URIs: mirror+file:/etc/apt/apt-mirrors.txt\n\n' +
+        'Types: deb\nURIs: https://archive.ubuntu.com/ubuntu/\nEnabled: no\n\n' +
+        'Types: deb-src\nURIs: https://archive.ubuntu.com/ubuntu/\n',
+      'sources.list': '# deb https://archive.ubuntu.com/ubuntu/ noble main\n',
+    });
+    expect(() => configureAptMirror(directory, () => {})).toThrow('No active Ubuntu APT source');
+  });
+
+  it('Deb822 직접 주소와 legacy 직접 주소 연결은 다른 저장소를 그대로 두고 처리한다', () => {
+    for (const [path, source] of [
+      [
+        'sources.list.d/ubuntu.sources',
+        'Types: deb deb-src\nURIs:\n https://azure.archive.ubuntu.com/ubuntu/\nSuites: noble\n\nTypes: deb\nURIs: https://packages.microsoft.com/ubuntu/24.04/prod\nSuites: noble\n',
+      ],
+      [
+        'sources.list',
+        'deb [arch=amd64 signed-by=/example.gpg] http://azure.archive.ubuntu.com/ubuntu/ noble main\ndeb https://packages.microsoft.com/ubuntu/24.04/prod noble main\n',
+      ],
+    ]) {
+      const directory = fixture({ [path]: source });
+      configureAptMirror(directory, () => {});
+      expect(readFileSync(join(directory, path), 'utf8')).toBe(replaceAzureMirror(source));
+    }
+  });
+
+  it('정확한 미러 파일을 참조하더라도 그 목록이 없으면 실패한다', () => {
+    const directory = fixture({
+      'sources.list': 'deb mirror+file:/etc/apt/apt-mirrors.txt noble main\n',
+    });
+    expect(() => configureAptMirror(directory, () => {})).toThrow('active APT mirror list');
   });
 });
