@@ -12,7 +12,7 @@
 
 Vite의 정적 React 앱과 TypeScript strict를 사용한다. GitHub Pages의 프로젝트 경로 `/yaku_IPhone/`에서 동작해야 하므로 자산 URL은 Vite base를 존중한다. 현재 서버·계정·외부 API·복잡한 라우터는 필요하지 않다.
 
-잠금/홈을 구현할 때는 다음 책임을 작은 컴포넌트로 나눈다. 이는 향후 구현 방향이며 현재 파일이 존재한다는 뜻은 아니다.
+공통 컨테이너는 `src/components/MobileShell.tsx`, 디자인 토큰은 `src/styles/tokens.css`, 날짜 데이터는 `src/display/`에 구현했다. `src/App.tsx`는 현재 준비 화면을 조합한다. 잠금/홈 컴포넌트는 후속 Issue에서 구현한다.
 
 | 책임                 | 내용                                                                                                                       |
 | -------------------- | -------------------------------------------------------------------------------------------------------------------------- |
@@ -37,6 +37,12 @@ ios27-design-system은 재질·색상·치수 참고 자료다. React 패키지�
 프레임·glass 라이브러리는 필요한 표현만 검토한다. 사용자의 선택에 따라 웹 화면에 가짜 상태바·Dynamic Island·기기 프레임을 추가하지 않는다. 공식 참고 이미지에 이 요소가 포함되어 있어도 복제 대상에서 제외한다. 화면 아래의 실제 시스템 제스처 영역은 safe area로 보존하며, 잠금 해제 안내 등 제품 내부 요소와 구분한다.
 
 ## 자산과 접근성
+
+`public/wallpapers/silver-fold.svg`는 프로젝트에서 직접 작성한 SVG다. Apple 자료의 은색·샴페인 곡면과 낮은 채도를 관찰했으며 원본 이미지·경로·외부 코드를 복사하지 않았다. 정확한 Apple 배경 복제품은 아니다. 색은 SVG 내부 gradient에, 화면 UI 값은 CSS 토큰에 둔다.
+
+컨테이너는 `100vh → 100svh → 100dvh` 순서의 fallback과 `min-height`를 사용한다. 지원 브라우저에서는 주소창에 따라 바뀌는 높이를 채우고, 문자가 커지면 본문이 늘어나 스크롤할 수 있다. 네 방향 `env(safe-area-inset-*)`에 기본 여백을 더하며 고정 기기 inset을 가정하지 않는다. 장식 배경만 clip한다. 관련 기준: [MDN viewport 단위](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Values/length), [WebKit safe area 안내](https://webkit.org/blog/7929/designing-websites-for-iphone-x/).
+
+표시 날짜는 브라우저 언어·시간대와 관계없이 `ko-KR` / `Asia/Seoul`로 포맷한다. 분마다, 탭 표시 상태가 바뀔 때 갱신한다. 고정 장면은 Playwright의 `page.clock`으로 실제 앱의 시간을 주입한다. 별도 검증 화면이나 공개 URL 디버그 모드는 없다.
 
 앱에 사용하는 이미지·아이콘·폰트의 출처를 기록한다. 외부 저장소의 MIT 코드 라이선스와 개별 자산의 출처를 구분한다. 기본 시스템 폰트 및 필요한 원본 자산만 사용하고, 레퍼런스 전체를 `public/`에 복사하지 않는다.
 
