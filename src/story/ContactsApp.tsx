@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useEffectEvent, useLayoutEffect, useRef, useState } from 'react';
 import { useEdgeNavigation } from '../navigation/EdgeNavigation';
 import { contacts } from './data';
 import './social.css';
@@ -67,20 +67,20 @@ export function ContactsApp({
     setSelected(null);
   }
   const edge = useEdgeNavigation({ active, onBack: contact ? back : undefined });
+  const keyboard = useEffectEvent((event: KeyboardEvent) => {
+    if (active && contact && event.key === 'Escape') {
+      event.preventDefault();
+      back();
+    }
+  });
+  useEffect(() => {
+    if (!active) return;
+    const handle = (event: KeyboardEvent) => keyboard(event);
+    window.addEventListener('keydown', handle);
+    return () => window.removeEventListener('keydown', handle);
+  }, [active]);
   return (
-    <section
-      className="social-app contacts-app"
-      ref={container}
-      aria-label="연락처 내용"
-      {...edge}
-      onKeyDown={(event) => {
-        if (active && contact && event.key === 'Escape') {
-          event.preventDefault();
-          event.stopPropagation();
-          back();
-        }
-      }}
-    >
+    <section className="social-app contacts-app" ref={container} aria-label="연락처 내용" {...edge}>
       <header className={`social-header${contact ? ' social-header--compact' : ''}`}>
         {contact ? (
           <button

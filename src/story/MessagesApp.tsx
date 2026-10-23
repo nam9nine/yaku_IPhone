@@ -1,4 +1,11 @@
-import { useLayoutEffect, useRef, useState, type FormEvent } from 'react';
+import {
+  useEffect,
+  useEffectEvent,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type FormEvent,
+} from 'react';
 import { useEdgeNavigation } from '../navigation/EdgeNavigation';
 import { contacts, initialMessages } from './data';
 import { useStoredState } from './useStoredState';
@@ -164,20 +171,20 @@ export function MessagesApp({
     }));
     composer.current?.focus({ preventScroll: true });
   }
+  const keyboard = useEffectEvent((event: KeyboardEvent) => {
+    if (active && (person || picking) && event.key === 'Escape') {
+      event.preventDefault();
+      back();
+    }
+  });
+  useEffect(() => {
+    if (!active) return;
+    const handle = (event: KeyboardEvent) => keyboard(event);
+    window.addEventListener('keydown', handle);
+    return () => window.removeEventListener('keydown', handle);
+  }, [active]);
   return (
-    <section
-      ref={root}
-      className="social-app messages-app"
-      aria-label="메시지 내용"
-      {...edge}
-      onKeyDown={(event) => {
-        if (active && event.key === 'Escape' && (person || picking)) {
-          event.preventDefault();
-          event.stopPropagation();
-          back();
-        }
-      }}
-    >
+    <section ref={root} className="social-app messages-app" aria-label="메시지 내용" {...edge}>
       <header
         className={`social-header${person || picking ? ' social-header--compact' : ''}${person ? ' message-thread-header' : ''}`}
       >

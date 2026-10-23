@@ -147,3 +147,18 @@ test('저장소 쓰기 거부와 낮은 화면에서도 메모·메시지를 사
   await expect(page.getByText('저장 실패에도 작성', { exact: true })).toBeVisible();
   expect(await page.evaluate(() => scrollY)).toBe(0);
 });
+
+test('사진과 말풍선을 터치해 포커스를 잃어도 Escape는 활성 앱만 뒤로 간다', async ({ page }) => {
+  await start(page);
+  await launchHomeApp(page, 'contacts');
+  await page.getByRole('button', { name: '사와무라 하루카', exact: true }).tap();
+  await page.getByRole('img', { name: '사와무라 하루카 프로필' }).tap();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('searchbox', { name: '연락처 검색' })).toBeVisible();
+  await home(page);
+  await launchHomeApp(page, 'messages');
+  await page.locator('[data-conversation=haruka]').tap();
+  await page.getByText('알았다. 이번에는 메모를 보고 사겠다.', { exact: true }).tap();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('searchbox', { name: '메시지 검색' })).toBeVisible();
+});
