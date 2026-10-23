@@ -82,32 +82,61 @@ test('멈추지 않고 느리게 올린 중간 release는 최근 앱, 짧은 드
   await expect(page.getByTestId('settings-app')).toBeVisible();
 });
 
-test('빠른 release 직후 앱이 전체 크기로 튀지 않고 현재 크기에서 홈으로 줄어든다', async ({
-  page,
-}) => {
+test('release 모션이 현재 크기에서 홈까지 이어지고 전체 크기로 튀지 않는다', async ({ page }) => {
   await open(page);
   const { x, y } = await start(page);
   await page.mouse.move(x, y - 170, { steps: 3 });
   await frame(page);
   const before = (await page.getByTestId('settings-app').boundingBox())!;
-  await page.evaluate(() => {
-    const widths: number[] = [];
-    (window as Window & { motionWidths?: number[] }).motionWidths = widths;
-    let frames = 0;
-    function sample() {
-      const app = document.querySelector<HTMLElement>('[data-app-window=settings]');
-      if (app && !app.closest('[hidden]')) widths.push(app.getBoundingClientRect().width);
-      if (++frames < 40) requestAnimationFrame(sample);
-    }
-    requestAnimationFrame(sample);
-  });
+  expect(before.width).toBeLessThan(390 * 0.9);
+  const widths = await page.getByTestId('settings-home-gesture').evaluate(
+    (surface, point) => {
+      const app = surface.closest<HTMLElement>('[data-app-window]')!;
+      const originalAnimate = app.animate;
+      const widths: number[] = [];
+      app.animate = function (...args: Parameters<Element['animate']>) {
+        app.animate = originalAnimate;
+        const animation = originalAnimate.apply(this, args);
+        const duration = Number(animation.effect!.getComputedTiming().duration);
+        animation.pause();
+        // Inspect the browser's actual animation geometry, without waiting for a
+        // particular number of compositor frames on a shared CI runner.
+        for (const progress of [0, 0.2, 0.4, 0.6, 0.8, 1]) {
+          animation.currentTime = duration * progress;
+          widths.push(app.getBoundingClientRect().width);
+        }
+        animation.currentTime = 0;
+        animation.play();
+        return animation;
+      };
+      // Measurement round trips must not turn the final flick into a 140ms hold.
+      // Native fast/slow input classification is covered by the other gesture tests.
+      const init = {
+        bubbles: true,
+        pointerId: 1,
+        pointerType: 'mouse',
+        isPrimary: true,
+        clientX: point.x,
+        clientY: point.y - 200,
+      };
+      surface.dispatchEvent(new PointerEvent('pointermove', { ...init, buttons: 1 }));
+      surface.dispatchEvent(new PointerEvent('pointerup', { ...init, buttons: 0 }));
+      app.animate = originalAnimate;
+      return widths;
+    },
+    { x, y },
+  );
   await page.mouse.up();
   await expect(page.getByTestId('settings-app')).toBeHidden();
-  const widths = await page.evaluate(
-    () => (window as Window & { motionWidths?: number[] }).motionWidths!,
-  );
-  expect(widths.length).toBeGreaterThan(1);
+  await expect(page.getByTestId('system-switcher')).toHaveCount(0);
+  await expect(page.locator('[data-launch-app=settings]')).toBeFocused();
+  expect(widths).toHaveLength(6);
+  expect(Math.abs(widths[0] - before.width)).toBeLessThanOrEqual(2);
   expect(Math.max(...widths)).toBeLessThanOrEqual(before.width + 2);
+  for (let index = 1; index < widths.length; index++) {
+    expect(widths[index]).toBeLessThanOrEqual(widths[index - 1] + 2);
+  }
+  expect(widths.at(-1)).toBeLessThan(before.width * 0.5);
 });
 
 test('최근 앱 미리보기가 실제 읽던 스크롤 위치를 유지한다', async ({ page }) => {
