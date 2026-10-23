@@ -42,6 +42,14 @@ Playwright는 개발 서버 대신 production build와 preview로 앱을 `/yaku_
 
 PR 검사는 기본 `contents: read`를 사용하고 GitHub PR/Issue 조회에 필요한 읽기 권한만 추가한다. 증거 검사는 PR head를 checkout하며 merge commit이나 오래된 head를 대신 검사하지 않는다. PR 코드를 쓰기 권한이 있는 `pull_request_target` 실행으로 옮기지 않는다. main의 Pages 배포 권한은 [배포 문서](deployment.md)를 따른다.
 
+### 브라우저 설치 관찰
+
+PR의 `browser`와 Pages의 `build`는 Ubuntu 24.04에서 같은 설치 순서를 사용한다. `scripts/configure-apt-mirror.mjs`는 실제 APT 소스와 미러 목록을 전후로 출력하고 정확한 Azure Ubuntu URI만 `https://archive.ubuntu.com/ubuntu/`로 바꾼다. suite·component·서명 키·다른 저장소·미러 우선순위는 유지한다. runner가 이미 제공하던 공식 archive 항목도 그대로 남기므로 같은 공식 URI가 두 우선순위에 있을 수 있다. 예상과 다른 Azure 경로나 소스 구조는 조용히 통과시키지 않는다.
+
+Ubuntu 24.04 runner의 Deb822 `ubuntu.sources`는 `mirror+file:/etc/apt/apt-mirrors.txt`를 참조한다. 따라서 legacy `sources.list`만 바꾸지 않고 해당 미러 목록을 함께 처리한다. 근거: [공식 runner의 소스 구성](https://github.com/actions/runner-images/blob/main/images/ubuntu/scripts/build/configure-apt-sources.sh), [간헐적인 Azure 미러 지연 보고](https://github.com/actions/runner-images/issues/12949), [프로젝트 Issue #8](https://github.com/nam9nine/yaku_IPhone/issues/8).
+
+OS 의존성 설치(`playwright install-deps chromium webkit`)와 브라우저 다운로드(`playwright install chromium webkit`)는 별도 step이며 `time`으로 각각 소요 시간을 기록한다. 단계 분리는 [Playwright의 공식 설치 명령](https://playwright.dev/docs/browsers#install-system-dependencies)을 사용한다. 설치 오류는 실패로 남기며 기존 job timeout과 모든 품질·브라우저·시각·증거·최종 gate 조건을 유지한다. 이 변경의 효과는 실제 PR와 Pages 실행 결과로 확인해야 하며, 미러 변경 자체를 성공 증거로 간주하지 않는다.
+
 ## PR 증거 계약
 
 PR 본문에는 `<!-- harness-evidence -->`와 `<!-- /harness-evidence -->` 사이에 JSON 객체를 정확히 하나 둔다. 선택적으로 `json` 코드 블록으로 감쌀 수 있다. marker 밖에는 `Closes #번호`와 같은 GitHub Issue 종료 연결을 적는다. JSON의 Issue 번호와 실제 종료 대상이 일치해야 한다.
