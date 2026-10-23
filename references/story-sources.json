@@ -332,7 +332,7 @@
       "visualIdentityVerified": true
     },
     {
-      "localPath": "public/story/kiryu.jpg",
+      "localPath": "references/local/story-legacy/kiryu.jpg",
       "url": "https://ryu-ga-gotoku.com/kiwami3/img/home/cast/cast01_ss.jpg",
       "sha256": "d4027ed77e4f31ab9cbef6fbe8d3739d7d6c1f562edc3a288e7fa774434eb65e",
       "bytes": 113143,
@@ -347,10 +347,11 @@
       "purpose": "사용자 요청 키류의 폰 팬 프로젝트에서 연락처 사진 또는 사진 보관함에 표시",
       "modification": "원본 바이트 그대로 저장. 앱 표시에서 object-fit 및 object-position만 사용 가능.",
       "suggestedObjectPosition": "50% 35%",
-      "visualIdentityVerified": true
+      "visualIdentityVerified": true,
+      "activeInApp": false
     },
     {
-      "localPath": "public/story/morning-glory.jpg",
+      "localPath": "references/local/story-legacy/morning-glory.jpg",
       "url": "https://ryu-ga-gotoku.com/kiwami3/img/home/cast/cast11_ss.jpg",
       "sha256": "82e9d05dceac6fe76777b97ba662419af94249201ad0007ef8e1da7f64a65ddb",
       "bytes": 160837,
@@ -365,10 +366,11 @@
       "purpose": "사용자 요청 키류의 폰 팬 프로젝트에서 연락처 사진 또는 사진 보관함에 표시",
       "modification": "원본 바이트 그대로 저장. 앱 표시에서 object-fit 및 object-position만 사용 가능.",
       "suggestedObjectPosition": "50% 50%",
-      "visualIdentityVerified": true
+      "visualIdentityVerified": true,
+      "activeInApp": false
     },
     {
-      "localPath": "public/story/family-time.jpg",
+      "localPath": "public/asagao/mealtime.jpg",
       "url": "https://ryu-ga-gotoku.com/kiwami3/kiwami3-adventure/img/ss_life_02_03.jpg",
       "sha256": "79e28c906b0ead54313a28ad4a02ee841d51738f7c711eaf4e0b14ea91ceaff2",
       "bytes": 320608,
@@ -386,7 +388,7 @@
       "visualIdentityVerified": true
     },
     {
-      "localPath": "public/story/okinawa.jpg",
+      "localPath": "references/local/story-legacy/okinawa.jpg",
       "url": "https://ryu-ga-gotoku.com/kiwami3/img/home/ss/kiwami3_adventure1_1.jpg",
       "sha256": "c84fa6819d472a0420ba337451b5f663aed46919d63c86edcbf0b01054be6b66",
       "bytes": 240429,
@@ -401,10 +403,11 @@
       "purpose": "사용자 요청 키류의 폰 팬 프로젝트에서 연락처 사진 또는 사진 보관함에 표시",
       "modification": "원본 바이트 그대로 저장. 앱 표시에서 object-fit 및 object-position만 사용 가능.",
       "suggestedObjectPosition": "50% 50%",
-      "visualIdentityVerified": true
+      "visualIdentityVerified": true,
+      "activeInApp": false
     },
     {
-      "localPath": "public/story/sewing.jpg",
+      "localPath": "references/local/story-legacy/sewing.jpg",
       "url": "https://ryu-ga-gotoku.com/kiwami3/kiwami3-adventure/img/ss_life_05_01.jpg",
       "sha256": "11d40cc6bb8fdcad2bd3ff5a921a24027656991a8b47f9ee96d19b0ea21492dc",
       "bytes": 205749,
@@ -419,7 +422,8 @@
       "purpose": "사용자 요청 키류의 폰 팬 프로젝트에서 연락처 사진 또는 사진 보관함에 표시",
       "modification": "원본 바이트 그대로 저장. 앱 표시에서 object-fit 및 object-position만 사용 가능.",
       "suggestedObjectPosition": "50% 50%",
-      "visualIdentityVerified": true
+      "visualIdentityVerified": true,
+      "activeInApp": false
     }
   ]
 }

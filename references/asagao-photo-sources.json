@@ -13,11 +13,12 @@
     "description": "Detail of vegetable garden. Tomato in foreground; kale, peppers, and zucchini in the middle; onions in the back.",
     "date": "2015-07",
     "retrievedOn": "2026-10-24",
-    "modifications": "Unmodified Wikimedia server-provided 1280px thumbnail; no local pixel edit/re-encode. CSS crop/display; second bento scene uses CSS blur.",
+    "modifications": "Unmodified Wikimedia server-provided 1280px thumbnail; no local pixel edit/re-encode. CSS crop/display.",
     "original": {
       "url": "https://upload.wikimedia.org/wikipedia/commons/3/3c/Vegetable_garden_1.JPG",
       "sha256": "c2560192e24e41e5012de807b8a550314d483e782ab00d2ff5fcde1738f0d3cb",
-      "bytes": 2889575
+      "bytes": 2889575,
+      "localPath": "references/local/asagao/originals/vegetable-garden.jpg"
     },
     "version": "Wikimedia 1280px server thumbnail"
   },
@@ -39,7 +40,8 @@
     "original": {
       "url": "https://upload.wikimedia.org/wikipedia/commons/8/89/Coronation_Bento_-_Taro_2026-02-11.jpg",
       "sha256": "71d4e71844b254f17d57b38137e2faeb486f245fa8cb08a9e14bf398eba32472",
-      "bytes": 7609827
+      "bytes": 7609827,
+      "localPath": "references/local/asagao/originals/bento-cc0.jpg"
     },
     "version": "Wikimedia 1280px server thumbnail"
   },
@@ -56,11 +58,12 @@
     "sha256": "c6f0415ee95afcfd45f2f72d6825a19b0b4e0de09f54291cb0fe787d1f93b031",
     "bytes": 190975,
     "retrievedOn": "2026-10-24",
-    "modifications": "Unmodified Wikimedia server-provided 1280px thumbnail; no local pixel edit/re-encode. CSS crop/display; second bento scene uses CSS blur.",
+    "modifications": "Unmodified Wikimedia server-provided 1280px thumbnail; no local pixel edit/re-encode. CSS crop/display.",
     "original": {
       "url": "https://upload.wikimedia.org/wikipedia/commons/0/00/Tudumari-no-hama_Iriomote_Island_Japan01bs4440.jpg",
       "sha256": "a645bda5af7a747feeefec8698b8d82de29c22d4756264fe380d7b8574022829",
-      "bytes": 7490561
+      "bytes": 7490561,
+      "localPath": "references/local/asagao/originals/okinawa-sea.jpg"
     },
     "version": "Wikimedia 1280px server thumbnail"
   }

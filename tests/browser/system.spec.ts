@@ -4,13 +4,13 @@ async function ready(page: Page) {
   await page.goto('./');
   await page.getByRole('button', { name: '잠금 해제', exact: true }).tap();
 }
-async function drag(page: Page, locator: Locator, dx: number, dy: number, pause = 0) {
+async function drag(page: Page, locator: Locator, dx: number, dy: number, pause = 0, steps = 8) {
   const r = (await locator.boundingBox())!;
   const x = r.x + r.width / 2,
     y = r.y + r.height / 2;
   await page.mouse.move(x, y);
   await page.mouse.down();
-  await page.mouse.move(x + dx, y + dy, { steps: 8 });
+  await page.mouse.move(x + dx, y + dy, { steps });
   if (pause) await page.waitForTimeout(pause);
   await page.mouse.up();
 }
@@ -58,7 +58,15 @@ test('홈 인디케이터를 빠르게 올리면 홈, 멈춘 뒤 놓으면 최�
   await ready(page);
   await open(page, 'settings');
   await page.locator('[data-settings-page=wifi]').tap();
-  await drag(page, page.getByTestId('settings-home-gesture').locator('.home-indicator'), 0, -140);
+  // Multiple rendered mouse steps can turn a fast swipe into a slow swipe on CI.
+  await drag(
+    page,
+    page.getByTestId('settings-home-gesture').locator('.home-indicator'),
+    0,
+    -140,
+    0,
+    1,
+  );
   await expect(page.getByTestId('settings-app')).toBeHidden();
   await expect(page.getByTestId('system-switcher')).toHaveCount(0);
   await open(page, 'settings');

@@ -16,12 +16,16 @@ export function CalendarApp({
   const returnButton = useRef<HTMLButtonElement>(null);
   const scroll = useRef<HTMLDivElement>(null);
   const listPosition = useRef(0);
+  const previousDetail = useRef(detail);
   useLayoutEffect(() => {
     if (scroll.current) scroll.current.scrollTop = detail ? 0 : listPosition.current;
+    if (previousDetail.current !== detail) {
+      (detail ? title.current : returnButton.current)?.focus({ preventScroll: true });
+      previousDetail.current = detail;
+    }
   }, [detail]);
   function back() {
     setDetail(false);
-    requestAnimationFrame(() => returnButton.current?.focus({ preventScroll: true }));
   }
   const edge = useEdgeNavigation({ active, onBack: detail ? back : undefined });
   useEffect(() => {
@@ -30,7 +34,6 @@ export function CalendarApp({
       if (event.key === 'Escape') {
         event.preventDefault();
         setDetail(false);
-        requestAnimationFrame(() => returnButton.current?.focus({ preventScroll: true }));
       }
     };
     window.addEventListener('keydown', key);
@@ -92,7 +95,6 @@ export function CalendarApp({
               onClick={() => {
                 listPosition.current = scroll.current?.scrollTop ?? 0;
                 setDetail(true);
-                requestAnimationFrame(() => title.current?.focus({ preventScroll: true }));
               }}
             >
               <time>17:00</time>
