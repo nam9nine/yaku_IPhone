@@ -90,3 +90,12 @@
   stroke-width: 1.7;
   stroke-linejoin: round;
 }
+
+.app-home-gesture {
+  padding-left: 0;
+  touch-action: pinch-zoom;
+}
+.app-home-button {
+  flex: 0 0 44px;
+  padding: 0;
+}

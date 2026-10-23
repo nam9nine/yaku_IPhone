@@ -6,7 +6,7 @@ export type NavigationOperation =
 export interface NavigationEntry {
   id: number;
   page: SafariPage;
-  scrollTop: number;
+  pageIndex: number;
 }
 
 export interface SafariTab {
@@ -32,12 +32,12 @@ export type SafariAction =
   | { type: 'new-tab' }
   | { type: 'select-tab'; tabId: number }
   | { type: 'close-tab'; tabId: number }
-  | { type: 'scroll'; tabId: number; entryId: number; scrollTop: number };
+  | { type: 'page-position'; tabId: number; entryId: number; pageIndex: number };
 
 function blankTab(id: number, entryId: number): SafariTab {
   return {
     id,
-    entries: [{ id: entryId, page: { kind: 'start' }, scrollTop: 0 }],
+    entries: [{ id: entryId, page: { kind: 'start' }, pageIndex: 0 }],
     index: 0,
     revision: 0,
     error: null,
@@ -79,7 +79,7 @@ function navigate(
         ...tab,
         entries: [
           ...tab.entries.slice(0, tab.index + 1),
-          { id: state.nextEntryId, page: operation.page, scrollTop: 0 },
+          { id: state.nextEntryId, page: operation.page, pageIndex: 0 },
         ],
         index: tab.index + 1,
         error: null,
@@ -139,14 +139,14 @@ export function safariReducer(state: SafariState, action: SafariAction): SafariS
             : state.activeTabId,
       };
     }
-    case 'scroll': {
-      const scrollTop = Math.max(0, action.scrollTop);
+    case 'page-position': {
+      const pageIndex = Math.max(0, Math.floor(action.pageIndex));
       const entry = tab.entries.find((candidate) => candidate.id === action.entryId);
-      if (!entry || entry.scrollTop === scrollTop || !Number.isFinite(scrollTop)) return state;
+      if (!entry || entry.pageIndex === pageIndex || !Number.isFinite(pageIndex)) return state;
       return replaceTab(state, {
         ...tab,
         entries: tab.entries.map((candidate) =>
-          candidate.id === entry.id ? { ...candidate, scrollTop } : candidate,
+          candidate.id === entry.id ? { ...candidate, pageIndex } : candidate,
         ),
       });
     }

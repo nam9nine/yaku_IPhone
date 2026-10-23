@@ -39,7 +39,7 @@ test('높이 변경·네 방향 safe area에서도 콘텐츠에 접근한다', a
   await page.goto('./');
   for (const height of [600, 932, 440]) {
     await page.setViewportSize({ width: 390, height });
-    await expect(page.getByRole('main')).toHaveCSS('min-height', `${height}px`);
+    await expect(page.getByRole('main')).toHaveCSS('height', `${height}px`);
     await page.getByRole('button', { name: '잠금 해제', exact: true }).scrollIntoViewIfNeeded();
     await expect(page.getByRole('button', { name: '잠금 해제', exact: true })).toBeInViewport();
   }
@@ -49,14 +49,17 @@ test('높이 변경·네 방향 safe area에서도 콘텐츠에 접근한다', a
     content:
       ':root { --safe-area-top: 20px; --safe-area-right: 47px; --safe-area-bottom: 34px; --safe-area-left: 47px; }',
   });
-  for (const [side, value] of Object.entries({ top: 44, right: 71, bottom: 58, left: 71 }))
+  for (const [side, value] of Object.entries({ top: 36, right: 71, bottom: 58, left: 71 }))
     await expect(page.getByRole('main')).toHaveCSS(`padding-${side}`, `${value}px`);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(844);
   await page.getByRole('button', { name: '잠금 해제', exact: true }).scrollIntoViewIfNeeded();
   await expect(page.getByRole('button', { name: '잠금 해제', exact: true })).toBeInViewport();
 });
 
-test('문자 확대와 짧은 화면에서 하단 제어까지 스크롤한다', async ({ page, browserName }) => {
+test('문자 확대와 짧은 화면에서도 세로 스크롤 없이 하단 제어에 접근한다', async ({
+  page,
+  browserName,
+}) => {
   await page.setViewportSize({ width: 360, height: 320 });
   await page.goto('./');
   const originalSize = await page.evaluate(() =>
@@ -69,23 +72,20 @@ test('문자 확대와 짧은 화면에서 하단 제어까지 스크롤한다',
     await page.evaluate(() => parseFloat(getComputedStyle(document.documentElement).fontSize)),
   ).toBe(originalSize * 2);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(360);
-  await expect(page.getByTestId('lock-screen')).toHaveCSS(
-    'touch-action',
-    /^(manipulation|pan-x pan-y pinch-zoom)$/,
-  );
+  await expect(page.getByTestId('lock-screen')).toHaveCSS('touch-action', 'pinch-zoom');
   if (browserName === 'chromium') {
     const client = await page.context().newCDPSession(page);
     await client.send('Input.dispatchTouchEvent', {
       type: 'touchStart',
-      touchPoints: [{ x: 180, y: 280 }],
+      touchPoints: [{ x: 20, y: 250 }],
     });
-    for (let y = 260; y >= 40; y -= 20)
+    for (let y = 230; y >= 180; y -= 10)
       await client.send('Input.dispatchTouchEvent', {
         type: 'touchMove',
-        touchPoints: [{ x: 180, y }],
+        touchPoints: [{ x: 20, y }],
       });
     await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
     await client.detach();
   } else {
     // WebKit has no CDP touch-drag API; check native scroll policy and the reachable control.

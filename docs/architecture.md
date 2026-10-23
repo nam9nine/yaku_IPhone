@@ -14,7 +14,7 @@ Vite의 정적 React 앱과 TypeScript strict를 사용한다. GitHub Pages의 �
 
 공통 컨테이너는 `src/components/MobileShell.tsx`, 디자인 토큰은 `src/styles/tokens.css`, 날짜·시계 데이터는 `src/display/`에 구현했다. `src/App.tsx`가 최초 잠금·홈·재잠금 상태를 소유하며 `src/lock/LockScreen.tsx`와 `src/home/HomeScreen.tsx`를 조합한다. 홈에 들어가면 제목에 포커스를 옮기고 다시 잠그면 해제 버튼에 포커스를 돌려준다.
 
-홈의 앱 데이터는 `src/home/apps.ts`, 자체 SVG 아이콘은 `AppIcon.tsx`, 페이지 이동 판정은 `pageGesture.ts`로 나눈다. 수평 이동 거리가 페이지 폭의 18% 또는 48px 중 큰 값을 넘어야 한 페이지 이동한다. 수직 이동·취소·포커스 손실은 페이지를 유지하고 드래그 후의 앱 클릭은 억제한다. 비활성 페이지는 `inert`이며 페이지 버튼과 화살표 키를 대체 조작으로 제공한다. 짧은 화면에서는 앱 영역만 스크롤하고 Dock을 유지한다. 확대된 라벨은 줄바꿈하고 위젯 최소 높이를 글자 크기에 맞춰 늘린다. 자산 출처는 [홈 자산 기록](assets-home.md)에 남긴다.
+홈의 앱 데이터는 `src/home/apps.ts`, 자체 SVG 아이콘은 `AppIcon.tsx`, 페이지 이동 판정은 `pageGesture.ts`로 나눈다. 수평 이동 거리가 페이지 폭의 18% 또는 48px 중 큰 값을 넘어야 한 페이지 이동한다. 수직 이동·취소·포커스 손실은 페이지를 유지하고 드래그 후의 앱 클릭은 억제한다. 비활성 페이지는 `inert`이며 페이지 버튼과 화살표 키를 대체 조작으로 제공한다. 홈 전체는 고정되며 `homeLayout.ts`가 높이·실측 앱 행 크기에 맞춰 가로 페이지를 늘리고 Dock을 유지한다. 위젯이 영역보다 크면 위젯을 생략하고 해당 앱 아이콘 접근은 보존한다. 확대된 라벨은 줄바꿈하고 위젯 최소 높이를 글자 크기에 맞춰 늘린다. 자산 출처는 [홈 자산 기록](assets-home.md)에 남긴다.
 
 | 책임                 | 내용                                                                                                                       |
 | -------------------- | -------------------------------------------------------------------------------------------------------------------------- |
@@ -44,7 +44,7 @@ ios27-design-system은 재질·색상·치수 참고 자료다. React 패키지�
 
 `public/wallpapers/silver-fold.svg`는 프로젝트에서 직접 작성한 SVG다. Apple 자료의 은색·샴페인 곡면과 낮은 채도를 관찰했으며 원본 이미지·경로·외부 코드를 복사하지 않았다. 잠금 화면에서는 같은 경로의 `silver-fold-front.svg`를 시계 위에 겹친다. 두 SVG의 전경 경로·gradient는 함께 변경해야 한다. 짧은 화면에서는 전경 덮개를 숨겨 콘텐츠 가독성을 지킨다. 정확한 Apple 배경 복제품은 아니다. 색은 SVG 내부 gradient에, 화면 UI 값은 CSS 토큰에 둔다.
 
-컨테이너는 `100vh → 100svh → 100dvh` 순서의 fallback과 `min-height`를 사용한다. 지원 브라우저에서는 주소창에 따라 바뀌는 높이를 채우고, 문자가 커지면 본문이 늘어나 스크롤할 수 있다. 네 방향 `env(safe-area-inset-*)`에 기본 여백을 더하며 고정 기기 inset을 가정하지 않는다. 장식 배경만 clip한다. 관련 기준: [MDN viewport 단위](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Values/length), [WebKit safe area 안내](https://webkit.org/blog/7929/designing-websites-for-iphone-x/).
+컨테이너는 `visualViewport` 높이(미지원 시 innerHeight)로 고정한다. 사용자의 세로 스크롤 금지 선택에 따라 문자가 커져 넘치는 본문은 가로 페이지로 나눈다. 네 방향 `env(safe-area-inset-*)`에 기본 여백을 더하며 고정 기기 inset을 가정하지 않는다. 문서·화면·본문의 세로 overflow를 clip하며 필요한 내용은 `PagedContent`의 CSS column과 페이지 조작으로 접근한다. 관련 기준: [MDN viewport 단위](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Values/length), [WebKit safe area 안내](https://webkit.org/blog/7929/designing-websites-for-iphone-x/).
 
 표시 날짜·시계는 브라우저 언어·시간대와 관계없이 `ko-KR` / `Asia/Seoul`로 포맷한다. 실제 분 경계에 맞춘 timeout과 탭 표시 상태 변경에서 갱신한다. 시계는 시스템 글꼴을 SVG에서 세로 확대한 웹 근사이며 Apple의 SF 폰트를 배포하지 않는다. 고정 장면은 Playwright의 `page.clock`으로 실제 앱의 시간을 주입한다. 별도 검증 화면이나 공개 URL 디버그 모드는 없다.
 
@@ -54,9 +54,9 @@ ios27-design-system은 재질·색상·치수 참고 자료다. React 패키지�
 
 ## 공통 앱 실행과 복귀
 
-`src/shell/session.ts`의 ShellState는 잠금 여부와 실행 앱을 분리한다. 설정·Safari는 최초 실행 이후 세션 동안 유지하고 비활성 앱에는 hidden/inert를 적용한다. 홈도 유지하여 페이지·스크롤을 보존하며 실행 아이콘에 포커스를 복원한다. 재잠금 해제 시 해당 아이콘이 비활성 페이지에 있으면 홈 제목으로 돌아간다.
+`src/shell/session.ts`의 ShellState는 잠금 여부와 실행 앱을 분리한다. 설정·Safari는 최초 실행 이후 세션 동안 유지하고 비활성 앱에는 hidden/inert를 적용한다. 홈도 유지하여 가로 페이지를 보존하며 실행 아이콘에 포커스를 복원한다. 재잠금 해제 시 해당 아이콘이 비활성 페이지에 있으면 홈 제목으로 돌아간다.
 
-`AppWindow`는 아이콘 위치를 기준으로 열기/닫기 애니메이션과 visualViewport 크기를 처리한다. 하단 전용 영역의 96px 이상 위 스와이프, 홈 버튼, Alt+Home이 같은 복귀 동작을 실행한다. 본문에는 홈 제스처를 적용하지 않는다. 짧은·수평 우세·취소·capture 손실·resize·blur 입력은 현재 앱에 머문다. 애니메이션 취소/종료 누락에도 복귀가 완료되고 동작 줄이기에서는 즉시 전환한다.
+`AppWindow`는 아이콘 위치를 기준으로 열기/닫기 애니메이션과 visualViewport 크기를 처리한다. 하단 전용 영역에서 96px 이상 올리고 바로 놓기, 홈 버튼, Alt+Home이 같은 복귀 동작을 실행한다. 올린 뒤 220ms 멈추면 최근 앱으로, 하단 수평 이동은 이전/다음 앱으로 전환한다. 본문에는 홈 제스처를 적용하지 않는다. 거리 부족·방향 기준 밖 대각선·취소·capture 손실·resize·blur 입력은 현재 앱에 머문다. 애니메이션 취소/종료 누락에도 복귀가 완료되고 동작 줄이기에서는 즉시 전환한다.
 
 ## 기기 환경 설정
 
@@ -70,10 +70,18 @@ ios27-design-system은 재질·색상·치수 참고 자료다. React 패키지�
 
 ## Safari 세션과 탐색
 
-`src/safari/navigation.ts`는 탭별 history/index/scrollTop과 실패한 pending 동작을 보관한다. 탭을 닫거나 앱을 전환해도 다른 탭 기록은 유지하며, 마지막 탭을 닫으면 빈 시작 탭을 만든다. 전체 새로고침에서는 세션이 초기화된다.
+`src/safari/navigation.ts`는 탭별 history/index/pageIndex과 실패한 pending 동작을 보관한다. 탭을 닫거나 앱을 전환해도 다른 탭 기록은 유지하며, 마지막 탭을 닫으면 빈 시작 탭을 만든다. 전체 새로고침에서는 세션이 초기화된다.
 
 `pages.ts`가 두 내부 URL과 제목 검색을 해석한다. http(s) 외의 스킴과 사용자 인증정보가 들어간 주소는 실행하지 않는다. 외부 주소는 자동 이동·iframe·프록시 없이 명시적 noopener/noreferrer 링크로 안내한다. 가상 연결이 없으면 기존 페이지를 보존하고 새 이동/뒤/앞/새로고침의 pending 동작을 재시도한다.
 
 Compact 주소 막대는 사용자가 누르면 React DOM을 동기 반영한 뒤 해당 이벤트 안에서 입력 포커스를 준다. [WebKit의 사용자 제스처/키보드 구분](https://bugs.webkit.org/show_bug.cgi?id=195884#c4)을 고려한 구현이며 실제 iPhone 키보드 확인을 뜻하지 않는다. visualViewport 높이/offset 변경은 공통 AppWindow가 반영한다.
 
 페이지 메뉴는 Safari 안의 일반 레이어다. 메뉴 아래 본문과 도구막대만 inert 처리하고 공통 하단 홈 제어를 유지한다. 밝기 덮개도 메뉴에 적용된다. Escape는 활성 메뉴에만 등록하며 닫은 뒤 메뉴 버튼에 포커스를 돌린다. 상세 페이지와 아이콘·그림은 이 프로젝트에서 CSS/SVG로 작성했고 Apple 콘텐츠를 앱에 복사하지 않았다.
+
+## 시스템 제스처와 가로 본문
+
+[제스처 조사 및 동작표](gestures.md)를 따른다. `systemGesture.ts`는 시스템 시작 영역의 거리·방향·멈춤을 판정하고 `useSystemGesture`가 capture·취소 수명주기를 관리한다. `SystemPanels`는 제어 센터·최근 앱·알림·검색을 표시한다. 뒤의 화면은 inert로 입력을 차단하며 패널은 키보드 포커스를 내부에 유지한다. 제어 센터는 `DevicePreferences`를 설정 앱과 공유한다.
+
+`ShellState.visited`는 가장 최근 사용 순서다. 빠른 왕복 전환 중에는 별도 `switchOrder`를 유지해 순서 갱신으로 앞뒤 이동이 뒤틀리지 않게 한다. 최근 앱에서 닫기를 선택하면 해당 keyed 인스턴스만 제거한다. 미리보기는 기존 DOM의 inert 복사이며 두 번째 React 앱·이벤트·중복 ID·radio name을 만들지 않는다.
+
+`src/navigation/`은 가로 본문과 앱 가장자리 탐색을 공유한다. 설정의 뒤로 가기는 방문 스택을 pop하고 Safari는 열린 UI 층을 먼저 닫은 뒤 탭 기록을 이동한다. CSS column은 텍스트를 가로 화면으로 나누고 개별 조작 행은 분할하지 않는다. 페이지 버튼과 키보드 포커스 이동으로 모든 내용에 접근하며, Safari는 탐색 기록 항목마다 가로 위치를 유지한다.

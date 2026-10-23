@@ -109,15 +109,15 @@ describe('Safari 탭별 탐색', () => {
   it('기록의 스크롤 위치를 탭별로 유지하고 새 탐색은 맨 위에서 시작한다', () => {
     let state = visit(initialSafariState(), guide);
     state = safariReducer(state, {
-      type: 'scroll',
+      type: 'page-position',
       tabId: state.activeTabId,
       entryId: currentEntry(activeTab(state)).id,
-      scrollTop: 350,
+      pageIndex: 3,
     });
     state = visit(state, example);
-    expect(currentEntry(activeTab(state)).scrollTop).toBe(0);
+    expect(currentEntry(activeTab(state)).pageIndex).toBe(0);
     state = navigate(state, { kind: 'back' });
-    expect(currentEntry(activeTab(state)).scrollTop).toBe(350);
+    expect(currentEntry(activeTab(state)).pageIndex).toBe(3);
   });
   it('새로고침은 현재 기록을 중복 추가하지 않는다', () => {
     let state = visit(initialSafariState(), guide);
@@ -128,9 +128,9 @@ describe('Safari 탭별 탐색', () => {
   });
   it('없어진 탭을 향한 늦은 이벤트는 무시한다', () => {
     const state = initialSafariState();
-    expect(safariReducer(state, { type: 'scroll', tabId: 99, entryId: 1, scrollTop: 100 })).toBe(
-      state,
-    );
+    expect(
+      safariReducer(state, { type: 'page-position', tabId: 99, entryId: 1, pageIndex: 2 }),
+    ).toBe(state);
     expect(safariReducer(state, { type: 'select-tab', tabId: 99 })).toBe(state);
   });
 });

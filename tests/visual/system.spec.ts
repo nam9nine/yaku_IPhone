@@ -1,0 +1,48 @@
+import { expect, test, type Page } from '@playwright/test';
+async function start(page: Page, width: number, height: number) {
+  await page.setViewportSize({ width, height });
+  await page.emulateMedia({ reducedMotion: 'reduce', colorScheme: 'light' });
+  await page.clock.setFixedTime(new Date('2026-10-23T09:41:00+09:00'));
+  await page.goto('./');
+  await page.getByRole('button', { name: '잠금 해제', exact: true }).tap();
+}
+async function capture(page: Page, name: string) {
+  await page.evaluate(async () => {
+    await document.fonts.ready;
+    await Promise.all([...document.images].map((img) => img.decode()));
+    await Promise.all(document.getAnimations().map((animation) => animation.finished));
+  });
+  await page.screenshot({ path: test.info().outputPath('capture.png') });
+  await expect(page).toHaveScreenshot(name);
+}
+for (const [width, height] of [
+  [360, 800],
+  [390, 844],
+  [430, 932],
+]) {
+  test(`제어 센터 ${width}x${height}`, async ({ page }) => {
+    await start(page, width, height);
+    await page.keyboard.press('Alt+c');
+    await capture(page, `control-${width}x${height}.png`);
+  });
+  test(`최근 앱 ${width}x${height}`, async ({ page }) => {
+    await start(page, width, height);
+    await page.locator('[data-launch-app=settings]').tap();
+    await page.locator('[data-settings-page=wifi]').tap();
+    await page.getByRole('button', { name: '홈으로 돌아가기' }).tap();
+    await page.locator('[data-launch-app=safari]').tap();
+    await page.getByRole('button', { name: '시작 안내', exact: true }).tap();
+    await page.keyboard.press('Alt+a');
+    await capture(page, `switcher-${width}x${height}.png`);
+  });
+}
+for (const [kind, key] of [
+  ['notifications', 'n'],
+  ['search', 's'],
+]) {
+  test(`${kind} 390x844`, async ({ page }) => {
+    await start(page, 390, 844);
+    await page.keyboard.press(`Alt+${key}`);
+    await capture(page, `${kind}-390x844.png`);
+  });
+}

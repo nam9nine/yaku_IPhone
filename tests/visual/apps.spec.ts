@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { checkPaged, firstContentPage, tapPaged } from '../helpers/paged-content';
 
 async function start(page: Page, size: { width: number; height: number }) {
   await page.setViewportSize(size);
@@ -39,10 +40,10 @@ for (const size of [
 test('다크 설정과 큰 글자', async ({ page }) => {
   await start(page, { width: 390, height: 844 });
   await page.locator('[data-launch-app=settings]').tap();
-  await page.locator('[data-settings-page=appearance]').tap();
-  await page.getByRole('radio', { name: '다크 모드', exact: true }).check();
-  await page.getByRole('radio', { name: '더 크게 130%' }).check();
-  await page.getByTestId('settings-content').evaluate((el) => (el.scrollTop = 0));
+  await tapPaged(page.locator('[data-settings-page=appearance]'));
+  await checkPaged(page.getByRole('radio', { name: '다크 모드', exact: true }));
+  await checkPaged(page.getByRole('radio', { name: '더 크게 130%' }));
+  await firstContentPage(page.getByTestId('settings-content'));
   await capture(page, 'settings-dark-large-390x844.png');
 });
 test('Safari 두 탭', async ({ page }) => {

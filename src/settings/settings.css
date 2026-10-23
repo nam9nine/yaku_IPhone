@@ -1,9 +1,13 @@
 .settings-app {
+  position: relative;
   display: flex;
   flex: 1;
   flex-direction: column;
   min-height: 0;
   min-width: 0;
+  height: 100%;
+  overflow: clip;
+  touch-action: pinch-zoom;
   color: var(--app-text, #1c1c1e);
   background: var(--app-background, #f2f2f7);
 }
@@ -70,14 +74,32 @@
 .settings-content {
   flex: 1;
   min-height: 0;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  touch-action: pan-y pinch-zoom;
-  padding: 0 16px 28px;
-  scrollbar-width: none;
+  overflow: clip;
+  padding: 0 16px;
 }
-.settings-content::-webkit-scrollbar {
-  display: none;
+.settings-pages .settings-row,
+.settings-pages .settings-preview-choice,
+.settings-pages .settings-brightness {
+  break-inside: avoid;
+}
+.settings-pages .settings-theme-options,
+.settings-pages .settings-wallpaper-options {
+  display: block;
+  padding: 8px 12px;
+}
+.settings-pages .settings-preview-choice {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 24px;
+  gap: 10px;
+  text-align: left;
+  padding: 8px 0;
+}
+.settings-pages .settings-theme-preview,
+.settings-pages .settings-wallpaper-preview {
+  width: 66px;
+  height: min(84px, calc(var(--paged-height) * 0.35));
+  aspect-ratio: auto;
+  padding-top: 12px;
 }
 .settings-section {
   margin: 0 0 12px;
@@ -422,5 +444,20 @@
   .settings-switch-track,
   .settings-switch-track::after {
     transition: none;
+  }
+}
+@media (max-height: 620px) {
+  .settings-header,
+  .settings-header--large {
+    padding-top: 0;
+    padding-bottom: 8px;
+    gap: 0;
+  }
+  .settings-header h1,
+  .settings-header--large h1 {
+    font-size: 1.25rem;
+  }
+  .settings-back {
+    min-height: 36px;
   }
 }
