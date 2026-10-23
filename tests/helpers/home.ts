@@ -1,5 +1,8 @@
 import { expect, type Page } from '@playwright/test';
-export async function launchHomeApp(page: Page, app: 'settings' | 'safari') {
+export async function launchHomeApp(
+  page: Page,
+  app: 'settings' | 'safari' | 'contacts' | 'messages' | 'notes' | 'photos',
+) {
   const icon = page.locator(`[data-launch-app=${app}]`);
   await page.evaluate(
     () =>

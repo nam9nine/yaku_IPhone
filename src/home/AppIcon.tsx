@@ -335,6 +335,17 @@ function IconArtwork({ id, day, weekday }: { id: AppId; day: string; weekday: st
           <path d="m32 25 23 14-23 14L9 39Z" fill="#f66fb0" fillOpacity=".9" />
         </>
       );
+    case 'contacts':
+      return (
+        <>
+          <rect x="7" y="4" width="46" height="56" rx="5" fill="#d4d0c9" />
+          <path d="M53 12h7v10h-7z" fill="#c4ad93" />
+          <path d="M53 25h7v10h-7z" fill="#b6a18b" />
+          <path d="M53 38h7v10h-7z" fill="#a28a72" />
+          <circle cx="29" cy="24" r="9" fill="#8c867c" />
+          <path d="M12 51c0-20 34-20 34 0Z" fill="#8c867c" />
+        </>
+      );
     case 'findmy':
       return (
         <>

@@ -134,7 +134,7 @@ for (const size of viewports) {
 
 test('앱을 누르는 동안 작아졌다가 복구되고 앱 준비 안내를 닫을 수 있다', async ({ page }) => {
   await openHome(page);
-  const app = page.getByRole('button', { name: '사진', exact: true });
+  const app = page.getByRole('button', { name: '카메라', exact: true });
   const icon = app.locator('.app-icon');
   const normalWidth = (await icon.boundingBox())!.width;
   const point = await center(app);
@@ -142,12 +142,12 @@ test('앱을 누르는 동안 작아졌다가 복구되고 앱 준비 안내를 
   await page.mouse.down();
   await expect.poll(async () => (await icon.boundingBox())!.width).toBeLessThan(normalWidth * 0.95);
   await page.mouse.up();
-  await expect(page.getByRole('status')).toHaveText('사진 앱은 곧 만나요');
+  await expect(page.getByRole('status')).toHaveText('카메라 앱은 곧 만나요');
   await expect.poll(async () => (await icon.boundingBox())!.width).toBeCloseTo(normalWidth, 1);
   await page.getByRole('button', { name: '앱 안내 닫기' }).tap();
   await expect(page.getByRole('status')).toHaveCount(0);
-  await page.getByRole('navigation', { name: 'Dock' }).getByRole('button', { name: '전화' }).tap();
-  await expect(page.getByRole('status')).toHaveText('전화 앱은 곧 만나요');
+  await page.getByRole('navigation', { name: 'Dock' }).getByRole('button', { name: '음악' }).tap();
+  await expect(page.getByRole('status')).toHaveText('음악 앱은 곧 만나요');
 });
 
 test('실제 pointer 좌우 스와이프로 페이지를 넘기고 양 끝을 넘어가지 않는다', async ({ page }) => {

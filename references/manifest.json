@@ -1128,6 +1128,344 @@
           "bytes": 1387342
         }
       ]
+    },
+    {
+      "id": "kiwami3-kr",
+      "sourceUrl": "https://ryu-ga-gotoku.com/kiwami3/kr/",
+      "version": "Yakuza Kiwami 3 2026",
+      "retrievedOn": "2026-10-24",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "SEGA copyrighted official website, local reference only."
+      },
+      "artifacts": [
+        {
+          "localPath": "references/local/story/kiwami3-kr.html",
+          "url": "https://ryu-ga-gotoku.com/kiwami3/kr/",
+          "sha256": "2fc9b9f27c7a5254e2804558afec3414e9ead2a433f1da4a0938a0cb702d3270",
+          "bytes": 60549,
+          "role": "html"
+        }
+      ],
+      "type": "official-document",
+      "purpose": "키류의 폰 연락처·메시지·메모·사진 스토리 및 iOS 27 화면 근거",
+      "keyPaths": ["references/local/story/kiwami3-kr.html"]
+    },
+    {
+      "id": "life",
+      "sourceUrl": "https://ryu-ga-gotoku.com/kiwami3/kr/kiwami3-adventure/kiwami3-adventure-life/",
+      "version": "Yakuza Kiwami 3 2026",
+      "retrievedOn": "2026-10-24",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "SEGA copyrighted official website, local reference only."
+      },
+      "artifacts": [
+        {
+          "localPath": "references/local/story/life.html",
+          "url": "https://ryu-ga-gotoku.com/kiwami3/kr/kiwami3-adventure/kiwami3-adventure-life/",
+          "sha256": "ebaf8918cd3f9e082a3b653289a625037a9f4f147c55f78cc464338d1b6c7b5e",
+          "bytes": 17559,
+          "role": "html"
+        }
+      ],
+      "type": "official-document",
+      "purpose": "키류의 폰 연락처·메시지·메모·사진 스토리 및 iOS 27 화면 근거",
+      "keyPaths": ["references/local/story/life.html"]
+    },
+    {
+      "id": "pirate-cast",
+      "sourceUrl": "https://ryu-ga-gotoku.com/pirate/cast/",
+      "version": "Pirate Yakuza 2025",
+      "retrievedOn": "2026-10-24",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "SEGA copyrighted official website, local reference only."
+      },
+      "artifacts": [
+        {
+          "localPath": "references/local/story/pirate-cast.html",
+          "url": "https://ryu-ga-gotoku.com/pirate/cast/",
+          "sha256": "e8eada5f5244ff63d961320dd7109874d9403b0b9bbcebee9c829367bc455b69",
+          "bytes": 35842,
+          "role": "html"
+        }
+      ],
+      "type": "official-document",
+      "purpose": "키류의 폰 연락처·메시지·메모·사진 스토리 및 iOS 27 화면 근거",
+      "keyPaths": ["references/local/story/pirate-cast.html"]
+    },
+    {
+      "id": "apple-contacts",
+      "sourceUrl": "https://support.apple.com/en-gb/guide/iphone/iph3e0ca2db/27/ios/27",
+      "version": "iOS 27",
+      "retrievedOn": "2026-10-24",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "Apple copyrighted documentation, local reference only; excluded from app."
+      },
+      "artifacts": [
+        {
+          "localPath": "references/local/story/apple-contacts.html",
+          "url": "https://support.apple.com/en-gb/guide/iphone/iph3e0ca2db/27/ios/27",
+          "sha256": "079f27307c3c2d1ae813d584cc57069f4ad745799eb904fe2499f07de7cac13b",
+          "bytes": 1389734,
+          "role": "html"
+        }
+      ],
+      "type": "official-document",
+      "purpose": "키류의 폰 연락처·메시지·메모·사진 스토리 및 iOS 27 화면 근거",
+      "keyPaths": ["references/local/story/apple-contacts.html"]
+    },
+    {
+      "id": "apple-contact-card",
+      "sourceUrl": "https://support.apple.com/en-gb/guide/iphone/iph18b749db1/27/ios/27",
+      "version": "iOS 27",
+      "retrievedOn": "2026-10-24",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "Apple copyrighted documentation, local reference only; excluded from app."
+      },
+      "artifacts": [
+        {
+          "localPath": "references/local/story/apple-contact-card.html",
+          "url": "https://support.apple.com/en-gb/guide/iphone/iph18b749db1/27/ios/27",
+          "sha256": "f120abe9b0b082dc758376874057e909b2882808b2828e5fe025663ef9780d96",
+          "bytes": 1391614,
+          "role": "html"
+        },
+        {
+          "localPath": "references/local/story/apple-contact-card-1.png",
+          "url": "https://ipcdn-web.apple.com/assets/v2/web/bcce4498-2d0b-4ddb-a576-9f62e80793fe",
+          "sha256": "880bac1cffb7a0461b63622362c325b105ab3a5a3b2012c0b523981d4f8ce7af",
+          "bytes": 414024,
+          "description": "A contact named Olivia Rico with She, Her, and Hers pronouns below the contact photo. Below her name are buttons to send a message, call, mail, and use Apple Pay. At the bottom of the screen are the contact’s mobile number and email address.",
+          "role": "image"
+        }
+      ],
+      "type": "official-document",
+      "purpose": "키류의 폰 연락처·메시지·메모·사진 스토리 및 iOS 27 화면 근거",
+      "keyPaths": [
+        "references/local/story/apple-contact-card.html",
+        "references/local/story/apple-contact-card-1.png"
+      ]
+    },
+    {
+      "id": "apple-messages",
+      "sourceUrl": "https://support.apple.com/en-euro/guide/iphone/iph82fb73ba3/27/ios/27",
+      "version": "iOS 27",
+      "retrievedOn": "2026-10-24",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "Apple copyrighted documentation, local reference only; excluded from app."
+      },
+      "artifacts": [
+        {
+          "localPath": "references/local/story/apple-messages.html",
+          "url": "https://support.apple.com/en-euro/guide/iphone/iph82fb73ba3/27/ios/27",
+          "sha256": "99fd75193654727eaebfe6d7cfc114fdb3915dd68f414adda9d6147c5d1996a8",
+          "bytes": 1318655,
+          "role": "html"
+        },
+        {
+          "localPath": "references/local/story/apple-messages-1.png",
+          "url": "https://ipcdn-web.apple.com/assets/v2/web/a2813d15-9fd6-48f4-ba8f-c98e23c56700",
+          "sha256": "30c396d6f09a5c23501868cac889dacd19cdf77914f349ddd003e95b0b938e7b",
+          "bytes": 177900,
+          "description": "The Messages conversation list, with the Compose button at the bottom right. A blue dot to the left of a message indicates it’s unread.",
+          "role": "image"
+        },
+        {
+          "localPath": "references/local/story/apple-messages-2.png",
+          "url": "https://ipcdn-web.apple.com/assets/v2/web/b8682365-85bf-4935-86b6-c5d942d3e9d5",
+          "sha256": "481f8a6eb7c46c6f18115a328f90602e4392e855dc0aceacf77a05434149638b",
+          "bytes": 289160,
+          "description": "A Messages conversation. The name of the person you’re sending messages to is at the top of the screen. You can tap their name to see conversation details. The Add button is in the bottom-left corner.",
+          "role": "image"
+        },
+        {
+          "localPath": "references/local/story/apple-messages-3.png",
+          "url": "https://ipcdn-web.apple.com/assets/v2/web/493622b9-334a-41ae-adb2-4649b5350434",
+          "sha256": "5483cf2f5cb4adca989c86ea73ee00815a98de284519729059d61c7e6dda5587",
+          "bytes": 197777,
+          "description": "Composing an inline reply in a group conversation in Messages. Another person in the conversation is mentioned, so their name appears in bold.",
+          "role": "image"
+        },
+        {
+          "localPath": "references/local/story/apple-messages-4.png",
+          "url": "https://ipcdn-web.apple.com/assets/v2/web/effc945c-b0bc-490b-82f2-5959e494d4b9",
+          "sha256": "aff59a0f343bb75b16ef25239f882c1d8629999bd37e3c698979e3316fa64771",
+          "bytes": 210066,
+          "description": "A conversation in Messages. The message bubbles are green, which indicates that the other person isn’t using iMessage.",
+          "role": "image"
+        }
+      ],
+      "type": "official-document",
+      "purpose": "키류의 폰 연락처·메시지·메모·사진 스토리 및 iOS 27 화면 근거",
+      "keyPaths": [
+        "references/local/story/apple-messages.html",
+        "references/local/story/apple-messages-1.png",
+        "references/local/story/apple-messages-2.png",
+        "references/local/story/apple-messages-3.png",
+        "references/local/story/apple-messages-4.png"
+      ]
+    },
+    {
+      "id": "apple-notes",
+      "sourceUrl": "https://support.apple.com/en-ca/guide/iphone/iph1ac0b3a2/27/ios/27",
+      "version": "iOS 27",
+      "retrievedOn": "2026-10-24",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "Apple copyrighted documentation, local reference only; excluded from app."
+      },
+      "artifacts": [
+        {
+          "localPath": "references/local/story/apple-notes.html",
+          "url": "https://support.apple.com/en-ca/guide/iphone/iph1ac0b3a2/27/ios/27",
+          "sha256": "47e151e517ac029db48141f2aa5a7cef85add363819ce53e2a8e580d5b9c1fc3",
+          "bytes": 1391860,
+          "role": "html"
+        },
+        {
+          "localPath": "references/local/story/apple-notes-1.png",
+          "url": "https://ipcdn-web.apple.com/assets/v2/web/66e6b7da-78d4-4530-b576-22dc390124e0",
+          "sha256": "1e050ec4b7850d3f6ef20e70447082ec47e05a65f1180e53b5c98595afddef0e",
+          "bytes": 224402,
+          "description": "A note for a class brainstorm with tags such as #school and #kine210. The note features a hand-drawn diagram of a box breathing exercise, which illustrates a four-step breathing cycle.",
+          "role": "image"
+        },
+        {
+          "localPath": "references/local/story/apple-notes-2.png",
+          "url": "https://ipcdn-web.apple.com/assets/v2/web/764b34dc-3c6d-4d93-a6dd-300a5aa05866",
+          "sha256": "92059dcbdd39845ae11968999167c7884aa3f4dd37042dcc4334cb9cfdb449da",
+          "bytes": 167700,
+          "description": "A note in the Notes app, with collapsible headings at the top of the screen.",
+          "role": "image"
+        }
+      ],
+      "type": "official-document",
+      "purpose": "키류의 폰 연락처·메시지·메모·사진 스토리 및 iOS 27 화면 근거",
+      "keyPaths": [
+        "references/local/story/apple-notes.html",
+        "references/local/story/apple-notes-1.png",
+        "references/local/story/apple-notes-2.png"
+      ]
+    },
+    {
+      "id": "apple-note-list",
+      "sourceUrl": "https://support.apple.com/en-ie/guide/iphone/ipha61270292/27/ios/27",
+      "version": "iOS 27",
+      "retrievedOn": "2026-10-24",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "Apple copyrighted documentation, local reference only; excluded from app."
+      },
+      "artifacts": [
+        {
+          "localPath": "references/local/story/apple-note-list.html",
+          "url": "https://support.apple.com/en-ie/guide/iphone/ipha61270292/27/ios/27",
+          "sha256": "92572360927a4a0048938080c926c3e5990d85b3b1004287e1da882a619b040a",
+          "bytes": 1378418,
+          "role": "html"
+        }
+      ],
+      "type": "official-document",
+      "purpose": "키류의 폰 연락처·메시지·메모·사진 스토리 및 iOS 27 화면 근거",
+      "keyPaths": ["references/local/story/apple-note-list.html"]
+    },
+    {
+      "id": "apple-photos",
+      "sourceUrl": "https://support.apple.com/en-ie/guide/iphone/iph3d267610/27/ios/27",
+      "version": "iOS 27",
+      "retrievedOn": "2026-10-24",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "Apple copyrighted documentation, local reference only; excluded from app."
+      },
+      "artifacts": [
+        {
+          "localPath": "references/local/story/apple-photos.html",
+          "url": "https://support.apple.com/en-ie/guide/iphone/iph3d267610/27/ios/27",
+          "sha256": "145d517b880dad76cb396c8dd159da7c6ca18078e5b1063a4cae99c0076c763a",
+          "bytes": 1375717,
+          "role": "html"
+        },
+        {
+          "localPath": "references/local/story/apple-photos-1.png",
+          "url": "https://ipcdn-web.apple.com/assets/v2/web/632ae935-85bb-4145-9cce-92327e4ebf5e",
+          "sha256": "9ed90af2317b0b76357b14311dbc512cb3140ea9978ae7af5e5f87493b95d180",
+          "bytes": 556852,
+          "description": "An open photo with thumbnails of other photos across the bottom of the screen. At the top left is a Back button to go back to browsing.",
+          "role": "image"
+        },
+        {
+          "localPath": "references/local/story/apple-photos-2.png",
+          "url": "https://ipcdn-web.apple.com/assets/v2/web/c5ad2930-015f-42bd-b7a0-ad51b6c70cb6",
+          "sha256": "16f468ab1be67dc66d30c1dc7ff956ff31f6a4703a77a5f35baf2059ca927c2a",
+          "bytes": 588111,
+          "description": "An open video with a Play/Pause button, a progress bar, and a Mute/Volume button along the bottom. At the top left is a Back button to go back to browsing.",
+          "role": "image"
+        }
+      ],
+      "type": "official-document",
+      "purpose": "키류의 폰 연락처·메시지·메모·사진 스토리 및 iOS 27 화면 근거",
+      "keyPaths": [
+        "references/local/story/apple-photos.html",
+        "references/local/story/apple-photos-1.png",
+        "references/local/story/apple-photos-2.png"
+      ]
+    },
+    {
+      "id": "apple-photo-library",
+      "sourceUrl": "https://support.apple.com/en-euro/guide/iphone/iphc259d0ac7/27/ios/27",
+      "version": "iOS 27",
+      "retrievedOn": "2026-10-24",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "Apple copyrighted documentation, local reference only; excluded from app."
+      },
+      "artifacts": [
+        {
+          "localPath": "references/local/story/apple-photo-library.html",
+          "url": "https://support.apple.com/en-euro/guide/iphone/iphc259d0ac7/27/ios/27",
+          "sha256": "d6efdba43b73d252c891704c8bc76758e50d10d7c7217e7097be894b4e0d850e",
+          "bytes": 1309009,
+          "role": "html"
+        },
+        {
+          "localPath": "references/local/story/apple-photo-library-1.png",
+          "url": "https://ipcdn-web.apple.com/assets/v2/web/259aaff5-9084-4d95-83a5-d1f7eee84268",
+          "sha256": "2003e0fbbd4ec300ef2601e51a194ee3a5ea30dc2f1f67b555790488736ce107",
+          "bytes": 827345,
+          "description": "The Photos app is open and the Library tab is selected at the bottom of the screen.",
+          "role": "image"
+        },
+        {
+          "localPath": "references/local/story/apple-photo-library-2.png",
+          "url": "https://ipcdn-web.apple.com/assets/v2/web/13e7f6b7-4f0e-4770-a48b-840d24296636",
+          "sha256": "fc549f6d526af9ffa5bbb6e33eee6ea219dcb34513e508dd92a5b17a308d9259",
+          "bytes": 506297,
+          "description": "The Edit screen with a photo in the center. At the bottom of the screen, from left to right, are the Adjust, Filters, Crop, and Clean Up buttons. The Adjust button is selected and there is a slider to adjust Brilliance. The Cancel button is in the top-left corner of the screen and the Done button is in the top-right corner.",
+          "role": "image"
+        },
+        {
+          "localPath": "references/local/story/apple-photo-library-3.png",
+          "url": "https://ipcdn-web.apple.com/assets/v2/web/f2bbd8e7-c79d-4e8a-b872-0877c8d4979e",
+          "sha256": "ae0450b6b5fb6b8130559541906061b98efeeb9ac0f1a665a0ee589a808e57dc",
+          "bytes": 572843,
+          "description": "A selected photo is displayed in the top half of the iPhone screen, with a row of share options below. Additional options appear below those, including Copy Photo, Add to Shared Album, Add to Album, and Use as Wallpaper.",
+          "role": "image"
+        }
+      ],
+      "type": "official-document",
+      "purpose": "키류의 폰 연락처·메시지·메모·사진 스토리 및 iOS 27 화면 근거",
+      "keyPaths": [
+        "references/local/story/apple-photo-library.html",
+        "references/local/story/apple-photo-library-1.png",
+        "references/local/story/apple-photo-library-2.png",
+        "references/local/story/apple-photo-library-3.png"
+      ]
     }
   ]
 }
