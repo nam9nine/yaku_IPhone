@@ -16,7 +16,8 @@ test('위로 충분히 밀면 홈으로 한 번 전환한다', async ({ page }) 
   await expect(page.getByTestId('home-screen')).toBeVisible();
   await expect(page.getByTestId('lock-screen')).toHaveCount(0);
   await expect(page.getByRole('heading', { name: '홈 화면', exact: true })).toBeFocused();
-  await page.getByRole('button', { name: '다시 잠그기' }).click();
+  await page.getByRole('button', { name: '다시 잠그기', exact: true }).focus();
+  await page.keyboard.press('Enter');
   await expect(page.getByTestId('lock-screen')).toBeVisible();
 });
 

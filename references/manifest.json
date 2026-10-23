@@ -406,7 +406,9 @@
           "sha256": "4756f5c779c590e047045f51eee7e79dc802510a44360fe0320315294f9ee5bc",
           "bytes": 522184
         }
-      ]
+      ],
+      "reviewedOn": "2026-10-24",
+      "version": "iOS 27 User Guide"
     },
     {
       "id": "apple-home-screen-image",
@@ -711,7 +713,7 @@
         "status": "copyright-reference-only",
         "notice": "Apple copyrighted material; local comparison reference only. Do not ship or extract product assets."
       },
-      "purpose": "Bottom-edge upward swipe for home; no system indicator is copied",
+      "purpose": "Official bottom-edge Home swipe diagram; local reference only. The project draws its own visible indicator and uses a custom recent-app gesture.",
       "keyPaths": [],
       "artifacts": [
         {
@@ -721,7 +723,9 @@
           "sha256": "ce2225b002717442bf82dde850a849aee1007d6737ca9b520361215fe8d8a479",
           "bytes": 5915
         }
-      ]
+      ],
+      "reviewedOn": "2026-10-24",
+      "version": "iOS 27 User Guide"
     },
     {
       "id": "apple-home-swipe-gesture",
@@ -732,7 +736,7 @@
         "status": "copyright-reference-only",
         "notice": "Apple copyrighted material; local comparison reference only. Do not ship or extract product assets."
       },
-      "purpose": "Bottom-edge upward swipe for home; no system indicator is copied",
+      "purpose": "Official Home and App Switcher gestures. The project intentionally opens recent apps after a distance threshold without the native pause, per Issue 20.",
       "keyPaths": [],
       "artifacts": [
         {
@@ -742,7 +746,9 @@
           "sha256": "3575b518d20e3e20bc20293fa04b923697d2aa8d8885ada2c03fdcd2c45e9fa2",
           "bytes": 1394708
         }
-      ]
+      ],
+      "reviewedOn": "2026-10-24",
+      "version": "iOS 27 User Guide"
     },
     {
       "id": "webkit-focus-195884",
@@ -805,7 +811,9 @@
           "sha256": "cf47c54b514ceb0621cae577bc031dd69890b2123a2f190ef136d435c992edd5",
           "bytes": 1386618
         }
-      ]
+      ],
+      "reviewedOn": "2026-10-24",
+      "version": "iOS 27 User Guide"
     },
     {
       "id": "apple-control-center",
@@ -826,7 +834,9 @@
           "sha256": "b7221c63de8600c6b3c22d89df1acbb875d12bfbe56f35d8ade9730b8030ea11",
           "bytes": 1381733
         }
-      ]
+      ],
+      "reviewedOn": "2026-10-24",
+      "version": "iOS 27 User Guide"
     },
     {
       "id": "apple-notification-center",
@@ -847,6 +857,11 @@
           "sha256": "c36dfe1c774f295c83a5cdc3f8dc3a4a5cc4a2a70d76a31dd94b831d0df5bb4e",
           "bytes": 1310534
         }
+      ],
+      "reviewedOn": "2026-10-24",
+      "version": "iOS 27 User Guide",
+      "limitations": [
+        "The iOS 27 guide contains gesture and notification-management text but no full Notification Center screenshot."
       ]
     },
     {
@@ -910,6 +925,12 @@
           "sha256": "2f04f64a0cf2baaa8cdb422adaa38350464aaeb18a50298b6d05bf5dc4f0d9b9",
           "bytes": 444257
         }
+      ],
+      "reviewedOn": "2026-10-24",
+      "version": "iOS 27 User Guide",
+      "limitations": [
+        "The 782x1008 image includes a roughly 490px-wide device and documentation callouts; do not scale the whole PNG as the screen.",
+        "Editable control arrangement and wallpaper-dependent tint; not an immutable layout or official CSS point specification."
       ]
     },
     {
@@ -930,6 +951,181 @@
           "localPath": "references/upstream/apple/apple-app-switcher-image.png",
           "sha256": "b8b717c4621508f095d57a96de765fd3ea6f355fd2d36b7d00f9958233d2f67a",
           "bytes": 487040
+        }
+      ],
+      "reviewedOn": "2026-10-24",
+      "version": "iOS 27 User Guide",
+      "limitations": [
+        "The image shows overlapping app cards and app identifiers above the cards. No persistent home indicator is visible in this screenshot."
+      ]
+    },
+    {
+      "id": "apple-notifications-support",
+      "type": "official-document",
+      "sourceUrl": "https://support.apple.com/en-us/108781",
+      "retrievedOn": "2026-10-24",
+      "version": "Apple Support 108781; images explicitly named iOS 26 / iPhone 16 Pro",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "Apple copyrighted documentation or image; local research and visual comparison only. Not MIT. Do not ship screenshots, wallpaper or extracted icons as application assets.",
+        "sourceUrl": "https://support.apple.com/en-ca/guide/iphone/iph3e5c0810/27/ios/27"
+      },
+      "purpose": "Official notification behavior and provenance of the supplementary iOS 26 screenshots.",
+      "keyPaths": [],
+      "artifacts": [
+        {
+          "role": "html",
+          "url": "https://support.apple.com/en-us/108781",
+          "localPath": "references/upstream/ios-system-20/notifications-support.html",
+          "sha256": "87a32e07d3a6210fc7e48cf878bd59526e2bbdc0fe55d303f060a7ef5bbf125d",
+          "bytes": 171918
+        }
+      ]
+    },
+    {
+      "id": "apple-notifications-ios26-lock-image",
+      "type": "official-image",
+      "sourceUrl": "https://cdsassets.apple.com/live/7WUAS350/images/ios/ios-26-iphone-16-pro-lock-screen-notifications.png",
+      "retrievedOn": "2026-10-24",
+      "version": "iOS 26 / iPhone 16 Pro, identified by official filename and alt text",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "Apple copyrighted documentation or image; local research and visual comparison only. Not MIT. Do not ship screenshots, wallpaper or extracted icons as application assets.",
+        "sourceUrl": "https://support.apple.com/en-ca/guide/iphone/iph3e5c0810/27/ios/27"
+      },
+      "purpose": "Supplementary Lock Screen notifications layout, glass cards, lower controls and white indicator. Not an iOS 27 exact screenshot.",
+      "keyPaths": [],
+      "artifacts": [
+        {
+          "role": "image",
+          "url": "https://cdsassets.apple.com/live/7WUAS350/images/ios/ios-26-iphone-16-pro-lock-screen-notifications.png",
+          "localPath": "references/upstream/ios-system-20/notifications-ios26-lock.png",
+          "sha256": "555d8c8bbda5014017ad2df91c39f2ffffc41e0163a69937777e05c3a4f719d7",
+          "bytes": 940300
+        }
+      ],
+      "parentSourceId": "apple-notifications-support",
+      "limitations": [
+        "Supplementary older-version reference only; not evidence of an exact iOS 27 Notification Center or empty-state appearance."
+      ]
+    },
+    {
+      "id": "apple-notifications-ios26-options-image",
+      "type": "official-image",
+      "sourceUrl": "https://cdsassets.apple.com/live/7WUAS350/images/ios/ios-26-iphone-16-pro-manage-notifications.png",
+      "retrievedOn": "2026-10-24",
+      "version": "iOS 26 / iPhone 16 Pro, identified by official filename",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "Apple copyrighted documentation or image; local research and visual comparison only. Not MIT. Do not ship screenshots, wallpaper or extracted icons as application assets.",
+        "sourceUrl": "https://support.apple.com/en-ca/guide/iphone/iph3e5c0810/27/ios/27"
+      },
+      "purpose": "Supplementary notification options and clearing controls; distinguishes notification clearing from panel dismissal. Not an iOS 27 exact screenshot.",
+      "keyPaths": [],
+      "artifacts": [
+        {
+          "role": "image",
+          "url": "https://cdsassets.apple.com/live/7WUAS350/images/ios/ios-26-iphone-16-pro-manage-notifications.png",
+          "localPath": "references/upstream/ios-system-20/notifications-ios26-options.png",
+          "sha256": "7811c68bffd81c557a5c0c3b7229ae60bc20a7be38174a72e51d7b8176f1f033",
+          "bytes": 933592
+        }
+      ],
+      "parentSourceId": "apple-notifications-support",
+      "limitations": [
+        "Supplementary older-version reference only; not evidence of an exact iOS 27 Notification Center or empty-state appearance."
+      ]
+    },
+    {
+      "id": "apple-app-switcher-drag-gesture-image",
+      "type": "official-image",
+      "sourceUrl": "https://ipcdn-web.apple.com/assets/v2/web/bbac2203-424e-4c2b-969e-0d09b400d26e",
+      "retrievedOn": "2026-10-24",
+      "version": "iOS 27 User Guide",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "Apple copyrighted documentation or image; local research and visual comparison only. Not MIT. Do not ship screenshots, wallpaper or extracted icons as application assets.",
+        "sourceUrl": "https://support.apple.com/en-ca/guide/iphone/iph3e5c0810/27/ios/27"
+      },
+      "purpose": "Native bottom-edge drag and pause illustration; contrasts with the user-requested distance-only recent-app gesture.",
+      "keyPaths": [],
+      "artifacts": [
+        {
+          "role": "image",
+          "url": "https://ipcdn-web.apple.com/assets/v2/web/bbac2203-424e-4c2b-969e-0d09b400d26e",
+          "localPath": "references/upstream/ios-system-20/app-switcher-drag-gesture.png",
+          "sha256": "3c593602f2b841772c63a1a07692596b1fda2133917915435b173cf9620f7c67",
+          "bytes": 4507
+        }
+      ],
+      "parentSourceId": "apple-home-swipe-gesture"
+    },
+    {
+      "id": "apple-home-indicator-visibility",
+      "type": "official-document",
+      "sourceUrl": "https://developer.apple.com/documentation/uikit/uiviewcontroller/prefershomeindicatorautohidden",
+      "retrievedOn": "2026-10-24",
+      "version": "Current UIKit documentation, reviewed 2026-10-24; no iOS 27-specific visual specification",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "Apple copyrighted documentation or image; local research and visual comparison only. Not MIT. Do not ship screenshots, wallpaper or extracted icons as application assets.",
+        "sourceUrl": "https://support.apple.com/en-ca/guide/iphone/iph3e5c0810/27/ios/27"
+      },
+      "purpose": "Official system-managed home indicator visibility policy. Does not establish a permanent white indicator on every system screen.",
+      "keyPaths": [],
+      "artifacts": [
+        {
+          "role": "html",
+          "url": "https://developer.apple.com/documentation/uikit/uiviewcontroller/prefershomeindicatorautohidden",
+          "localPath": "references/upstream/ios-system-20/home-indicator-visibility.html",
+          "sha256": "215a6d5d23271b42d0c4db1d2813dd18a46aeb0310b7b06d381cf3eb55ddee33",
+          "bytes": 19042
+        }
+      ]
+    },
+    {
+      "id": "apple-quit-app",
+      "type": "official-document",
+      "sourceUrl": "https://support.apple.com/en-ca/guide/iphone/iph83bfec492/27/ios/27",
+      "retrievedOn": "2026-10-24",
+      "version": "iOS 27 User Guide",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "Apple copyrighted documentation or image; local research and visual comparison only. Not MIT. Do not ship screenshots, wallpaper or extracted icons as application assets.",
+        "sourceUrl": "https://support.apple.com/en-ca/guide/iphone/iph3e5c0810/27/ios/27"
+      },
+      "purpose": "Swipe upward on an app in the App Switcher to quit it.",
+      "keyPaths": [],
+      "artifacts": [
+        {
+          "role": "html",
+          "url": "https://support.apple.com/en-ca/guide/iphone/iph83bfec492/27/ios/27",
+          "localPath": "references/upstream/ios-system-20/quit-app-ios27.html",
+          "sha256": "5920039e52facb2e12c43282a157103da4975242253059e88fc4be687bdd5897",
+          "bytes": 1386101
+        }
+      ]
+    },
+    {
+      "id": "apple-copyright",
+      "type": "official-document",
+      "sourceUrl": "https://support.apple.com/en-ca/guide/iphone/iph3e5c0810/27/ios/27",
+      "retrievedOn": "2026-10-24",
+      "version": "iOS 27 User Guide, Copyright 2026 Apple Inc.",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "Apple copyrighted documentation or image; local research and visual comparison only. Not MIT. Do not ship screenshots, wallpaper or extracted icons as application assets.",
+        "sourceUrl": "https://support.apple.com/en-ca/guide/iphone/iph3e5c0810/27/ios/27"
+      },
+      "purpose": "Preserve the copyright and trademark notice for local-only official reference material.",
+      "keyPaths": [],
+      "artifacts": [
+        {
+          "role": "html",
+          "url": "https://support.apple.com/en-ca/guide/iphone/iph3e5c0810/27/ios/27",
+          "localPath": "references/upstream/ios-system-20/copyright-ios27.html",
+          "sha256": "b42eb043adb51bb92fc65e0a0e9a4063415d2e7c46883bbdf8f22d44333ee145",
+          "bytes": 1387342
         }
       ]
     }

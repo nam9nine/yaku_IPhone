@@ -3,6 +3,7 @@ import { useSystemGesture } from './useSystemGesture';
 import { useViewport } from './useViewport';
 import type { LaunchRect, RunnableApp } from './session';
 import './shell.css';
+import { HomeIndicator } from '../system/HomeIndicator';
 
 interface Props {
   app: RunnableApp;
@@ -33,8 +34,7 @@ export function AppWindow({
   const closing = useRef(false);
   const generation = useRef(0);
   const bottom = useSystemGesture('bottom', interactive, (result) => {
-    if (result === 'home') returnHome();
-    else if (result === 'switcher') onSwitcher();
+    if (result === 'home' || result === 'switcher') onSwitcher();
     else if (result === 'previous' || result === 'next') onQuickSwitch(result);
   });
   const drag = bottom.offset;
@@ -176,13 +176,11 @@ export function AppWindow({
         <footer className="app-home-controls">
           <button
             tabIndex={0}
-            className="app-home-button"
+            className="system-keyboard-control"
             aria-label="제어 센터 열기"
             onClick={onControl}
           >
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M4 7h16M4 17h16M8 4v6M16 14v6" />
-            </svg>
+            제어 센터 열기
           </button>
           <div
             className="app-home-gesture"
@@ -190,30 +188,23 @@ export function AppWindow({
             aria-hidden="true"
             {...bottom.handlers}
           >
-            <svg viewBox="0 0 20 20">
-              <path d="m5 12 5-5 5 5" />
-            </svg>
+            <HomeIndicator />
           </div>
           <button
             tabIndex={0}
-            className="app-home-button"
+            className="system-keyboard-control"
             aria-label="최근 앱 열기"
             onClick={onSwitcher}
           >
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <rect x="4" y="5" width="11" height="16" rx="2" />
-              <path d="M9 2h11v15" />
-            </svg>
+            최근 앱 열기
           </button>
           <button
             tabIndex={0}
-            className="app-home-button"
+            className="system-keyboard-control"
             aria-label="홈으로 돌아가기"
             onClick={returnHome}
           >
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="m3 11 9-8 9 8M5.5 9v11h5v-6h3v6h5V9" />
-            </svg>
+            홈으로 돌아가기
           </button>
         </footer>
       </section>

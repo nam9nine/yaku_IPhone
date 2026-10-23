@@ -6,19 +6,22 @@ import {
   useState,
   useSyncExternalStore,
   type CSSProperties,
-  type ReactNode,
 } from 'react';
 import { AppIcon } from '../home/AppIcon';
 import { useDisplayDate } from '../display/useDisplayDate';
-import { setAirplaneMode, type DevicePreferences } from '../settings/preferences';
+import { type DevicePreferences } from '../settings/preferences';
 import type { RunnableApp } from '../shell/session';
 import { AppSnapshot } from './AppSnapshot';
-import { SystemIcon, type SystemIconName } from './SystemIcon';
+import { SystemIcon } from './SystemIcon';
+import { HomeIndicator } from './HomeIndicator';
+import { ControlCenter, type ControlState } from './ControlCenter';
 import { usePanelSwipe } from './usePanelSwipe';
 import './system-panels.css';
 
 export type SystemPanelKind = 'control' | 'switcher' | 'notifications' | 'search';
 export interface SystemPanelsProps {
+  controls: ControlState;
+  onControls: (next: ControlState) => void;
   kind: SystemPanelKind;
   recent: RunnableApp[];
   activeApp: RunnableApp | null;
@@ -76,279 +79,40 @@ function isTextInput(element: Element | null) {
   return element?.matches('input, textarea, [contenteditable="true"]') ?? false;
 }
 
-function PageButtons({
-  index,
-  count,
-  onChange,
-  label,
-}: {
-  index: number;
-  count: number;
-  onChange: (index: number) => void;
-  label: string;
-}) {
-  if (count < 2) return null;
-  return (
-    <nav className="system-pages" aria-label={`${label} 페이지`} data-no-swipe>
-      <button
-        type="button"
-        aria-label={`이전 ${label} 페이지`}
-        disabled={index === 0}
-        onClick={() => onChange(index - 1)}
-      >
-        <SystemIcon name="left" />
-      </button>
-      <span className="system-page-dots">
-        {Array.from({ length: count }, (_, page) => (
-          <button
-            key={page}
-            type="button"
-            aria-label={`${label} ${page + 1}페이지`}
-            aria-current={page === index ? 'page' : undefined}
-            onClick={() => onChange(page)}
-          >
-            <i />
-          </button>
-        ))}
-      </span>
-      <button
-        type="button"
-        aria-label={`다음 ${label} 페이지`}
-        disabled={index === count - 1}
-        onClick={() => onChange(index + 1)}
-      >
-        <SystemIcon name="right" />
-      </button>
-    </nav>
-  );
-}
-
-function HorizontalPages({ pages, label }: { pages: ReactNode[]; label: string }) {
-  const [requestedIndex, setIndex] = useState(0);
-  const index = Math.min(requestedIndex, pages.length - 1);
-  const move = (next: number) => setIndex(Math.max(0, Math.min(pages.length - 1, next)));
-  const swipe = usePanelSwipe({ horizontal: (direction) => move(index + direction) });
-  return (
-    <div className="system-pager">
-      <div
-        className="system-pages-viewport"
-        {...swipe.handlers}
-        onKeyDown={(event) => {
-          if (isTextInput(event.target as Element)) return;
-          if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
-            event.preventDefault();
-            move(index + (event.key === 'ArrowRight' ? 1 : -1));
-          }
-        }}
-      >
-        <div
-          className="system-pages-track"
-          data-dragging={swipe.offset.x !== 0}
-          style={{ transform: `translateX(calc(${-index * 100}% + ${swipe.offset.x * 0.45}px))` }}
-        >
-          {pages.map((page, position) => (
-            <div
-              key={position}
-              className="system-slide"
-              inert={position !== index}
-              aria-hidden={position !== index}
-            >
-              {page}
-            </div>
-          ))}
-        </div>
-      </div>
-      <PageButtons index={index} count={pages.length} onChange={move} label={label} />
-    </div>
-  );
-}
-
-function ControlCenter({
-  preferences,
-  onPreferences,
-  viewport,
-  fontScale,
-}: Pick<SystemPanelsProps, 'preferences' | 'onPreferences' | 'viewport'> & { fontScale: number }) {
-  const dark =
-    preferences.theme === 'dark' ||
-    (preferences.theme === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
-  const controls: {
-    icon: SystemIconName;
-    label: string;
-    checked: boolean;
-    disabled?: boolean;
-    change: () => void;
-  }[] = [
-    {
-      icon: 'airplane',
-      label: '에어플레인 모드',
-      checked: preferences.airplane,
-      change: () => onPreferences(setAirplaneMode(preferences, !preferences.airplane)),
-    },
-    {
-      icon: 'wifi',
-      label: 'Wi-Fi',
-      checked: preferences.wifi,
-      change: () => onPreferences({ ...preferences, wifi: !preferences.wifi }),
-    },
-    {
-      icon: 'cellular',
-      label: '셀룰러 데이터',
-      checked: !preferences.airplane && preferences.cellular,
-      disabled: preferences.airplane,
-      change: () => onPreferences({ ...preferences, cellular: !preferences.cellular }),
-    },
-    {
-      icon: 'bluetooth',
-      label: 'Bluetooth',
-      checked: preferences.bluetooth,
-      change: () => onPreferences({ ...preferences, bluetooth: !preferences.bluetooth }),
-    },
-  ];
-  const tiles = controls.map((control) => (
-    <button
-      key={control.icon}
-      type="button"
-      role="switch"
-      aria-label={control.label}
-      aria-checked={control.checked}
-      disabled={control.disabled}
-      className={`control-tile control-tile--${control.icon}`}
-      onClick={control.change}
-    >
-      <span className="control-symbol">
-        <SystemIcon name={control.icon} />
-      </span>
-      <span className="control-label">{control.label}</span>
-      <span className="control-state">
-        {control.disabled ? '비행기 모드' : control.checked ? '켬' : '끔'}
-      </span>
-    </button>
-  ));
-  const brightness = (
-    <div className="control-brightness" key="brightness" data-no-swipe>
-      <label htmlFor="system-brightness">
-        <SystemIcon name="sun" />
-        <span>밝기</span>
-        <output>{preferences.brightness}%</output>
-      </label>
-      <input
-        id="system-brightness"
-        aria-label="화면 밝기"
-        type="range"
-        min={50}
-        max={100}
-        step={1}
-        value={preferences.brightness}
-        onChange={(event) =>
-          onPreferences({ ...preferences, brightness: Number(event.target.value) })
-        }
-      />
-    </div>
-  );
-  const theme = (
-    <button
-      key="theme"
-      type="button"
-      role="switch"
-      aria-label="다크 모드"
-      aria-checked={dark}
-      className="control-tile control-tile--dark"
-      onClick={() => onPreferences({ ...preferences, theme: dark ? 'light' : 'dark' })}
-    >
-      <span className="control-symbol">
-        <SystemIcon name="dark" />
-      </span>
-      <span className="control-label">다크 모드</span>
-      <span className="control-state">{dark ? '켬' : '끔'}</span>
-    </button>
-  );
-  const scale = fontScale;
-  const tiny = viewport.height < 440 * scale;
-  const short = viewport.height < 560 * scale;
-  const compact = viewport.height < 710 * scale;
-  const note = (
-    <p className="system-note">
-      이 웹 체험의 가상 연결입니다.
-      <br />
-      Wi-Fi·Bluetooth는 일시 해제가 아닌 켜기·끄기로 동작합니다.
-    </p>
-  );
-  const pages = tiny
-    ? [...tiles, brightness, theme].map((tile) => (
-        <div className="control-page control-page--single">{tile}</div>
-      ))
-    : short
-      ? [
-          <div className="control-page control-page--pair">{tiles.slice(0, 2)}</div>,
-          <div className="control-page control-page--pair">{tiles.slice(2, 4)}</div>,
-          <div className="control-page control-page--single">{brightness}</div>,
-          <div className="control-page control-page--single">{theme}</div>,
-        ]
-      : compact
-        ? [
-            <div className="control-page control-page--connections">{tiles}</div>,
-            <div className="control-page control-page--display">
-              {brightness}
-              {theme}
-            </div>,
-          ]
-        : [
-            <div className="control-page control-page--all">
-              {tiles}
-              {brightness}
-              {theme}
-            </div>,
-          ];
-  if (short) {
-    pages.push(
-      <div className="control-connection-note">
-        <h2>가상 연결 안내</h2>
-        {note}
-      </div>,
-    );
-  }
-  return (
-    <div className="control-center">
-      <HorizontalPages label="제어 센터" pages={pages} />
-      {!short && note}
-    </div>
-  );
-}
-
 function RecentApps({
   recent,
-  activeApp,
   onSelectApp,
   onCloseApp,
   getPreview,
   viewport,
-}: Pick<
-  SystemPanelsProps,
-  'recent' | 'activeApp' | 'onSelectApp' | 'onCloseApp' | 'getPreview' | 'viewport'
->) {
+}: Pick<SystemPanelsProps, 'recent' | 'onSelectApp' | 'onCloseApp' | 'getPreview' | 'viewport'>) {
   const [requestedIndex, setIndex] = useState(0);
+  const [draggedApp, setDraggedApp] = useState<RunnableApp | null>(null);
   const index = Math.min(requestedIndex, Math.max(0, recent.length - 1));
   const move = (next: number) => setIndex(Math.max(0, Math.min(recent.length - 1, next)));
   const swipe = usePanelSwipe({
     horizontal: (direction) => move(index + direction),
     upward: () => {
-      if (recent[index]) onCloseApp(recent[index]);
+      if (draggedApp) onCloseApp(draggedApp);
     },
   });
-  if (!recent.length)
-    return (
-      <div className="system-empty">
-        <SystemIcon name="cards" />
-        <h2>열린 앱이 없어요</h2>
-        <p>홈에서 앱을 열면 여기에 표시됩니다.</p>
-      </div>
-    );
   return (
     <div className="recent-apps">
+      {!recent.length && (
+        <span className="system-sr-only" role="status">
+          열린 앱이 없습니다.
+        </span>
+      )}
       <div
         className="recent-viewport"
         {...swipe.handlers}
+        onPointerDown={(event) => {
+          setDraggedApp(
+            ((event.target as HTMLElement).closest<HTMLElement>('[data-recent-app]')?.dataset
+              .recentApp as RunnableApp) ?? null,
+          );
+          swipe.handlers.onPointerDown(event);
+        }}
         onKeyDown={(event) => {
           if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
             event.preventDefault();
@@ -356,42 +120,36 @@ function RecentApps({
           }
         }}
       >
-        <div
-          className="recent-track"
-          data-dragging={swipe.offset.x !== 0}
-          style={
-            {
-              '--recent-index': index,
-              '--recent-drag': `${swipe.offset.x * 0.6}px`,
-            } as CSSProperties
-          }
-        >
+        <div className="recent-track" data-dragging={swipe.offset.x !== 0}>
           {recent.map((application, position) => (
             <article
               key={application}
               className="recent-card"
-              inert={position !== index}
-              aria-hidden={position !== index}
+              data-recent-app={application}
               data-active={position === index}
-              data-dragging={position === index && swipe.offset.y !== 0}
-              style={{
-                transform: position === index ? `translateY(${swipe.offset.y}px)` : undefined,
-                opacity: position === index ? Math.max(0.3, 1 + swipe.offset.y / 420) : 0.65,
-              }}
+              data-dragging={draggedApp === application && swipe.offset.y !== 0}
+              style={
+                {
+                  '--card-offset': position - index,
+                  '--card-drag-x': `${swipe.offset.x * 0.6}px`,
+                  '--card-drag-y': `${draggedApp === application ? swipe.offset.y : 0}px`,
+                  '--card-scale': position === index ? 1 : 0.94,
+                  zIndex: recent.length - Math.abs(position - index),
+                  opacity: draggedApp === application ? Math.max(0, 1 + swipe.offset.y / 420) : 1,
+                } as CSSProperties
+              }
             >
               <header className="recent-card-title">
                 <AppIcon id={application} day="" weekday="" />
-                <span>
-                  {appNames[application]}
-                  {activeApp === application && <small>사용 중</small>}
-                </span>
+                <span>{appNames[application]}</span>
                 <button
                   type="button"
+                  className="system-keyboard-control"
                   data-no-swipe
                   aria-label={`${appNames[application]} 앱 닫기`}
                   onClick={() => onCloseApp(application)}
                 >
-                  <SystemIcon name="close" />
+                  {appNames[application]} 앱 닫기
                 </button>
               </header>
               <button
@@ -406,37 +164,33 @@ function RecentApps({
           ))}
         </div>
       </div>
-      <p className="system-note">앱을 누르면 열리고, 위로 밀면 닫힙니다.</p>
-      <PageButtons index={index} count={recent.length} onChange={move} label="최근 앱" />
+      <button
+        className="system-keyboard-control"
+        disabled={index === 0}
+        onClick={() => move(index - 1)}
+      >
+        이전 최근 앱 페이지
+      </button>
+      <button
+        className="system-keyboard-control"
+        disabled={index === recent.length - 1 || !recent.length}
+        onClick={() => move(index + 1)}
+      >
+        다음 최근 앱 페이지
+      </button>
     </div>
   );
 }
 
-function Notifications({ paged }: { paged: boolean }) {
+function Notifications() {
   const date = useDisplayDate();
-  const clock = (
-    <div className="notification-date">
-      <time dateTime={date.isoDate}>{date.label}</time>
-      <span aria-label={date.accessibleTime}>{date.clock}</span>
-    </div>
-  );
-  const empty = (
-    <div className="system-empty">
-      <SystemIcon name="bell" />
-      <h2>알림이 없어요</h2>
-      <p>현재 이 웹 체험에서 받은 알림이 없습니다.</p>
-    </div>
-  );
   return (
     <div className="notification-center">
-      {paged ? (
-        <HorizontalPages label="알림 센터" pages={[clock, empty]} />
-      ) : (
-        <>
-          {clock}
-          {empty}
-        </>
-      )}
+      <div className="notification-date">
+        <time dateTime={date.isoDate}>{date.label}</time>
+        <span aria-label={date.accessibleTime}>{date.clock}</span>
+      </div>
+      <p className="notification-empty">이전 알림 없음</p>
     </div>
   );
 }
@@ -454,7 +208,7 @@ function AppSearch({ onSelectApp }: Pick<SystemPanelsProps, 'onSelectApp'>) {
           type="text"
           enterKeyHint="search"
           aria-label="앱 검색"
-          placeholder="앱 검색"
+          placeholder="검색"
           value={query}
           autoComplete="off"
           autoCapitalize="none"
@@ -474,7 +228,6 @@ function AppSearch({ onSelectApp }: Pick<SystemPanelsProps, 'onSelectApp'>) {
             <button key={app} type="button" onClick={() => onSelectApp(app)}>
               <AppIcon id={app} day="" weekday="" />
               <span>{appNames[app]}</span>
-              <SystemIcon name="right" />
             </button>
           ))
         ) : (
@@ -483,7 +236,6 @@ function AppSearch({ onSelectApp }: Pick<SystemPanelsProps, 'onSelectApp'>) {
           </p>
         )}
       </div>
-      <p className="system-note">설정과 Safari를 검색할 수 있어요.</p>
     </div>
   );
 }
@@ -541,10 +293,10 @@ export function SystemPanels(props: SystemPanelsProps) {
       if (event.target instanceof Node && !node.contains(event.target))
         heading.current?.focus({ preventScroll: true });
     };
-    document.addEventListener('keydown', keydown, true);
+    document.addEventListener('keydown', keydown);
     document.addEventListener('focusin', focusin);
     return () => {
-      document.removeEventListener('keydown', keydown, true);
+      document.removeEventListener('keydown', keydown);
       document.removeEventListener('focusin', focusin);
       if (!restoreFocus.current) return;
       requestAnimationFrame(() => {
@@ -584,16 +336,16 @@ export function SystemPanels(props: SystemPanelsProps) {
       />
       <div className="system-panel-content">
         <header className="system-panel-header">
-          <h1 id={titleId} ref={heading} tabIndex={-1}>
+          <h1 className="system-sr-only" id={titleId} ref={heading} tabIndex={-1}>
             {titles[kind]}
           </h1>
           <button
             type="button"
-            className="system-close"
+            className="system-keyboard-control"
             aria-label={`${titles[kind]} 닫기`}
             onClick={onDismiss}
           >
-            <SystemIcon name="close" />
+            {titles[kind]} 닫기
           </button>
         </header>
         <div
@@ -601,15 +353,15 @@ export function SystemPanels(props: SystemPanelsProps) {
           key={kind}
           onClick={(event) => {
             if (
-              (event.target as HTMLElement).matches(
-                '.control-page, .recent-viewport, .system-pages-viewport',
-              )
+              (event.target as HTMLElement).matches('.recent-viewport, .recent-track, .recent-apps')
             )
               onDismiss();
           }}
         >
           {kind === 'control' && (
             <ControlCenter
+              controls={props.controls}
+              onControls={props.onControls}
               preferences={props.preferences}
               onPreferences={props.onPreferences}
               viewport={viewport}
@@ -619,14 +371,13 @@ export function SystemPanels(props: SystemPanelsProps) {
           {kind === 'switcher' && (
             <RecentApps
               recent={props.recent}
-              activeApp={props.activeApp}
               onSelectApp={selectApp}
               onCloseApp={props.onCloseApp}
               getPreview={props.getPreview}
               viewport={viewport}
             />
           )}
-          {kind === 'notifications' && <Notifications paged={viewport.height / fontScale < 330} />}
+          {kind === 'notifications' && <Notifications />}
           {kind === 'search' && <AppSearch onSelectApp={selectApp} />}
         </div>
         <footer className="system-panel-footer">
@@ -634,10 +385,10 @@ export function SystemPanels(props: SystemPanelsProps) {
             className="system-dismiss-gesture"
             data-testid="system-dismiss-gesture"
             aria-hidden="true"
+            style={{ transform: `translateY(${Math.max(swipe.offset.y * 0.2, -36)}px)` }}
             {...swipe.handlers}
           >
-            <SystemIcon name="up" />
-            <span>위로 밀어 닫기</span>
+            <HomeIndicator />
           </div>
         </footer>
       </div>

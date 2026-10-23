@@ -26,7 +26,7 @@ async function openSafari(page: Page) {
 }
 
 async function goHome(page: Page) {
-  await page.getByRole('button', { name: '홈으로 돌아가기', exact: true }).tap();
+  await page.keyboard.press('Alt+Home');
   await expect(page.getByTestId('home-screen')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Safari', exact: true })).toBeVisible();
 }
@@ -334,7 +334,7 @@ for (const size of [
   { width: 360, height: 420 },
   { width: 390, height: 480 },
 ]) {
-  test(`주소 편집 중 축소 viewport에서 이동·취소·홈 버튼을 가리지 않는다 ${size.width}x${size.height}`, async ({
+  test(`주소 편집 중 축소 viewport에서도 이동·취소·홈 인디케이터와 키보드 복귀를 사용할 수 있다 ${size.width}x${size.height}`, async ({
     page,
   }) => {
     await openSafari(page);
@@ -348,7 +348,7 @@ for (const size of [
       input,
       safari(page).getByRole('button', { name: '이동', exact: true }),
       safari(page).getByRole('button', { name: '취소', exact: true }),
-      safari(page).getByRole('button', { name: '홈으로 돌아가기', exact: true }),
+      page.getByTestId('safari-home-gesture'),
     ]) {
       await expectTouchable(control);
     }
@@ -361,6 +361,11 @@ for (const size of [
     await expect(addressDisplay(page)).toHaveText('yaku.test/guide');
     await expect(safari(page).getByRole('textbox')).toHaveCount(0);
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(size.width);
+    await addressDisplay(page).tap();
+    await expect(input).toBeFocused();
+    await page.keyboard.press('Alt+Home');
+    await expect(safari(page)).toBeHidden();
+    await expect(page.getByRole('button', { name: 'Safari', exact: true })).toBeFocused();
   });
 }
 
@@ -389,7 +394,9 @@ test('키보드로 페이지와 주소 입력을 열고 Alt+Home으로 복귀한
   await expect(safari(page)).toBeHidden();
 });
 
-test('페이지 메뉴가 열려 있어도 홈 버튼과 홈 스와이프를 사용할 수 있다', async ({ page }) => {
+test('페이지 메뉴가 열려 있어도 키보드 홈 복귀와 인디케이터의 최근 앱 진입을 사용할 수 있다', async ({
+  page,
+}) => {
   await openSafari(page);
   await tapPaged(safari(page).getByRole('button', { name: '페이지 메뉴', exact: true }));
   await expect(safari(page).getByRole('dialog')).toBeVisible();
@@ -409,6 +416,14 @@ test('페이지 메뉴가 열려 있어도 홈 버튼과 홈 스와이프를 사
   await page.mouse.down();
   await page.mouse.move(x, y - 130, { steps: 8 });
   await page.mouse.up();
+  await expect(page.getByTestId('system-switcher')).toBeVisible();
+  await page.getByRole('button', { name: 'Safari 앱으로 전환', exact: true }).tap();
+  await expect(page.getByTestId('system-switcher')).toHaveCount(0);
+  await expect(safari(page)).toBeVisible();
+  await expect(safari(page).getByRole('dialog')).toBeVisible();
+  await page.keyboard.press('Alt+a');
+  await expect(page.getByTestId('system-switcher')).toBeVisible();
+  await page.keyboard.press('Escape');
   await expect(safari(page)).toBeHidden();
   await expect(page.locator('[data-launch-app=safari]')).toBeFocused();
 });

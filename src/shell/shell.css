@@ -55,49 +55,17 @@
   display: flex;
   flex: 0 0 auto;
   position: relative;
-  min-height: 44px;
   padding-bottom: var(--safe-area-bottom);
   background: var(--app-background);
 }
 .app-home-gesture {
-  display: grid;
-  place-items: center;
-  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  width: 100%;
   height: 44px;
-  padding-left: 44px;
-  touch-action: pan-x pinch-zoom;
+  padding-bottom: 8px;
+  touch-action: pinch-zoom;
   user-select: none;
   -webkit-user-select: none;
-  color: var(--app-secondary);
-}
-.app-home-gesture svg {
-  width: 20px;
-  height: 20px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.8;
-}
-.app-home-button {
-  width: 44px;
-  height: 44px;
-  border: 0;
-  background: transparent;
-  color: var(--app-text);
-}
-.app-home-button svg {
-  width: 21px;
-  height: 21px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.7;
-  stroke-linejoin: round;
-}
-
-.app-home-gesture {
-  padding-left: 0;
-  touch-action: pinch-zoom;
-}
-.app-home-button {
-  flex: 0 0 44px;
-  padding: 0;
 }

@@ -30,7 +30,9 @@ for (const size of [
   { width: 390, height: 844 },
   { width: 430, height: 932 },
 ]) {
-  test(`앱은 전체 면에서 열리고 전용 스와이프로 복귀한다 ${size.width}`, async ({ page }) => {
+  test(`앱은 전체 면에서 열리고 빠르게 위로 밀어도 최근 앱을 거쳐 홈으로 복귀한다 ${size.width}`, async ({
+    page,
+  }) => {
     await page.setViewportSize(size);
     await home(page);
     await open(page);
@@ -43,13 +45,19 @@ for (const size of [
     const start = await begin(page);
     await page.mouse.move(start.x, start.y - 130, { steps: 8 });
     await page.mouse.up();
+    await expect(page.getByTestId('system-switcher')).toBeVisible();
+    await expect(page.getByRole('button', { name: '설정 앱으로 전환', exact: true })).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.getByTestId('system-switcher')).toHaveCount(0);
     await expect(app).toBeHidden();
     await expect(page.getByRole('button', { name: '설정', exact: true })).toBeFocused();
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(size.width);
   });
 }
 
-test('짧은·수평·취소·resize·blur 드래그 후에도 다시 홈으로 갈 수 있다', async ({ page }) => {
+test('짧은·수평·취소·resize·blur 드래그는 앱을 유지하고 다음 스와이프로 최근 앱을 연다', async ({
+  page,
+}) => {
   await home(page);
   await open(page);
   for (const mode of ['short', 'horizontal', 'cancel', 'resize', 'blur']) {
@@ -65,15 +73,17 @@ test('짧은·수평·취소·resize·blur 드래그 후에도 다시 홈으로 
     if (mode === 'resize') await page.setViewportSize({ width: 390, height: 700 });
     if (mode === 'blur') await page.evaluate(() => window.dispatchEvent(new Event('blur')));
     await page.mouse.up();
-    // A diagonal with greater horizontal travel must not qualify as a home swipe.
+    // A diagonal with greater horizontal travel must not open the app switcher.
     await expect(page.getByTestId('settings-app')).toBeVisible();
+    await expect(page.getByTestId('system-switcher')).toHaveCount(0);
     await expect(page.getByTestId('settings-app')).toHaveAttribute('data-dragging', 'false');
     expect(await page.evaluate(() => window.getSelection()?.toString())).toBe('');
   }
-  await page.evaluate(() => {
-    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
-  });
-  await page.keyboard.press('Alt+Home');
+  const retry = await begin(page);
+  await page.mouse.move(retry.x, retry.y - 130, { steps: 8 });
+  await page.mouse.up();
+  await expect(page.getByTestId('system-switcher')).toBeVisible();
+  await page.keyboard.press('Escape');
   await expect(page.getByTestId('settings-app')).toBeHidden();
 });
 
@@ -84,19 +94,21 @@ test('홈 페이지와 포커스가 유지되고 비활성 앱은 입력에서 �
   await expect(settings).toBeInViewport();
   const homePage = await page.getByTestId('home-pages').getAttribute('data-page');
   await open(page);
-  await page.getByRole('button', { name: '홈으로 돌아가기' }).tap();
+  await page.keyboard.press('Alt+Home');
   await expect(settings).toBeFocused();
   await expect(page.getByTestId('home-pages')).toHaveAttribute('data-page', homePage!);
   expect(await page.getByTestId('home-pages').evaluate((el) => el.scrollTop)).toBe(0);
   await page.getByRole('button', { name: '2페이지로 이동' }).tap();
   await open(page, 'safari');
   await expect(page.getByRole('heading', { name: '설정', exact: true })).toHaveCount(0);
-  await page.getByRole('button', { name: '홈으로 돌아가기' }).tap();
+  await page.keyboard.press('Alt+Home');
   await expect(page.getByTestId('home-pages')).toHaveAttribute('data-page', '2');
   await expect(page.locator('[data-launch-app="safari"]')).toBeFocused();
 });
 
-test('본문 드래그는 홈 복귀가 아니며 reduced motion과 반복 복귀는 안정적이다', async ({ page }) => {
+test('본문 드래그는 최근 앱을 열지 않으며 reduced motion과 반복 키보드 복귀는 안정적이다', async ({
+  page,
+}) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await home(page);
   await open(page);
@@ -105,18 +117,18 @@ test('본문 드래그는 홈 복귀가 아니며 reduced motion과 반복 복�
   await page.mouse.move(180, 200, { steps: 5 });
   await page.mouse.up();
   await expect(page.getByTestId('settings-app')).toBeVisible();
-  await page
-    .getByRole('button', { name: '홈으로 돌아가기' })
-    .evaluate((button: HTMLButtonElement) => {
-      button.click();
-      button.click();
-    });
+  await expect(page.getByTestId('system-switcher')).toHaveCount(0);
+  await page.keyboard.press('Alt+Home');
+  await page.keyboard.press('Alt+Home');
   await expect(page.getByTestId('settings-app')).toBeHidden();
   await open(page);
   await expect(page.getByRole('heading', { name: '설정', exact: true })).toBeFocused();
 });
 
-test('브라우저별 홈 제스처: Chromium touch / WebKit pointer', async ({ page, browserName }) => {
+test('브라우저별 위로 밀기는 기다리지 않고 최근 앱을 연다: Chromium touch / WebKit pointer', async ({
+  page,
+  browserName,
+}) => {
   await home(page);
   await open(page);
   const bounds = (await page.getByTestId('settings-home-gesture').boundingBox())!;
@@ -127,26 +139,39 @@ test('브라우저별 홈 제스처: Chromium touch / WebKit pointer', async ({ 
     await page.mouse.down();
     await page.mouse.move(x, y - 128, { steps: 8 });
     await page.mouse.up();
-    await expect(page.getByTestId('settings-app')).toBeHidden();
-    return;
+  } else {
+    const client = await page.context().newCDPSession(page);
+    try {
+      await client.send('Input.dispatchTouchEvent', {
+        type: 'touchStart',
+        touchPoints: [{ x, y }],
+      });
+      for (let i = 1; i <= 8; i++)
+        await client.send('Input.dispatchTouchEvent', {
+          type: 'touchMove',
+          touchPoints: [{ x, y: y - i * 16 }],
+        });
+      await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    } finally {
+      await client.detach();
+    }
   }
-  const client = await page.context().newCDPSession(page);
-  await client.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] });
-  for (let i = 1; i <= 8; i++)
-    await client.send('Input.dispatchTouchEvent', {
-      type: 'touchMove',
-      touchPoints: [{ x, y: y - i * 16 }],
-    });
-  await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await expect(page.getByTestId('system-switcher')).toBeVisible();
+  await page.getByRole('button', { name: '설정 앱으로 전환', exact: true }).tap();
+  await expect(page.getByTestId('system-switcher')).toHaveCount(0);
+  await expect(page.getByTestId('settings-app')).toBeVisible();
+  await expect(page.getByRole('heading', { name: '설정', exact: true })).toBeFocused();
+  await page.keyboard.press('Alt+Home');
   await expect(page.getByTestId('settings-app')).toBeHidden();
 });
 
 test('다른 홈 페이지에서 다시 잠금을 해제하면 표시 중인 홈 제목에 포커스한다', async ({ page }) => {
   await home(page);
   await open(page);
-  await page.getByRole('button', { name: '홈으로 돌아가기' }).tap();
+  await page.keyboard.press('Alt+Home');
   await page.getByRole('button', { name: '2페이지로 이동' }).tap();
-  await page.getByRole('button', { name: '다시 잠그기' }).tap();
+  await page.getByRole('button', { name: '다시 잠그기', exact: true }).focus();
+  await page.keyboard.press('Enter');
   await page.getByRole('button', { name: '잠금 해제', exact: true }).tap();
   await expect(page.getByTestId('home-pages')).toHaveAttribute('data-page', '2');
   await expect(page.locator('[data-home-title]')).toBeFocused();
