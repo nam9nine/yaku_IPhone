@@ -3,7 +3,13 @@ import { useDisplayDate } from '../display/useDisplayDate';
 import { useUnlockGesture } from './useUnlockGesture';
 import './lock.css';
 
-export function LockScreen({ onUnlock }: { onUnlock: () => void }) {
+export function LockScreen({
+  onUnlock,
+  autoFocus = false,
+}: {
+  onUnlock: () => void;
+  autoFocus?: boolean;
+}) {
   const date = useDisplayDate();
   const gradient = useId();
   const [notice, setNotice] = useState('');
@@ -78,6 +84,7 @@ export function LockScreen({ onUnlock }: { onUnlock: () => void }) {
         <button
           className="unlock-hint"
           data-unlock-handle
+          autoFocus={autoFocus}
           type="button"
           onClick={unlock}
           aria-label="잠금 해제"

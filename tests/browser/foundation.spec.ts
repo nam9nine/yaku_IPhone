@@ -85,7 +85,7 @@ test('문자 확대와 짧은 화면에서 하단 제어까지 스크롤한다',
   }
   await expect(page.getByRole('button', { name: '잠금 해제', exact: true })).toBeInViewport();
   await page.getByRole('button', { name: '잠금 해제', exact: true }).tap();
-  await expect(page.getByTestId('home-arrival')).toBeVisible();
+  await expect(page.getByTestId('home-screen')).toBeVisible();
 });
 
 test('분 경계와 한국 자정에 시계·날짜를 갱신한다', async ({ page }) => {
