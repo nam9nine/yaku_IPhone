@@ -23,6 +23,7 @@ import './system-panels.css';
 
 export type SystemPanelKind = 'control' | 'switcher' | 'notifications' | 'search';
 export interface SystemPanelsProps {
+  preview?: boolean;
   controls: ControlState;
   onControls: (next: ControlState) => void;
   kind: SystemPanelKind;
@@ -271,7 +272,8 @@ function AppSearch({ onSelectApp }: Pick<SystemPanelsProps, 'onSelectApp'>) {
 }
 
 export function SystemPanels(props: SystemPanelsProps) {
-  const { kind, onDismiss, onSelectApp, viewport } = props;
+  const { kind, onDismiss, onSelectApp, viewport, preview = false } = props;
+  const [topEntry] = useState(preview);
   const panel = useRef<HTMLDivElement>(null);
   const heading = useRef<HTMLHeadingElement>(null);
   const restoreFocus = useRef(true);
@@ -355,9 +357,10 @@ export function SystemPanels(props: SystemPanelsProps) {
 
   useEffect(() => {
     const node = panel.current;
-    if (!node) return;
+    if (!node || preview) return;
     heading.current?.focus({ preventScroll: true });
     const keydown = (event: KeyboardEvent) => {
+      if (document.querySelector('.day-call[open]')) return;
       if (event.key === 'Escape') {
         event.preventDefault();
         event.stopPropagation();
@@ -390,6 +393,7 @@ export function SystemPanels(props: SystemPanelsProps) {
       targets[next].focus({ preventScroll: true });
     };
     const focusin = (event: FocusEvent) => {
+      if (document.querySelector('.day-call[open]')) return;
       if (event.target instanceof Node && !node.contains(event.target))
         heading.current?.focus({ preventScroll: true });
     };
@@ -409,7 +413,7 @@ export function SystemPanels(props: SystemPanelsProps) {
           target.focus({ preventScroll: true });
       });
     };
-  }, [kind, previous]);
+  }, [kind, previous, preview]);
 
   const selectApp = (app: RunnableApp, entry?: LaunchRect) => {
     restoreFocus.current = false;
@@ -419,6 +423,10 @@ export function SystemPanels(props: SystemPanelsProps) {
     <div
       ref={panel}
       className={`system-panel system-panel--${kind}`}
+      inert={preview}
+      aria-hidden={preview || undefined}
+      data-top-entry={topEntry}
+      data-preview={preview}
       role="dialog"
       aria-modal="true"
       aria-labelledby={titleId}

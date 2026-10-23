@@ -1,0 +1,141 @@
+.messages-app {
+  background: var(--phone-canvas, var(--app-surface));
+}
+.messages-app > .social-header {
+  border-bottom: 0.5px solid var(--app-separator);
+  min-height: 64px;
+}
+.message-edit,
+.message-filter {
+  position: absolute;
+  top: 8px;
+  background: var(--phone-button, var(--app-background));
+  font-size: 0.875rem !important;
+}
+.message-edit {
+  left: 16px;
+  width: 54px;
+  border-radius: 26px;
+}
+.message-filter {
+  right: 16px;
+}
+.message-filter[aria-pressed='true'] {
+  color: var(--app-accent);
+}
+.message-edit-menu {
+  position: absolute;
+  top: 60px;
+  left: 16px;
+  z-index: 3;
+  min-width: 210px;
+  padding: 6px;
+  border: 1px solid var(--app-separator);
+  border-radius: 18px;
+  background: var(--app-surface);
+  box-shadow: 0 8px 28px #0003;
+}
+.message-edit-menu button {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  border: 0;
+  background: none;
+  color: var(--app-text);
+  text-align: left;
+  padding: 8px 12px;
+}
+.messages-app .message-list {
+  padding: 0 16px 12px 25px;
+}
+.messages-app .message-list-row {
+  min-height: 94px;
+  padding-block: 14px;
+  gap: 12px;
+}
+.messages-app .message-list-row > img {
+  width: 44px;
+  height: 44px;
+}
+.messages-app .message-list-heading strong {
+  font-size: 1rem;
+}
+.messages-app .message-list-preview {
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+.messages-app .social-toolbar {
+  background: var(--phone-canvas, var(--app-surface));
+  padding-top: 10px;
+  padding-bottom: 4px;
+}
+.messages-app .social-search {
+  min-height: 44px;
+  background: var(--phone-button, var(--app-background));
+  box-shadow: inset 0 0.5px 1px #fff2;
+  border: 1px solid var(--app-separator);
+}
+.messages-app .social-search input {
+  height: 42px;
+}
+.messages-app .social-circle,
+.messages-app .social-back {
+  background: var(--phone-button, var(--app-background));
+}
+.messages-app .message-thread-header {
+  min-height: 102px;
+  padding: 8px 74px 10px;
+  background: var(--phone-canvas, var(--app-surface));
+}
+.message-thread-header .social-back {
+  top: 10px;
+}
+.message-recipient img {
+  width: 50px;
+  height: 50px;
+}
+.messages-app .message-recipient h1 {
+  font-size: 0.8125rem;
+  line-height: 1.3;
+}
+.messages-app .message-recipient {
+  gap: 5px;
+}
+.messages-app .message-history {
+  padding: 14px 19px 12px;
+}
+.messages-app .message-bubble {
+  --message-fill: #e9e9eb;
+  font-size: 1rem;
+  border-radius: 21px;
+  padding: 10px 14px;
+}
+.mobile-shell[data-theme='dark'] .messages-app .message-bubble {
+  --message-fill: #27272b;
+}
+.messages-app .message-line--outgoing .message-bubble {
+  --message-fill: #30c94c;
+  color: white;
+}
+.messages-app .message-bubble::after {
+  background: var(--phone-canvas, var(--app-surface));
+}
+.messages-app .message-send {
+  background: #30c94c;
+}
+.messages-app .message-composer {
+  background: var(--phone-canvas, var(--app-surface));
+  padding: 8px 16px 4px;
+}
+.messages-app .message-input-wrap {
+  border-radius: 26px;
+  min-height: 44px;
+  border: 1px solid var(--app-separator);
+  background: var(--phone-button, var(--app-background));
+}
+.messages-app .message-choice-status {
+  font-size: 0.6875rem;
+}
+.mobile-shell[data-theme='dark'] .messages-app .message-line--outgoing .message-bubble {
+  --message-fill: #30c94c;
+}

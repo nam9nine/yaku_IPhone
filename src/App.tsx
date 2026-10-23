@@ -1,4 +1,4 @@
-import { useEffect, useReducer, useState } from 'react';
+import { useEffect, useLayoutEffect, useReducer, useState } from 'react';
 import { MobileShell } from './components/MobileShell';
 import { LockScreen } from './lock/LockScreen';
 import { HomeScreen } from './home/HomeScreen';
@@ -17,6 +17,7 @@ import { useViewport } from './shell/useViewport';
 import { SafariApp } from './safari/SafariApp';
 import { defaultPreferences, isOnline, type DevicePreferences } from './settings/preferences';
 import { SystemEdges, HomeGestures } from './system/SystemEdges';
+import type { TopPanel } from './system/useTopPull';
 import { SystemPanels } from './system/SystemPanels';
 import './shell/appearance.css';
 import { ContactsApp } from './story/ContactsApp';
@@ -27,6 +28,7 @@ import { PhoneApp } from './story/PhoneApp';
 import { DayProvider, useDay } from './day/DayContext';
 import { RemindersApp } from './day/RemindersApp';
 import { CalendarApp } from './day/CalendarApp';
+import { DayCall } from './components/DayCall';
 import { DayNotification } from './components/DayNotification';
 import { resetStoryStorage } from './story/useStoredState';
 
@@ -47,14 +49,17 @@ function PhoneSession() {
   const [note, setNote] = useState<string | null>(null);
   const [photo, setPhoto] = useState<string | null>(null);
   const [settingsEntry, setSettingsEntry] = useState<{ page: 'demo'; key: number } | null>(null);
+  const [phoneEntry, setPhoneEntry] = useState(0);
   const [conversation, setConversation] = useState<string | null>(null);
   const [controls, setControls] = useState({ volume: 50, rotation: false, silent: false });
   const [state, dispatch] = useReducer(shellReducer, initialShellState);
   const { preferences, setPreferences, storageUnavailable } = useDevicePreferences();
   const appearance = useAppearance(preferences);
   const viewport = useViewport();
+  const [topPull, setTopPull] = useState<TopPanel | null>(null);
   const [switcherEntry, setSwitcherEntry] = useState<LaunchRect | null>(null);
   const showPanel = (panel: SystemPanel, entry?: LaunchRect) => {
+    setTopPull(null);
     setSwitcherEntry(entry ?? null);
     dispatch({ type: 'panel', panel });
   };
@@ -74,6 +79,10 @@ function PhoneSession() {
     setNote(id);
     openApp('notes');
   }
+  function openPhone() {
+    setPhoneEntry((value) => value + 1);
+    openApp('phone');
+  }
   function openHaruka() {
     setConversation('haruka');
     openApp('messages');
@@ -90,22 +99,22 @@ function PhoneSession() {
     dispatch({ type: 'lock' });
     setEpoch((value) => value + 1);
   }
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (state.locked || state.activeApp || state.panel) return;
-    const frame = requestAnimationFrame(() => {
-      const launcher = state.launcher
-        ? document.querySelector<HTMLElement>(`[data-launch-app="${state.launcher}"]`)
-        : null;
-      const target =
-        launcher && !launcher.closest('[inert], [hidden]')
-          ? launcher
-          : document.querySelector<HTMLElement>('[data-home-title]');
-      target?.focus({ preventScroll: true });
-    });
-    return () => cancelAnimationFrame(frame);
+    // Restore within the visibility commit so a later user focus is never
+    // overwritten by a queued animation frame.
+    const launcher = state.launcher
+      ? document.querySelector<HTMLElement>(`[data-launch-app="${state.launcher}"]`)
+      : null;
+    const target =
+      launcher && !launcher.closest('[inert], [hidden]')
+        ? launcher
+        : document.querySelector<HTMLElement>('[data-home-title]');
+    target?.focus({ preventScroll: true });
   }, [state.locked, state.activeApp, state.launcher, state.panel]);
   useEffect(() => {
     const shortcuts = (event: KeyboardEvent) => {
+      if (document.querySelector('.day-call[open]')) return;
       if (state.panel) return;
       if (event.altKey && event.key.toLowerCase() === 'c') {
         event.preventDefault();
@@ -131,7 +140,12 @@ function PhoneSession() {
     return () => window.removeEventListener('keydown', shortcuts);
   }, [state.locked, state.panel, state.activeApp]);
   return (
-    <MobileShell foreground={state.locked} preferences={preferences} appearance={appearance}>
+    <MobileShell
+      foreground={state.locked}
+      preferences={preferences}
+      appearance={appearance}
+      appVisible={!state.locked && !!state.activeApp && !state.panel}
+    >
       <div className="base-screens" inert={Boolean(state.panel)} aria-hidden={Boolean(state.panel)}>
         {state.locked && (
           <LockScreen
@@ -139,6 +153,7 @@ function PhoneSession() {
             onUnlock={() => dispatch({ type: 'unlock' })}
             autoFocus={state.hasUnlocked}
             onMessage={openHaruka}
+            onCall={openPhone}
             onCalendar={() => openApp('calendar')}
             onReminders={() => openApp('reminders')}
             onWeather={() => {
@@ -237,6 +252,7 @@ function PhoneSession() {
             />
           ) : app === 'phone' ? (
             <PhoneApp
+              requestedRecent={phoneEntry}
               active={!state.locked && state.activeApp === app && !state.panel}
               onMessage={(id) => {
                 setConversation(id);
@@ -257,16 +273,18 @@ function PhoneSession() {
       ))}
       {!state.panel && (
         <SystemEdges
+          onPreview={setTopPull}
           active
           onControl={() => showPanel('control')}
           onNotifications={() => showPanel('notifications')}
         />
       )}
-      {state.panel && (
+      {(state.panel || topPull) && (
         <SystemPanels
+          preview={!!topPull}
           controls={controls}
           onControls={setControls}
-          kind={state.panel}
+          kind={(state.panel || topPull)!}
           recent={state.visited}
           activeApp={state.activeApp}
           entry={switcherEntry}
@@ -279,32 +297,18 @@ function PhoneSession() {
           }
           getPreview={getPreview}
           viewport={viewport}
-          notifications={<DayNotification onOpen={openHaruka} />}
+          notifications={<DayNotification onOpen={openHaruka} onCall={openPhone} />}
         />
       )}
-      {!state.locked &&
-        !state.panel &&
-        day.state.missedCall &&
-        !day.state.missedCallRead &&
-        state.activeApp !== 'phone' && (
-          <aside className="missed-call-banner" aria-label="부재중 전화 알림">
-            <button
-              onClick={() => {
-                day.dispatch({ type: 'read-call' });
-                openApp('phone');
-              }}
-            >
-              <strong>마지마 형님</strong>
-              <span>부재중 전화</span>
-            </button>
-            <button
-              aria-label="부재중 전화 알림 닫기"
-              onClick={() => day.dispatch({ type: 'read-call' })}
-            >
-              ×
-            </button>
-          </aside>
-        )}
+      <DayCall
+        preferences={preferences}
+        key={epoch}
+        locked={state.locked}
+        onMessage={() => {
+          setConversation('majima');
+          openApp('messages');
+        }}
+      />
     </MobileShell>
   );
 }

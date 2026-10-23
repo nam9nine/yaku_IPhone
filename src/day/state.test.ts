@@ -132,7 +132,7 @@ describe('저장된 하루 검증', () => {
     const loaded = loadDay({
       getItem: (key) => (key === DAY_STORAGE_KEY ? JSON.stringify(state) : null),
     });
-    expect(loaded.state).toEqual(state);
+    expect(loaded.state).toEqual({ ...state, callStatus: 'missed' });
     expect(loaded.unavailable).toBe(false);
   });
   it('falls back safely when storage is denied', () => {
@@ -150,4 +150,18 @@ describe('저장된 하루 검증', () => {
       loadDay({ getItem: () => JSON.stringify({ ...initialDay(), replySent: true }) }).state,
     ).toEqual(initialDay());
   });
+});
+
+it('전화는 응답/거절 결과를 구분하고 완료 이벤트를 다시 재생하지 않는다', () => {
+  const ringing = completeShopping();
+  expect(ringing.callStatus).toBe('ringing');
+  const answered = dayReducer(ringing, { type: 'answer-call' });
+  expect(answered.callStatus).toBe('answered');
+  expect(answered.missedCallRead).toBe(true);
+  expect(dayReducer(answered, { type: 'miss-call' })).toBe(answered);
+  const missed = dayReducer(ringing, { type: 'miss-call' });
+  expect(missed.callStatus).toBe('missed');
+  expect(missed.missedCallRead).toBe(false);
+  expect(dayReducer(missed, { type: 'answer-call' })).toBe(missed);
+  expect(loadDay({ getItem: () => JSON.stringify(ringing) }).state.callStatus).toBe('missed');
 });

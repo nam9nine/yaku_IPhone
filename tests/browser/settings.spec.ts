@@ -53,7 +53,7 @@ test('연결 토글은 에어플레인 규칙을 따르고 새로고침 후 잠�
   await page.getByRole('switch', { name: 'Wi-Fi', exact: true }).check();
   await backToList(page);
   await expect(airplane).toBeChecked();
-  await expect(page.getByRole('button', { name: 'Wi-Fi 켬', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Wi-Fi ASAGAO_HOME', exact: true })).toBeVisible();
 
   await page.reload();
   await expect(page.getByTestId('lock-screen')).toBeVisible();
@@ -61,7 +61,7 @@ test('연결 토글은 에어플레인 규칙을 따르고 새로고침 후 잠�
   await tapPaged(page.getByRole('button', { name: '잠금 해제', exact: true }));
   await launchSettings(page);
   await expect(airplane).toBeChecked();
-  await expect(page.getByRole('button', { name: 'Wi-Fi 켬', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Wi-Fi ASAGAO_HOME', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Bluetooth 끔', exact: true })).toBeVisible();
   await airplane.uncheck();
   await expect(page.getByRole('button', { name: '셀룰러 켬', exact: true })).toBeVisible();
@@ -88,7 +88,7 @@ test('손상된 저장값은 유효한 기본 설정으로 복구된다', async 
   });
   await openSettings(page);
   await expect(page.getByRole('switch', { name: '에어플레인 모드' })).not.toBeChecked();
-  await expect(page.getByRole('button', { name: 'Wi-Fi 켬', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Wi-Fi ASAGAO_HOME', exact: true })).toBeVisible();
   await tapPaged(page.getByRole('button', { name: '디스플레이 및 밝기', exact: true }));
   await expect(page.getByRole('slider', { name: '화면 밝기' })).toHaveValue('100');
 });
@@ -324,6 +324,8 @@ for (const size of [
 test('Tab·Space·Enter로 연결을 바꾸고 상세 화면에서 돌아올 수 있다', async ({ page }) => {
   await openSettings(page);
   await page.keyboard.press('Tab');
+  await expect(page.getByRole('button', { name: '키류 카즈마 프로필' })).toBeFocused();
+  await page.keyboard.press('Tab');
   const airplane = page.getByRole('switch', { name: '에어플레인 모드' });
   await expect(airplane).toBeFocused();
   await page.keyboard.press('Space');
@@ -339,5 +341,5 @@ test('Tab·Space·Enter로 연결을 바꾸고 상세 화면에서 돌아올 수
   await page.keyboard.press('Shift+Tab');
   await expect(page.getByRole('button', { name: '설정 목록으로 돌아가기' })).toBeFocused();
   await page.keyboard.press('Enter');
-  await expect(page.getByRole('button', { name: 'Wi-Fi 켬', exact: true })).toBeFocused();
+  await expect(page.getByRole('button', { name: 'Wi-Fi ASAGAO_HOME', exact: true })).toBeFocused();
 });

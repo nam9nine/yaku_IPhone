@@ -27,7 +27,7 @@ export function HomeScreen({
   onOpenApp?: (app: RunnableApp, origin: LaunchRect) => void;
 }) {
   const date = useDisplayDate();
-  const { shoppingDone } = useDay();
+  const { shoppingDone, state: dayState } = useDay();
   const widgetPhoto = dayPhotos[shoppingDone ? 1 : 0];
   const day = String(Number(date.isoDate.slice(-2)));
   const weekday = date.label.split(' ').at(-1) ?? '';
@@ -176,7 +176,22 @@ export function HomeScreen({
         data-launch-app={app.id}
         onClick={(event) => openApp(app, event.currentTarget)}
       >
-        <AppIcon id={app.id} day={day} weekday={weekday.replace('요일', '')} />
+        <span className="home-icon-wrap">
+          <AppIcon id={app.id} day={day} weekday={weekday.replace('요일', '')} />
+          {app.id === 'messages' && dayState.readThreads.length < 5 && (
+            <span
+              className="home-badge"
+              aria-label={`읽지 않은 대화 ${5 - dayState.readThreads.length}개`}
+            >
+              {5 - dayState.readThreads.length}
+            </span>
+          )}
+          {app.id === 'phone' && dayState.callStatus === 'missed' && !dayState.missedCallRead && (
+            <span className="home-badge" aria-label="부재중 전화 1개">
+              1
+            </span>
+          )}
+        </span>
         {!inDock && <span className="home-app-label">{app.name}</span>}
       </button>
     );

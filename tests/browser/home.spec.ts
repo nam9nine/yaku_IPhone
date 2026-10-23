@@ -96,7 +96,7 @@ test('잠금 해제 후 홈으로 포커스를 옮기고 숨겨진 키보드 보
 });
 
 for (const size of viewports) {
-  test(`사진 위젯 1개·실행 앱 4개·Dock 4개가 잘림 없이 보인다 ${size.width}x${size.height}`, async ({
+  test(`사진 위젯 1개·실행 앱 5개·Dock 4개가 잘림 없이 보인다 ${size.width}x${size.height}`, async ({
     page,
   }) => {
     await page.setViewportSize(size);
@@ -110,10 +110,10 @@ for (const size of viewports) {
     const dock = page.getByRole('navigation', { name: 'Dock' });
     const pageBounds = (await page.getByTestId('home-pages').boundingBox())!;
     await expect(widgets).toHaveCount(1);
-    await expect(apps).toHaveCount(4);
+    await expect(apps).toHaveCount(5);
     expect(
       await apps.evaluateAll((items) => items.map((item) => item.getAttribute('aria-label'))),
-    ).toEqual(['사진', '캘린더', '미리 알림', '설정']);
+    ).toEqual(['사진', '캘린더', '미리 알림', '설정', '연락처']);
     expect(
       await dock
         .getByRole('button')
@@ -129,7 +129,7 @@ for (const size of viewports) {
       }),
     );
     expect(new Set(appCenters.map(({ x }) => x)).size).toBe(4);
-    expect(new Set(appCenters.map(({ y }) => y)).size).toBe(1);
+    expect(new Set(appCenters.map(({ y }) => y)).size).toBe(2);
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(size.width);
     const photo = page.getByRole('button', { name: '사진 위젯' }).locator('img');
     await expect(photo).toHaveAttribute('src', /\/asagao\//);

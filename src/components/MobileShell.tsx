@@ -1,3 +1,4 @@
+import { StatusBar } from './StatusBar';
 import type { CSSProperties, ReactNode } from 'react';
 import { useViewport } from '../shell/useViewport';
 import type { DevicePreferences } from '../settings/preferences';
@@ -8,8 +9,10 @@ export function MobileShell({
   foreground = false,
   preferences,
   appearance,
+  appVisible = false,
 }: {
   children: ReactNode;
+  appVisible?: boolean;
   foreground?: boolean;
   preferences: DevicePreferences;
   appearance: { theme: 'light' | 'dark'; reduceMotion: boolean };
@@ -54,6 +57,7 @@ export function MobileShell({
           }}
         />
       </div>
+      <StatusBar preferences={preferences} appVisible={appVisible} />
       <div className="mobile-shell-content">{children}</div>
       <div
         className="brightness-overlay"

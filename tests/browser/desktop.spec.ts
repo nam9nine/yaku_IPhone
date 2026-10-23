@@ -27,9 +27,8 @@ async function insidePhone(page: Page, locator: Locator) {
 }
 async function fillsPhone(page: Page, locator: Locator) {
   const outer = await bounds(page.locator('.mobile-shell'));
-  const inner = await bounds(locator);
   for (const key of ['x', 'y', 'width', 'height'] as const)
-    expect(inner[key]).toBeCloseTo(outer[key], 0);
+    await expect.poll(async () => (await bounds(locator))[key]).toBeCloseTo(outer[key], 0);
 }
 async function indicatorsInside(page: Page) {
   const indicators = page.locator('.home-indicator:visible');
@@ -136,6 +135,9 @@ test('PC 폰 오른쪽 위 제어 센터와 키보드 조작은 프레임을 벗
   await page.mouse.up();
   const control = page.getByTestId('system-control');
   await expect(control).toBeVisible();
+  await expect
+    .poll(async () => (await control.boundingBox())?.y)
+    .toBeCloseTo((await bounds(page.getByRole('main'))).y, 0);
   await fillsPhone(page, control);
   await indicatorsInside(page);
   const wifi = control.getByRole('switch', { name: 'Wi-Fi', exact: true });
@@ -152,6 +154,9 @@ test('PC 폰 오른쪽 위 제어 센터와 키보드 조작은 프레임을 벗
   await insidePhone(page, keyboardControl);
   await keyboardControl.press('Enter');
   await expect(control).toBeVisible();
+  await expect
+    .poll(async () => (await control.boundingBox())?.y)
+    .toBeCloseTo((await bounds(page.getByRole('main'))).y, 0);
   await fillsPhone(page, control);
   await page.keyboard.press('Escape');
   const left = await bounds(page.getByTestId('notification-edge'));

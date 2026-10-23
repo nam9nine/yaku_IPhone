@@ -22,7 +22,7 @@ test('장보기 완료 후 잠금 위젯', async ({ page }) => {
   await page.getByRole('button', { name: '장보기 목록: 오늘 저녁 카레 메모 열기' }).tap();
   for (const name of ['감자', '양파', '고기', '카레'])
     await page.getByRole('checkbox', { name: `${name} 완료`, exact: true }).check();
-  await page.getByRole('button', { name: '부재중 전화 알림 닫기' }).tap();
+  await page.getByRole('button', { name: '전화 거절' }).tap();
   await page.keyboard.press('Alt+Home');
   const lock = page.getByRole('button', { name: '다시 잠그기' });
   await lock.focus();

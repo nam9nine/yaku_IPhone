@@ -1,3 +1,5 @@
+import { PhoneIcon } from './PhoneIcon';
+import './messages-native.css';
 import { useEffect, useEffectEvent, useLayoutEffect, useRef, useState } from 'react';
 import { useEdgeNavigation } from '../navigation/EdgeNavigation';
 import { contacts } from './data';
@@ -47,6 +49,8 @@ export function MessagesApp({
 }) {
   const { state, dispatch, shoppingDone, storageUnavailable } = useDay();
   const [query, setQuery] = useState('');
+  const [unreadOnly, setUnreadOnly] = useState(false);
+  const [editMenu, setEditMenu] = useState(false);
   const [composing, setComposing] = useState(false);
   const [recipientQuery, setRecipientQuery] = useState('');
   const root = useRef<HTMLElement>(null);
@@ -61,6 +65,7 @@ export function MessagesApp({
   const picking = composing && !person;
   const filtered = [...contacts]
     .sort((left, right) => Number(right.id === 'haruka') - Number(left.id === 'haruka'))
+    .filter((contact) => !unreadOnly || !state.readThreads.includes(contact.id))
     .filter((contact) =>
       `${contact.name} ${threadMessages(contact.id, state.replies.includes(contact.id))
         .map((message) => message.text)
@@ -120,7 +125,7 @@ export function MessagesApp({
   return (
     <section ref={root} className="social-app messages-app" aria-label="메시지 내용" {...edge}>
       <header
-        className={`social-header${person || picking ? ' social-header--compact' : ''}${person ? ' message-thread-header' : ''}`}
+        className={`social-header social-header--compact${person ? ' message-thread-header' : ''}`}
       >
         {person || picking ? (
           <button
@@ -131,12 +136,44 @@ export function MessagesApp({
           >
             <Chevron />
           </button>
-        ) : null}
+        ) : (
+          <>
+            <button
+              className="message-edit social-circle"
+              aria-expanded={editMenu}
+              onClick={() => setEditMenu(!editMenu)}
+            >
+              편집
+            </button>
+            <button
+              className="message-filter social-circle"
+              aria-label="읽지 않은 메시지만 보기"
+              aria-pressed={unreadOnly}
+              onClick={() => setUnreadOnly(!unreadOnly)}
+            >
+              <PhoneIcon name="menu" />
+            </button>
+            {editMenu && (
+              <div className="message-edit-menu">
+                <button
+                  onClick={() => {
+                    for (const contact of contacts)
+                      dispatch({ type: 'read-thread', id: contact.id });
+                    setEditMenu(false);
+                  }}
+                >
+                  모두 읽음으로 표시
+                </button>
+                <button onClick={() => setEditMenu(false)}>취소</button>
+              </div>
+            )}
+          </>
+        )}
         {person ? (
           <div className="message-recipient">
             <img src={person.portrait} alt="" />
             <h1 ref={title} tabIndex={-1} data-app-title>
-              {person.name}
+              {person.shortName}
             </h1>
           </div>
         ) : (
@@ -320,6 +357,7 @@ export function MessagesApp({
                 onChange={(event) => setQuery(event.target.value)}
                 autoComplete="off"
               />
+              <PhoneIcon name="microphone" />
             </label>
             <button
               type="button"

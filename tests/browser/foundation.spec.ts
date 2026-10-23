@@ -13,7 +13,7 @@ test('프로젝트 경로에서 가상 토요일 날짜·시계와 로컬 배경
   await page.clock.setFixedTime(new Date('2026-10-23T09:41:00+09:00'));
   await page.goto('./');
   await expect(page.getByTestId('lock-screen')).toBeVisible();
-  await expect(page.locator('time')).toHaveText('10월 24일 토요일');
+  await expect(page.locator('.lock-date')).toHaveText('10월 24일 토요일');
   await expect(page.getByRole('img', { name: '16시 40분' })).toBeVisible();
   for (const img of await page.locator('main img').all()) {
     await expect(img).toHaveJSProperty('complete', true);
@@ -53,7 +53,7 @@ test('높이 변경·네 방향 safe area에서도 콘텐츠에 접근한다', a
     content:
       ':root { --safe-area-top: 20px; --safe-area-right: 47px; --safe-area-bottom: 34px; --safe-area-left: 47px; }',
   });
-  for (const [side, value] of Object.entries({ top: 36, right: 71, bottom: 58, left: 71 }))
+  for (const [side, value] of Object.entries({ top: 66, right: 71, bottom: 58, left: 71 }))
     await expect(page.getByRole('main')).toHaveCSS(`padding-${side}`, `${value}px`);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(844);
   await page.getByRole('button', { name: '잠금 해제', exact: true }).scrollIntoViewIfNeeded();
@@ -100,13 +100,13 @@ test('실제 시각의 자정과 날짜 변경은 가상 시각·할 일·알림
 }) => {
   await page.clock.install({ time: new Date('2026-12-31T23:59:59+09:00') });
   await page.goto('./');
-  await expect(page.locator('time')).toHaveAttribute('datetime', '2026-10-24');
+  await expect(page.locator('.lock-date')).toHaveAttribute('datetime', '2026-10-24');
   await expect(page.getByRole('img', { name: '16시 40분' })).toBeVisible();
   await expect(page.getByRole('button', { name: '남은 할 일 3개' })).toBeVisible();
   const notification = page.locator('.day-notification');
   const before = await notification.innerText();
   await page.clock.fastForward(86_401_000);
-  await expect(page.locator('time')).toHaveAttribute('datetime', '2026-10-24');
+  await expect(page.locator('.lock-date')).toHaveAttribute('datetime', '2026-10-24');
   await expect(page.getByRole('img', { name: '16시 40분' })).toBeVisible();
   await expect(page.getByRole('button', { name: '남은 할 일 3개' })).toBeVisible();
   await expect(notification).toHaveText(before, { useInnerText: true });
