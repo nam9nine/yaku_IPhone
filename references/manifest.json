@@ -743,6 +743,27 @@
           "bytes": 1394708
         }
       ]
+    },
+    {
+      "id": "webkit-focus-195884",
+      "type": "official-document",
+      "sourceUrl": "https://bugs.webkit.org/show_bug.cgi?id=195884",
+      "retrievedOn": "2026-10-23",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "WebKit Bugzilla discussion; local technical reference only. Do not redistribute as product content."
+      },
+      "purpose": "Comment 4 and 6: distinguish DOM focus from user-gesture software keyboard activation; synchronous focus in address click handler. No iOS 27 real-device verification is implied.",
+      "keyPaths": [],
+      "artifacts": [
+        {
+          "role": "html",
+          "url": "https://bugs.webkit.org/show_bug.cgi?id=195884",
+          "localPath": "references/upstream/webkit/focus-195884.html",
+          "sha256": "3e59d78a294f714fa71e64e402068b9db06806f850e98ab1d93986cdd8cb88c0",
+          "bytes": 39444
+        }
+      ]
     }
   ]
 }

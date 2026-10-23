@@ -90,23 +90,3 @@
   stroke-width: 1.7;
   stroke-linejoin: round;
 }
-.app-preview {
-  flex: 1;
-  padding: 48px 24px;
-  overflow: auto;
-}
-.app-preview h1 {
-  font-size: 2rem;
-  margin: 0 0 24px;
-  letter-spacing: -0.04em;
-}
-.app-preview-card {
-  padding: 24px;
-  border-radius: 22px;
-  background: var(--app-surface);
-  line-height: 1.6;
-  color: var(--app-secondary);
-}
-.app-preview-card p {
-  margin: 0;
-}
