@@ -92,7 +92,7 @@ button:focus:not(:focus-visible),
   }
 }
 
-/* The shell never scrolls. Content overflow is exposed through horizontal pages. */
+/* The shell stays fixed. Settings owns its vertical scroll; Safari uses pages. */
 html,
 body,
 #root {
@@ -199,11 +199,51 @@ body,
   backdrop-filter: none;
 }
 
-/* Blur stays on the fading overlay; do not leave a second blurred scene behind it. */
+/* Parent opacity isolates backdrop-filter, so animate the existing scene blur on exit. */
 .mobile-shell:has(.system-panel[data-empty-switcher='true']) .base-screens,
-.mobile-shell:has(.system-panel[data-empty-switcher='true']) .mobile-shell-wallpaper,
+.mobile-shell:has(.system-panel[data-empty-switcher='true']) .mobile-shell-wallpaper {
+  filter: blur(8px);
+  animation: empty-scene-blur 700ms ease-out both;
+}
 .mobile-shell:has(.system-panel[data-closing='true']) .base-screens,
 .mobile-shell:has(.system-panel[data-closing='true']) .app-host,
 .mobile-shell:has(.system-panel[data-closing='true']) .mobile-shell-wallpaper {
+  animation: panel-scene-clear 200ms ease-out both;
+}
+@keyframes empty-scene-blur {
+  0% {
+    filter: blur(0);
+  }
+  20%,
+  45% {
+    filter: blur(8px);
+  }
+  100% {
+    filter: blur(0);
+  }
+}
+@keyframes panel-scene-clear {
+  from {
+    filter: blur(20px);
+  }
+  to {
+    filter: blur(0);
+  }
+}
+.mobile-shell[data-reduced-motion='true']:has(.system-panel[data-empty-switcher='true'])
+  .base-screens,
+.mobile-shell[data-reduced-motion='true']:has(.system-panel[data-empty-switcher='true'])
+  .mobile-shell-wallpaper {
+  animation: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mobile-shell:has(.system-panel[data-empty-switcher='true']) .base-screens,
+  .mobile-shell:has(.system-panel[data-empty-switcher='true']) .mobile-shell-wallpaper {
+    animation: none;
+  }
+}
+
+.mobile-shell:has(.system-panel--notifications[data-closing='true']) .mobile-shell-wallpaper {
+  animation: none;
   filter: none;
 }

@@ -419,21 +419,52 @@ test('작은 높이와 200% 글자에서 Safari 메뉴·탭·오류도 세로 �
 test('설정의 실제 세로 입력과 가장자리 뒤로는 목록 위치와 홈 고정을 유지한다', async ({
   page,
   browserName,
-}) => {
+}, testInfo) => {
   await page.setViewportSize({ width: 360, height: 500 });
   await openApp(page, '설정');
   const content = settingsBody(page);
   if (browserName === 'chromium') {
+    const bounds = (await content.boundingBox())!;
+    const x = bounds.x + bounds.width / 2;
+    const y = bounds.y + bounds.height * 0.8;
+    expect(await content.evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(true);
+    expect(
+      await content.evaluate(
+        (el, point) => el.contains(document.elementFromPoint(point.x, point.y)),
+        { x, y },
+      ),
+    ).toBe(true);
     const client = await page.context().newCDPSession(page);
-    await client.send('Input.synthesizeScrollGesture', {
-      x: 180,
-      y: 370,
-      yDistance: -240,
-      speed: 600,
-      gestureSourceType: 'touch',
-      preventFling: true,
+    // Native touch events exercise browser scrolling without assigning scrollTop.
+    // Send each finger position explicitly instead of the experimental scroll synthesizer.
+    await client.send('Input.dispatchTouchEvent', {
+      type: 'touchStart',
+      touchPoints: [{ x, y }],
     });
+    for (let step = 1; step <= 12; step++) {
+      await page.evaluate(() => new Promise(requestAnimationFrame));
+      await client.send('Input.dispatchTouchEvent', {
+        type: 'touchMove',
+        touchPoints: [{ x, y: y - step * 20 }],
+      });
+    }
+    // Hold before lifting so this checks a drag, not platform-dependent inertia.
+    for (let frame = 0; frame < 6; frame++)
+      await page.evaluate(() => new Promise(requestAnimationFrame));
+    await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
     await client.detach();
+    await testInfo.attach('native-scroll-geometry', {
+      body: JSON.stringify(
+        await content.evaluate((el) => ({
+          scrollTop: el.scrollTop,
+          scrollHeight: el.scrollHeight,
+          clientHeight: el.clientHeight,
+          touchAction: getComputedStyle(el).touchAction,
+          documentY: window.scrollY,
+        })),
+      ),
+      contentType: 'application/json',
+    });
   } else {
     for (let i = 0; i < 20; i++) {
       await page.keyboard.press('Tab');
