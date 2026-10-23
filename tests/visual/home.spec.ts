@@ -8,6 +8,8 @@ for (const size of [
   for (const pageNumber of [1, 2]) {
     test(`홈 ${pageNumber}페이지 ${size.width}x${size.height}`, async ({ page }) => {
       await page.setViewportSize(size);
+      // Capture a static scene without transient compositor layers from the entry motion.
+      await page.emulateMedia({ reducedMotion: 'reduce' });
       await page.clock.setFixedTime(new Date('2026-10-23T09:41:00+09:00'));
       await page.goto('./');
       await page.getByRole('button', { name: '잠금 해제', exact: true }).tap();
@@ -15,6 +17,7 @@ for (const size of [
       for (const img of await page.locator('main img').all()) {
         await expect(img).toHaveJSProperty('complete', true);
         expect(await img.evaluate((el: HTMLImageElement) => el.naturalWidth)).toBeGreaterThan(0);
+        await img.evaluate((el: HTMLImageElement) => el.decode());
       }
       if (pageNumber === 2) await page.getByRole('button', { name: '2페이지로 이동' }).tap();
       await page.evaluate(async () => {
