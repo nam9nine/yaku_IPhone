@@ -1,32 +1,17 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { MobileShell } from './components/MobileShell';
 import { LockScreen } from './lock/LockScreen';
+import { HomeScreen } from './home/HomeScreen';
 
 export function App() {
-  const [locked, setLocked] = useState(true);
-  const arrivalTitle = useRef<HTMLHeadingElement>(null);
-  useEffect(() => {
-    if (!locked) arrivalTitle.current?.focus();
-  }, [locked]);
-
+  const [screen, setScreen] = useState<'initial-lock' | 'lock' | 'home'>('initial-lock');
+  const locked = screen !== 'home';
   return (
     <MobileShell foreground={locked}>
       {locked ? (
-        <LockScreen onUnlock={() => setLocked(false)} />
+        <LockScreen onUnlock={() => setScreen('home')} autoFocus={screen === 'lock'} />
       ) : (
-        <section
-          className="home-arrival screen-enter"
-          aria-label="홈 도착 화면"
-          data-testid="home-arrival"
-        >
-          <h1 ref={arrivalTitle} tabIndex={-1}>
-            홈
-          </h1>
-          <p>잠금이 해제되었어요.</p>
-          <button type="button" onClick={() => setLocked(true)}>
-            다시 잠그기
-          </button>
-        </section>
+        <HomeScreen onLock={() => setScreen('lock')} />
       )}
     </MobileShell>
   );

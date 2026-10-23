@@ -119,31 +119,6 @@
   background: rgb(28 24 33 / 72%);
   border-radius: var(--space-4);
 }
-.home-arrival {
-  position: relative;
-  z-index: 2;
-  text-align: center;
-  margin: auto;
-  padding: var(--space-8);
-  border-radius: var(--radius-panel);
-  background: var(--color-panel);
-}
-.home-arrival h1 {
-  margin: 0 0 var(--space-3);
-  font-size: var(--font-title);
-}
-.home-arrival p {
-  line-height: 1.6;
-  color: var(--color-ink-secondary);
-}
-.home-arrival button {
-  color: white;
-  background: var(--glass-fill);
-  border: 1px solid var(--glass-edge);
-  border-radius: 24px;
-  padding: var(--space-3) var(--space-6);
-  min-height: 44px;
-}
 @media (max-height: 620px) {
   .lock-screen {
     touch-action: pan-x pan-y pinch-zoom;

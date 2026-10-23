@@ -12,7 +12,9 @@
 
 Vite의 정적 React 앱과 TypeScript strict를 사용한다. GitHub Pages의 프로젝트 경로 `/yaku_IPhone/`에서 동작해야 하므로 자산 URL은 Vite base를 존중한다. 현재 서버·계정·외부 API·복잡한 라우터는 필요하지 않다.
 
-공통 컨테이너는 `src/components/MobileShell.tsx`, 디자인 토큰은 `src/styles/tokens.css`, 날짜·시계 데이터는 `src/display/`에 구현했다. `src/App.tsx`가 잠금 여부를 소유하며 `src/lock/LockScreen.tsx`와 홈 도착 상태를 조합한다. 홈 앱 격자·Dock은 Issue #5에서 통합한다.
+공통 컨테이너는 `src/components/MobileShell.tsx`, 디자인 토큰은 `src/styles/tokens.css`, 날짜·시계 데이터는 `src/display/`에 구현했다. `src/App.tsx`가 최초 잠금·홈·재잠금 상태를 소유하며 `src/lock/LockScreen.tsx`와 `src/home/HomeScreen.tsx`를 조합한다. 홈에 들어가면 제목에 포커스를 옮기고 다시 잠그면 해제 버튼에 포커스를 돌려준다.
+
+홈의 앱 데이터는 `src/home/apps.ts`, 자체 SVG 아이콘은 `AppIcon.tsx`, 페이지 이동 판정은 `pageGesture.ts`로 나눈다. 수평 이동 거리가 페이지 폭의 18% 또는 48px 중 큰 값을 넘어야 한 페이지 이동한다. 수직 이동·취소·포커스 손실은 페이지를 유지하고 드래그 후의 앱 클릭은 억제한다. 비활성 페이지는 `inert`이며 페이지 버튼과 화살표 키를 대체 조작으로 제공한다. 짧은 화면에서는 앱 영역만 스크롤하고 Dock을 유지한다. 확대된 라벨은 줄바꿈하고 위젯 최소 높이를 글자 크기에 맞춰 늘린다. 자산 출처는 [홈 자산 기록](assets-home.md)에 남긴다.
 
 | 책임                 | 내용                                                                                                                       |
 | -------------------- | -------------------------------------------------------------------------------------------------------------------------- |
