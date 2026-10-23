@@ -145,6 +145,9 @@
   min-height: 44px;
 }
 @media (max-height: 620px) {
+  .lock-screen {
+    touch-action: pan-x pan-y pinch-zoom;
+  }
   .lock-clock-group {
     padding-top: var(--space-4);
   }

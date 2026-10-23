@@ -56,13 +56,36 @@ test('높이 변경·네 방향 safe area에서도 콘텐츠에 접근한다', a
   await expect(page.getByRole('button', { name: '잠금 해제', exact: true })).toBeInViewport();
 });
 
-test('문자 확대와 짧은 화면에서 하단 제어까지 스크롤한다', async ({ page }) => {
+test('문자 확대와 짧은 화면에서 하단 제어까지 스크롤한다', async ({ page, browserName }) => {
   await page.setViewportSize({ width: 360, height: 320 });
   await page.goto('./');
   await page.addStyleTag({ content: ':root { font-size: 200%; }' });
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(360);
-  await page.getByRole('button', { name: '잠금 해제', exact: true }).scrollIntoViewIfNeeded();
+  await expect(page.getByTestId('lock-screen')).toHaveCSS(
+    'touch-action',
+    /^(manipulation|pan-x pan-y pinch-zoom)$/,
+  );
+  if (browserName === 'chromium') {
+    const client = await page.context().newCDPSession(page);
+    await client.send('Input.dispatchTouchEvent', {
+      type: 'touchStart',
+      touchPoints: [{ x: 180, y: 280 }],
+    });
+    for (let y = 260; y >= 40; y -= 20)
+      await client.send('Input.dispatchTouchEvent', {
+        type: 'touchMove',
+        touchPoints: [{ x: 180, y }],
+      });
+    await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+    await client.detach();
+  } else {
+    // WebKit has no CDP touch-drag API; check native scroll policy and the reachable control.
+    await page.getByRole('button', { name: '잠금 해제', exact: true }).scrollIntoViewIfNeeded();
+  }
   await expect(page.getByRole('button', { name: '잠금 해제', exact: true })).toBeInViewport();
+  await page.getByRole('button', { name: '잠금 해제', exact: true }).tap();
+  await expect(page.getByTestId('home-arrival')).toBeVisible();
 });
 
 test('분 경계와 한국 자정에 시계·날짜를 갱신한다', async ({ page }) => {
