@@ -1,41 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 1950" fill="none">
-  <defs>
-    <linearGradient id="base" x1="220" y1="0" x2="680" y2="1950" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#b3a591"/>
-      <stop offset=".3" stop-color="#d9d4cc"/>
-      <stop offset=".63" stop-color="#756d78"/>
-      <stop offset="1" stop-color="#353345"/>
-    </linearGradient>
-    <linearGradient id="upper" x1="80" y1="60" x2="580" y2="1050" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#5b4e40"/>
-      <stop offset=".33" stop-color="#bba98b"/>
-      <stop offset=".68" stop-color="#e5dfd1"/>
-      <stop offset=".89" stop-color="#f1eee5"/>
-      <stop offset="1" stop-color="#a7a2a2"/>
-    </linearGradient>
-    <linearGradient id="fold" x1="620" y1="510" x2="275" y2="1470" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#fcfaf4"/>
-      <stop offset=".22" stop-color="#deddd9"/>
-      <stop offset=".5" stop-color="#a7a5ad"/>
-      <stop offset=".72" stop-color="#706c7a"/>
-      <stop offset="1" stop-color="#353242"/>
-    </linearGradient>
-    <linearGradient id="lower" x1="290" y1="1330" x2="1000" y2="1830" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#393542"/>
-      <stop offset=".34" stop-color="#777481"/>
-      <stop offset=".65" stop-color="#c0bec3"/>
-      <stop offset=".88" stop-color="#e0dedc"/>
-      <stop offset="1" stop-color="#aba8af"/>
-    </linearGradient>
-    <linearGradient id="edge" x1="240" y1="950" x2="660" y2="1670" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#fffdf3" stop-opacity=".8"/>
-      <stop offset="1" stop-color="#eeebf4" stop-opacity=".1"/>
-    </linearGradient>
-  </defs>
-  <path fill="url(#base)" d="M0 0h900v1950H0z"/>
-  <path fill="url(#upper)" d="M0 0h900v320C766 391 737 581 621 735 446 968 147 1028 0 1160V0Z"/>
-  <path fill="url(#fold)" d="M900 320C822 487 737 626 555 803 287 1064 36 1032 0 1379v571h900V320Z"/>
-  <path fill="url(#lower)" d="M900 667C1003 1211 311 1123 221 1572 184 1754 310 1891 409 1950h491V667Z"/>
-  <path stroke="url(#edge)" stroke-width="2" d="M900 667C1003 1211 311 1123 221 1572 184 1754 310 1891 409 1950"/>
-  <path stroke="#fffdf3" stroke-opacity=".34" stroke-width="2" d="M900 320C822 487 737 626 555 803 287 1064 36 1032 0 1379"/>
+<defs>
+<linearGradient id="base" x1="150" y1="0" x2="650" y2="1950" gradientUnits="userSpaceOnUse"><stop stop-color="#6c5039"/><stop offset=".38" stop-color="#8e7866"/><stop offset="1" stop-color="#262435"/></linearGradient>
+<linearGradient id="left" x1="70" y1="130" x2="440" y2="740" gradientUnits="userSpaceOnUse"><stop stop-color="#705239"/><stop offset=".45" stop-color="#b8935a"/><stop offset=".73" stop-color="#e8d8b4"/><stop offset="1" stop-color="#8c7e6c"/></linearGradient>
+<linearGradient id="right" x1="400" y1="210" x2="950" y2="550" gradientUnits="userSpaceOnUse"><stop stop-color="#685342"/><stop offset=".4" stop-color="#9b8876"/><stop offset=".78" stop-color="#d4ccbf"/><stop offset="1" stop-color="#efebe0"/></linearGradient>
+<linearGradient id="front" x1="330" y1="850" x2="280" y2="1910" gradientUnits="userSpaceOnUse"><stop stop-color="#b4a28c"/><stop offset=".28" stop-color="#8c7d7b"/><stop offset=".67" stop-color="#514959"/><stop offset="1" stop-color="#242333"/></linearGradient>
+<linearGradient id="curl" x1="270" y1="1320" x2="970" y2="1670" gradientUnits="userSpaceOnUse"><stop stop-color="#35303e"/><stop offset=".36" stop-color="#6a6571"/><stop offset=".72" stop-color="#b5b2b3"/><stop offset=".91" stop-color="#dedbd2"/><stop offset="1" stop-color="#bbb6ae"/></linearGradient>
+<linearGradient id="shine" x1="0" y1="950" x2="800" y2="1790" gradientUnits="userSpaceOnUse"><stop stop-color="#f6e6c9" stop-opacity=".9"/><stop offset="1" stop-color="#eeeaf1" stop-opacity=".2"/></linearGradient>
+</defs>
+<path fill="url(#base)" d="M0 0h900v1950H0z"/>
+<path fill="url(#left)" d="M-20-20H432C597 175 468 399 331 539C154 720 37 856-20 1080Z"/>
+<path fill="url(#right)" d="M432-20H920V220C926 587 720 652 486 716C242 782 50 845-20 1080C59 794 276 610 405 439C524 282 534 147 432-20Z"/>
+<path stroke="#f2e9d9" stroke-opacity=".65" stroke-width="3" d="M432-20C597 175 468 399 331 539C154 720 37 856-20 1080M920 220C926 587 720 652 486 716C242 782 50 845-20 1080"/><path fill="url(#front)" d="M-20 1040C115 745 666 1225 847 925C871 882 890 821 920 750V1970H-20Z"/>
+<path fill="url(#curl)" d="M920 750C926 1158 575 1328 472 1670C430 1803 452 1900 530 1970H920Z"/>
+<path stroke="url(#shine)" stroke-width="3" d="M-20 1040C115 745 666 1225 847 925C871 882 890 821 920 750C926 1158 575 1328 472 1670C430 1803 452 1900 530 1970"/>
 </svg>

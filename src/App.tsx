@@ -1,25 +1,33 @@
+import { useEffect, useRef, useState } from 'react';
 import { MobileShell } from './components/MobileShell';
-import { useDisplayDate } from './display/useDisplayDate';
+import { LockScreen } from './lock/LockScreen';
 
 export function App() {
-  const date = useDisplayDate();
+  const [locked, setLocked] = useState(true);
+  const arrivalTitle = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    if (!locked) arrivalTitle.current?.focus();
+  }, [locked]);
 
   return (
-    <MobileShell>
-      <section className="welcome" aria-labelledby="welcome-title" data-testid="fixture">
-        <time className="welcome-date" dateTime={date.isoDate}>
-          {date.label}
-        </time>
-        <div className="welcome-mark" aria-hidden="true">
-          y
-        </div>
-        <h1 id="welcome-title">yaku iPhone</h1>
-        <p>
-          잠금 화면과 홈 화면을
-          <br />
-          준비하고 있습니다.
-        </p>
-      </section>
+    <MobileShell foreground={locked}>
+      {locked ? (
+        <LockScreen onUnlock={() => setLocked(false)} />
+      ) : (
+        <section
+          className="home-arrival screen-enter"
+          aria-label="홈 도착 화면"
+          data-testid="home-arrival"
+        >
+          <h1 ref={arrivalTitle} tabIndex={-1}>
+            홈
+          </h1>
+          <p>잠금이 해제되었어요.</p>
+          <button type="button" onClick={() => setLocked(true)}>
+            다시 잠그기
+          </button>
+        </section>
+      )}
     </MobileShell>
   );
 }
