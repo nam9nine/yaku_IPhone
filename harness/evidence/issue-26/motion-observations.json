@@ -1,0 +1,259 @@
+{
+  "sourceCommit": "a23e83d1793f48760ebcde233017f893e48e1369",
+  "environment": {
+    "platform": "darwin",
+    "node": "v24.22.0",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "locale": "ko-KR",
+    "timezone": "Asia/Seoul",
+    "pointer": "Playwright mouse (not physical iPhone touch)",
+    "reducedMotion": "no-preference"
+  },
+  "limitations": [
+    "Screenshot collection pauses a held drag and changes gesture timing. Fast path is executed separately without captures while the pointer is down.",
+    "rAF intervals describe this instrumented desktop run only; these are not device performance benchmarks."
+  ],
+  "engines": {
+    "chromium": {
+      "browserVersion": "156.0.8078.4",
+      "source": "/yaku_IPhone/assets/index-Bm_xuPCn.js",
+      "errors": [],
+      "longDrag": [
+        {
+          "label": "full",
+          "time": 2167,
+          "appRect": {
+            "x": 0,
+            "y": 0,
+            "width": 390,
+            "height": 844
+          },
+          "appTransform": "none",
+          "previousRect": null,
+          "previousVisible": null,
+          "stageOpacity": null,
+          "activeApps": ["messages"],
+          "switcher": false
+        },
+        {
+          "label": "drag-120",
+          "time": 2419,
+          "appRect": {
+            "x": 34.65639877319336,
+            "y": 30,
+            "width": 320.68719482421875,
+            "height": 694
+          },
+          "appTransform": "matrix(0.822275, 0, 0, 0.822275, 34.6564, 30)",
+          "previousRect": {
+            "x": -94.06999206542969,
+            "y": 128.96234130859375,
+            "width": 249.2762451171875,
+            "height": 602.9659423828125
+          },
+          "previousVisible": "0.31147",
+          "stageOpacity": "1",
+          "activeApps": ["messages"],
+          "switcher": false
+        },
+        {
+          "label": "drag-300",
+          "time": 2739,
+          "appRect": {
+            "x": 86.64099884033203,
+            "y": 75,
+            "width": 216.718017578125,
+            "height": 469
+          },
+          "appTransform": "matrix(0.555687, 0, 0, 0.555687, 86.641, 75)",
+          "previousRect": {
+            "x": -94.06999206542969,
+            "y": 128.96234130859375,
+            "width": 249.2762451171875,
+            "height": 602.9659423828125
+          },
+          "previousVisible": "1",
+          "stageOpacity": "1",
+          "activeApps": ["messages"],
+          "switcher": false
+        },
+        {
+          "label": "drag-500",
+          "time": 3042,
+          "appRect": {
+            "x": 144.4016571044922,
+            "y": 125,
+            "width": 101.19667053222656,
+            "height": 219
+          },
+          "appTransform": "matrix(0.259479, 0, 0, 0.259479, 144.402, 125)",
+          "previousRect": {
+            "x": -94.06999206542969,
+            "y": 128.96234130859375,
+            "width": 249.2762451171875,
+            "height": 602.9659423828125
+          },
+          "previousVisible": "0.694153",
+          "stageOpacity": "1",
+          "activeApps": ["messages"],
+          "switcher": false
+        },
+        {
+          "label": "drag-650",
+          "time": 3378,
+          "appRect": {
+            "x": 171.60000610351562,
+            "y": 92.72000122070312,
+            "width": 46.80000305175781,
+            "height": 101.27999877929688
+          },
+          "appTransform": "matrix(0.12, 0, 0, 0.12, 171.6, 92.72)",
+          "previousRect": null,
+          "previousVisible": null,
+          "stageOpacity": "1",
+          "activeApps": ["messages"],
+          "switcher": false
+        },
+        {
+          "label": "release-home",
+          "time": 4004,
+          "appRect": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0
+          },
+          "appTransform": "none",
+          "previousRect": null,
+          "previousVisible": null,
+          "stageOpacity": null,
+          "activeApps": [],
+          "switcher": false
+        }
+      ],
+      "fastPointerDurationMs": 52
+    },
+    "webkit": {
+      "browserVersion": "27.2",
+      "source": "/yaku_IPhone/assets/index-Bm_xuPCn.js",
+      "errors": [],
+      "longDrag": [
+        {
+          "label": "full",
+          "time": 2209,
+          "appRect": {
+            "x": 0,
+            "y": 0,
+            "width": 390,
+            "height": 844
+          },
+          "appTransform": "none",
+          "previousRect": null,
+          "previousVisible": null,
+          "stageOpacity": null,
+          "activeApps": ["messages"],
+          "switcher": false
+        },
+        {
+          "label": "drag-120",
+          "time": 2271,
+          "appRect": {
+            "x": 34.65639877319336,
+            "y": 30,
+            "width": 320.68719482421875,
+            "height": 694
+          },
+          "appTransform": "matrix(0.822275, 0, 0, 0.822275, 34.656399, 30)",
+          "previousRect": {
+            "x": -93.95938110351562,
+            "y": 128.94874572753906,
+            "width": 249.27626037597656,
+            "height": 602.9659423828125
+          },
+          "previousVisible": "0.888889",
+          "stageOpacity": "1",
+          "activeApps": ["messages"],
+          "switcher": false
+        },
+        {
+          "label": "drag-300",
+          "time": 2372,
+          "appRect": {
+            "x": 86.64099884033203,
+            "y": 75,
+            "width": 216.718017578125,
+            "height": 469
+          },
+          "appTransform": "matrix(0.555687, 0, 0, 0.555687, 86.640999, 75)",
+          "previousRect": {
+            "x": -93.95938110351562,
+            "y": 128.94874572753906,
+            "width": 249.27626037597656,
+            "height": 602.9659423828125
+          },
+          "previousVisible": "0.888889",
+          "stageOpacity": "1",
+          "activeApps": ["messages"],
+          "switcher": false
+        },
+        {
+          "label": "drag-500",
+          "time": 2483,
+          "appRect": {
+            "x": 144.4016571044922,
+            "y": 125,
+            "width": 101.19668579101562,
+            "height": 219
+          },
+          "appTransform": "matrix(0.259479, 0, 0, 0.259479, 144.401657, 125)",
+          "previousRect": {
+            "x": -93.95938110351562,
+            "y": 128.94874572753906,
+            "width": 249.27626037597656,
+            "height": 602.9659423828125
+          },
+          "previousVisible": "0.868389",
+          "stageOpacity": "1",
+          "activeApps": ["messages"],
+          "switcher": false
+        },
+        {
+          "label": "drag-650",
+          "time": 2604,
+          "appRect": {
+            "x": 171.60000610351562,
+            "y": 92.72000122070312,
+            "width": 46.80000305175781,
+            "height": 101.27999877929688
+          },
+          "appTransform": "matrix(0.12, 0, 0, 0.12, 171.600006, 92.720001)",
+          "previousRect": null,
+          "previousVisible": null,
+          "stageOpacity": "1",
+          "activeApps": ["messages"],
+          "switcher": false
+        },
+        {
+          "label": "release-home",
+          "time": 3200,
+          "appRect": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0
+          },
+          "appTransform": "none",
+          "previousRect": null,
+          "previousVisible": null,
+          "stageOpacity": null,
+          "activeApps": [],
+          "switcher": false
+        }
+      ],
+      "fastPointerDurationMs": 3
+    }
+  }
+}

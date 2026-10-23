@@ -554,7 +554,7 @@ test('뒤로 정착 중 홈으로 나가면 늦은 탐색 콜백이 재진입 �
   await expect(app).not.toHaveAttribute('data-edge-motion');
 });
 
-test('뒤로 정착 중 실제 하단 바를 빠르게 올리면 홈 복귀 후에도 기존 화면을 유지한다', async ({
+test('뒤로 정착 중 실제 하단 바를 끝까지 올리면 홈 복귀 후에도 기존 화면을 유지한다', async ({
   page,
 }) => {
   await openApp(page, '설정');
@@ -567,7 +567,9 @@ test('뒤로 정착 중 실제 하단 바를 빠르게 올리면 홈 복귀 후�
   await expect(app).toHaveAttribute('data-edge-motion', 'leaving');
   await page.mouse.move(x, y);
   await page.mouse.down();
-  await page.mouse.move(x, y - 150, { steps: 3 });
+  // This case checks interruption at the real bar, not flick velocity. A full
+  // stroke returns Home even if CI protocol delivery pauses between input events.
+  await page.mouse.move(x, y * 0.2, { steps: 3 });
   await page.mouse.up();
   await expect(page.getByTestId('system-switcher')).toHaveCount(0);
   await expect(page.getByTestId('settings-app')).toBeHidden();
