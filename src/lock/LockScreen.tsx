@@ -6,14 +6,16 @@ import './lock.css';
 export function LockScreen({
   onUnlock,
   autoFocus = false,
+  active = true,
 }: {
   onUnlock: () => void;
   autoFocus?: boolean;
+  active?: boolean;
 }) {
   const date = useDisplayDate();
   const gradient = useId();
   const [notice, setNotice] = useState('');
-  const { offset, dragging, bind, unlock } = useUnlockGesture({ onUnlock });
+  const { offset, dragging, bind, unlock } = useUnlockGesture({ onUnlock, active });
 
   return (
     <section className="lock-screen" aria-label="잠금 화면" data-testid="lock-screen" {...bind}>

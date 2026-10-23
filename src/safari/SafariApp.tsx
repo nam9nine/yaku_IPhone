@@ -1,13 +1,5 @@
 import { flushSync } from 'react-dom';
-import {
-  useEffect,
-  useEffectEvent,
-  useLayoutEffect,
-  useReducer,
-  useRef,
-  useState,
-  type FormEvent,
-} from 'react';
+import { useEffect, useEffectEvent, useReducer, useRef, useState, type FormEvent } from 'react';
 import {
   currentEntry,
   initialSafariState,
@@ -19,53 +11,53 @@ import {
 import { pageAddress, pageTitle, resolveAddress, type SafariPage } from './pages';
 import { SafariContent } from './SafariContent';
 import { SafariIcon } from './SafariIcon';
+import { PagedContent } from '../navigation/PagedContent';
+import { useEdgeNavigation } from '../navigation/EdgeNavigation';
 import './safari.css';
 
 function SafariDocument({
   tab,
   visible,
+  active,
   online,
   dispatch,
 }: {
   tab: SafariTab;
   visible: boolean;
+  active: boolean;
   online: boolean;
   dispatch: React.Dispatch<SafariAction>;
 }) {
-  const scroller = useRef<HTMLDivElement>(null);
   const entry = currentEntry(tab);
-  useLayoutEffect(() => {
-    if (visible && scroller.current) scroller.current.scrollTop = entry.scrollTop;
-  }, [visible, entry.id, entry.scrollTop, tab.revision]);
   const visit = (page: SafariPage) =>
     dispatch({ type: 'navigate', tabId: tab.id, operation: { kind: 'visit', page }, online });
   return (
     <div
-      ref={scroller}
       className="safari-document"
       hidden={!visible}
-      inert={Boolean(tab.error)}
+      inert={!active || Boolean(tab.error)}
       aria-label={pageTitle(entry.page)}
-      onScroll={(event) => {
-        if (visible)
-          dispatch({
-            type: 'scroll',
-            tabId: tab.id,
-            entryId: entry.id,
-            scrollTop: event.currentTarget.scrollTop,
-          });
-      }}
     >
-      <SafariContent
-        page={entry.page}
-        visit={visit}
-        openExternal={(event) => {
-          if (!online) {
-            event.preventDefault();
-            dispatch({ type: 'navigate', tabId: tab.id, operation: { kind: 'reload' }, online });
-          }
-        }}
-      />
+      <PagedContent
+        key={entry.id}
+        label="Safari 본문"
+        active={active && visible && !tab.error}
+        page={entry.pageIndex}
+        onPageChange={(pageIndex) =>
+          dispatch({ type: 'page-position', tabId: tab.id, entryId: entry.id, pageIndex })
+        }
+      >
+        <SafariContent
+          page={entry.page}
+          visit={visit}
+          openExternal={(event) => {
+            if (!online) {
+              event.preventDefault();
+              dispatch({ type: 'navigate', tabId: tab.id, operation: { kind: 'reload' }, online });
+            }
+          }}
+        />
+      </PagedContent>
     </div>
   );
 }
@@ -136,8 +128,26 @@ export function SafariApp({ online, active }: { online: boolean; active: boolean
     setEditing(false);
   }
 
+  function back() {
+    if (menuOpen) closeMenu();
+    else if (editing) {
+      setEditing(false);
+      input.current?.blur();
+    } else if (tabsVisible) setTabsVisible(false);
+    else if (tab.error) dispatch({ type: 'dismiss-error', tabId: tab.id });
+    else navigate({ kind: 'back' });
+  }
+  const edge = useEdgeNavigation({
+    active,
+    onBack: back,
+    onForward:
+      !menuOpen && !editing && !tabsVisible && !tab.error && tab.index < tab.entries.length - 1
+        ? () => navigate({ kind: 'forward' })
+        : undefined,
+  });
+
   return (
-    <section className="safari-app" aria-label="Safari">
+    <section className="safari-app" aria-label="Safari" {...edge}>
       <h1 className="safari-visually-hidden" data-app-title tabIndex={-1}>
         Safari
       </h1>
@@ -146,7 +156,8 @@ export function SafariApp({ online, active }: { online: boolean; active: boolean
           <SafariDocument
             key={item.id}
             tab={item}
-            visible={active && !tabsVisible && item.id === tab.id}
+            visible={!tabsVisible && item.id === tab.id}
+            active={active && !menuOpen}
             online={online}
             dispatch={dispatch}
           />
@@ -164,7 +175,11 @@ export function SafariApp({ online, active }: { online: boolean; active: boolean
                 <SafariIcon name="plus" />
               </button>
             </header>
-            <div className="safari-tab-grid">
+            <PagedContent
+              label="탭 목록"
+              active={active && !menuOpen}
+              contentClassName="safari-tab-grid"
+            >
               {state.tabs.map((item) => {
                 const itemPage = currentEntry(item).page;
                 return (
@@ -214,32 +229,38 @@ export function SafariApp({ online, active }: { online: boolean; active: boolean
                   </div>
                 );
               })}
-            </div>
+            </PagedContent>
           </section>
         )}
         {!tabsVisible && tab.error && (
           <div className="safari-error-layer">
-            <section className="safari-error" role="alert">
-              <SafariIcon name="globe" />
-              <h2>{tab.error.pending ? '연결할 수 없습니다' : '주소를 열 수 없습니다'}</h2>
-              <p>{tab.error.message}</p>
-              {tab.error.pending && (
+            <PagedContent
+              label="오류 안내"
+              active={active && !menuOpen}
+              contentClassName="safari-error"
+            >
+              <section role="alert">
+                <SafariIcon name="globe" />
+                <h2>{tab.error.pending ? '연결할 수 없습니다' : '주소를 열 수 없습니다'}</h2>
+                <p>{tab.error.message}</p>
+                {tab.error.pending && (
+                  <button
+                    tabIndex={0}
+                    className="safari-primary-button"
+                    onClick={() => dispatch({ type: 'retry', tabId: tab.id, online })}
+                  >
+                    다시 시도
+                  </button>
+                )}
                 <button
                   tabIndex={0}
-                  className="safari-primary-button"
-                  onClick={() => dispatch({ type: 'retry', tabId: tab.id, online })}
+                  className="safari-text-link"
+                  onClick={() => dispatch({ type: 'dismiss-error', tabId: tab.id })}
                 >
-                  다시 시도
+                  닫기
                 </button>
-              )}
-              <button
-                tabIndex={0}
-                className="safari-text-link"
-                onClick={() => dispatch({ type: 'dismiss-error', tabId: tab.id })}
-              >
-                닫기
-              </button>
-            </section>
+              </section>
+            </PagedContent>
           </div>
         )}
       </div>
@@ -267,8 +288,8 @@ export function SafariApp({ online, active }: { online: boolean; active: boolean
                 type="button"
                 className="safari-icon-button safari-round-button"
                 aria-label="뒤로"
-                disabled={tab.index === 0}
-                onClick={() => navigate({ kind: 'back' })}
+                disabled={tab.index === 0 && !tab.error}
+                onClick={back}
               >
                 <SafariIcon name="back" />
               </button>
@@ -397,41 +418,43 @@ export function SafariApp({ online, active }: { online: boolean; active: boolean
                 <SafariIcon name="close" />
               </button>
             </header>
-            <div className="safari-page-info">
-              <strong>{pageTitle(page)}</strong>
-              <span>{pageAddress(page) || '시작 페이지'}</span>
-              {page.kind === 'internal' && <small>이 앱에서 제공하는 예제 페이지</small>}
-            </div>
-            <button tabIndex={0} className="safari-menu-row" onClick={editAddress}>
-              <SafariIcon name="search" />
-              주소 편집
-            </button>
-            <button
-              tabIndex={0}
-              className="safari-menu-row"
-              disabled={tab.index === tab.entries.length - 1}
-              onClick={() => {
-                navigate({ kind: 'forward' });
-                setMenuOpen(false);
-              }}
-            >
-              <SafariIcon name="forward" />
-              앞으로
-            </button>
-            <button
-              tabIndex={0}
-              className="safari-menu-row"
-              onClick={() => {
-                navigate({ kind: 'visit', page: { kind: 'start' } });
-                setMenuOpen(false);
-              }}
-            >
-              <SafariIcon name="compass" />
-              시작 페이지
-            </button>
-            <button tabIndex={0} className="safari-menu-row" onClick={newTab}>
-              <SafariIcon name="plus" />새 탭
-            </button>
+            <PagedContent label="페이지 메뉴" active={active}>
+              <div className="safari-page-info">
+                <strong>{pageTitle(page)}</strong>
+                <span>{pageAddress(page) || '시작 페이지'}</span>
+                {page.kind === 'internal' && <small>이 앱에서 제공하는 예제 페이지</small>}
+              </div>
+              <button tabIndex={0} className="safari-menu-row" onClick={editAddress}>
+                <SafariIcon name="search" />
+                주소 편집
+              </button>
+              <button
+                tabIndex={0}
+                className="safari-menu-row"
+                disabled={tab.index === tab.entries.length - 1}
+                onClick={() => {
+                  navigate({ kind: 'forward' });
+                  setMenuOpen(false);
+                }}
+              >
+                <SafariIcon name="forward" />
+                앞으로
+              </button>
+              <button
+                tabIndex={0}
+                className="safari-menu-row"
+                onClick={() => {
+                  navigate({ kind: 'visit', page: { kind: 'start' } });
+                  setMenuOpen(false);
+                }}
+              >
+                <SafariIcon name="compass" />
+                시작 페이지
+              </button>
+              <button tabIndex={0} className="safari-menu-row" onClick={newTab}>
+                <SafariIcon name="plus" />새 탭
+              </button>
+            </PagedContent>
           </div>
         </div>
       )}

@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { useViewport } from '../shell/useViewport';
 import type { DevicePreferences } from '../settings/preferences';
 
 export function MobileShell({
@@ -12,9 +13,11 @@ export function MobileShell({
   preferences: DevicePreferences;
   appearance: { theme: 'light' | 'dark'; reduceMotion: boolean };
 }) {
+  const viewport = useViewport();
   return (
     <main
       className="mobile-shell"
+      style={{ height: viewport.height, top: viewport.top }}
       aria-label="yaku iPhone"
       data-theme={appearance.theme}
       data-wallpaper={preferences.wallpaper}

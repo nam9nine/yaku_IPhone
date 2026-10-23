@@ -764,6 +764,174 @@
           "bytes": 39444
         }
       ]
+    },
+    {
+      "id": "apple-basic-gestures",
+      "type": "official-document",
+      "sourceUrl": "https://support.apple.com/en-in/guide/iphone/iph75e97af9b/27/ios/27",
+      "retrievedOn": "2026-10-23",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "Copyrighted primary documentation or screenshot. Local research reference only; not included in app assets."
+      },
+      "purpose": "Basic gesture semantics and the distinction between native scrolling and project customization.",
+      "keyPaths": [],
+      "artifacts": [
+        {
+          "role": "html",
+          "url": "https://support.apple.com/en-in/guide/iphone/iph75e97af9b/27/ios/27",
+          "localPath": "references/upstream/apple/apple-basic-gestures.html",
+          "sha256": "e4cbb430c485b3ac3c844dfd60a330fd88927ca35ce5b3c48d81e767399dc244",
+          "bytes": 1383230
+        }
+      ]
+    },
+    {
+      "id": "apple-app-switcher",
+      "type": "official-document",
+      "sourceUrl": "https://support.apple.com/en-ca/guide/iphone/iph1a1f981ad/27/ios/27",
+      "retrievedOn": "2026-10-23",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "Copyrighted primary documentation or screenshot. Local research reference only; not included in app assets."
+      },
+      "purpose": "Swipe up, pause and lift to open recent apps; bottom horizontal quick switching.",
+      "keyPaths": [],
+      "artifacts": [
+        {
+          "role": "html",
+          "url": "https://support.apple.com/en-ca/guide/iphone/iph1a1f981ad/27/ios/27",
+          "localPath": "references/upstream/apple/apple-app-switcher.html",
+          "sha256": "cf47c54b514ceb0621cae577bc031dd69890b2123a2f190ef136d435c992edd5",
+          "bytes": 1386618
+        }
+      ]
+    },
+    {
+      "id": "apple-control-center",
+      "type": "official-document",
+      "sourceUrl": "https://support.apple.com/en-ie/guide/iphone/iph59095ec58/27/ios/27",
+      "retrievedOn": "2026-10-23",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "Copyrighted primary documentation or screenshot. Local research reference only; not included in app assets."
+      },
+      "purpose": "Top-right pull-down and bottom-up dismissal; real Wi-Fi temporary disconnection semantics.",
+      "keyPaths": [],
+      "artifacts": [
+        {
+          "role": "html",
+          "url": "https://support.apple.com/en-ie/guide/iphone/iph59095ec58/27/ios/27",
+          "localPath": "references/upstream/apple/apple-control-center.html",
+          "sha256": "b7221c63de8600c6b3c22d89df1acbb875d12bfbe56f35d8ade9730b8030ea11",
+          "bytes": 1381733
+        }
+      ]
+    },
+    {
+      "id": "apple-notification-center",
+      "type": "official-document",
+      "sourceUrl": "https://support.apple.com/en-euro/guide/iphone/iph6534c01bc/27/ios/27",
+      "retrievedOn": "2026-10-23",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "Copyrighted primary documentation or screenshot. Local research reference only; not included in app assets."
+      },
+      "purpose": "Top-left pull-down opens Notification Center.",
+      "keyPaths": [],
+      "artifacts": [
+        {
+          "role": "html",
+          "url": "https://support.apple.com/en-euro/guide/iphone/iph6534c01bc/27/ios/27",
+          "localPath": "references/upstream/apple/apple-notification-center.html",
+          "sha256": "c36dfe1c774f295c83a5cdc3f8dc3a4a5cc4a2a70d76a31dd94b831d0df5bb4e",
+          "bytes": 1310534
+        }
+      ]
+    },
+    {
+      "id": "apple-interactive-pop",
+      "type": "official-document",
+      "sourceUrl": "https://developer.apple.com/documentation/uikit/uinavigationcontroller/interactivepopgesturerecognizer",
+      "retrievedOn": "2026-10-23",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "Copyrighted primary documentation or screenshot. Local research reference only; not included in app assets."
+      },
+      "purpose": "Leading-edge back gesture follows the navigation stack.",
+      "keyPaths": [],
+      "artifacts": [
+        {
+          "role": "html",
+          "url": "https://developer.apple.com/documentation/uikit/uinavigationcontroller/interactivepopgesturerecognizer",
+          "localPath": "references/upstream/apple/apple-interactive-pop.html",
+          "sha256": "5e98d33d1af949e70ef7aa1e167924fef11db87c3e21b21d6b56123d212000f3",
+          "bytes": 19263
+        }
+      ]
+    },
+    {
+      "id": "mdn-touch-action",
+      "type": "official-document",
+      "sourceUrl": "https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/touch-action",
+      "retrievedOn": "2026-10-23",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "Copyrighted primary documentation or screenshot. Local research reference only; not included in app assets."
+      },
+      "purpose": "Gesture ownership is negotiated before pointerdown; preserve pinch zoom and handle pointercancel.",
+      "keyPaths": [],
+      "artifacts": [
+        {
+          "role": "html",
+          "url": "https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/touch-action",
+          "localPath": "references/upstream/apple/mdn-touch-action.html",
+          "sha256": "fe3eefec7f49964733ec05b9987b487bae3da9201b3389aa5054123d03090f43",
+          "bytes": 334973
+        }
+      ]
+    },
+    {
+      "id": "apple-control-center-image",
+      "type": "official-image",
+      "sourceUrl": "https://ipcdn-web.apple.com/assets/v2/web/f7c9983b-1d8d-4cf6-ae45-4a07076542d3",
+      "retrievedOn": "2026-10-23",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "Copyrighted primary documentation or screenshot. Local research reference only; not included in app assets."
+      },
+      "purpose": "Official Control Center grouping, glass materials and controls visual reference.",
+      "keyPaths": [],
+      "artifacts": [
+        {
+          "role": "image",
+          "url": "https://ipcdn-web.apple.com/assets/v2/web/f7c9983b-1d8d-4cf6-ae45-4a07076542d3",
+          "localPath": "references/upstream/apple/apple-control-center-image.png",
+          "sha256": "2f04f64a0cf2baaa8cdb422adaa38350464aaeb18a50298b6d05bf5dc4f0d9b9",
+          "bytes": 444257
+        }
+      ]
+    },
+    {
+      "id": "apple-app-switcher-image",
+      "type": "official-image",
+      "sourceUrl": "https://ipcdn-web.apple.com/assets/v2/web/72179418-ad4b-426c-a510-02a34d70c5f3",
+      "retrievedOn": "2026-10-23",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "Apple copyrighted screenshot; local reference only, not an application asset."
+      },
+      "purpose": "Official recent-app overlapping card layout visual reference.",
+      "keyPaths": [],
+      "artifacts": [
+        {
+          "role": "image",
+          "url": "https://ipcdn-web.apple.com/assets/v2/web/72179418-ad4b-426c-a510-02a34d70c5f3",
+          "localPath": "references/upstream/apple/apple-app-switcher-image.png",
+          "sha256": "b8b717c4621508f095d57a96de765fd3ea6f355fd2d36b7d00f9958233d2f67a",
+          "bytes": 487040
+        }
+      ]
     }
   ]
 }

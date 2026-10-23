@@ -1,7 +1,9 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import { tapPaged } from '../helpers/paged-content';
 
 const safari = (page: Page) => page.getByTestId('safari-app');
-const documentView = (page: Page) => safari(page).locator('.safari-document:not([hidden])');
+const documentView = (page: Page) =>
+  safari(page).locator('.safari-document:not([hidden]) .paged-content');
 const addressDisplay = (page: Page) =>
   safari(page).getByRole('button', { name: '주소 또는 검색어 입력', exact: true });
 
@@ -34,11 +36,11 @@ async function enterAddress(page: Page, value: string) {
   const input = safari(page).getByRole('textbox', { name: '주소 또는 검색어', exact: true });
   await expect(input).toBeFocused();
   await input.fill(value);
-  await safari(page).getByRole('button', { name: '이동', exact: true }).tap();
+  await tapPaged(safari(page).getByRole('button', { name: '이동', exact: true }));
 }
 
 async function menuAction(page: Page, name: string) {
-  await safari(page).getByRole('button', { name: '페이지 메뉴', exact: true }).tap();
+  await tapPaged(safari(page).getByRole('button', { name: '페이지 메뉴', exact: true }));
   await safari(page)
     .getByRole('dialog', { name: '페이지 메뉴' })
     .getByRole('button', { name, exact: true })
@@ -102,26 +104,26 @@ test('Safari 진입은 키보드를 열지 않고 두 내부 페이지와 뒤로
   ).toBeVisible();
   await expect(safari(page).getByRole('button', { name: '뒤로', exact: true })).toBeDisabled();
 
-  await safari(page).getByRole('button', { name: '시작 안내', exact: true }).tap();
+  await tapPaged(safari(page).getByRole('button', { name: '시작 안내', exact: true }));
   await expect(safari(page).getByRole('heading', { name: /작은 화면/ })).toBeVisible();
   await expect(addressDisplay(page)).toHaveText('yaku.test/guide');
-  await documentView(page).evaluate((element) => {
-    element.scrollTop = 240;
-  });
-  await expect.poll(() => documentView(page).evaluate((element) => element.scrollTop)).toBe(240);
-  await safari(page).getByRole('button', { name: '새로 고침', exact: true }).tap();
-  await expect.poll(() => documentView(page).evaluate((element) => element.scrollTop)).toBe(240);
+  await documentView(page)
+    .getByRole('button', { name: 'Safari 본문 다음 페이지', exact: true })
+    .tap();
+  await expect(documentView(page)).toHaveAttribute('data-page', '2');
+  await tapPaged(safari(page).getByRole('button', { name: '새로 고침', exact: true }));
+  await expect(documentView(page)).toHaveAttribute('data-page', '2');
 
   await enterAddress(page, 'https://yaku.test/example');
   await expect(safari(page).getByRole('heading', { name: /천천히/ })).toBeVisible();
-  await expect.poll(() => documentView(page).evaluate((element) => element.scrollTop)).toBe(0);
-  await safari(page).getByRole('button', { name: '뒤로', exact: true }).tap();
+  await expect(documentView(page)).toHaveAttribute('data-page', '1');
+  await tapPaged(safari(page).getByRole('button', { name: '뒤로', exact: true }));
   await expect(addressDisplay(page)).toHaveText('yaku.test/guide');
-  await expect.poll(() => documentView(page).evaluate((element) => element.scrollTop)).toBe(240);
+  await expect(documentView(page)).toHaveAttribute('data-page', '2');
   await menuAction(page, '앞으로');
   await expect(addressDisplay(page)).toHaveText('yaku.test/example');
-  await safari(page).getByRole('button', { name: '뒤로', exact: true }).tap();
-  await safari(page).getByRole('button', { name: '뒤로', exact: true }).tap();
+  await tapPaged(safari(page).getByRole('button', { name: '뒤로', exact: true }));
+  await tapPaged(safari(page).getByRole('button', { name: '뒤로', exact: true }));
   await expect(
     safari(page).getByRole('heading', { name: '시작 페이지', exact: true }),
   ).toBeVisible();
@@ -166,10 +168,10 @@ test('검색은 내부 페이지 제목만 찾고 외부 주소는 명시적인 
       safari(page).getByRole('heading', { name: '주소를 열 수 없습니다' }),
     ).toBeVisible();
     await expect(addressDisplay(page)).toHaveText('example.com');
-    await safari(page).getByRole('button', { name: '닫기', exact: true }).tap();
+    await tapPaged(safari(page).getByRole('button', { name: '닫기', exact: true }));
     await expect(external).toBeVisible();
   }
-  await safari(page).getByRole('button', { name: '뒤로', exact: true }).tap();
+  await tapPaged(safari(page).getByRole('button', { name: '뒤로', exact: true }));
   await expect(
     safari(page).getByRole('heading', { name: '일치하는 페이지가 없어요' }),
   ).toBeVisible();
@@ -179,50 +181,50 @@ test('탭마다 페이지와 방문 위치가 남고 마지막 탭을 닫으면 
   page,
 }) => {
   await openSafari(page);
-  await safari(page).getByRole('button', { name: '시작 안내', exact: true }).tap();
-  await documentView(page).evaluate((element) => {
-    element.scrollTop = 240;
-  });
-  await expect.poll(() => documentView(page).evaluate((element) => element.scrollTop)).toBe(240);
+  await tapPaged(safari(page).getByRole('button', { name: '시작 안내', exact: true }));
+  await documentView(page)
+    .getByRole('button', { name: 'Safari 본문 다음 페이지', exact: true })
+    .tap();
+  await expect(documentView(page)).toHaveAttribute('data-page', '2');
   await menuAction(page, '새 탭');
   await expect(
     safari(page).getByRole('heading', { name: '시작 페이지', exact: true }),
   ).toBeVisible();
   await expect(safari(page).getByRole('textbox')).toHaveCount(0);
-  await safari(page).getByRole('button', { name: '예제 페이지', exact: true }).tap();
+  await tapPaged(safari(page).getByRole('button', { name: '예제 페이지', exact: true }));
   let tabs = await showTabs(page, 2);
-  await tabs.getByRole('button', { name: '시작 안내 탭 선택', exact: true }).tap();
+  await tapPaged(tabs.getByRole('button', { name: '시작 안내 탭 선택', exact: true }));
   await expect(addressDisplay(page)).toHaveText('yaku.test/guide');
-  await expect.poll(() => documentView(page).evaluate((element) => element.scrollTop)).toBe(240);
+  await expect(documentView(page)).toHaveAttribute('data-page', '2');
 
   tabs = await showTabs(page, 2);
-  await tabs.getByRole('button', { name: '예제 페이지 탭 닫기', exact: true }).tap();
+  await tapPaged(tabs.getByRole('button', { name: '예제 페이지 탭 닫기', exact: true }));
   await expect(tabs.getByRole('heading', { name: '탭 1개', exact: true })).toBeVisible();
-  await safari(page).getByRole('button', { name: '완료', exact: true }).tap();
+  await tapPaged(safari(page).getByRole('button', { name: '완료', exact: true }));
   await expect(addressDisplay(page)).toHaveText('yaku.test/guide');
   tabs = await showTabs(page, 1);
-  await tabs.getByRole('button', { name: '시작 안내 탭 닫기', exact: true }).tap();
+  await tapPaged(tabs.getByRole('button', { name: '시작 안내 탭 닫기', exact: true }));
   await expect(
     safari(page).getByRole('heading', { name: '시작 페이지', exact: true }),
   ).toBeVisible();
   await expect(safari(page).getByRole('button', { name: '뒤로', exact: true })).toBeDisabled();
   tabs = await showTabs(page, 1);
-  await tabs.getByRole('button', { name: '새 탭', exact: true }).tap();
+  await tapPaged(tabs.getByRole('button', { name: '새 탭', exact: true }));
   await expect(
     safari(page).getByRole('button', { name: '탭 보기, 2개', exact: true }),
   ).toBeVisible();
 });
 
-test('홈을 거쳐 재진입하면 탭·스크롤이 유지되고 전체 새로 고침은 세션을 초기화한다', async ({
+test('홈을 거쳐 재진입하면 탭·가로 페이지가 유지되고 전체 새로 고침은 세션을 초기화한다', async ({
   page,
 }) => {
   await openSafari(page);
   await menuAction(page, '새 탭');
-  await safari(page).getByRole('button', { name: '시작 안내', exact: true }).tap();
-  await documentView(page).evaluate((element) => {
-    element.scrollTop = 240;
-  });
-  await expect.poll(() => documentView(page).evaluate((element) => element.scrollTop)).toBe(240);
+  await tapPaged(safari(page).getByRole('button', { name: '시작 안내', exact: true }));
+  await documentView(page)
+    .getByRole('button', { name: 'Safari 본문 다음 페이지', exact: true })
+    .tap();
+  await expect(documentView(page)).toHaveAttribute('data-page', '2');
   await goHome(page);
   await expect(safari(page)).toBeHidden();
   await launchSafari(page);
@@ -230,7 +232,7 @@ test('홈을 거쳐 재진입하면 탭·스크롤이 유지되고 전체 새로
   await expect(
     safari(page).getByRole('button', { name: '탭 보기, 2개', exact: true }),
   ).toBeVisible();
-  await expect.poll(() => documentView(page).evaluate((element) => element.scrollTop)).toBe(240);
+  await expect(documentView(page)).toHaveAttribute('data-page', '2');
   await expect(safari(page).getByRole('textbox')).toHaveCount(0);
 
   await page.reload();
@@ -248,14 +250,14 @@ test('설정의 오프라인 전환은 현재 페이지를 보존하고 Wi-Fi �
   page,
 }) => {
   await openSafari(page);
-  await safari(page).getByRole('button', { name: '시작 안내', exact: true }).tap();
+  await tapPaged(safari(page).getByRole('button', { name: '시작 안내', exact: true }));
   await setAirplaneMode(page, true);
   await expect(safari(page).getByText('오프라인', { exact: true })).toBeVisible();
   await expect(safari(page).getByRole('heading', { name: /작은 화면/ })).toBeVisible();
   await enterAddress(page, 'https://yaku.test/example');
   await expect(safari(page).getByRole('heading', { name: '연결할 수 없습니다' })).toBeVisible();
   await expect(addressDisplay(page)).toHaveText('yaku.test/guide');
-  await safari(page).getByRole('button', { name: '다시 시도', exact: true }).tap();
+  await tapPaged(safari(page).getByRole('button', { name: '다시 시도', exact: true }));
   await expect(addressDisplay(page)).toHaveText('yaku.test/guide');
 
   await goHome(page);
@@ -267,11 +269,11 @@ test('설정의 오프라인 전환은 현재 페이지를 보존하고 Wi-Fi �
   await launchSafari(page);
   await expect(safari(page).getByText('오프라인', { exact: true })).toHaveCount(0);
   await expect(safari(page).getByRole('heading', { name: '연결할 수 없습니다' })).toBeVisible();
-  await safari(page).getByRole('button', { name: '다시 시도', exact: true }).tap();
+  await tapPaged(safari(page).getByRole('button', { name: '다시 시도', exact: true }));
   await expect(safari(page).getByRole('heading', { name: /천천히/ })).toBeVisible();
-  await safari(page).getByRole('button', { name: '뒤로', exact: true }).tap();
+  await tapPaged(safari(page).getByRole('button', { name: '뒤로', exact: true }));
   await expect(addressDisplay(page)).toHaveText('yaku.test/guide');
-  await safari(page).getByRole('button', { name: '뒤로', exact: true }).tap();
+  await tapPaged(safari(page).getByRole('button', { name: '뒤로', exact: true }));
   await expect(safari(page).getByRole('button', { name: '뒤로', exact: true })).toBeDisabled();
 });
 
@@ -283,22 +285,22 @@ for (const operation of ['뒤로', '앞으로', '새로 고침'] as const) {
     await enterAddress(page, 'https://yaku.test/guide');
     await enterAddress(page, 'https://yaku.test/example');
     if (operation === '앞으로')
-      await safari(page).getByRole('button', { name: '뒤로', exact: true }).tap();
+      await tapPaged(safari(page).getByRole('button', { name: '뒤로', exact: true }));
     const previous = operation === '앞으로' ? 'yaku.test/guide' : 'yaku.test/example';
     await setAirplaneMode(page, true);
     if (operation === '앞으로') await menuAction(page, operation);
-    else await safari(page).getByRole('button', { name: operation, exact: true }).tap();
+    else await tapPaged(safari(page).getByRole('button', { name: operation, exact: true }));
     await expect(safari(page).getByRole('heading', { name: '연결할 수 없습니다' })).toBeVisible();
     await expect(addressDisplay(page)).toHaveText(previous);
     await setAirplaneMode(page, false);
     await expect(addressDisplay(page)).toHaveText(previous);
-    await safari(page).getByRole('button', { name: '다시 시도', exact: true }).tap();
+    await tapPaged(safari(page).getByRole('button', { name: '다시 시도', exact: true }));
     await expect(safari(page).getByRole('heading', { name: '연결할 수 없습니다' })).toHaveCount(0);
     await expect(addressDisplay(page)).toHaveText(
       operation === '뒤로' ? 'yaku.test/guide' : 'yaku.test/example',
     );
     if (operation === '새로 고침') {
-      await safari(page).getByRole('button', { name: '뒤로', exact: true }).tap();
+      await tapPaged(safari(page).getByRole('button', { name: '뒤로', exact: true }));
       await expect(addressDisplay(page)).toHaveText('yaku.test/guide');
     }
   });
@@ -308,12 +310,12 @@ test('오프라인에서도 빈 탭 생성과 기존 탭 선택이 가능하고 
   page,
 }) => {
   await openSafari(page);
-  await safari(page).getByRole('button', { name: '시작 안내', exact: true }).tap();
+  await tapPaged(safari(page).getByRole('button', { name: '시작 안내', exact: true }));
   await menuAction(page, '새 탭');
-  await safari(page).getByRole('button', { name: '예제 페이지', exact: true }).tap();
+  await tapPaged(safari(page).getByRole('button', { name: '예제 페이지', exact: true }));
   await setAirplaneMode(page, true);
   const tabs = await showTabs(page, 2);
-  await tabs.getByRole('button', { name: '시작 안내 탭 선택', exact: true }).tap();
+  await tapPaged(tabs.getByRole('button', { name: '시작 안내 탭 선택', exact: true }));
   await expect(safari(page).getByRole('heading', { name: /작은 화면/ })).toBeVisible();
   await enterAddress(page, 'https://yaku.test/example');
   await expect(safari(page).getByRole('heading', { name: '연결할 수 없습니다' })).toBeVisible();
@@ -323,7 +325,7 @@ test('오프라인에서도 빈 탭 생성과 기존 탭 선택이 가능하고 
   ).toBeVisible();
   await expect(safari(page).getByRole('heading', { name: '연결할 수 없습니다' })).toHaveCount(0);
   await showTabs(page, 3);
-  await safari(page).getByRole('button', { name: '시작 안내 탭 선택', exact: true }).tap();
+  await tapPaged(safari(page).getByRole('button', { name: '시작 안내 탭 선택', exact: true }));
   await expect(addressDisplay(page)).toHaveText('yaku.test/guide');
   await expect(safari(page).getByRole('heading', { name: '연결할 수 없습니다' })).toBeVisible();
 });
@@ -351,11 +353,11 @@ for (const size of [
       await expectTouchable(control);
     }
     await input.fill('https://yaku.test/guide');
-    await safari(page).getByRole('button', { name: '이동', exact: true }).tap();
+    await tapPaged(safari(page).getByRole('button', { name: '이동', exact: true }));
     await expect(addressDisplay(page)).toHaveText('yaku.test/guide');
     await addressDisplay(page).tap();
     await input.fill('취소할 검색어');
-    await safari(page).getByRole('button', { name: '취소', exact: true }).tap();
+    await tapPaged(safari(page).getByRole('button', { name: '취소', exact: true }));
     await expect(addressDisplay(page)).toHaveText('yaku.test/guide');
     await expect(safari(page).getByRole('textbox')).toHaveCount(0);
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(size.width);
@@ -389,7 +391,7 @@ test('키보드로 페이지와 주소 입력을 열고 Alt+Home으로 복귀한
 
 test('페이지 메뉴가 열려 있어도 홈 버튼과 홈 스와이프를 사용할 수 있다', async ({ page }) => {
   await openSafari(page);
-  await safari(page).getByRole('button', { name: '페이지 메뉴', exact: true }).tap();
+  await tapPaged(safari(page).getByRole('button', { name: '페이지 메뉴', exact: true }));
   await expect(safari(page).getByRole('dialog')).toBeVisible();
   await goHome(page);
   await launchSafari(page);
@@ -399,7 +401,7 @@ test('페이지 메뉴가 열려 있어도 홈 버튼과 홈 스와이프를 사
   await expect(
     safari(page).getByRole('button', { name: '페이지 메뉴', exact: true }),
   ).toBeFocused();
-  await safari(page).getByRole('button', { name: '페이지 메뉴', exact: true }).tap();
+  await tapPaged(safari(page).getByRole('button', { name: '페이지 메뉴', exact: true }));
   const box = (await page.getByTestId('safari-home-gesture').boundingBox())!;
   const x = box.x + box.width / 2,
     y = box.y + box.height / 2;

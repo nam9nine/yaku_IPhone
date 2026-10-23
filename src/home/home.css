@@ -359,3 +359,71 @@
     transition: none;
   }
 }
+
+.home-screen {
+  height: 100%;
+  min-height: 0;
+}
+.home-pages {
+  overflow: clip;
+  touch-action: pinch-zoom;
+}
+.home-page-track,
+.home-page {
+  height: 100%;
+}
+.home-app-grid {
+  row-gap: 10px;
+}
+.home-system-button {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  background: transparent;
+}
+.home-system-button svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+}
+.home-system-button--control {
+  left: 0;
+}
+.home-system-button--recent {
+  right: 44px;
+}
+.home-page-control {
+  max-width: calc(100% - 120px);
+}
+.home-page-control button {
+  flex: 0 0 36px;
+  width: 36px;
+}
+.home-page-control button:disabled {
+  opacity: 0.4;
+}
+.home-page-count {
+  position: relative;
+  align-self: center;
+  font-size: 12px;
+  white-space: nowrap;
+}
+@media (max-height: 480px) {
+  .home-screen {
+    --home-icon-size: 44px;
+    padding-top: 4px;
+  }
+  .home-bottom-controls {
+    height: 44px;
+  }
+  .home-dock {
+    padding: 8px;
+  }
+  .home-app-grid {
+    row-gap: 6px;
+  }
+}

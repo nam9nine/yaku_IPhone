@@ -1,73 +1,60 @@
-import {
-  useEffect,
-  useEffectEvent,
-  useRef,
-  useState,
-  type PointerEvent,
-  type ReactNode,
-} from 'react';
-import { homeDrag, type HomeGesture } from './homeGesture';
+import { useEffect, useEffectEvent, useRef, type ReactNode } from 'react';
+import { useSystemGesture } from './useSystemGesture';
+import { useViewport } from './useViewport';
 import type { LaunchRect, RunnableApp } from './session';
 import './shell.css';
 
 interface Props {
   app: RunnableApp;
   active: boolean;
+  interactive?: boolean;
+  onSwitcher: () => void;
+  onControl: () => void;
+  onQuickSwitch: (direction: 'previous' | 'next') => void;
   origin: LaunchRect | null;
   onHome: () => void;
   children: ReactNode;
 }
 
-export function AppWindow({ app, active, origin, onHome, children }: Props) {
+export function AppWindow({
+  app,
+  active,
+  interactive = active,
+  origin,
+  onHome,
+  onSwitcher,
+  onControl,
+  onQuickSwitch,
+  children,
+}: Props) {
   const card = useRef<HTMLElement>(null);
-  const gestureZone = useRef<HTMLDivElement>(null);
-  const gesture = useRef<HomeGesture | null>(null);
   const animation = useRef<Animation | null>(null);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const closing = useRef(false);
-  const [drag, setDrag] = useState(0);
-  const [viewport, setViewport] = useState(() => ({
-    top: window.visualViewport?.offsetTop ?? 0,
-    height: window.visualViewport?.height ?? window.innerHeight,
-  }));
+  const generation = useRef(0);
+  const bottom = useSystemGesture('bottom', interactive, (result) => {
+    if (result === 'home') returnHome();
+    else if (result === 'switcher') onSwitcher();
+    else if (result === 'previous' || result === 'next') onQuickSwitch(result);
+  });
+  const drag = bottom.offset;
+  const cancelGesture = bottom.cancel;
+  const viewport = useViewport();
   const homeCallback = useRef(onHome);
   useEffect(() => {
     homeCallback.current = onHome;
   }, [onHome]);
 
-  function cancelGesture() {
-    const current = gesture.current;
-    gesture.current = null;
-    setDrag(0);
-    if (current && gestureZone.current?.hasPointerCapture(current.pointerId)) {
-      gestureZone.current.releasePointerCapture(current.pointerId);
-    }
-  }
-
+  const cancelClosing = useEffectEvent(() => {
+    if (!closing.current) return;
+    generation.current += 1;
+    closing.current = false;
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    animation.current?.cancel();
+  });
   useEffect(() => {
-    const resize = () => {
-      cancelGesture();
-      setViewport({
-        top: window.visualViewport?.offsetTop ?? 0,
-        height: window.visualViewport?.height ?? window.innerHeight,
-      });
-    };
-    const hidden = () => {
-      if (document.hidden) cancelGesture();
-    };
-    window.addEventListener('resize', resize);
-    window.addEventListener('blur', cancelGesture);
-    window.visualViewport?.addEventListener('resize', resize);
-    window.visualViewport?.addEventListener('scroll', resize);
-    document.addEventListener('visibilitychange', hidden);
-    return () => {
-      window.removeEventListener('resize', resize);
-      window.removeEventListener('blur', cancelGesture);
-      window.visualViewport?.removeEventListener('resize', resize);
-      window.visualViewport?.removeEventListener('scroll', resize);
-      document.removeEventListener('visibilitychange', hidden);
-    };
-  }, []);
+    if (!interactive) cancelClosing();
+  }, [interactive]);
 
   useEffect(() => {
     if (!active || !card.current) return;
@@ -94,13 +81,15 @@ export function AppWindow({ app, active, origin, onHome, children }: Props) {
     }
     node.querySelector<HTMLElement>('[data-app-title]')?.focus({ preventScroll: true });
     return () => {
+      generation.current += 1;
+      closing.current = false;
       animation.current?.cancel();
       if (closeTimer.current) clearTimeout(closeTimer.current);
     };
   }, [active, origin]);
 
   function returnHome() {
-    if (!active || closing.current || !card.current) return;
+    if (!interactive || closing.current || !card.current) return;
     closing.current = true;
     cancelGesture();
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
@@ -109,9 +98,16 @@ export function AppWindow({ app, active, origin, onHome, children }: Props) {
     const bounds = node.getBoundingClientRect();
     const launcher = document.querySelector(`[data-launch-app="${app}"] .app-icon`);
     const destination = launcher?.getBoundingClientRect() ?? origin;
+    const token = ++generation.current;
     let completed = false;
     const complete = () => {
-      if (completed) return;
+      if (
+        completed ||
+        token !== generation.current ||
+        !node.isConnected ||
+        node.closest('[hidden], [inert]')
+      )
+        return;
       completed = true;
       if (closeTimer.current) clearTimeout(closeTimer.current);
       homeCallback.current();
@@ -139,17 +135,9 @@ export function AppWindow({ app, active, origin, onHome, children }: Props) {
     closeTimer.current = setTimeout(complete, 320);
   }
 
-  function finish(event: PointerEvent<HTMLDivElement>, cancelled = false) {
-    const current = gesture.current;
-    if (!current || current.pointerId !== event.pointerId) return;
-    const result = homeDrag(current, event.clientX, event.clientY);
-    cancelGesture();
-    if (!cancelled && !result.cancelled && result.complete) returnHome();
-  }
-
   const keyboardHome = useEffectEvent(() => returnHome());
   useEffect(() => {
-    if (!active) return;
+    if (!interactive) return;
     const keydown = (event: KeyboardEvent) => {
       if (event.altKey && event.key === 'Home') {
         event.preventDefault();
@@ -158,19 +146,20 @@ export function AppWindow({ app, active, origin, onHome, children }: Props) {
     };
     window.addEventListener('keydown', keydown);
     return () => window.removeEventListener('keydown', keydown);
-  }, [active]);
+  }, [interactive]);
 
   return (
     <div
       className="app-host"
       hidden={!active}
-      inert={!active}
-      aria-hidden={!active}
+      inert={!interactive}
+      aria-hidden={!interactive}
       style={{ top: viewport.top, height: viewport.height }}
     >
       <section
         ref={card}
         className="app-window"
+        data-app-window={app}
         aria-label={app === 'settings' ? '설정 앱' : 'Safari 앱'}
         data-testid={`${app}-app`}
         data-dragging={drag > 0}
@@ -185,37 +174,37 @@ export function AppWindow({ app, active, origin, onHome, children }: Props) {
       >
         <div className="app-body">{children}</div>
         <footer className="app-home-controls">
+          <button
+            tabIndex={0}
+            className="app-home-button"
+            aria-label="제어 센터 열기"
+            onClick={onControl}
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 7h16M4 17h16M8 4v6M16 14v6" />
+            </svg>
+          </button>
           <div
-            ref={gestureZone}
             className="app-home-gesture"
             data-testid={`${app}-home-gesture`}
             aria-hidden="true"
-            onPointerDown={(event) => {
-              if (!event.isPrimary || event.button !== 0 || gesture.current || closing.current)
-                return;
-              animation.current?.cancel();
-              gesture.current = {
-                pointerId: event.pointerId,
-                startX: event.clientX,
-                startY: event.clientY,
-              };
-              event.currentTarget.setPointerCapture(event.pointerId);
-            }}
-            onPointerMove={(event) => {
-              const current = gesture.current;
-              if (!current || current.pointerId !== event.pointerId) return;
-              const result = homeDrag(current, event.clientX, event.clientY);
-              if (result.cancelled) cancelGesture();
-              else setDrag(result.offset);
-            }}
-            onPointerUp={(event) => finish(event)}
-            onPointerCancel={(event) => finish(event, true)}
-            onLostPointerCapture={(event) => finish(event, true)}
+            {...bottom.handlers}
           >
             <svg viewBox="0 0 20 20">
               <path d="m5 12 5-5 5 5" />
             </svg>
           </div>
+          <button
+            tabIndex={0}
+            className="app-home-button"
+            aria-label="최근 앱 열기"
+            onClick={onSwitcher}
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="4" y="5" width="11" height="16" rx="2" />
+              <path d="M9 2h11v15" />
+            </svg>
+          </button>
           <button
             tabIndex={0}
             className="app-home-button"

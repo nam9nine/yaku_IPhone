@@ -18,6 +18,7 @@
   background: var(--safari-background);
   font-size: inherit;
   line-height: 1.45;
+  touch-action: pinch-zoom;
 }
 .safari-app button,
 .safari-app input,
@@ -64,9 +65,7 @@
 .safari-document,
 .safari-tabs {
   height: 100%;
-  overflow: auto;
-  overscroll-behavior: contain;
-  scrollbar-width: none;
+  overflow: clip;
 }
 .safari-document[hidden] {
   display: none;
@@ -305,6 +304,8 @@
   color: var(--safari-secondary);
 }
 .safari-tabs {
+  display: flex;
+  flex-direction: column;
   padding: 20px 16px;
 }
 .safari-tabs > header {
@@ -330,7 +331,8 @@
   background: var(--safari-surface);
 }
 .safari-tab-selected {
-  box-shadow: 0 0 0 3px var(--safari-accent);
+  outline: 3px solid var(--safari-accent);
+  outline-offset: -3px;
 }
 .safari-tab-select {
   width: 100%;
@@ -416,8 +418,11 @@
   background: #0003;
 }
 .safari-menu {
+  display: flex;
+  flex-direction: column;
   width: min(360px, 100%);
   max-height: 100%;
+  height: min(440px, 100%);
   margin: 0;
   padding: 12px 18px 16px;
   border: 1px solid var(--safari-separator);
@@ -425,7 +430,7 @@
   color: var(--safari-text);
   background: var(--safari-surface);
   box-shadow: 0 12px 60px #0003;
-  overflow: auto;
+  overflow: clip;
 }
 .safari-menu > header {
   display: flex;
@@ -464,25 +469,83 @@
 .safari-error-layer {
   position: absolute;
   inset: 0;
-  display: grid;
-  align-items: center;
-  padding: 24px;
-  overflow: auto;
+  display: flex;
+  padding: 12px;
+  overflow: clip;
   background: color-mix(in srgb, var(--safari-background) 65%, transparent);
   backdrop-filter: blur(8px);
 }
 .safari-error {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
-  padding: 26px 22px 16px;
+  display: block;
+  padding: 0;
   border-radius: 24px;
   background: var(--safari-surface);
   text-align: center;
   box-shadow: 0 10px 40px #0001;
 }
-.safari-error > svg {
+.safari-error > section {
+  padding: 16px;
+}
+.safari-error > section > * {
+  margin-bottom: 14px;
+}
+.safari-menu > header,
+.safari-tabs > header {
+  flex: none;
+}
+.safari-page-info {
+  display: block;
+}
+.safari-page-info > * {
+  display: block;
+  margin-bottom: 5px;
+}
+.safari-tab-grid {
+  display: block;
+  padding: 0;
+  column-gap: 24px;
+}
+.safari-tab-card {
+  margin: 4px 4px 18px;
+  break-inside: avoid;
+}
+.safari-tab-preview {
+  min-height: 0;
+  height: min(100px, calc(var(--paged-height) * 0.35));
+  padding: 16px;
+}
+.safari-tab-preview > strong,
+.safari-tab-preview > span {
+  display: none;
+}
+.safari-tabs .paged-viewport {
+  padding: 0;
+}
+.safari-document
+  .paged-flow
+  :is(.safari-start, .safari-search-page, .safari-external, .safari-article) {
+  min-height: 0;
+}
+.safari-document .paged-flow :is(.safari-start-heading, .safari-external) {
+  display: block;
+}
+.safari-external > * {
+  margin-bottom: 20px !important;
+}
+.safari-external-icon {
+  margin-inline: auto;
+}
+.safari-document .paged-flow :is(h2, h3, p) {
+  orphans: 1;
+  widows: 1;
+}
+.safari-document .safari-guide-art {
+  height: min(180px, calc(var(--paged-height) * 0.6));
+}
+.safari-document .safari-example-art {
+  height: min(215px, calc(var(--paged-height) * 0.6));
+}
+.safari-error > section > svg {
   width: 38px;
   height: 38px;
   color: var(--safari-secondary);

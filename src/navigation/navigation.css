@@ -1,0 +1,68 @@
+.paged-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  overflow: clip;
+  touch-action: pinch-zoom;
+}
+.paged-viewport {
+  flex: 1;
+  min-height: 0;
+  overflow: clip;
+  position: relative;
+}
+.paged-flow {
+  height: 100%;
+  width: 100%;
+  column-width: 100vw;
+  column-gap: 24px;
+  column-fill: auto;
+  overflow: visible;
+}
+.paged-flow :is(p, li) {
+  overflow-wrap: anywhere;
+  widows: 2;
+  orphans: 2;
+}
+.paged-flow :is(button, label, input, svg, img) {
+  break-inside: avoid;
+}
+.paged-controls {
+  display: flex;
+  flex: none;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  color: var(--app-secondary, #6c6c70);
+  background: var(--app-background, #f2f2f7);
+  font-size: 14px;
+}
+.paged-controls button {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--app-accent, #007aff);
+  font: inherit;
+  font-size: 28px;
+}
+.paged-controls button:disabled {
+  opacity: 0.3;
+}
+.paged-controls button:focus-visible {
+  outline: 3px solid var(--app-accent, #007aff);
+  outline-offset: -3px;
+}
+.paged-controls span {
+  min-width: 48px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}

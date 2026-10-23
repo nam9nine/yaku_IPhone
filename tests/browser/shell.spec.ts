@@ -13,7 +13,11 @@ async function open(page: Page, app: 'settings' | 'safari' = 'settings') {
   });
 }
 async function begin(page: Page) {
-  const box = (await page.getByTestId('settings-home-gesture').boundingBox())!;
+  const zone = page.getByTestId('settings-home-gesture');
+  // Wait for the returning app transform before choosing the next gesture origin.
+  // A stale coordinate can land in selectable app content instead of this surface.
+  await zone.click({ trial: true });
+  const box = (await zone.boundingBox())!;
   const x = box.x + box.width / 2;
   const y = box.y + box.height / 2;
   await page.mouse.move(x, y);
@@ -53,6 +57,7 @@ test('짧은·수평·취소·resize·blur 드래그 후에도 다시 홈으로 
     await page.mouse.move(mode === 'horizontal' ? x + 140 : x, y - (mode === 'short' ? 40 : 110), {
       steps: 5,
     });
+    await expect(page.getByTestId('settings-app')).toHaveAttribute('data-dragging', 'true');
     if (mode === 'cancel')
       await page
         .getByTestId('settings-home-gesture')
@@ -63,6 +68,7 @@ test('짧은·수평·취소·resize·blur 드래그 후에도 다시 홈으로 
     // A diagonal with greater horizontal travel must not qualify as a home swipe.
     await expect(page.getByTestId('settings-app')).toBeVisible();
     await expect(page.getByTestId('settings-app')).toHaveAttribute('data-dragging', 'false');
+    expect(await page.evaluate(() => window.getSelection()?.toString())).toBe('');
   }
   await page.evaluate(() => {
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
@@ -71,16 +77,17 @@ test('짧은·수평·취소·resize·blur 드래그 후에도 다시 홈으로 
   await expect(page.getByTestId('settings-app')).toBeHidden();
 });
 
-test('홈 페이지와 스크롤·포커스가 유지되고 비활성 앱은 입력에서 제외된다', async ({ page }) => {
-  await page.setViewportSize({ width: 360, height: 500 });
+test('홈 페이지와 포커스가 유지되고 비활성 앱은 입력에서 제외된다', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
   await home(page);
   const settings = page.getByRole('button', { name: '설정', exact: true });
-  await settings.scrollIntoViewIfNeeded();
-  const scroll = await page.getByTestId('home-pages').evaluate((el) => el.scrollTop);
+  await expect(settings).toBeInViewport();
+  const homePage = await page.getByTestId('home-pages').getAttribute('data-page');
   await open(page);
   await page.getByRole('button', { name: '홈으로 돌아가기' }).tap();
   await expect(settings).toBeFocused();
-  expect(await page.getByTestId('home-pages').evaluate((el) => el.scrollTop)).toBe(scroll);
+  await expect(page.getByTestId('home-pages')).toHaveAttribute('data-page', homePage!);
+  expect(await page.getByTestId('home-pages').evaluate((el) => el.scrollTop)).toBe(0);
   await page.getByRole('button', { name: '2페이지로 이동' }).tap();
   await open(page, 'safari');
   await expect(page.getByRole('heading', { name: '설정', exact: true })).toHaveCount(0);

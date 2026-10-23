@@ -19,12 +19,30 @@ type PointerHandlers = {
   onClickCapture: MouseEventHandler<HTMLElement>;
 };
 
-export function useUnlockGesture({ onUnlock }: { onUnlock: () => void }) {
+export function useUnlockGesture({
+  onUnlock,
+  active = true,
+}: {
+  onUnlock: () => void;
+  active?: boolean;
+}) {
   const current = useRef(initialUnlockState);
   const suppressPointerClick = useRef(false);
   const [state, setState] = useState(initialUnlockState);
+  const [wasActive, setWasActive] = useState(active);
+  if (wasActive !== active) {
+    setWasActive(active);
+    setState(initialUnlockState);
+  }
+  useEffect(() => {
+    if (!active) {
+      current.current = initialUnlockState;
+      suppressPointerClick.current = true;
+    }
+  }, [active]);
 
   function transition(action: UnlockAction) {
+    if (!active) return;
     const previous = current.current;
     if (action.type === 'move' || action.type === 'end') {
       suppressPointerClick.current ||= movedBeyondTap(previous, action);
@@ -41,6 +59,7 @@ export function useUnlockGesture({ onUnlock }: { onUnlock: () => void }) {
     const cancel = () => {
       const next = unlockReducer(current.current, { type: 'cancel' });
       if (next !== current.current) {
+        suppressPointerClick.current = true;
         current.current = next;
         setState(next);
       }
@@ -48,9 +67,19 @@ export function useUnlockGesture({ onUnlock }: { onUnlock: () => void }) {
     const visibilityChanged = () => {
       if (document.hidden) cancel();
     };
+    const second = (event: PointerEvent) => {
+      if (current.current.status === 'dragging' && current.current.pointerId !== event.pointerId)
+        cancel();
+    };
+    window.addEventListener('pointerdown', second, true);
+    window.addEventListener('resize', cancel);
+    window.visualViewport?.addEventListener('resize', cancel);
     window.addEventListener('blur', cancel);
     document.addEventListener('visibilitychange', visibilityChanged);
     return () => {
+      window.removeEventListener('pointerdown', second, true);
+      window.removeEventListener('resize', cancel);
+      window.visualViewport?.removeEventListener('resize', cancel);
       window.removeEventListener('blur', cancel);
       document.removeEventListener('visibilitychange', visibilityChanged);
     };
@@ -58,7 +87,8 @@ export function useUnlockGesture({ onUnlock }: { onUnlock: () => void }) {
 
   const bind: PointerHandlers = {
     onPointerDown(event) {
-      if (current.current.status !== 'locked' || !event.isPrimary || event.button !== 0) return;
+      if (!active || current.current.status !== 'locked' || !event.isPrimary || event.button !== 0)
+        return;
       suppressPointerClick.current = false;
       const target = event.target instanceof Element ? event.target : null;
       const interactive = target?.closest(INTERACTIVE_TARGET);

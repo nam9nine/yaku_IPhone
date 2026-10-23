@@ -1,6 +1,8 @@
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { setAirplaneMode, type DevicePreferences } from './preferences';
 import { SettingsIcon, type SettingsIconName } from './SettingsIcon';
+import { PagedContent } from '../navigation/PagedContent';
+import { useEdgeNavigation } from '../navigation/EdgeNavigation';
 import './settings.css';
 
 type SettingsPage =
@@ -91,32 +93,37 @@ export function SettingsApp({
   active: boolean;
   storageUnavailable?: boolean;
 }) {
-  const [page, setPage] = useState<SettingsPage>('main');
-  const content = useRef<HTMLDivElement>(null);
+  const [history, setHistory] = useState<SettingsPage[]>(['main']);
+  const page = history[history.length - 1];
   const title = useRef<HTMLHeadingElement>(null);
-  const scrollPositions = useRef<Partial<Record<SettingsPage, number>>>({});
+  const [positions, setPositions] = useState<Partial<Record<SettingsPage, number>>>({});
   const focusAfterNavigation = useRef(false);
-  const previousDetail = useRef<SettingsPage>('wifi');
+  const returnTo = useRef<SettingsPage | null>(null);
+  const container = useRef<HTMLElement>(null);
 
   useLayoutEffect(() => {
     if (!focusAfterNavigation.current || !active) return;
     focusAfterNavigation.current = false;
-    if (content.current) content.current.scrollTop = scrollPositions.current[page] ?? 0;
-    if (page === 'main') {
-      content.current
-        ?.querySelector<HTMLButtonElement>(`[data-settings-page="${previousDetail.current}"]`)
-        ?.focus({ preventScroll: true });
-    } else {
-      title.current?.focus({ preventScroll: true });
-    }
+    const target = returnTo.current
+      ? container.current?.querySelector<HTMLElement>(`[data-settings-page="${returnTo.current}"]`)
+      : null;
+    returnTo.current = null;
+    (target ?? title.current)?.focus({ preventScroll: true });
   }, [page, active]);
 
   function navigate(next: SettingsPage) {
-    scrollPositions.current[page] = content.current?.scrollTop ?? 0;
-    if (next !== 'main') previousDetail.current = next;
+    if (next === page) return;
     focusAfterNavigation.current = true;
-    setPage(next);
+    setHistory((current) => [...current, next]);
   }
+
+  function back() {
+    if (history.length <= 1) return;
+    focusAfterNavigation.current = true;
+    returnTo.current = page;
+    setHistory((current) => current.slice(0, -1));
+  }
+  const edge = useEdgeNavigation({ active, onBack: history.length > 1 ? back : undefined });
 
   function update<K extends keyof DevicePreferences>(key: K, value: DevicePreferences[K]) {
     onChange({ ...preferences, [key]: value });
@@ -140,25 +147,42 @@ export function SettingsApp({
   }
 
   return (
-    <section className="settings-app" aria-label="설정 내용">
+    <section ref={container} className="settings-app" aria-label="설정 내용" {...edge}>
       <header className={`settings-header${page === 'main' ? ' settings-header--large' : ''}`}>
         {page !== 'main' && (
           <button
             tabIndex={0}
             className="settings-back"
             type="button"
-            aria-label="설정 목록으로 돌아가기"
-            onClick={() => navigate('main')}
+            aria-label={
+              history[history.length - 2] === 'main'
+                ? '설정 목록으로 돌아가기'
+                : `${pageTitles[history[history.length - 2]]}으로 돌아가기`
+            }
+            onClick={back}
           >
             <Chevron />
-            <span>설정</span>
+            <span>{pageTitles[history[history.length - 2]]}</span>
           </button>
         )}
         <h1 ref={title} data-app-title tabIndex={-1}>
           {pageTitles[page]}
         </h1>
       </header>
-      <div className="settings-content" ref={content} data-testid="settings-content">
+      <PagedContent
+        key={page}
+        className="settings-content"
+        contentClassName="settings-pages"
+        testId="settings-content"
+        label="설정 내용"
+        active={active}
+        page={positions[page] ?? 0}
+        onPageChange={(value) =>
+          setPositions((current) =>
+            current[page] === value ? current : { ...current, [page]: value },
+          )
+        }
+      >
         {storageUnavailable && (
           <p className="settings-footnote" role="status">
             설정을 저장할 수 없어 현재 접속 중에만 유지됩니다.
@@ -400,7 +424,7 @@ export function SettingsApp({
             </p>
           </>
         )}
-      </div>
+      </PagedContent>
     </section>
   );
 }

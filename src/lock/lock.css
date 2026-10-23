@@ -130,3 +130,44 @@
     height: 220px;
   }
 }
+
+.lock-screen {
+  height: 100%;
+  min-height: 0;
+  overflow: clip;
+  touch-action: pinch-zoom;
+}
+.lock-clock-group {
+  min-height: 0;
+  flex-shrink: 1;
+}
+.lock-clock {
+  max-height: calc(100dvh - 280px);
+  min-height: 0;
+}
+.lock-bottom {
+  flex-shrink: 0;
+}
+@media (max-height: 480px) {
+  .lock-clock-group {
+    padding-top: 0;
+  }
+  .lock-date {
+    font-size: clamp(0.875rem, 5vw, 1.4rem);
+  }
+  .lock-clock {
+    height: 72px;
+    max-height: calc(100dvh - 245px - 2rem);
+  }
+  .lock-bottom {
+    padding: 0;
+  }
+  .unlock-hint {
+    margin-top: 4px;
+  }
+  .lock-notice:not(:empty) {
+    margin-bottom: 4px;
+    padding: 4px;
+    font-size: 12px;
+  }
+}

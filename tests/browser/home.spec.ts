@@ -1,4 +1,8 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import { attachFailedInput, recordInput } from '../helpers/input-diagnostics';
+import { dragTouchWithoutFling } from '../helpers/touch';
+
+test.afterEach(async ({ page }, info) => attachFailedInput(page, info));
 
 const viewports = [
   { width: 360, height: 800 },
@@ -44,6 +48,14 @@ async function swipe(page: Page, direction: 'left' | 'right') {
   await page.mouse.down();
   await page.mouse.move(endX, y, { steps: 8 });
   await page.mouse.up();
+}
+
+async function revealSettings(page: Page) {
+  for (let i = 0; i < 12; i++) {
+    if (await page.getByRole('button', { name: '설정', exact: true }).count()) return;
+    await swipe(page, 'left');
+  }
+  throw new Error('설정 아이콘에 가로 페이지로 접근할 수 없음');
 }
 
 async function expectInsideViewport(locator: Locator, width: number, bottom: number) {
@@ -244,22 +256,26 @@ test('화살표 키와 페이지 버튼으로 이동하고 숨겨진 앱은 포�
   await expectPage(page, 1);
 });
 
-test('높이 600과 합성 safe area에서 Dock을 보존하고 마지막 앱까지 스크롤한다', async ({ page }) => {
+test('높이 600과 합성 safe area에서 Dock을 보존하고 마지막 앱까지 가로로 넘긴다', async ({
+  page,
+}) => {
   await openHome(page);
   await page.setViewportSize({ width: 390, height: 600 });
   await page.addStyleTag({
     content:
       ':root { --safe-area-top: 20px; --safe-area-right: 12px; --safe-area-bottom: 34px; --safe-area-left: 12px; }',
   });
+  await expect(page.getByRole('main')).toHaveCSS('height', '600px');
   const pages = page.getByTestId('home-pages');
   const dock = page.getByRole('navigation', { name: 'Dock' });
   const dockBounds = (await dock.boundingBox())!;
   expect(dockBounds.x).toBeGreaterThanOrEqual(12);
   expect(dockBounds.x + dockBounds.width).toBeLessThanOrEqual(390 - 12);
   expect(dockBounds.y + dockBounds.height).toBeLessThanOrEqual(600 - 34);
-  expect(await pages.evaluate((element) => element.scrollHeight > element.clientHeight)).toBe(true);
+  expect(await pages.evaluate((element) => element.scrollTop)).toBe(0);
+  await revealSettings(page);
   const settings = page.getByRole('button', { name: '설정', exact: true });
-  await settings.scrollIntoViewIfNeeded();
+  await revealSettings(page);
   const settingsBounds = (await settings.boundingBox())!;
   const pagesBounds = (await pages.boundingBox())!;
   expect(settingsBounds.y).toBeGreaterThanOrEqual(pagesBounds.y - 1);
@@ -288,49 +304,39 @@ test('reduced motion에서도 페이지 이동과 앱 눌림이 완료된다', a
   expect(await page.evaluate(() => document.getAnimations().length)).toBe(0);
 });
 
-test('세로 스크롤은 페이지를 유지하며 다른 페이지에서 돌아오면 처음부터 보인다', async ({
+test('홈 본문의 세로 이동은 스크롤을 만들지 않고 가로 페이지는 유지된다', async ({
   page,
   browserName,
 }) => {
+  await recordInput(page);
   await page.setViewportSize({ width: 390, height: 600 });
   await openHome(page);
   const pages = page.getByTestId('home-pages');
   const region = (await pages.boundingBox())!;
-  if (browserName === 'chromium') {
-    const session = await page.context().newCDPSession(page);
-    const x = region.x + region.width * 0.5;
-    const startY = region.y + region.height * 0.85;
-    const endY = region.y + region.height * 0.2;
-    const point = (y: number) => ({ x, y, id: 1, radiusX: 4, radiusY: 4, force: 1 });
-    try {
-      await session.send('Input.dispatchTouchEvent', {
-        type: 'touchStart',
-        touchPoints: [point(startY)],
-      });
-      for (let step = 1; step <= 8; step++) {
-        await session.send('Input.dispatchTouchEvent', {
-          type: 'touchMove',
-          touchPoints: [point(startY + ((endY - startY) * step) / 8)],
-        });
-      }
-      await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-    } finally {
-      await session.detach();
+  const session = browserName === 'chromium' ? await page.context().newCDPSession(page) : null;
+  try {
+    if (session) {
+      const x = region.x + region.width * 0.5;
+      const startY = region.y + region.height * 0.85;
+      const endY = region.y + region.height * 0.2;
+      await dragTouchWithoutFling(page, session, x, startY, endY - startY);
+    } else {
+      // Mobile WebKit exposes neither CDP touch-drag nor wheel; check scroll policy and container.
+      await expect(pages).toHaveCSS('touch-action', 'pinch-zoom');
+      await pages.evaluate((element) => element.scrollBy(0, 350));
     }
-  } else {
-    // Mobile WebKit exposes neither CDP touch-drag nor wheel; check scroll policy and container.
-    await expect(pages).toHaveCSS('touch-action', 'pan-y pinch-zoom');
-    await pages.evaluate((element) => element.scrollBy(0, 350));
+    await expect.poll(async () => pages.evaluate((element) => element.scrollTop)).toBe(0);
+    await expect(pages).toHaveAttribute('data-page', '1');
+    await expect(page.getByRole('status')).toHaveCount(0);
+    await page.getByRole('button', { name: '2페이지로 이동' }).tap();
+    await expect(pages).toHaveAttribute('data-page', '2');
+    await page.getByRole('button', { name: '1페이지로 이동' }).tap();
+    await expect(pages).toHaveAttribute('data-page', '1');
+    await expect.poll(async () => pages.evaluate((element) => element.scrollTop)).toBe(0);
+    await expect(page.getByRole('button', { name: '사진 위젯' })).toBeInViewport();
+  } finally {
+    await session?.detach();
   }
-  await expect.poll(async () => pages.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
-  await expectPage(page, 1);
-  await expect(page.getByRole('status')).toHaveCount(0);
-  await page.getByRole('button', { name: '2페이지로 이동' }).tap();
-  await expectPage(page, 2);
-  await page.getByRole('button', { name: '1페이지로 이동' }).tap();
-  await expectPage(page, 1);
-  await expect.poll(async () => pages.evaluate((element) => element.scrollTop)).toBe(0);
-  await expect(page.getByRole('button', { name: '사진 위젯' })).toBeInViewport();
 });
 
 test('글자 200%에서도 달력의 요일·날짜·일정 안내가 서로 겹치거나 잘리지 않는다', async ({
@@ -362,7 +368,7 @@ test('글자 200%에서도 달력의 요일·날짜·일정 안내가 서로 겹
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(360);
   await page.screenshot({ path: test.info().outputPath('calendar-200.png') });
   const settings = page.getByRole('button', { name: '설정', exact: true });
-  await settings.scrollIntoViewIfNeeded();
+  await revealSettings(page);
   await settings.tap();
   await expect(page.getByTestId('settings-app')).toBeVisible();
   await page.getByRole('button', { name: '홈으로 돌아가기' }).tap();
@@ -402,4 +408,64 @@ test('브라우저별 실제 입력으로 홈 페이지를 넘긴다: Chromium t
   }
   await expectPage(page, 2);
   await expect(page.getByRole('status')).toHaveCount(0);
+});
+
+test('가로 페이지 수가 줄어든 뒤 첫 방향키부터 현재 페이지를 기준으로 움직인다', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 360, height: 320 });
+  await openHome(page);
+  await page.evaluate(() => (document.documentElement.style.fontSize = '200%'));
+  const next = page.getByRole('button', { name: '다음 홈 페이지' });
+  await expect(next).toBeVisible();
+  for (let i = 0; i < 12 && (await next.isEnabled()); i++) await next.tap();
+  await page.evaluate(() => (document.documentElement.style.fontSize = '100%'));
+  await page.setViewportSize({ width: 430, height: 932 });
+  const pages = page.getByTestId('home-pages');
+  await expect(pages).toHaveAttribute('data-page', '2');
+  await pages.focus();
+  await page.keyboard.press('ArrowLeft');
+  await expect(pages).toHaveAttribute('data-page', '1');
+});
+
+test('많은 홈 페이지에서도 실제 Tab 순회로 검색과 다음 페이지를 선택한다', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 320 });
+  await openHome(page);
+  await page.evaluate(() => (document.documentElement.style.fontSize = '200%'));
+  await expect(page.getByRole('button', { name: '다음 홈 페이지' })).toBeVisible();
+  await page.locator('[data-home-title]').focus();
+  const names = new Set<string>();
+  for (let i = 0; i < 32; i++) {
+    await page.keyboard.press('Tab');
+    names.add(await page.evaluate(() => document.activeElement?.getAttribute('aria-label') ?? ''));
+  }
+  expect(names.has('홈 앱 검색')).toBe(true);
+  expect(names.has('다음 홈 페이지')).toBe(true);
+});
+
+test('홈 진입의 시각 변환은 페이지 용량과 렌더링에 영향을 주지 않는다', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.setViewportSize({ width: 390, height: 600 });
+  await openHome(page);
+  const home = page.getByTestId('home-screen');
+  const pageCount = await home.locator('.home-page').count();
+  expect(pageCount).toBeGreaterThan(2);
+  const style = await page.addStyleTag({
+    content: '.home-screen { animation: none !important; transform: scale(.5); }',
+  });
+  await page.setViewportSize({ width: 390, height: 601 });
+  await expect(page.getByRole('main')).toHaveCSS('height', '601px');
+  // Let ResizeObserver and React finish layout before checking transformed capacity.
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+      ),
+  );
+  await expect(home.locator('.home-page')).toHaveCount(pageCount);
+  await style.evaluate((element) => element.parentNode?.removeChild(element));
+  await page.setViewportSize({ width: 390, height: 600 });
+  await expect(home.locator('.home-page')).toHaveCount(pageCount);
+  expect(errors).toEqual([]);
 });
