@@ -338,7 +338,15 @@ test('글자 200%에서도 달력의 요일·날짜·일정 안내가 서로 겹
 }) => {
   await page.setViewportSize({ width: 360, height: 800 });
   await openHome(page);
-  await page.addStyleTag({ content: ':root { font-size: 200%; }' });
+  const originalSize = await page.evaluate(() =>
+    parseFloat(getComputedStyle(document.documentElement).fontSize),
+  );
+  await page.evaluate(() => {
+    document.documentElement.style.fontSize = '200%';
+  });
+  expect(
+    await page.evaluate(() => parseFloat(getComputedStyle(document.documentElement).fontSize)),
+  ).toBe(originalSize * 2);
   const calendar = page.locator('.home-calendar-widget');
   await calendar.scrollIntoViewIfNeeded();
   const container = (await calendar.boundingBox())!;

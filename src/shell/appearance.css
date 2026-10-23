@@ -1,0 +1,40 @@
+.mobile-shell {
+  --app-background: #f2f2f7;
+  --app-surface: #fff;
+  --app-text: #1c1c1e;
+  --app-secondary: #6c6c70;
+  --app-separator: rgb(60 60 67 / 18%);
+  --app-accent: #007aff;
+}
+.mobile-shell[data-theme='dark'] {
+  --app-background: #000;
+  --app-surface: #1c1c1e;
+  --app-text: #f5f5f7;
+  --app-secondary: #a6a6ae;
+  --app-separator: rgb(235 235 245 / 22%);
+  --app-accent: #0a84ff;
+}
+.mobile-shell[data-reduced-motion='true'] {
+  --motion-short: 0ms;
+  --motion-settle: 0ms;
+}
+.mobile-shell[data-wallpaper='solid'] .mobile-shell-wallpaper {
+  background: #334155;
+}
+.mobile-shell[data-wallpaper='solid'] .mobile-shell-wallpaper img,
+.mobile-shell[data-wallpaper='solid'] .mobile-shell-foreground {
+  display: none;
+}
+.brightness-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  background: #000;
+  pointer-events: none;
+}
+.mobile-shell[data-theme='light'] .app-window {
+  color-scheme: light;
+}
+.mobile-shell[data-theme='dark'] .app-window {
+  color-scheme: dark;
+}

@@ -4,9 +4,15 @@ import { LockScreen } from './lock/LockScreen';
 import { HomeScreen } from './home/HomeScreen';
 import { AppWindow } from './shell/AppWindow';
 import { initialShellState, shellReducer } from './shell/session';
+import { SettingsApp } from './settings/SettingsApp';
+import { useDevicePreferences } from './settings/useDevicePreferences';
+import { useAppearance } from './shell/useAppearance';
+import './shell/appearance.css';
 
 export function App() {
   const [state, dispatch] = useReducer(shellReducer, initialShellState);
+  const { preferences, setPreferences, storageUnavailable } = useDevicePreferences();
+  const appearance = useAppearance(preferences);
   useEffect(() => {
     if (state.locked || state.activeApp) return;
     const frame = requestAnimationFrame(() => {
@@ -22,7 +28,7 @@ export function App() {
     return () => cancelAnimationFrame(frame);
   }, [state.locked, state.activeApp, state.launcher]);
   return (
-    <MobileShell foreground={state.locked}>
+    <MobileShell foreground={state.locked} preferences={preferences} appearance={appearance}>
       {state.locked && (
         <LockScreen onUnlock={() => dispatch({ type: 'unlock' })} autoFocus={state.hasUnlocked} />
       )}
@@ -46,19 +52,24 @@ export function App() {
           origin={state.activeApp === app ? state.origin : null}
           onHome={() => dispatch({ type: 'home' })}
         >
-          <div className="app-preview">
-            <h1 data-app-title tabIndex={-1}>
-              {app === 'settings' ? '설정' : 'Safari'}
-            </h1>
-            <div className="app-preview-card">
-              <p>
-                {app === 'settings'
-                  ? '설정 화면을 준비하고 있어요.'
-                  : 'Safari 화면을 준비하고 있어요.'}
-              </p>
-              <p>아래에서 위로 밀면 홈으로 돌아갑니다.</p>
+          {app === 'settings' ? (
+            <SettingsApp
+              preferences={preferences}
+              onChange={setPreferences}
+              active={!state.locked && state.activeApp === app}
+              storageUnavailable={storageUnavailable}
+            />
+          ) : (
+            <div className="app-preview">
+              <h1 data-app-title tabIndex={-1}>
+                Safari
+              </h1>
+              <div className="app-preview-card">
+                <p>Safari 화면을 준비하고 있어요.</p>
+                <p>아래에서 위로 밀면 홈으로 돌아갑니다.</p>
+              </div>
             </div>
-          </div>
+          )}
         </AppWindow>
       ))}
     </MobileShell>

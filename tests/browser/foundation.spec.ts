@@ -59,7 +59,15 @@ test('높이 변경·네 방향 safe area에서도 콘텐츠에 접근한다', a
 test('문자 확대와 짧은 화면에서 하단 제어까지 스크롤한다', async ({ page, browserName }) => {
   await page.setViewportSize({ width: 360, height: 320 });
   await page.goto('./');
-  await page.addStyleTag({ content: ':root { font-size: 200%; }' });
+  const originalSize = await page.evaluate(() =>
+    parseFloat(getComputedStyle(document.documentElement).fontSize),
+  );
+  await page.evaluate(() => {
+    document.documentElement.style.fontSize = '200%';
+  });
+  expect(
+    await page.evaluate(() => parseFloat(getComputedStyle(document.documentElement).fontSize)),
+  ).toBe(originalSize * 2);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(360);
   await expect(page.getByTestId('lock-screen')).toHaveCSS(
     'touch-action',
