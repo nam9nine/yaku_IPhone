@@ -1,3 +1,4 @@
+import { wallpaperIds } from '../day/media';
 export interface DevicePreferences {
   airplane: boolean;
   wifi: boolean;
@@ -5,17 +6,7 @@ export interface DevicePreferences {
   bluetooth: boolean;
   theme: 'system' | 'light' | 'dark';
   brightness: number;
-  wallpaper:
-    | 'default'
-    | 'solid'
-    | 'drawing'
-    | 'sea'
-    | 'mealtime'
-    | 'family-drawing'
-    | 'lunchbox'
-    | 'lunchbox-blur'
-    | 'sprout-garden'
-    | 'evening-sea';
+  wallpaper: string;
   wallpaperPositions?: Record<string, { x: number; y: number }>;
   textScale: 100 | 115 | 130;
   reduceMotion: boolean;
@@ -59,18 +50,7 @@ export function parsePreferences(value: unknown): DevicePreferences | null {
     candidate.brightness < 50 ||
     candidate.brightness > 100 ||
     typeof candidate.wallpaper !== 'string' ||
-    ![
-      'default',
-      'solid',
-      'drawing',
-      'sea',
-      'mealtime',
-      'family-drawing',
-      'lunchbox',
-      'lunchbox-blur',
-      'sprout-garden',
-      'evening-sea',
-    ].includes(candidate.wallpaper) ||
+    !wallpaperIds.includes(candidate.wallpaper) ||
     (candidate.textScale !== 100 && candidate.textScale !== 115 && candidate.textScale !== 130) ||
     typeof candidate.reduceMotion !== 'boolean'
   )
@@ -83,18 +63,7 @@ export function parsePreferences(value: unknown): DevicePreferences | null {
       Array.isArray(positions) ||
       Object.entries(positions).some(
         ([key, value]) =>
-          ![
-            'default',
-            'drawing',
-            'sea',
-            'mealtime',
-            'family-drawing',
-            'lunchbox',
-            'lunchbox-blur',
-            'sprout-garden',
-            'evening-sea',
-            'solid',
-          ].includes(key) ||
+          !wallpaperIds.includes(key) ||
           !value ||
           typeof value !== 'object' ||
           typeof value.x !== 'number' ||

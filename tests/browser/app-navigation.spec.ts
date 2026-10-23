@@ -253,7 +253,7 @@ for (const interruption of [
     page,
   }) => {
     await openApp(page, '설정');
-    await page.getByRole('button', { name: 'Wi-Fi 켬', exact: true }).tap();
+    await page.getByRole('button', { name: 'Wi-Fi ASAGAO_HOME', exact: true }).tap();
     const app = page.locator('.settings-app');
     await app.evaluate((element) => {
       window.addEventListener(
@@ -494,7 +494,7 @@ test('한 단계 뒤로 화면은 손가락을 따라오고 짧은 입력은 원
 }, testInfo) => {
   await openApp(page, '설정');
   const app = page.locator('.settings-app');
-  await page.getByRole('button', { name: 'Wi-Fi 켬', exact: true }).tap();
+  await page.getByRole('button', { name: 'Wi-Fi ASAGAO_HOME', exact: true }).tap();
   const rect = (await app.boundingBox())!;
   await page.mouse.move(rect.x + 20, rect.y + 190);
   await page.mouse.down();
@@ -547,7 +547,7 @@ test('뒤로 정착 중 홈으로 나가면 늦은 탐색 콜백이 재진입 �
   page,
 }) => {
   await openApp(page, '설정');
-  await page.getByRole('button', { name: 'Wi-Fi 켬', exact: true }).tap();
+  await page.getByRole('button', { name: 'Wi-Fi ASAGAO_HOME', exact: true }).tap();
   const app = page.locator('.settings-app');
   await edgeSwipe(page, app, 'back');
   await page.keyboard.press('Alt+Home');
@@ -561,7 +561,7 @@ test('뒤로 정착 중 실제 하단 바를 끝까지 올리면 홈 복귀 후�
   page,
 }) => {
   await openApp(page, '설정');
-  await page.getByRole('button', { name: 'Wi-Fi 켬', exact: true }).tap();
+  await page.getByRole('button', { name: 'Wi-Fi ASAGAO_HOME', exact: true }).tap();
   const app = page.locator('.settings-app');
   const bar = (await page.getByTestId('settings-home-gesture').boundingBox())!;
   const x = bar.x + bar.width / 2;
@@ -584,7 +584,7 @@ test('뒤로 정착 중 실제 하단 바를 끝까지 올리면 홈 복귀 후�
 test('동작 줄이기에서는 화면을 끌지 않으며 뒤로 탐색 결과는 유지한다', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await openApp(page, '설정');
-  await page.getByRole('button', { name: 'Wi-Fi 켬', exact: true }).tap();
+  await page.getByRole('button', { name: 'Wi-Fi ASAGAO_HOME', exact: true }).tap();
   const app = page.locator('.settings-app');
   const rect = (await app.boundingBox())!;
   await page.mouse.move(rect.x + 20, rect.y + 190);
@@ -599,7 +599,7 @@ test('동작 줄이기에서는 화면을 끌지 않으며 뒤로 탐색 결과�
 for (const interruption of ['resize', 'control'] as const) {
   test(`완료 모션 도중 ${interruption}는 지연된 뒤로 탐색을 취소한다`, async ({ page }) => {
     await openApp(page, '설정');
-    await page.getByRole('button', { name: 'Wi-Fi 켬', exact: true }).tap();
+    await page.getByRole('button', { name: 'Wi-Fi ASAGAO_HOME', exact: true }).tap();
     const app = page.locator('.settings-app');
     await edgeSwipe(page, app, 'back');
     if (interruption === 'resize') {

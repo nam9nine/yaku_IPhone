@@ -65,8 +65,10 @@ for (const width of [360, 390, 430]) {
     await expect(page.getByText('하루카: 냉장고에 있어요.', { exact: true })).toBeVisible();
     await completeCurry(page);
     await expect(page.getByRole('status').filter({ hasText: /^저녁 장보기 완료$/ })).toBeVisible();
-    await expect(page.getByLabel('부재중 전화 알림', { exact: true })).toBeVisible();
-    await page.getByRole('button', { name: '부재중 전화 알림 닫기', exact: true }).tap();
+    await expect(
+      page.getByRole('region', { name: '마지마 형님 전화 수신', exact: true }),
+    ).toBeVisible();
+    await page.getByRole('button', { name: '전화 거절', exact: true }).tap();
     await home(page);
     await launchHomeApp(page, 'reminders');
     await expect(
@@ -95,7 +97,9 @@ for (const width of [360, 390, 430]) {
       await expect(page.getByRole('checkbox', { name: `${item} 완료`, exact: true })).toBeChecked();
     await page.getByRole('checkbox', { name: '감자 완료', exact: true }).uncheck();
     await page.getByRole('checkbox', { name: '감자 완료', exact: true }).check();
-    await expect(page.getByLabel('부재중 전화 알림', { exact: true })).toHaveCount(0);
+    await expect(
+      page.getByRole('region', { name: '마지마 형님 전화 수신', exact: true }),
+    ).toHaveCount(0);
     await home(page);
     await launchHomeApp(page, 'messages');
     await page.locator('[data-conversation=haruka]').tap();
@@ -116,7 +120,7 @@ test('확인 전 초기화는 취소되고 확인 후 대화·체크·배경을 
   await boot(page);
   await openCurryFromNotification(page);
   await completeCurry(page);
-  await page.getByRole('button', { name: '부재중 전화 알림 닫기' }).tap();
+  await page.getByRole('button', { name: '전화 거절' }).tap();
   await home(page);
   await launchHomeApp(page, 'messages');
   await page.getByRole('button', { name: '다 샀다. 보내기' }).tap();
@@ -165,7 +169,7 @@ test('저장소 읽기와 쓰기가 거부되어도 현재 세션의 카레 흐�
   await expect(
     page.getByText('저장 공간을 사용할 수 없어 이번 접속 중에만 유지됩니다.', { exact: true }),
   ).toBeVisible();
-  await page.getByRole('button', { name: '부재중 전화 알림 닫기' }).tap();
+  await page.getByRole('button', { name: '전화 거절' }).tap();
   await home(page);
   await launchHomeApp(page, 'messages');
   await page.getByRole('button', { name: '다 샀다. 보내기' }).tap();
@@ -180,16 +184,14 @@ test('사진에서 배경을 선택하고 설정에서 위치·다른 배경을 
   await boot(page);
   await page.getByRole('button', { name: '잠금 해제', exact: true }).tap();
   await launchHomeApp(page, 'photos');
-  await page.getByRole('button', { name: '아이들이 그려준 가족 그림', exact: true }).tap();
-  await expect(
-    page.getByText('아저씨도 같이 그렸다.\n내가 이렇게 무섭게 생겼나.', { exact: true }),
-  ).toBeVisible();
+  await page.getByRole('button', { name: '재봉틀 앞에서', exact: true }).tap();
+  await expect(page.getByText('실이 풀리지 않게. 이번에는 제대로.', { exact: true })).toBeVisible();
   await expect(page.locator('.photo-caption small').first()).toBeVisible();
   await expect(page.locator('.photo-caption small').first()).not.toBeEmpty();
   await page.getByRole('button', { name: '배경화면으로 설정', exact: true }).tap();
-  await expect(page.locator('.mobile-shell')).toHaveAttribute('data-wallpaper', 'family-drawing');
+  await expect(page.locator('.mobile-shell')).toHaveAttribute('data-wallpaper', 'sewing');
   await page.reload();
-  await expect(page.locator('.mobile-shell')).toHaveAttribute('data-wallpaper', 'family-drawing');
+  await expect(page.locator('.mobile-shell')).toHaveAttribute('data-wallpaper', 'sewing');
   await page.getByRole('button', { name: '잠금 해제', exact: true }).tap();
   await launchHomeApp(page, 'settings');
   await page.getByRole('button', { name: '배경화면', exact: true }).tap();

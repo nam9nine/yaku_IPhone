@@ -1,3 +1,5 @@
+import { useStoredState } from '../story/useStoredState';
+import { validExtraContacts, type ExtraContact } from '../story/addressBook';
 import {
   createContext,
   useCallback,
@@ -5,6 +7,7 @@ import {
   useRef,
   useState,
   type Dispatch,
+  type SetStateAction,
   type ReactNode,
 } from 'react';
 import {
@@ -18,6 +21,8 @@ import {
   type DayState,
 } from './state';
 interface DayValue {
+  extraContacts: ExtraContact[];
+  setExtraContacts: Dispatch<SetStateAction<ExtraContact[]>>;
   state: DayState;
   dispatch: Dispatch<DayAction>;
   remaining: number;
@@ -27,6 +32,11 @@ interface DayValue {
 }
 const DayContext = createContext<DayValue | null>(null);
 export function DayProvider({ children }: { children: ReactNode }) {
+  const [extraContacts, setExtraContacts, contactsUnavailable] = useStoredState<ExtraContact[]>(
+    'contacts',
+    [],
+    validExtraContacts,
+  );
   const [loaded] = useState(() => {
     try {
       return loadDay(window.localStorage);
@@ -49,15 +59,20 @@ export function DayProvider({ children }: { children: ReactNode }) {
       setStorageUnavailable(true);
     }
   }, []);
-  const reset = useCallback(() => dispatch({ type: 'reset' }), [dispatch]);
+  const reset = useCallback(() => {
+    dispatch({ type: 'reset' });
+    setExtraContacts([]);
+  }, [dispatch, setExtraContacts]);
   return (
     <DayContext
       value={{
         state,
+        extraContacts,
+        setExtraContacts,
         dispatch,
         remaining: remainingReminders(state),
         shoppingDone: shoppingComplete(state),
-        storageUnavailable,
+        storageUnavailable: storageUnavailable || contactsUnavailable,
         reset,
       }}
     >

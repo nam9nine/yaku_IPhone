@@ -484,3 +484,199 @@ body {
     font-size: 14px;
   }
 }
+
+/* User-supplied real-device captures now include an in-web status row. */
+.mobile-shell {
+  --status-row-height: 34px;
+  padding-top: calc(var(--safe-area-top) + var(--status-row-height) + 12px);
+}
+.app-window {
+  padding-top: calc(var(--safe-area-top) + var(--status-row-height));
+}
+.system-panel-content {
+  padding-top: calc(var(--safe-area-top) + var(--status-row-height));
+}
+.phone-status-bar {
+  position: absolute;
+  top: calc(var(--safe-area-top) + 5px);
+  left: 28px;
+  right: 28px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 18;
+  color: white;
+  pointer-events: none;
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1;
+}
+.phone-status-bar[data-app='true'] {
+  color: var(--app-text);
+}
+.phone-status-icons {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.phone-status-icons svg {
+  width: 18px;
+  height: 15px;
+}
+.status-battery {
+  position: relative;
+  display: block;
+  width: 27px;
+  height: 14px;
+  padding: 1px;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+}
+.status-battery::after {
+  content: '';
+  position: absolute;
+  left: 28px;
+  top: 4px;
+  width: 2px;
+  height: 5px;
+  border-radius: 0 2px 2px 0;
+  background: currentColor;
+  opacity: 0.5;
+}
+.status-battery span {
+  position: relative;
+  display: grid;
+  place-items: center;
+  height: 10px;
+  border-radius: 2px;
+  background: linear-gradient(to right, #30d158 80%, #30d15833 80%);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 750;
+}
+
+.system-top-edge {
+  top: calc(var(--phone-top) + var(--safe-area-top) + 40px);
+  height: 72px;
+  pointer-events: none;
+}
+.system-panel[data-top-entry='true'] {
+  animation: none;
+  transform: translate3d(0, calc((var(--top-pull-progress, 1) - 1) * 100%), 0);
+  will-change: transform;
+}
+.mobile-shell[data-top-settling='true'] .system-panel[data-top-entry='true'] {
+  transition: transform 420ms cubic-bezier(0.18, 0.82, 0.25, 1);
+}
+.system-panel[data-preview='true'] {
+  pointer-events: none;
+}
+.mobile-shell:has(.system-panel[data-preview='true']) .base-screens,
+.mobile-shell:has(.system-panel[data-preview='true']) .mobile-shell-wallpaper {
+  visibility: visible;
+  filter: blur(calc(var(--top-pull-progress, 0) * 16px));
+  transition: none;
+}
+.mobile-shell[data-reduced-motion='true'][data-top-settling='true']
+  .system-panel[data-top-entry='true'] {
+  transition-duration: 80ms;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mobile-shell[data-top-settling='true'] .system-panel[data-top-entry='true'] {
+    transition-duration: 80ms;
+  }
+}
+
+.day-notifications {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+  max-height: 38vh;
+  overflow: auto;
+  overscroll-behavior: contain;
+  pointer-events: auto;
+}
+.day-notification {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  min-height: 80px;
+  padding: 14px;
+  margin: 0;
+  border-radius: 26px;
+  background: #ededf0cf;
+  color: #171719;
+  border: 1px solid #ffffff40;
+}
+.notification-symbol {
+  flex: 0 0 38px;
+}
+.notification-symbol .app-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+}
+.notification-copy {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 0.875rem;
+  line-height: 1.35;
+}
+.notification-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.notification-heading strong {
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+.notification-heading small {
+  font-size: 0.75rem;
+  color: #65656a;
+}
+.system-panel-body > .day-notifications {
+  flex: 0 0 auto;
+  width: calc(100% - 24px);
+  margin: auto 12px 16px;
+}
+.notification-center:has(+ .day-notifications) .notification-empty {
+  display: none;
+}
+.mobile-shell[data-theme='dark'] .day-notification {
+  background: #303034d9;
+  color: #f5f5f7;
+}
+.mobile-shell[data-theme='dark'] .notification-heading small {
+  color: #bebec5;
+}
+.home-icon-wrap {
+  position: relative;
+  display: block;
+}
+.home-badge {
+  position: absolute;
+  z-index: 1;
+  top: -5px;
+  right: -7px;
+  display: grid;
+  place-items: center;
+  min-width: 23px;
+  height: 23px;
+  padding: 0 6px;
+  border-radius: 14px;
+  background: #ff3b30;
+  color: white;
+  font-size: 14px;
+  line-height: 1;
+  font-weight: 500;
+  box-shadow: 0 0 1px #0003;
+}

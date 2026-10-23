@@ -40,6 +40,7 @@ export const homePages: readonly (readonly HomeApp[])[] = [
     { id: 'calendar', name: '캘린더' },
     { id: 'reminders', name: '미리 알림' },
     { id: 'settings', name: '설정' },
+    { id: 'contacts', name: '연락처' },
   ],
 ];
 export const dockApps: readonly HomeApp[] = [

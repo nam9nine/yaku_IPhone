@@ -14,6 +14,7 @@ export interface DayState {
   replySent: boolean;
   missedCall: boolean;
   missedCallRead: boolean;
+  callStatus: null | 'ringing' | 'missed' | 'answered';
 }
 export type DayAction =
   | { type: 'read-thread'; id: string }
@@ -21,6 +22,8 @@ export type DayAction =
   | { type: 'reminder'; id: ReminderId; done: boolean }
   | { type: 'reply'; id: string }
   | { type: 'read-call' }
+  | { type: 'answer-call' }
+  | { type: 'miss-call' }
   | { type: 'reset' };
 export const DAY_STORAGE_KEY = 'yaku-iphone.day.v1';
 export function initialDay(): DayState {
@@ -32,6 +35,7 @@ export function initialDay(): DayState {
     replySent: false,
     missedCall: false,
     missedCallRead: false,
+    callStatus: null,
   };
 }
 export function shoppingComplete(state: DayState): boolean {
@@ -63,7 +67,11 @@ export function dayReducer(state: DayState, action: DayAction): DayState {
       )
         return state;
       const next = { ...state, ingredients: { ...state.ingredients, [action.id]: action.done } };
-      return { ...next, missedCall: state.missedCall || shoppingComplete(next) };
+      return {
+        ...next,
+        missedCall: state.missedCall || shoppingComplete(next),
+        callStatus: !state.missedCall && shoppingComplete(next) ? 'ringing' : state.callStatus,
+      };
     }
     case 'reminder': {
       if (action.id === 'shopping') {
@@ -73,7 +81,11 @@ export function dayReducer(state: DayState, action: DayAction): DayState {
             ingredients.map(({ id }) => [id, action.done]),
           ) as DayState['ingredients'],
         };
-        return { ...next, missedCall: state.missedCall || action.done };
+        return {
+          ...next,
+          missedCall: state.missedCall || action.done,
+          callStatus: !state.missedCall && action.done ? 'ringing' : state.callStatus,
+        };
       }
       if (action.id !== 'garden' && action.id !== 'mame') return state;
       return { ...state, reminders: { ...state.reminders, [action.id]: action.done } };
@@ -94,6 +106,14 @@ export function dayReducer(state: DayState, action: DayAction): DayState {
           : [...state.readThreads, action.id],
       };
     }
+    case 'answer-call':
+      return state.callStatus === 'ringing'
+        ? { ...state, callStatus: 'answered', missedCallRead: true }
+        : state;
+    case 'miss-call':
+      return state.callStatus === 'ringing'
+        ? { ...state, callStatus: 'missed', missedCallRead: false }
+        : state;
     case 'read-call':
       return state.missedCall && !state.missedCallRead ? { ...state, missedCallRead: true } : state;
   }
@@ -126,7 +146,9 @@ export function validDay(value: unknown): value is DayState {
     !contactsArray(value.replies) ||
     typeof value.replySent !== 'boolean' ||
     typeof value.missedCall !== 'boolean' ||
-    typeof value.missedCallRead !== 'boolean'
+    typeof value.missedCallRead !== 'boolean' ||
+    ![null, 'ringing', 'missed', 'answered'].includes(value.callStatus as string | null) ||
+    value.missedCall === (value.callStatus === null)
   )
     return false;
   if (
@@ -146,7 +168,14 @@ export function loadDay(storage: Pick<Storage, 'getItem'>): {
     const raw = storage.getItem(DAY_STORAGE_KEY);
     if (raw !== null) {
       const value: unknown = JSON.parse(raw);
-      if (validDay(value)) return { state: value, unavailable: false };
+      // Old v1 records had no incoming phase. A page reload never rings again.
+      if (record(value) && !('callStatus' in value))
+        value.callStatus = value.missedCall ? 'missed' : null;
+      if (validDay(value))
+        return {
+          state: value.callStatus === 'ringing' ? { ...value, callStatus: 'missed' } : value,
+          unavailable: false,
+        };
     }
     return { state: initialDay(), unavailable: false };
   } catch {

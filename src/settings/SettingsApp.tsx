@@ -14,7 +14,8 @@ type SettingsPage =
   | 'brightness'
   | 'wallpaper'
   | 'accessibility'
-  | 'demo';
+  | 'demo'
+  | 'profile';
 const pageTitles: Record<SettingsPage, string> = {
   main: '설정',
   wifi: 'Wi-Fi',
@@ -25,6 +26,7 @@ const pageTitles: Record<SettingsPage, string> = {
   wallpaper: '배경화면',
   accessibility: '손쉬운 사용',
   demo: '데모 안내',
+  profile: 'Apple 계정',
 };
 
 function Chevron() {
@@ -159,7 +161,7 @@ export function SettingsApp({
         data-settings-page={next}
         onClick={() => navigate(next)}
       >
-        <SettingsIcon name={next === 'demo' ? 'accessibility' : next} />
+        <SettingsIcon name={next === 'demo' || next === 'profile' ? 'accessibility' : next} />
         <span className="settings-row-label">{pageTitles[next]}</span>
         {value && <span className="settings-row-value">{value}</span>}
         <Chevron />
@@ -206,23 +208,33 @@ export function SettingsApp({
         )}
         {page === 'main' && (
           <>
-            <div className="settings-device">
-              <strong>키류의 iPhone</strong>
-              <span>나팔꽃 · ASAGAO_HOME</span>
-            </div>
-            <Group label="연결">
+            <button
+              className="settings-profile-card"
+              tabIndex={0}
+              data-settings-page="profile"
+              onClick={() => navigate('profile')}
+              aria-label="키류 카즈마 프로필"
+            >
+              <img src={`${import.meta.env.BASE_URL}story/kiryu.jpg`} alt="" />
+              <span>
+                <strong>키류 카즈마</strong>
+                <small>Apple 계정, iCloud+ 등</small>
+              </span>
+              <Chevron />
+            </button>
+            <Group>
               <SwitchRow
                 icon="airplane"
                 label="에어플레인 모드"
                 checked={preferences.airplane}
                 onChange={(enabled) => onChange(setAirplaneMode(preferences, enabled))}
               />
-              {destination('wifi', preferences.wifi ? '켬' : '끔')}
+              {destination('wifi', preferences.wifi ? 'ASAGAO_HOME' : '끔')}
               {destination('bluetooth', preferences.bluetooth ? '켬' : '끔')}
               {destination('cellular', !preferences.airplane && preferences.cellular ? '켬' : '끔')}
             </Group>
             <p className="settings-footnote">연결 설정은 이 웹 체험 안에서만 적용됩니다.</p>
-            <Group label="화면과 사용 방식">
+            <Group>
               {destination('appearance')}
               {destination('brightness')}
               {destination('wallpaper')}
@@ -240,6 +252,33 @@ export function SettingsApp({
           </>
         )}
 
+        {page === 'profile' && (
+          <>
+            <div className="settings-profile-hero">
+              <img src={`${import.meta.env.BASE_URL}story/kiryu.jpg`} alt="키류 카즈마" />
+              <h2>키류 카즈마</h2>
+              <p>나팔꽃</p>
+            </div>
+            <Group>
+              <div className="settings-row">
+                <span className="settings-row-label">이름</span>
+                <span className="settings-row-value">키류 카즈마</span>
+              </div>
+              <div className="settings-row">
+                <span className="settings-row-label">기기</span>
+                <span className="settings-row-value">키류의 iPhone</span>
+              </div>
+              <div className="settings-row">
+                <span className="settings-row-label">가족</span>
+                <span className="settings-row-value">나팔꽃 아이들</span>
+              </div>
+            </Group>
+            <p className="settings-footnote">
+              하루카가 설정과 화면 정리를 도와줬습니다. 이 프로필은 팬메이드 설정이며 실제 Apple
+              계정에 연결되지 않습니다.
+            </p>
+          </>
+        )}
         {page === 'wifi' && (
           <>
             <Group>

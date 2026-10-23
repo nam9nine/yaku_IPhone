@@ -1,6 +1,6 @@
 [
   {
-    "localPath": "public/asagao/sprout-garden.jpg",
+    "localPath": "references/local/issue33/replaced-stock/sprout-garden.jpg",
     "title": "File:Vegetable garden 1.JPG",
     "sourcePage": "https://commons.wikimedia.org/wiki/File:Vegetable_garden_1.JPG",
     "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/3c/Vegetable_garden_1.JPG/1280px-Vegetable_garden_1.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
@@ -23,7 +23,7 @@
     "version": "Wikimedia 1280px server thumbnail"
   },
   {
-    "localPath": "public/asagao/lunchbox.jpg",
+    "localPath": "references/local/issue33/replaced-stock/lunchbox.jpg",
     "title": "File:Coronation Bento - Taro 2026-02-11.jpg",
     "sourcePage": "https://commons.wikimedia.org/wiki/File:Coronation_Bento_-_Taro_2026-02-11.jpg",
     "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/89/Coronation_Bento_-_Taro_2026-02-11.jpg/1280px-Coronation_Bento_-_Taro_2026-02-11.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
@@ -54,7 +54,7 @@
     "artist": "663highland",
     "description": "<b>Tudumari-no-hama</b> ( <b>Tsukigahama Beach</b> ) in <a href=\"https://en.wikipedia.org/wiki/Iriomote_Island\" class=\"extiw\" title=\"en:Iriomote Island\">Iriomote Island</a>, <a href=\"//commons.wikimedia.org/wiki/Taketomi_Town\" class=\"mw-redirect\" title=\"Taketomi Town\">Taketomi Town</a>, <a href=\"//commons.wikimedia.org/wiki/Okinawa_Prefecture\" class=\"mw-redirect\" title=\"Okinawa Prefecture\">Okinawa Prefecture</a>, <a href=\"//commons.wikimedia.org/wiki/Japan\" class=\"mw-redirect\" title=\"Japan\">Japan</a>.",
     "downloadStatus": "downloaded",
-    "localPath": "public/asagao/evening-sea.jpg",
+    "localPath": "references/local/issue33/replaced-stock/evening-sea.jpg",
     "sha256": "c6f0415ee95afcfd45f2f72d6825a19b0b4e0de09f54291cb0fe787d1f93b031",
     "bytes": 190975,
     "retrievedOn": "2026-10-24",

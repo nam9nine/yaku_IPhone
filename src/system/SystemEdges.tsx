@@ -1,29 +1,29 @@
+import { useTopPull, type TopPanel } from './useTopPull';
 import { useSystemGesture } from '../shell/useSystemGesture';
 import { HomeIndicator } from './HomeIndicator';
 export function SystemEdges({
   active,
   onControl,
   onNotifications,
+  onPreview,
 }: {
   active: boolean;
   onControl: () => void;
   onNotifications: () => void;
+  onPreview: (kind: TopPanel | null) => void;
 }) {
-  const left = useSystemGesture('top', active, onNotifications);
-  const right = useSystemGesture('top', active, onControl);
+  useTopPull(active, onPreview, (kind) => (kind === 'control' ? onControl() : onNotifications()));
   return (
     <>
       <div
         className="system-top-edge system-top-edge--left"
         data-testid="notification-edge"
         aria-hidden="true"
-        {...left.handlers}
       />
       <div
         className="system-top-edge system-top-edge--right"
         data-testid="control-edge"
         aria-hidden="true"
-        {...right.handlers}
       />
       <button tabIndex={0} className="system-keyboard-control" onClick={onControl}>
         제어 센터 열기

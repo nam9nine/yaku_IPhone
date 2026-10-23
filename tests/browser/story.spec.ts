@@ -23,7 +23,7 @@ test('다섯 연락처의 프로필에서 선택형 답장을 보내고 새로�
   await page.locator('[data-note-id=curry]').tap();
   for (const item of ['감자', '양파', '고기', '카레'])
     await page.getByRole('checkbox', { name: `${item} 완료`, exact: true }).check();
-  await page.getByRole('button', { name: '부재중 전화 알림 닫기' }).tap();
+  await page.getByRole('button', { name: '전화 거절' }).tap();
   await home(page);
   for (const name of [
     '도지마 다이고',

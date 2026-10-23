@@ -1,0 +1,100 @@
+.contacts-app {
+  background: var(--phone-canvas, var(--app-surface));
+}
+.contacts-header {
+  min-height: 62px;
+  padding: 8px 65px;
+}
+.contacts-header .social-back,
+.contacts-add {
+  background: var(--phone-button, var(--app-background));
+  width: 44px;
+  height: 44px;
+}
+.contacts-add {
+  position: absolute;
+  right: 16px;
+  top: 8px;
+  font-size: 1.8rem !important;
+  font-weight: 300;
+}
+.contacts-search {
+  flex: 0 0 auto;
+  min-height: 42px;
+  margin: 0 16px 8px;
+  border: 0;
+  background: var(--phone-button, var(--app-background));
+  box-shadow: none;
+}
+.contacts-search input {
+  height: 42px;
+}
+.contacts-search > svg:last-child {
+  width: 18px;
+  height: 20px;
+  margin-left: auto;
+}
+.contacts-scroll {
+  padding: 0 24px 24px 16px;
+}
+.contacts-app .contact-list-row {
+  min-height: 68px;
+}
+.contacts-app .contact-list-row img {
+  width: 42px;
+  height: 42px;
+  flex-basis: 42px;
+}
+.contact-my-card {
+  margin-bottom: 15px;
+}
+.contact-my-card small {
+  display: block;
+  color: var(--app-secondary);
+  font-size: 0.75rem;
+  font-weight: 400;
+  margin-top: 3px;
+}
+.contacts-index {
+  position: absolute;
+  top: 40%;
+  right: 1px;
+  display: flex;
+  flex-direction: column;
+}
+.contacts-index button {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  min-height: 28px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--app-accent);
+  font-size: 0.625rem;
+}
+.contact-initial {
+  display: grid;
+  place-items: center;
+  max-width: 42px;
+  height: 42px;
+  flex: 0 0 42px !important;
+  border-radius: 50%;
+  background: #77728d;
+  color: white;
+}
+.contact-add-dialog label {
+  display: block;
+  text-align: left;
+  margin: 14px 0;
+}
+.contact-add-dialog input {
+  display: block;
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid var(--app-separator);
+  background: var(--app-background);
+  color: var(--app-text);
+  min-height: 44px;
+  padding: 8px;
+}

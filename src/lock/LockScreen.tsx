@@ -10,6 +10,7 @@ export function LockScreen({
   autoFocus = false,
   active = true,
   onMessage,
+  onCall,
   onCalendar,
   onReminders,
   onWeather,
@@ -18,6 +19,7 @@ export function LockScreen({
   autoFocus?: boolean;
   active?: boolean;
   onMessage: () => void;
+  onCall: () => void;
   onCalendar: () => void;
   onReminders: () => void;
   onWeather: () => void;
@@ -69,7 +71,7 @@ export function LockScreen({
         </div>
       </div>
       <div className="lock-bottom">
-        <DayNotification onOpen={onMessage} />
+        <DayNotification onOpen={onMessage} onCall={onCall} />
         <div className="lock-notice" role="status">
           {notice}
         </div>

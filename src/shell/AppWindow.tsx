@@ -175,6 +175,7 @@ export function AppWindow({
   useEffect(() => {
     if (!interactive) return;
     const keydown = (event: KeyboardEvent) => {
+      if (document.querySelector('.day-call[open]')) return;
       if (event.altKey && event.key === 'Home') {
         event.preventDefault();
         keyboardHome();

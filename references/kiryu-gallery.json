@@ -1,0 +1,292 @@
+{
+  "schemaVersion": 1,
+  "purpose": "User-requested actual Like a Dragon game gallery. Captions are fan fiction, images are published game scenes.",
+  "assets": [
+    {
+      "id": "mealtime",
+      "localPath": "public/asagao/mealtime.jpg",
+      "sourceUrl": "https://ryu-ga-gotoku.com/kiwami3/kiwami3-adventure/img/ss_life_02_03.jpg",
+      "sourcePage": "https://ryu-ga-gotoku.com/kiwami3/kr/",
+      "sha256": "79e28c906b0ead54313a28ad4a02ee841d51738f7c711eaf4e0b14ea91ceaff2",
+      "bytes": 320608,
+      "rightsHolder": "SEGA",
+      "rightsStatus": "Official game image; copyright SEGA. No open license or separate interactive redistribution permission confirmed.",
+      "retrievedOn": "2026-10-24"
+    },
+    {
+      "id": "sewing",
+      "localPath": "public/asagao/game/sewing.jpg",
+      "sourceUrl": "https://ryu-ga-gotoku.com/kiwami3/kiwami3-adventure/img/ss_life_05_01.jpg",
+      "sourcePage": "https://ryu-ga-gotoku.com/kiwami3/kr/",
+      "sha256": "11d40cc6bb8fdcad2bd3ff5a921a24027656991a8b47f9ee96d19b0ea21492dc",
+      "bytes": 205749,
+      "rightsHolder": "SEGA",
+      "rightsStatus": "Official game image; copyright SEGA. No open license or separate interactive redistribution permission confirmed.",
+      "retrievedOn": "2026-10-24"
+    },
+    {
+      "id": "asagao-family",
+      "localPath": "public/asagao/game/asagao-family.jpg",
+      "sourceUrl": "https://ryu-ga-gotoku.com/kiwami3/img/home/cast/cast11_ss.jpg",
+      "sourcePage": "https://ryu-ga-gotoku.com/kiwami3/kr/",
+      "sha256": "82e9d05dceac6fe76777b97ba662419af94249201ad0007ef8e1da7f64a65ddb",
+      "bytes": 160837,
+      "rightsHolder": "SEGA",
+      "rightsStatus": "Official game image; copyright SEGA. No open license or separate interactive redistribution permission confirmed.",
+      "retrievedOn": "2026-10-24"
+    },
+    {
+      "id": "evening-sea",
+      "localPath": "public/asagao/game/evening-sea.jpg",
+      "sourceUrl": "https://ryu-ga-gotoku.com/kiwami3/img/home/ss/kiwami3_adventure1_2.jpg",
+      "sourcePage": "https://ryu-ga-gotoku.com/kiwami3/kr/",
+      "sha256": "d78694e668b9ed2528495bb58fee0c316557879695089a2b8ac4e97353042324",
+      "bytes": 180115,
+      "rightsHolder": "SEGA",
+      "rightsStatus": "Official game image; copyright SEGA. No open license or separate interactive redistribution permission confirmed.",
+      "retrievedOn": "2026-10-24"
+    },
+    {
+      "id": "cooking",
+      "localPath": "public/asagao/game/cooking.jpg",
+      "sourceUrl": "https://ryu-ga-gotoku.com/kiwami3/kr/kiwami3-adventure/img/ss_life_05_03.jpg",
+      "sourcePage": "https://ryu-ga-gotoku.com/kiwami3/kr/",
+      "sha256": "7d3150913a3895ad8d0bb82a578e6b2e8ddfffe3c7dd560a5e2937e488848f4e",
+      "bytes": 134235,
+      "rightsHolder": "SEGA",
+      "rightsStatus": "Official game image; copyright SEGA. No open license or separate interactive redistribution permission confirmed.",
+      "retrievedOn": "2026-10-24"
+    },
+    {
+      "id": "homework",
+      "localPath": "public/asagao/game/homework.jpg",
+      "sourceUrl": "https://ryu-ga-gotoku.com/kiwami3/kr/kiwami3-adventure/img/ss_life_05_04.jpg",
+      "sourcePage": "https://ryu-ga-gotoku.com/kiwami3/kr/",
+      "sha256": "def1281ba4acc08f772227cdd747514bebb3b96c4cbff14c1ba8f739d99213b1",
+      "bytes": 132022,
+      "rightsHolder": "SEGA",
+      "rightsStatus": "Official game image; copyright SEGA. No open license or separate interactive redistribution permission confirmed.",
+      "retrievedOn": "2026-10-24"
+    },
+    {
+      "id": "okinawa-street",
+      "localPath": "public/asagao/game/okinawa-street.jpg",
+      "sourceUrl": "https://ryu-ga-gotoku.com/kiwami3/img/home/ss/kiwami3_adventure1_1.jpg",
+      "sourcePage": "https://ryu-ga-gotoku.com/kiwami3/kr/",
+      "sha256": "c84fa6819d472a0420ba337451b5f663aed46919d63c86edcbf0b01054be6b66",
+      "bytes": 240429,
+      "rightsHolder": "SEGA",
+      "rightsStatus": "Official game image; copyright SEGA. No open license or separate interactive redistribution permission confirmed.",
+      "retrievedOn": "2026-10-24"
+    },
+    {
+      "id": "kamurocho",
+      "localPath": "public/asagao/game/kamurocho.jpg",
+      "sourceUrl": "https://ryu-ga-gotoku.com/kiwami3/img/home/ss/kiwami3_adventure1_3.jpg",
+      "sourcePage": "https://ryu-ga-gotoku.com/kiwami3/kr/",
+      "sha256": "a2e35c110e0f9823afaa1f17ed064d380944028bedb40984651c97c0c43332b8",
+      "bytes": 224120,
+      "rightsHolder": "SEGA",
+      "rightsStatus": "Official game image; copyright SEGA. No open license or separate interactive redistribution permission confirmed.",
+      "retrievedOn": "2026-10-24"
+    },
+    {
+      "id": "kiryu-portrait",
+      "localPath": "public/asagao/game/kiryu-portrait.jpg",
+      "sourceUrl": "https://ryu-ga-gotoku.com/kiwami3/img/home/cast/cast01_ss.jpg",
+      "sourcePage": "https://ryu-ga-gotoku.com/kiwami3/kr/",
+      "sha256": "d4027ed77e4f31ab9cbef6fbe8d3739d7d6c1f562edc3a288e7fa774434eb65e",
+      "bytes": 113143,
+      "rightsHolder": "SEGA",
+      "rightsStatus": "Official game image; copyright SEGA. No open license or separate interactive redistribution permission confirmed.",
+      "retrievedOn": "2026-10-24"
+    },
+    {
+      "id": "asagao-afternoon",
+      "localPath": "public/asagao/game/asagao-afternoon.jpg",
+      "sourceUrl": "https://ryu-ga-gotoku.com/kiwami3/kr/kiwami3-adventure/img/ss_life_02_01.jpg",
+      "sourcePage": "https://ryu-ga-gotoku.com/kiwami3/kr/",
+      "sha256": "6eb47fe630d77b4d4375ce246856d8854f15dbb0aebd50106b4930003e0a6f2a",
+      "bytes": 162533,
+      "rightsHolder": "SEGA",
+      "rightsStatus": "Official game image; copyright SEGA. No open license or separate interactive redistribution permission confirmed.",
+      "retrievedOn": "2026-10-24"
+    },
+    {
+      "id": "haruka-home",
+      "localPath": "public/asagao/game/haruka-home.jpg",
+      "sourceUrl": "https://ryu-ga-gotoku.com/kiwami3/kr/kiwami3-adventure/img/ss_life_02_02.jpg",
+      "sourcePage": "https://ryu-ga-gotoku.com/kiwami3/kr/",
+      "sha256": "6a97d6a9a5c63fa700eb4ef40c31c69dcf14e1f487f0a267b00f87252965b182",
+      "bytes": 106394,
+      "rightsHolder": "SEGA",
+      "rightsStatus": "Official game image; copyright SEGA. No open license or separate interactive redistribution permission confirmed.",
+      "retrievedOn": "2026-10-24"
+    },
+    {
+      "id": "beach-training",
+      "localPath": "public/asagao/game/beach-training.jpg",
+      "sourceUrl": "https://ryu-ga-gotoku.com/kiwami3/kiwami3-adventure/img/ss_life_03_01.jpg",
+      "sourcePage": "https://ryu-ga-gotoku.com/kiwami3/kr/",
+      "sha256": "647e874f8a21f042c246cd4c846522285939c2506a5f64bdaa4a4806440a12c1",
+      "bytes": 115437,
+      "rightsHolder": "SEGA",
+      "rightsStatus": "Official game image; copyright SEGA. No open license or separate interactive redistribution permission confirmed.",
+      "retrievedOn": "2026-10-24"
+    },
+    {
+      "id": "shopping-trip",
+      "localPath": "public/asagao/game/shopping-trip.jpg",
+      "sourceUrl": "https://ryu-ga-gotoku.com/kiwami3/kr/kiwami3-adventure/img/ss_life_03_02.jpg",
+      "sourcePage": "https://ryu-ga-gotoku.com/kiwami3/kr/",
+      "sha256": "50ec2eaafbbd3e6e2c7fd8dc477015347b205b5f1ec79870cccd779baf3160d0",
+      "bytes": 175398,
+      "rightsHolder": "SEGA",
+      "rightsStatus": "Official game image; copyright SEGA. No open license or separate interactive redistribution permission confirmed.",
+      "retrievedOn": "2026-10-24"
+    },
+    {
+      "id": "sewing-again",
+      "localPath": "public/asagao/game/sewing-again.jpg",
+      "sourceUrl": "https://ryu-ga-gotoku.com/kiwami3/kr/kiwami3-adventure/img/ss_life_05_02.jpg",
+      "sourcePage": "https://ryu-ga-gotoku.com/kiwami3/kr/",
+      "sha256": "731bd68bb281a42ec55c00cb616347096ebe6be023635714248fd7a99103689e",
+      "bytes": 146809,
+      "rightsHolder": "SEGA",
+      "rightsStatus": "Official game image; copyright SEGA. No open license or separate interactive redistribution permission confirmed.",
+      "retrievedOn": "2026-10-24"
+    },
+    {
+      "id": "insects",
+      "localPath": "public/asagao/game/insects.jpg",
+      "sourceUrl": "https://ryu-ga-gotoku.com/kiwami3/kr/kiwami3-adventure/img/ss_life_05_05.jpg",
+      "sourcePage": "https://ryu-ga-gotoku.com/kiwami3/kr/",
+      "sha256": "a62e0390f9fa44a74c0a39046c33e95d01c3b425b55c10681df310872f1406e3",
+      "bytes": 192687,
+      "rightsHolder": "SEGA",
+      "rightsStatus": "Official game image; copyright SEGA. No open license or separate interactive redistribution permission confirmed.",
+      "retrievedOn": "2026-10-24"
+    },
+    {
+      "id": "fishing",
+      "localPath": "public/asagao/game/fishing.jpg",
+      "sourceUrl": "https://ryu-ga-gotoku.com/kiwami3/kr/kiwami3-adventure/img/ss_life_05_06.jpg",
+      "sourcePage": "https://ryu-ga-gotoku.com/kiwami3/kr/",
+      "sha256": "534fdcd6937ebd937920c45d77b1589360dcecbc60f24682922cc17c1dfc6bad",
+      "bytes": 227560,
+      "rightsHolder": "SEGA",
+      "rightsStatus": "Official game image; copyright SEGA. No open license or separate interactive redistribution permission confirmed.",
+      "retrievedOn": "2026-10-24"
+    },
+    {
+      "id": "reversi",
+      "localPath": "public/asagao/game/reversi.jpg",
+      "sourceUrl": "https://ryu-ga-gotoku.com/kiwami3/kr/kiwami3-adventure/img/ss_life_05_07.jpg",
+      "sourcePage": "https://ryu-ga-gotoku.com/kiwami3/kr/",
+      "sha256": "137a50e1fd4735d7e6da346d8e94dbb6984f30aa0cf91610209cbc2698bdaffa",
+      "bytes": 183831,
+      "rightsHolder": "SEGA",
+      "rightsStatus": "Official game image; copyright SEGA. No open license or separate interactive redistribution permission confirmed.",
+      "retrievedOn": "2026-10-24"
+    },
+    {
+      "id": "taichi",
+      "localPath": "public/asagao/game/taichi.jpg",
+      "sourceUrl": "https://ryu-ga-gotoku.com/kiwami3/kiwami3-adventure/img/ss_life_03_taiichi.jpg",
+      "sourcePage": "https://ryu-ga-gotoku.com/kiwami3/kr/",
+      "sha256": "f34934874b6d62bb8327832d16fe928351248258c14579a17f8b8a35463717f7",
+      "bytes": 80426,
+      "rightsHolder": "SEGA",
+      "rightsStatus": "Official game image; copyright SEGA. No open license or separate interactive redistribution permission confirmed.",
+      "retrievedOn": "2026-10-24"
+    },
+    {
+      "id": "koji",
+      "localPath": "public/asagao/game/koji.jpg",
+      "sourceUrl": "https://ryu-ga-gotoku.com/kiwami3/kiwami3-adventure/img/ss_life_03_koji.jpg",
+      "sourcePage": "https://ryu-ga-gotoku.com/kiwami3/kr/",
+      "sha256": "913825d41848d7e7d7c65bb73c99d0dffd6923dc79839d947cb7183400ec3755",
+      "bytes": 103199,
+      "rightsHolder": "SEGA",
+      "rightsStatus": "Official game image; copyright SEGA. No open license or separate interactive redistribution permission confirmed.",
+      "retrievedOn": "2026-10-24"
+    },
+    {
+      "id": "shiro",
+      "localPath": "public/asagao/game/shiro.jpg",
+      "sourceUrl": "https://ryu-ga-gotoku.com/kiwami3/kiwami3-adventure/img/ss_life_03_shiro.jpg",
+      "sourcePage": "https://ryu-ga-gotoku.com/kiwami3/kr/",
+      "sha256": "0df590fdb637f632c6f0afbb2a34b2d9b4c8500dbbf66e11fa5386a16ba99871",
+      "bytes": 118870,
+      "rightsHolder": "SEGA",
+      "rightsStatus": "Official game image; copyright SEGA. No open license or separate interactive redistribution permission confirmed.",
+      "retrievedOn": "2026-10-24"
+    },
+    {
+      "id": "mitsuo",
+      "localPath": "public/asagao/game/mitsuo.jpg",
+      "sourceUrl": "https://ryu-ga-gotoku.com/kiwami3/kiwami3-adventure/img/ss_life_03_mitsuo.jpg",
+      "sourcePage": "https://ryu-ga-gotoku.com/kiwami3/kr/",
+      "sha256": "cce9eae45080008c1d507e3ec65c62c2a255bf81a946fcd76bd8a1d81f704798",
+      "bytes": 105150,
+      "rightsHolder": "SEGA",
+      "rightsStatus": "Official game image; copyright SEGA. No open license or separate interactive redistribution permission confirmed.",
+      "retrievedOn": "2026-10-24"
+    },
+    {
+      "id": "ayako",
+      "localPath": "public/asagao/game/ayako.jpg",
+      "sourceUrl": "https://ryu-ga-gotoku.com/kiwami3/kiwami3-adventure/img/ss_life_03_ayako.jpg",
+      "sourcePage": "https://ryu-ga-gotoku.com/kiwami3/kr/",
+      "sha256": "281a7179533231850e38e0d6b28da6432e1120100a1067eede4e015f0a2ff0ca",
+      "bytes": 117858,
+      "rightsHolder": "SEGA",
+      "rightsStatus": "Official game image; copyright SEGA. No open license or separate interactive redistribution permission confirmed.",
+      "retrievedOn": "2026-10-24"
+    },
+    {
+      "id": "riona",
+      "localPath": "public/asagao/game/riona.jpg",
+      "sourceUrl": "https://ryu-ga-gotoku.com/kiwami3/kiwami3-adventure/img/ss_life_03_riona.jpg",
+      "sourcePage": "https://ryu-ga-gotoku.com/kiwami3/kr/",
+      "sha256": "baa146e629f45a64dfbfee1b6b9a5a6b4dc172fe1625a95d32a2c895bb589d55",
+      "bytes": 81195,
+      "rightsHolder": "SEGA",
+      "rightsStatus": "Official game image; copyright SEGA. No open license or separate interactive redistribution permission confirmed.",
+      "retrievedOn": "2026-10-24"
+    },
+    {
+      "id": "eri",
+      "localPath": "public/asagao/game/eri.jpg",
+      "sourceUrl": "https://ryu-ga-gotoku.com/kiwami3/kiwami3-adventure/img/ss_life_03_eri.jpg",
+      "sourcePage": "https://ryu-ga-gotoku.com/kiwami3/kr/",
+      "sha256": "25c2cb56ff55179577ea6ad9e691898e86582c3236114c8311ba0043bff60ddf",
+      "bytes": 157585,
+      "rightsHolder": "SEGA",
+      "rightsStatus": "Official game image; copyright SEGA. No open license or separate interactive redistribution permission confirmed.",
+      "retrievedOn": "2026-10-24"
+    },
+    {
+      "id": "izumi",
+      "localPath": "public/asagao/game/izumi.jpg",
+      "sourceUrl": "https://ryu-ga-gotoku.com/kiwami3/kiwami3-adventure/img/ss_life_03_izumi.jpg",
+      "sourcePage": "https://ryu-ga-gotoku.com/kiwami3/kr/",
+      "sha256": "8091737296808f583f49e7324ef5b2ef05beb3f31223529b05d3d862064089e2",
+      "bytes": 78734,
+      "rightsHolder": "SEGA",
+      "rightsStatus": "Official game image; copyright SEGA. No open license or separate interactive redistribution permission confirmed.",
+      "retrievedOn": "2026-10-24"
+    },
+    {
+      "id": "asagao-together",
+      "localPath": "public/asagao/game/asagao-together.jpg",
+      "sourceUrl": "https://ryu-ga-gotoku.com/kiwami3/kr/kiwami3-adventure/img/ss_life_06_02.jpg",
+      "sourcePage": "https://ryu-ga-gotoku.com/kiwami3/kr/",
+      "sha256": "928f4693e71e13061e1c8b2b47d2ec289d73327af6433320f776aa32e69298f6",
+      "bytes": 336305,
+      "rightsHolder": "SEGA",
+      "rightsStatus": "Official game image; copyright SEGA. No open license or separate interactive redistribution permission confirmed.",
+      "retrievedOn": "2026-10-24"
+    }
+  ]
+}

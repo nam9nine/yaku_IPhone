@@ -1,0 +1,236 @@
+[
+  {
+    "id": "mealtime",
+    "src": "mealtime.jpg",
+    "title": "나팔꽃의 식사 시간",
+    "date": "토요일 12:10",
+    "caption": "모두 모였다. 오늘도 밥솥이 비었다.",
+    "position": "50% 50%",
+    "landscape": true
+  },
+  {
+    "id": "sewing",
+    "src": "game/sewing.jpg",
+    "title": "재봉틀 앞에서",
+    "date": "나팔꽃 앨범",
+    "caption": "실이 풀리지 않게. 이번에는 제대로.",
+    "position": "50% 50%",
+    "landscape": true
+  },
+  {
+    "id": "asagao-family",
+    "src": "game/asagao-family.jpg",
+    "title": "아이들과 함께",
+    "date": "나팔꽃 앨범",
+    "caption": "오늘도 모두 모였다.",
+    "position": "50% 50%",
+    "landscape": true
+  },
+  {
+    "id": "evening-sea",
+    "src": "game/evening-sea.jpg",
+    "title": "나팔꽃 앞 저녁 바다",
+    "date": "나팔꽃 앨범",
+    "caption": "조금 더 있다가 돌아가자.",
+    "position": "50% 50%",
+    "landscape": true
+  },
+  {
+    "id": "cooking",
+    "src": "game/cooking.jpg",
+    "title": "나팔꽃 키친",
+    "date": "나팔꽃 앨범",
+    "caption": "이번에는 너무 맵지 않게.",
+    "position": "50% 50%",
+    "landscape": true
+  },
+  {
+    "id": "homework",
+    "src": "game/homework.jpg",
+    "title": "숙제를 도와주던 날",
+    "date": "나팔꽃 앨범",
+    "caption": "나도 다시 배워야겠다.",
+    "position": "50% 50%",
+    "landscape": true
+  },
+  {
+    "id": "okinawa-street",
+    "src": "game/okinawa-street.jpg",
+    "title": "류큐 거리",
+    "date": "나팔꽃 앨범",
+    "caption": "장 보러 가는 길.",
+    "position": "50% 50%",
+    "landscape": true
+  },
+  {
+    "id": "kamurocho",
+    "src": "game/kamurocho.jpg",
+    "title": "카무로쵸의 밤",
+    "date": "나팔꽃 앨범",
+    "caption": "익숙한 거리.",
+    "position": "50% 50%",
+    "landscape": true
+  },
+  {
+    "id": "kiryu-portrait",
+    "src": "game/kiryu-portrait.jpg",
+    "title": "오래된 한 장",
+    "date": "나팔꽃 앨범",
+    "caption": "누가 찍어 줬더라.",
+    "position": "50% 50%",
+    "landscape": true
+  },
+  {
+    "id": "asagao-afternoon",
+    "src": "game/asagao-afternoon.jpg",
+    "title": "나팔꽃의 오후",
+    "date": "나팔꽃 앨범",
+    "caption": "아이들과 한 약속은 지켜야 한다.",
+    "position": "50% 50%",
+    "landscape": true
+  },
+  {
+    "id": "haruka-home",
+    "src": "game/haruka-home.jpg",
+    "title": "하루카와 이야기",
+    "date": "나팔꽃 앨범",
+    "caption": "고맙다는 말을 더 해야겠다.",
+    "position": "50% 50%",
+    "landscape": true
+  },
+  {
+    "id": "beach-training",
+    "src": "game/beach-training.jpg",
+    "title": "바닷가에서",
+    "date": "나팔꽃 앨범",
+    "caption": "몸을 움직이고 나면 밥맛이 좋다.",
+    "position": "50% 50%",
+    "landscape": true
+  },
+  {
+    "id": "shopping-trip",
+    "src": "game/shopping-trip.jpg",
+    "title": "함께 고른 선물",
+    "date": "나팔꽃 앨범",
+    "caption": "마음에 들면 좋겠다.",
+    "position": "50% 50%",
+    "landscape": true
+  },
+  {
+    "id": "sewing-again",
+    "src": "game/sewing-again.jpg",
+    "title": "재봉 연습",
+    "date": "나팔꽃 앨범",
+    "caption": "다음에는 조금 더 반듯하게.",
+    "position": "50% 50%",
+    "landscape": true
+  },
+  {
+    "id": "insects",
+    "src": "game/insects.jpg",
+    "title": "마당에서 곤충 잡기",
+    "date": "나팔꽃 앨범",
+    "caption": "아이들이 나보다 잘 찾는다.",
+    "position": "50% 50%",
+    "landscape": true
+  },
+  {
+    "id": "fishing",
+    "src": "game/fishing.jpg",
+    "title": "물고기 잡기",
+    "date": "나팔꽃 앨범",
+    "caption": "오늘은 얼마나 잡았을까.",
+    "position": "50% 50%",
+    "landscape": true
+  },
+  {
+    "id": "reversi",
+    "src": "game/reversi.jpg",
+    "title": "함께 둔 리버시",
+    "date": "나팔꽃 앨범",
+    "caption": "한 판만 더.",
+    "position": "50% 50%",
+    "landscape": true
+  },
+  {
+    "id": "taichi",
+    "src": "game/taichi.jpg",
+    "title": "타이치",
+    "date": "나팔꽃 앨범",
+    "caption": "나팔꽃에 남겨 둔 한 장.",
+    "position": "50% 50%",
+    "landscape": true
+  },
+  {
+    "id": "koji",
+    "src": "game/koji.jpg",
+    "title": "코지",
+    "date": "나팔꽃 앨범",
+    "caption": "나팔꽃에 남겨 둔 한 장.",
+    "position": "50% 50%",
+    "landscape": true
+  },
+  {
+    "id": "shiro",
+    "src": "game/shiro.jpg",
+    "title": "시로",
+    "date": "나팔꽃 앨범",
+    "caption": "나팔꽃에 남겨 둔 한 장.",
+    "position": "50% 50%",
+    "landscape": true
+  },
+  {
+    "id": "mitsuo",
+    "src": "game/mitsuo.jpg",
+    "title": "미츠오",
+    "date": "나팔꽃 앨범",
+    "caption": "나팔꽃에 남겨 둔 한 장.",
+    "position": "50% 50%",
+    "landscape": true
+  },
+  {
+    "id": "ayako",
+    "src": "game/ayako.jpg",
+    "title": "아야코",
+    "date": "나팔꽃 앨범",
+    "caption": "나팔꽃에 남겨 둔 한 장.",
+    "position": "50% 50%",
+    "landscape": true
+  },
+  {
+    "id": "riona",
+    "src": "game/riona.jpg",
+    "title": "리오나",
+    "date": "나팔꽃 앨범",
+    "caption": "나팔꽃에 남겨 둔 한 장.",
+    "position": "50% 50%",
+    "landscape": true
+  },
+  {
+    "id": "eri",
+    "src": "game/eri.jpg",
+    "title": "에리",
+    "date": "나팔꽃 앨범",
+    "caption": "나팔꽃에 남겨 둔 한 장.",
+    "position": "50% 50%",
+    "landscape": true
+  },
+  {
+    "id": "izumi",
+    "src": "game/izumi.jpg",
+    "title": "이즈미",
+    "date": "나팔꽃 앨범",
+    "caption": "나팔꽃에 남겨 둔 한 장.",
+    "position": "50% 50%",
+    "landscape": true
+  },
+  {
+    "id": "asagao-together",
+    "src": "game/asagao-together.jpg",
+    "title": "다 같이 나팔꽃 앞에서",
+    "date": "나팔꽃 앨범",
+    "caption": "모두 수고했다.",
+    "position": "50% 50%",
+    "landscape": true
+  }
+]

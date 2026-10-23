@@ -867,3 +867,15 @@
 .safari-saved-article footer {
   margin-top: 20px;
 }
+/* A status row also consumes space in very short, enlarged layouts. */
+.safari-tab-select {
+  max-height: var(--paged-height);
+  overflow: hidden;
+}
+.safari-tab-preview {
+  padding: min(16px, calc(var(--paged-height) * 0.06));
+}
+.safari-tab-caption {
+  min-height: 0;
+  padding-block: min(12px, calc(var(--paged-height) * 0.08));
+}
