@@ -14,6 +14,9 @@ export function useSystemGesture(
 ) {
   const gesture = useRef<SystemGesture | null>(null);
   const surface = useRef<HTMLElement | null>(null);
+  const dimensions = useRef('');
+  const viewportKey = () =>
+    `${window.innerWidth}:${window.innerHeight}:${window.visualViewport?.width}:${window.visualViewport?.height}`;
   const suppress = useRef(false);
   const [drag, setDrag] = useState({ active, offset: 0 });
   if (drag.active !== active) setDrag({ active, offset: 0 });
@@ -60,7 +63,12 @@ export function useSystemGesture(
     if (!current || current.pointerId !== event.pointerId) return;
     const final = moveSystemGesture(current, event.clientX, event.clientY, event.timeStamp);
     suppress.current ||= Math.hypot(final.x, final.y) > 8;
-    const result = !cancelled && active ? resolveSystemGesture(kind, final, event.timeStamp) : null;
+    // Resize notifications can arrive after pointerup. Compare the viewport itself
+    // so a release during that interval cannot complete an old gesture.
+    const result =
+      !cancelled && active && dimensions.current === viewportKey()
+        ? resolveSystemGesture(kind, final, event.timeStamp)
+        : null;
     cancel();
     if (result) onComplete(result);
   }
@@ -71,8 +79,12 @@ export function useSystemGesture(
       onPointerDown(event: PointerEvent<HTMLElement>) {
         if (!active || !event.isPrimary || event.button !== 0 || gesture.current) return;
         if ((event.target as HTMLElement).closest('button,input,a,select,textarea')) return;
+        // This dedicated surface owns the gesture. Native mouse selection/dragging
+        // must not take over when the pointer leaves it or capture is cancelled.
+        event.preventDefault();
         suppress.current = false;
         surface.current = event.currentTarget;
+        dimensions.current = viewportKey();
         gesture.current = {
           pointerId: event.pointerId,
           startX: event.clientX,
@@ -88,6 +100,11 @@ export function useSystemGesture(
       onPointerMove(event: PointerEvent<HTMLElement>) {
         const current = gesture.current;
         if (!current || current.pointerId !== event.pointerId) return;
+        if (dimensions.current !== viewportKey()) {
+          cancel();
+          return;
+        }
+        event.preventDefault();
         const next = moveSystemGesture(current, event.clientX, event.clientY, event.timeStamp);
         gesture.current = next;
         if (Math.hypot(next.x, next.y) > 8) suppress.current = true;

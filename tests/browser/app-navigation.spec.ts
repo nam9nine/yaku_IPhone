@@ -400,6 +400,7 @@ test('작은 높이와 200% 글자에서 Safari 메뉴·탭·오류도 세로 �
   await revealWithPages(pager, add, '페이지 메뉴 다음 페이지');
   await add.tap();
   await enterAddress(page, 'https://yaku.test/example');
+  await expect(page.getByTestId('safari-app')).toHaveCSS('width', '360px');
   await page.getByRole('button', { name: '탭 보기, 2개', exact: true }).tap();
   pager = page.getByRole('region', { name: '탭 목록', exact: true });
   await expectNoVerticalClip(pager);

@@ -125,6 +125,7 @@ for (const interrupt of ['pointercancel', 'resize', 'blur', 'second-pointer'] as
     await page.mouse.move(x, y);
     await page.mouse.down();
     await page.mouse.move(x, y - 130, { steps: 5 });
+    await expect(page.getByTestId('settings-app')).toHaveAttribute('data-dragging', 'true');
     if (interrupt === 'pointercancel')
       await zone.dispatchEvent('pointercancel', { pointerId: 1, clientX: x, clientY: y - 130 });
     if (interrupt === 'resize') await page.setViewportSize({ width: 390, height: 700 });
@@ -136,6 +137,7 @@ for (const interrupt of ['pointercancel', 'resize', 'blur', 'second-pointer'] as
     await expect(page.getByTestId('settings-app')).toBeVisible();
     await expect(page.getByTestId('system-switcher')).toHaveCount(0);
     await expect(page.getByTestId('settings-app')).toHaveAttribute('data-dragging', 'false');
+    expect(await page.evaluate(() => window.getSelection()?.toString())).toBe('');
     await recent(page);
     await expect(page.getByTestId('system-switcher')).toBeVisible();
   });

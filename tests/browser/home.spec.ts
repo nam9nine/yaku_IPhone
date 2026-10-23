@@ -1,4 +1,7 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import { attachFailedInput, recordInput } from '../helpers/input-diagnostics';
+
+test.afterEach(async ({ page }, info) => attachFailedInput(page, info));
 
 const viewports = [
   { width: 360, height: 800 },
@@ -304,6 +307,7 @@ test('홈 본문의 세로 이동은 스크롤을 만들지 않고 가로 페이
   page,
   browserName,
 }) => {
+  await recordInput(page);
   await page.setViewportSize({ width: 390, height: 600 });
   await openHome(page);
   const pages = page.getByTestId('home-pages');

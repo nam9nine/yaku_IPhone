@@ -1,4 +1,7 @@
 import { expect, test } from '@playwright/test';
+import { attachFailedInput, recordInput } from '../helpers/input-diagnostics';
+
+test.afterEach(async ({ page }, info) => attachFailedInput(page, info));
 
 test('프로젝트 경로에서 한국 날짜·시계와 로컬 배경이 로드된다', async ({ page }) => {
   const failures: string[] = [];
@@ -60,6 +63,7 @@ test('문자 확대와 짧은 화면에서도 세로 스크롤 없이 하단 제
   page,
   browserName,
 }) => {
+  await recordInput(page);
   await page.setViewportSize({ width: 360, height: 320 });
   await page.goto('./');
   const originalSize = await page.evaluate(() =>

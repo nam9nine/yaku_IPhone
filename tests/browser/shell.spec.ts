@@ -13,7 +13,11 @@ async function open(page: Page, app: 'settings' | 'safari' = 'settings') {
   });
 }
 async function begin(page: Page) {
-  const box = (await page.getByTestId('settings-home-gesture').boundingBox())!;
+  const zone = page.getByTestId('settings-home-gesture');
+  // Wait for the returning app transform before choosing the next gesture origin.
+  // A stale coordinate can land in selectable app content instead of this surface.
+  await zone.click({ trial: true });
+  const box = (await zone.boundingBox())!;
   const x = box.x + box.width / 2;
   const y = box.y + box.height / 2;
   await page.mouse.move(x, y);
@@ -53,6 +57,7 @@ test('짧은·수평·취소·resize·blur 드래그 후에도 다시 홈으로 
     await page.mouse.move(mode === 'horizontal' ? x + 140 : x, y - (mode === 'short' ? 40 : 110), {
       steps: 5,
     });
+    await expect(page.getByTestId('settings-app')).toHaveAttribute('data-dragging', 'true');
     if (mode === 'cancel')
       await page
         .getByTestId('settings-home-gesture')
@@ -63,6 +68,7 @@ test('짧은·수평·취소·resize·blur 드래그 후에도 다시 홈으로 
     // A diagonal with greater horizontal travel must not qualify as a home swipe.
     await expect(page.getByTestId('settings-app')).toBeVisible();
     await expect(page.getByTestId('settings-app')).toHaveAttribute('data-dragging', 'false');
+    expect(await page.evaluate(() => window.getSelection()?.toString())).toBe('');
   }
   await page.evaluate(() => {
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
