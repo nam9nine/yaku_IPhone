@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.tooling/
+.cache/
+.DS_Store
+.env*
+!.env.example
+playwright-report/
+test-results/
+references/upstream/
+references/archives/
+harness/local/
