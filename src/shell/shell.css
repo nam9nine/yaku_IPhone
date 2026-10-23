@@ -1,0 +1,118 @@
+.app-host {
+  position: fixed;
+  z-index: 5;
+  left: 0;
+  right: 0;
+  display: grid;
+  justify-items: center;
+  pointer-events: none;
+}
+.app-host[hidden] {
+  display: none;
+}
+.app-window {
+  --app-background: #f2f2f7;
+  --app-surface: #fff;
+  --app-text: #1c1c1e;
+  --app-secondary: #6c6c70;
+  --app-separator: rgb(60 60 67 / 18%);
+  --app-accent: #007aff;
+  display: flex;
+  flex-direction: column;
+  width: min(100%, 478px);
+  height: 100%;
+  min-height: 0;
+  padding: var(--safe-area-top) var(--safe-area-right) 0 var(--safe-area-left);
+  background: var(--app-background);
+  color: var(--app-text);
+  transform-origin: top left;
+  overflow: clip;
+  pointer-events: auto;
+  transition:
+    transform var(--motion-short) var(--ease-standard),
+    border-radius var(--motion-short);
+}
+.app-window[data-dragging='true'] {
+  transition: none;
+  transform-origin: center;
+}
+.app-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+.app-window button,
+.app-window input {
+  font: inherit;
+}
+.app-window button {
+  -webkit-tap-highlight-color: transparent;
+}
+.app-window button:focus-visible,
+.app-window input:focus-visible,
+.app-window [tabindex]:focus-visible {
+  outline: 3px solid var(--app-accent);
+  outline-offset: 2px;
+}
+.app-home-controls {
+  display: flex;
+  flex: 0 0 auto;
+  position: relative;
+  min-height: 44px;
+  padding-bottom: var(--safe-area-bottom);
+  background: var(--app-background);
+}
+.app-home-gesture {
+  display: grid;
+  place-items: center;
+  flex: 1;
+  height: 44px;
+  padding-left: 44px;
+  touch-action: pan-x pinch-zoom;
+  user-select: none;
+  -webkit-user-select: none;
+  color: var(--app-secondary);
+}
+.app-home-gesture svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+}
+.app-home-button {
+  width: 44px;
+  height: 44px;
+  border: 0;
+  background: transparent;
+  color: var(--app-text);
+}
+.app-home-button svg {
+  width: 21px;
+  height: 21px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linejoin: round;
+}
+.app-preview {
+  flex: 1;
+  padding: 48px 24px;
+  overflow: auto;
+}
+.app-preview h1 {
+  font-size: 2rem;
+  margin: 0 0 24px;
+  letter-spacing: -0.04em;
+}
+.app-preview-card {
+  padding: 24px;
+  border-radius: 22px;
+  background: var(--app-surface);
+  line-height: 1.6;
+  color: var(--app-secondary);
+}
+.app-preview-card p {
+  margin: 0;
+}

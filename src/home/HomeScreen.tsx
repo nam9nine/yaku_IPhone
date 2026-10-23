@@ -4,8 +4,15 @@ import { AppIcon } from './AppIcon';
 import { dockApps, homePages, type HomeApp } from './apps';
 import { isHorizontalGesture, pageAfterGesture, type PageGesture } from './pageGesture';
 import './home.css';
+import type { LaunchRect, RunnableApp } from '../shell/session';
 
-export function HomeScreen({ onLock }: { onLock: () => void }) {
+export function HomeScreen({
+  onLock,
+  onOpenApp,
+}: {
+  onLock: () => void;
+  onOpenApp?: (app: RunnableApp, origin: LaunchRect) => void;
+}) {
   const date = useDisplayDate();
   const day = String(Number(date.isoDate.slice(-2)));
   const weekday = date.label.split(' ').at(-1) ?? '';
@@ -79,7 +86,14 @@ export function HomeScreen({ onLock }: { onLock: () => void }) {
     }
   }
 
-  function openApp(app: HomeApp) {
+  function openApp(app: HomeApp, button: HTMLButtonElement) {
+    if (onOpenApp && (app.id === 'settings' || app.id === 'safari')) {
+      const bounds =
+        button.querySelector('.app-icon')?.getBoundingClientRect() ??
+        button.getBoundingClientRect();
+      onOpenApp(app.id, { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height });
+      return;
+    }
     setNotice(`${app.name} 앱은 곧 만나요`);
   }
 
@@ -90,7 +104,8 @@ export function HomeScreen({ onLock }: { onLock: () => void }) {
         className={`home-app${inDock ? ' home-app--dock' : ''}`}
         aria-label={app.name}
         tabIndex={0}
-        onClick={() => openApp(app)}
+        data-launch-app={app.id}
+        onClick={(event) => openApp(app, event.currentTarget)}
       >
         <AppIcon id={app.id} day={day} weekday={weekday.replace('요일', '')} />
         {!inDock && <span className="home-app-label">{app.name}</span>}
@@ -100,7 +115,7 @@ export function HomeScreen({ onLock }: { onLock: () => void }) {
 
   return (
     <section className="home-screen screen-enter" aria-label="홈 화면" data-testid="home-screen">
-      <h1 className="home-sr-only" ref={titleRef} tabIndex={-1}>
+      <h1 className="home-sr-only" ref={titleRef} tabIndex={-1} data-home-title>
         홈 화면
       </h1>
       <div
