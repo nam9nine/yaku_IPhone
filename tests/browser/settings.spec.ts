@@ -93,7 +93,7 @@ test('손상된 저장값은 유효한 기본 설정으로 복구된다', async 
   await expect(page.getByRole('slider', { name: '화면 밝기' })).toHaveValue('100');
 });
 
-test('설정 상세 화면과 가로 페이지를 유지하고 목록 복귀 시 실행 행에 포커스를 돌린다', async ({
+test('설정 상세 화면과 세로 스크롤을 유지하고 목록 복귀 시 실행 행에 포커스를 돌린다', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 360, height: 500 });
@@ -102,14 +102,13 @@ test('설정 상세 화면과 가로 페이지를 유지하고 목록 복귀 시
   await expect(page.getByRole('heading', { name: '화면 모드', exact: true })).toBeFocused();
   const content = page.getByTestId('settings-content');
   await revealPagedControl(page.getByRole('radio', { name: '더 크게 130%' }).locator('..'));
-  const position = await content.getAttribute('data-page');
-  expect(Number(position)).toBeGreaterThan(1);
+  const position = await content.evaluate((el) => el.scrollTop);
+  expect(position).toBeGreaterThan(0);
   await page.keyboard.press('Alt+Home');
   await expect(page.getByTestId('settings-app')).toBeHidden();
   await launchSettings(page);
   await expect(page.getByRole('heading', { name: '화면 모드', exact: true })).toBeFocused();
-  await expect(content).toHaveAttribute('data-page', position!);
-  await expect(content).toHaveJSProperty('scrollTop', 0);
+  await expect(content).toHaveJSProperty('scrollTop', position);
   await backToList(page);
   await expect(page.getByRole('button', { name: '화면 모드', exact: true })).toBeFocused();
 });

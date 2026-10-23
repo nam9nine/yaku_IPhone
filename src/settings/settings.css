@@ -74,8 +74,11 @@
 .settings-content {
   flex: 1;
   min-height: 0;
-  overflow: clip;
-  padding: 0 16px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  touch-action: pan-y pinch-zoom;
+  padding: 0 16px 20px;
 }
 .settings-pages .settings-row,
 .settings-pages .settings-preview-choice,
@@ -97,7 +100,7 @@
 .settings-pages .settings-theme-preview,
 .settings-pages .settings-wallpaper-preview {
   width: 66px;
-  height: min(84px, calc(var(--paged-height) * 0.35));
+  height: 84px;
   aspect-ratio: auto;
   padding-top: 12px;
 }

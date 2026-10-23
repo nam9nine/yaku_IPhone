@@ -273,6 +273,7 @@ test('홈 닫힘 애니메이션 중 패널을 열어도 오래된 완료가 패
   await page.waitForTimeout(360);
   await expect(page.getByTestId('system-control')).toBeVisible();
   await page.keyboard.press('Escape');
+  await expect(page.getByTestId('system-control')).toHaveCount(0);
   await expect(page.getByTestId('settings-app')).toBeVisible();
   await page.keyboard.press('Alt+Home');
   await expect(page.getByTestId('settings-app')).toBeHidden();
@@ -443,4 +444,55 @@ test('키보드로 드러낸 보조 버튼을 마우스로 누르는 동안 표�
   await page.mouse.up();
   await expect(page.getByTestId('system-switcher')).toBeVisible();
   await expect(page.locator('[data-recent-app=settings]')).toHaveAttribute('data-active', 'true');
+});
+
+test('빈 최근 앱은 잠깐 흐려졌다 홈으로 돌아오고 이전 타이머는 다른 패널을 닫지 않는다', async ({
+  page,
+}) => {
+  await ready(page);
+  await page.clock.install();
+  await page.keyboard.press('Alt+a');
+  const panel = page.getByTestId('system-switcher');
+  await expect(panel).toHaveAttribute('data-empty-switcher', 'true');
+  await page.clock.runFor(300);
+  await expect(panel).toBeVisible();
+  await page.clock.runFor(450);
+  await expect(panel).toHaveCount(0);
+  await expect(page.getByTestId('home-screen')).toBeVisible();
+  await page.keyboard.press('Alt+a');
+  await page.clock.runFor(100);
+  await page.keyboard.press('Escape');
+  await page.keyboard.press('Alt+c');
+  await page.clock.runFor(800);
+  await expect(page.getByTestId('system-control')).toBeVisible();
+});
+
+test('마지막 앱을 닫으면 홈으로 복귀하고 카드가 있으면 최근 앱을 유지한다', async ({ page }) => {
+  await ready(page);
+  await open(page, 'settings');
+  await page.clock.install();
+  await page.keyboard.press('Alt+a');
+  await page.clock.runFor(1000);
+  await expect(page.getByTestId('system-switcher')).toBeVisible();
+  const close = page.getByRole('button', { name: '설정 앱 닫기', exact: true });
+  await close.focus();
+  await page.keyboard.press('Enter');
+  await expect(page.getByTestId('system-switcher')).toHaveAttribute('data-empty-switcher', 'true');
+  await page.clock.runFor(750);
+  await expect(page.getByTestId('system-switcher')).toHaveCount(0);
+  await expect(page.locator('.app-host:not([hidden])')).toHaveCount(0);
+});
+
+test('제어 센터 빈 공간은 닫고 연결 버튼과 밝기 입력은 유지한다', async ({ page }) => {
+  await ready(page);
+  await page.keyboard.press('Alt+c');
+  const panel = page.getByTestId('system-control');
+  await panel.getByRole('switch', { name: 'Wi-Fi', exact: true }).tap();
+  await expect(panel).toBeVisible();
+  await panel.getByRole('slider', { name: '화면 밝기', exact: true }).focus();
+  await page.keyboard.press('ArrowDown');
+  await expect(panel).toBeVisible();
+  const rect = (await page.locator('.cc-pages').boundingBox())!;
+  await page.touchscreen.tap(rect.x + rect.width / 2, rect.y + rect.height - 12);
+  await expect(panel).toHaveCount(0);
 });

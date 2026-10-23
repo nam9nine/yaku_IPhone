@@ -24,7 +24,19 @@ export function usePanelSwipe({
   const blockedClick = useRef(false);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
 
+  const frame = useRef<number | null>(null);
+  const pendingOffset = useRef({ x: 0, y: 0 });
+  function queueOffset(next: { x: number; y: number }) {
+    pendingOffset.current = next;
+    if (frame.current !== null) return;
+    frame.current = requestAnimationFrame(() => {
+      frame.current = null;
+      setOffset(pendingOffset.current);
+    });
+  }
   function reset(blockClick = false) {
+    if (frame.current !== null) cancelAnimationFrame(frame.current);
+    frame.current = null;
     const current = drag.current;
     drag.current = null;
     blockedClick.current ||= blockClick;
@@ -58,6 +70,8 @@ export function usePanelSwipe({
     window.addEventListener('pointerdown', additionalPointer, true);
     window.addEventListener('pointerup', releasedOutside, true);
     return () => {
+      if (frame.current !== null) cancelAnimationFrame(frame.current);
+      frame.current = null;
       window.removeEventListener('blur', cancel);
       window.removeEventListener('resize', cancel);
       window.visualViewport?.removeEventListener('resize', cancel);
@@ -117,7 +131,7 @@ export function usePanelSwipe({
         }
         if (current.axis) {
           event.preventDefault();
-          setOffset({
+          queueOffset({
             x: current.axis === 'x' ? x : 0,
             y: current.axis === 'y' ? Math.min(0, y) : 0,
           });

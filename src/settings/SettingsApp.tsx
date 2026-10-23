@@ -1,7 +1,6 @@
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { setAirplaneMode, type DevicePreferences } from './preferences';
 import { SettingsIcon, type SettingsIconName } from './SettingsIcon';
-import { PagedContent } from '../navigation/PagedContent';
 import { useEdgeNavigation } from '../navigation/EdgeNavigation';
 import './settings.css';
 
@@ -96,7 +95,11 @@ export function SettingsApp({
   const [history, setHistory] = useState<SettingsPage[]>(['main']);
   const page = history[history.length - 1];
   const title = useRef<HTMLHeadingElement>(null);
-  const [positions, setPositions] = useState<Partial<Record<SettingsPage, number>>>({});
+  const positions = useRef<Partial<Record<SettingsPage, number>>>({});
+  const scrollArea = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    if (scrollArea.current) scrollArea.current.scrollTop = positions.current[page] ?? 0;
+  }, [page]);
   const focusAfterNavigation = useRef(false);
   const returnTo = useRef<SettingsPage | null>(null);
   const container = useRef<HTMLElement>(null);
@@ -169,19 +172,14 @@ export function SettingsApp({
           {pageTitles[page]}
         </h1>
       </header>
-      <PagedContent
+      <div
         key={page}
-        className="settings-content"
-        contentClassName="settings-pages"
-        testId="settings-content"
-        label="설정 내용"
-        active={active}
-        page={positions[page] ?? 0}
-        onPageChange={(value) =>
-          setPositions((current) =>
-            current[page] === value ? current : { ...current, [page]: value },
-          )
-        }
+        ref={scrollArea}
+        className="settings-content settings-pages"
+        data-testid="settings-content"
+        onScroll={(event) => {
+          positions.current[page] = event.currentTarget.scrollTop;
+        }}
       >
         {storageUnavailable && (
           <p className="settings-footnote" role="status">
@@ -424,7 +422,7 @@ export function SettingsApp({
             </p>
           </>
         )}
-      </PagedContent>
+      </div>
     </section>
   );
 }
