@@ -52,21 +52,24 @@ test('상단의 시작 위치가 제어 센터와 알림 센터를 구분하고 
   await expect(page.getByTestId('system-notifications')).toHaveCount(0);
 });
 
-test('홈 인디케이터를 빠르게 올리거나 멈춘 뒤 놓으면 최근 앱이 열리고 앱 상태를 유지한다', async ({
+test('홈 인디케이터를 빠르게 올리면 홈, 멈춘 뒤 놓으면 최근 앱이 열리고 상태를 유지한다', async ({
   page,
 }) => {
   await ready(page);
   await open(page, 'settings');
   await page.locator('[data-settings-page=wifi]').tap();
   await drag(page, page.getByTestId('settings-home-gesture').locator('.home-indicator'), 0, -140);
-  await expect(page.getByTestId('system-switcher')).toBeVisible();
+  await expect(page.getByTestId('settings-app')).toBeHidden();
+  await expect(page.getByTestId('system-switcher')).toHaveCount(0);
+  await open(page, 'settings');
+  await recent(page);
   await page.getByRole('button', { name: '설정 앱으로 전환', exact: true }).tap();
   await expect(page.getByRole('heading', { name: 'Wi-Fi', exact: true })).toBeVisible();
   await page.keyboard.press('Alt+Home');
   await open(page, 'safari');
   await page.getByRole('button', { name: '시작 안내', exact: true }).tap();
   await recent(page);
-  await drag(page, page.getByRole('button', { name: 'Safari 앱으로 전환', exact: true }), -110, 0);
+  await drag(page, page.getByRole('button', { name: 'Safari 앱으로 전환', exact: true }), 110, 0);
   await page.getByRole('button', { name: '설정 앱으로 전환', exact: true }).tap();
   await expect(page.getByRole('heading', { name: 'Wi-Fi', exact: true })).toBeVisible();
 });
@@ -400,7 +403,7 @@ test('최근 앱에서 키보드로 선택한 뒤쪽 카드와 닫기 조작이 
       }),
     )
     .toBe(true);
-  await page.keyboard.press('ArrowLeft');
+  await page.keyboard.press('ArrowRight');
   await expect(page.getByRole('button', { name: 'Safari 앱으로 전환', exact: true })).toBeFocused();
   await page.keyboard.press('Enter');
   await expect(page.getByTestId('safari-app')).toBeVisible();
@@ -415,7 +418,7 @@ test('보이는 뒤쪽 카드를 누르는 도중 카드 위치가 바뀌지 않
   await page.keyboard.press('Alt+a');
   const card = page.getByRole('button', { name: '설정 앱으로 전환', exact: true });
   const before = (await card.boundingBox())!;
-  const x = 370,
+  const x = 20,
     y = before.y + 100;
   await page.mouse.move(x, y);
   await page.mouse.down();

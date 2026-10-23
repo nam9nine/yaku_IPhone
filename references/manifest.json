@@ -1466,6 +1466,289 @@
         "references/local/story/apple-photo-library-2.png",
         "references/local/story/apple-photo-library-3.png"
       ]
+    },
+    {
+      "id": "macmost-real-gestures",
+      "type": "reference-site",
+      "sourceUrl": "https://macmost.com/7-ways-to-switch-apps-on-an-iphone.html",
+      "retrievedOn": "2026-10-24",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "Copyright retained by original creator; local reference only; not an app asset"
+      },
+      "purpose": "Actual iPhone interaction demonstration; continuity and gestures only, not current app chrome Version: iOS version not explicitly stated; older than iOS 27",
+      "keyPaths": [],
+      "artifacts": [
+        {
+          "role": "html",
+          "url": "https://macmost.com/7-ways-to-switch-apps-on-an-iphone.html",
+          "localPath": "references/local/real-device/macmost-gestures.html",
+          "sha256": "dd3ded5923cb3f9f486e4043ecba73a46c1972eee125b3243c4ba931fa8a79ad",
+          "bytes": 52758
+        }
+      ]
+    },
+    {
+      "id": "zollotech-ios27-beta8",
+      "type": "reference-site",
+      "sourceUrl": "https://www.youtube.com/watch?v=VOcVKyVJuOw",
+      "retrievedOn": "2026-10-24",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "Copyright retained by original creator; local reference only; not an app asset"
+      },
+      "purpose": "Physical phone hands-on for contemporary transitions Version: iOS 27 Developer Beta 8 / Public Beta 6 per author",
+      "keyPaths": [],
+      "artifacts": [
+        {
+          "role": "html",
+          "url": "https://www.youtube.com/watch?v=VOcVKyVJuOw",
+          "localPath": "references/local/real-device/zollotech-at-last.html",
+          "sha256": "fd5d3d94751fbd714be4ec06436114e179618367c2dccff6ed5ccf2e3053d6d2",
+          "bytes": 2101454
+        }
+      ]
+    },
+    {
+      "id": "idb-messages-ios27",
+      "type": "reference-site",
+      "sourceUrl": "https://www.idownloadblog.com/2026/06/12/send-handwritten-message-iphone/",
+      "retrievedOn": "2026-10-24",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "Copyright retained by original creator; local reference only; not an app asset"
+      },
+      "purpose": "Author tutorial screenshots, not Apple advertisement Version: iOS 27 per author",
+      "keyPaths": [],
+      "artifacts": [
+        {
+          "role": "image",
+          "url": "https://media.idownloadblog.com/wp-content/uploads/2026/06/Tap-plus-button-and-select-Drawing-in-iPhone-Messages.jpg",
+          "localPath": "references/local/real-device/ios27-messages-compose.jpg",
+          "sha256": "1ae893bfacf0d1f003811a78cffe1740cd3b38b6712fe1fcad977bf15a8b7bc4",
+          "bytes": 171228
+        }
+      ]
+    },
+    {
+      "id": "idb-photos-ios27",
+      "type": "reference-site",
+      "sourceUrl": "https://www.idownloadblog.com/2026/09/18/new-photos-app-features-ios-27/",
+      "retrievedOn": "2026-10-24",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "Copyright retained by original creator; local reference only; not an app asset"
+      },
+      "purpose": "Author actual library and collection screenshots Version: iOS 27 per author",
+      "keyPaths": [],
+      "artifacts": [
+        {
+          "role": "html",
+          "url": "https://www.idownloadblog.com/2026/09/18/new-photos-app-features-ios-27/",
+          "localPath": "references/local/real-device/photos-idb.html",
+          "sha256": "73fffea81fdf6a843552ec8366717ec7a8fe48b742717ffcd50c58b718c93808",
+          "bytes": 268736
+        },
+        {
+          "role": "image",
+          "url": "https://media.idownloadblog.com/wp-content/uploads/2026/09/Captured-by-Me-in-iOS-27-Photos-app.jpg",
+          "localPath": "references/local/real-device/ios27-photos-collections.jpg",
+          "sha256": "dca9420508ca341eee7cd6bc584f65a7beb042012af26bfcccfc7c010907d480",
+          "bytes": 69502
+        },
+        {
+          "role": "image",
+          "url": "https://media.idownloadblog.com/wp-content/uploads/2026/09/Seeing-only-selected-photos-on-iPhone-in-iOS-27.jpg",
+          "localPath": "references/local/real-device/ios27-photos-selection.jpg",
+          "sha256": "792588b414faa890821f2f1141da2714cb030f698297276caeaecd103a1a892e",
+          "bytes": 216575
+        }
+      ]
+    },
+    {
+      "id": "tg-notes-ios26",
+      "type": "reference-site",
+      "sourceUrl": "https://www.tomsguide.com/phones/iphones/i-use-notes-to-capture-ideas-on-my-iphone-these-8-tips-help-me-do-more-with-the-app",
+      "retrievedOn": "2026-10-24",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "Copyright retained by original creator; local reference only; not an app asset"
+      },
+      "purpose": "First-person Notes list screenshot; explicitly older OS Version: iOS 26",
+      "keyPaths": [],
+      "artifacts": [
+        {
+          "role": "html",
+          "url": "https://www.tomsguide.com/phones/iphones/i-use-notes-to-capture-ideas-on-my-iphone-these-8-tips-help-me-do-more-with-the-app",
+          "localPath": "references/local/real-device/notes-tg.html",
+          "sha256": "307d844c2a288ff04fa81c17f73d6d714713516444435ed886c8d7f6945aa97c",
+          "bytes": 2303532
+        },
+        {
+          "role": "image",
+          "url": "https://cdn.mos.cms.futurecdn.net/TAoCBCStp8Xekh2BJyhmEQ.jpg",
+          "localPath": "references/local/real-device/ios26-notes-list.jpg",
+          "sha256": "87a5d42cd11386345c535a4ad4f5dc10922408420ac777274fcbc3c84b4ab062",
+          "bytes": 259666
+        }
+      ]
+    },
+    {
+      "id": "idb-contacts-ios26",
+      "type": "reference-site",
+      "sourceUrl": "https://www.idownloadblog.com/2026/03/03/fix-missing-iphone-contacts/",
+      "retrievedOn": "2026-10-24",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "Copyright retained by original creator; local reference only; not an app asset"
+      },
+      "purpose": "Actual Contacts list rows and app switcher cards Version: Article updated for iOS 27, images predate iOS 27; treat as iOS 26-era",
+      "keyPaths": [],
+      "artifacts": [
+        {
+          "role": "html",
+          "url": "https://www.idownloadblog.com/2026/03/03/fix-missing-iphone-contacts/",
+          "localPath": "references/local/real-device/contacts-idb.html",
+          "sha256": "250037c1917dd543565b3b4fd4e7085ad8318b3c90a61b37f59330d2b5caffe0",
+          "bytes": 257704
+        },
+        {
+          "role": "image",
+          "url": "https://media.idownloadblog.com/wp-content/uploads/2026/03/Selecting-All-Contacts-in-iPhone-Phone-app.png",
+          "localPath": "references/local/real-device/ios26-contacts-list.png",
+          "sha256": "a45ff606b97d039222f1e31712e7bbf09e7e1dd1f3981aeae1ef8d546c7d377d",
+          "bytes": 182969
+        },
+        {
+          "role": "image",
+          "url": "https://media.idownloadblog.com/wp-content/uploads/2026/03/Force-closing-iOS-Contacts-app.jpg",
+          "localPath": "references/local/real-device/ios26-contacts-switcher.jpg",
+          "sha256": "b3581c7babd1026050773bdcf9dc8483b183953089f54dd4633cb8325b5aa85a",
+          "bytes": 143207
+        }
+      ]
+    },
+    {
+      "id": "macrumors-ios27-beta5",
+      "type": "reference-site",
+      "sourceUrl": "https://www.macrumors.com/2026/08/10/ios-27-beta-5-everything-new/",
+      "retrievedOn": "2026-10-24",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "Copyright retained by original creator; local reference only; not an app asset"
+      },
+      "purpose": "Contemporary screenshots from beta use Version: Contacts iOS 27 beta 5; Control Center explicitly beta 4 in caption",
+      "keyPaths": [],
+      "artifacts": [
+        {
+          "role": "image",
+          "url": "https://images.macrumors.com/article-new/2026/08/ios-27-contacts-company-name.jpg",
+          "localPath": "references/local/real-device/ios27-beta5-contacts.jpg",
+          "sha256": "d33c88ebd3ff8d1f7877aac521d65c9d1df99ab8254c235978a060e14802b26d",
+          "bytes": 57741
+        },
+        {
+          "role": "image",
+          "url": "https://images.macrumors.com/article-new/2026/07/ios-27-control-center-5g.jpg",
+          "localPath": "references/local/real-device/ios27-beta4-control-center.jpg",
+          "sha256": "bc79cab99b95aa264f4c9a4b60a205681f4ae1b83b99554a8b2f0c65ea223531",
+          "bytes": 82751
+        }
+      ]
+    },
+    {
+      "id": "wwdc18-fluid-interfaces",
+      "type": "reference-site",
+      "sourceUrl": "https://developer.apple.com/videos/play/wwdc2018/803/",
+      "retrievedOn": "2026-10-24",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "Copyright retained by original creator; local reference only; not an app asset"
+      },
+      "purpose": "Technical reference, not advertising or iOS 27 visual target Version: iOS 11-era motion design principles only",
+      "keyPaths": [],
+      "artifacts": [
+        {
+          "role": "html",
+          "url": "https://developer.apple.com/videos/play/wwdc2018/803/",
+          "localPath": "references/local/real-device/apple-wwdc2018-803.html",
+          "sha256": "4538ef805fe1a9fe8baf56679029f9faf161eea01d157d96fe35885c0beffccb",
+          "bytes": 301390
+        }
+      ]
+    },
+    {
+      "id": "fluid-interfaces",
+      "type": "repository",
+      "sourceUrl": "https://github.com/nathangitter/fluid-interfaces",
+      "retrievedOn": "2026-10-24",
+      "license": {
+        "status": "license-file-reviewed",
+        "spdxId": "Apache-2.0",
+        "localPath": "references/licenses/fluid-interfaces.LICENSE",
+        "notice": "Swift reference only. Not installed or executed; no upstream app is bundled."
+      },
+      "purpose": "Read-only native motion implementation reference; not dependency or app code Version: commit da5c66cc5f7986339ed29c6b6d995bbd1f8b0a8b",
+      "keyPaths": [
+        "FluidInterfaces/FluidInterfaces/Acceleration.swift",
+        "FluidInterfaces/FluidInterfaces/Spring.swift",
+        "FluidInterfaces/FluidInterfaces/Rubberbanding.swift"
+      ],
+      "artifacts": [
+        {
+          "role": "archive",
+          "url": "https://codeload.github.com/nathangitter/fluid-interfaces/tar.gz/da5c66cc5f7986339ed29c6b6d995bbd1f8b0a8b",
+          "localPath": "references/local/real-device/fluid-interfaces-da5c66cc5f7986339ed29c6b6d995bbd1f8b0a8b.tar.gz",
+          "sha256": "386a3d52ad501b369ffb2f813546e54a5c06a0dad1b46f383e27e9e6631e2f1a",
+          "bytes": 5646068,
+          "archiveRoot": "fluid-interfaces-da5c66cc5f7986339ed29c6b6d995bbd1f8b0a8b"
+        },
+        {
+          "role": "license",
+          "url": "https://raw.githubusercontent.com/nathangitter/fluid-interfaces/da5c66cc5f7986339ed29c6b6d995bbd1f8b0a8b/LICENSE",
+          "localPath": "references/licenses/fluid-interfaces.LICENSE",
+          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+          "bytes": 11357
+        }
+      ],
+      "commitSha": "da5c66cc5f7986339ed29c6b6d995bbd1f8b0a8b",
+      "localExtractedPath": "references/local/real-device/fluid-interfaces"
+    },
+    {
+      "id": "fluid-interface-kit",
+      "type": "repository",
+      "sourceUrl": "https://github.com/FluidGroup/FluidInterfaceKit",
+      "retrievedOn": "2026-10-24",
+      "license": {
+        "status": "license-file-reviewed",
+        "spdxId": "MIT",
+        "localPath": "references/licenses/fluid-interface-kit.LICENSE",
+        "notice": "Swift reference only. Not installed or executed; no upstream app is bundled."
+      },
+      "purpose": "Read-only native motion implementation reference; not dependency or app code Version: commit ca52622410198ea2922de935943aef1e3bba4080",
+      "keyPaths": [
+        "Sources/FluidGesture/Drag.swift",
+        "Sources/FluidStack/Transition/AddingPresets/AnyAddingTransition+contextualExpanding.swift"
+      ],
+      "artifacts": [
+        {
+          "role": "archive",
+          "url": "https://codeload.github.com/FluidGroup/FluidInterfaceKit/tar.gz/ca52622410198ea2922de935943aef1e3bba4080",
+          "localPath": "references/local/real-device/FluidInterfaceKit-ca52622410198ea2922de935943aef1e3bba4080.tar.gz",
+          "sha256": "bf79b4b7e0493ff12551268cb486a5f304665498d9c2d8966e9192f84a8c0f17",
+          "bytes": 211665,
+          "archiveRoot": "FluidInterfaceKit-ca52622410198ea2922de935943aef1e3bba4080"
+        },
+        {
+          "role": "license",
+          "url": "https://raw.githubusercontent.com/FluidGroup/FluidInterfaceKit/ca52622410198ea2922de935943aef1e3bba4080/LICENSE",
+          "localPath": "references/licenses/fluid-interface-kit.LICENSE",
+          "sha256": "8fab4e6ee0f64c310fdebd89e1e3330d026da32f85e80116876d2cc127c24409",
+          "bytes": 1063
+        }
+      ],
+      "commitSha": "ca52622410198ea2922de935943aef1e3bba4080",
+      "localExtractedPath": "references/local/real-device/FluidInterfaceKit"
     }
   ]
 }

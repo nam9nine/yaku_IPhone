@@ -175,6 +175,17 @@ body,
   }
 }
 
+/* Gesture blur follows the finger on the real home layers in both engines. */
+.base-screens,
+.mobile-shell-wallpaper {
+  filter: var(--gesture-blur, none);
+  transition: filter var(--motion-settle) var(--ease-standard);
+}
+.mobile-shell:has(.app-window[data-dragging='true']) .base-screens,
+.mobile-shell:has(.app-window[data-dragging='true']) .mobile-shell-wallpaper {
+  transition: none;
+}
+
 /* Keep the inactive scene blurred in WebKit as well as Chromium. */
 .base-screens[aria-hidden='true'],
 .app-host[aria-hidden='true']:not([hidden]) {

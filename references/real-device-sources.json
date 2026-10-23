@@ -1,0 +1,367 @@
+{
+  "checkedAt": "2026-10-24",
+  "sources": [
+    {
+      "id": "macmost-real-gestures",
+      "url": "https://macmost.com/7-ways-to-switch-apps-on-an-iphone.html",
+      "author": "Gary Rosenzweig / MacMost",
+      "publishedOrUpdated": "2024-02-09",
+      "version": "iOS version not explicitly stated; older than iOS 27",
+      "checkedAt": "2026-10-24",
+      "license": "Copyright retained by original creator; local reference only; not an app asset",
+      "purpose": "Actual iPhone interaction demonstration; continuity and gestures only, not current app chrome",
+      "artifacts": [
+        {
+          "path": "references/local/real-device/macmost-gestures.html",
+          "url": "https://macmost.com/7-ways-to-switch-apps-on-an-iphone.html",
+          "sha256": "dd3ded5923cb3f9f486e4043ecba73a46c1972eee125b3243c4ba931fa8a79ad"
+        },
+        {
+          "path": "references/local/real-device/macmost-switch-apps-2024.mp4",
+          "url": "https://vz-2b98893a-a04.b-cdn.net/e617f63d-8227-4126-ab3c-1e767812fff7/play_720p.mp4",
+          "sha256": "2cbddee96d09d1f5b8a18c0fd623cfb658677210cc54ed54b95841c9c75defca"
+        },
+        {
+          "path": "references/local/real-device/macmost-home-52-56-sheet.jpg",
+          "url": "derived from video",
+          "sha256": "6abfd34af33c6ed1c3e25e73b7657f5747705705b12d7b7f63ed8f5e2ae9ddf0",
+          "timecode": "00:52–00:56",
+          "sampling": "6 fps, 24 frames",
+          "directlyViewed": true
+        },
+        {
+          "path": "references/local/real-device/macmost-switcher-76-80-sheet.jpg",
+          "url": "derived from video",
+          "sha256": "02f34b5198f4028dbe02f851df669a42a51a68272ea2d6080066bc3e87f0d847",
+          "timecode": "01:16–01:20",
+          "sampling": "6 fps, 24 frames",
+          "directlyViewed": true
+        }
+      ],
+      "observations": [
+        "App content stays continuous as it scales during the home gesture; home wallpaper initially blurs then resolves.",
+        "When upward movement stops, the previous app card appears at the left; current content including keyboard remains in the card.",
+        "Release settles the dragged card into larger overlapping switcher cards."
+      ],
+      "limits": [
+        "Presentation screen recording, not our own device test",
+        "No exact native velocity or spring constants inferred from 6 fps frames"
+      ]
+    },
+    {
+      "id": "zollotech-ios27-beta8",
+      "url": "https://www.youtube.com/watch?v=VOcVKyVJuOw",
+      "author": "Aaron Zollo / Zollotech",
+      "publishedOrUpdated": "2026-09-05",
+      "version": "iOS 27 Developer Beta 8 / Public Beta 6 per author",
+      "checkedAt": "2026-10-24",
+      "license": "Copyright retained by original creator; local reference only; not an app asset",
+      "purpose": "Physical phone hands-on for contemporary transitions",
+      "artifacts": [
+        {
+          "path": "references/local/real-device/zollotech-at-last.html",
+          "url": "https://www.youtube.com/watch?v=VOcVKyVJuOw",
+          "sha256": "fd5d3d94751fbd714be4ec06436114e179618367c2dccff6ed5ccf2e3053d6d2"
+        },
+        {
+          "path": "references/local/real-device/zollotech-at-last-sheet-0.jpg",
+          "url": "YouTube public storyboard from player metadata",
+          "sha256": "6be8e45ce50c1a20b22d4b5bde389d344288f5a0b5f226c424a82b597f1f2e7a",
+          "timecode": "0–80 seconds",
+          "sampling": "10 second storyboard interval",
+          "directlyViewed": true
+        },
+        {
+          "path": "references/local/real-device/zollotech-at-last-sheet-1.jpg",
+          "url": "YouTube public storyboard from player metadata",
+          "sha256": "e06bcf5378780963f1dca49e3f9645cc822b8ccf182dc58c639d12c2a07cfedb",
+          "timecode": "90–170 seconds",
+          "sampling": "10 second storyboard interval",
+          "directlyViewed": true
+        },
+        {
+          "path": "references/local/real-device/zollotech-at-last-sheet-2.jpg",
+          "url": "YouTube public storyboard from player metadata",
+          "sha256": "8aec98835d19c0f5835499f1724fe6d43fd371c6108f76ee2248f820c4ff1e4b",
+          "timecode": "180–260 seconds",
+          "sampling": "10 second storyboard interval",
+          "directlyViewed": true
+        },
+        {
+          "path": "references/local/real-device/zollotech-at-last-sheet-5.jpg",
+          "url": "YouTube public storyboard from player metadata",
+          "sha256": "9dbde0d85889b0c1f39c233463ae10699eccdcdc70a264b23fae190df0e98af2",
+          "timecode": "450–530 seconds",
+          "sampling": "10 second storyboard interval",
+          "directlyViewed": true
+        },
+        {
+          "path": "references/local/real-device/zollotech-at-last-sheet-6.jpg",
+          "url": "YouTube public storyboard from player metadata",
+          "sha256": "8336ed93a20ebd88b21a89753be7ac5a89c584346b284ef53b2d52a19c603854",
+          "timecode": "540–620 seconds",
+          "sampling": "10 second storyboard interval",
+          "directlyViewed": true
+        }
+      ],
+      "limits": [
+        "Sparse storyboard is not enough to measure animation timing",
+        "Description covers multiple models; individual frame model not independently confirmed"
+      ],
+      "chapters": {
+        "08:23": "Even Smoother",
+        "08:36": "RAM Management"
+      }
+    },
+    {
+      "id": "idb-messages-ios27",
+      "url": "https://www.idownloadblog.com/2026/06/12/send-handwritten-message-iphone/",
+      "author": "Ankur Thakur / iDownloadBlog",
+      "publishedOrUpdated": "2026-09-17",
+      "version": "iOS 27 per author",
+      "checkedAt": "2026-10-24",
+      "license": "Copyright retained by original creator; local reference only; not an app asset",
+      "purpose": "Author tutorial screenshots, not Apple advertisement",
+      "artifacts": [
+        {
+          "path": "references/local/real-device/ios27-messages-compose.jpg",
+          "url": "https://media.idownloadblog.com/wp-content/uploads/2026/06/Tap-plus-button-and-select-Drawing-in-iPhone-Messages.jpg",
+          "sha256": "1ae893bfacf0d1f003811a78cffe1740cd3b38b6712fe1fcad977bf15a8b7bc4",
+          "directlyViewed": true
+        }
+      ],
+      "observations": [
+        "Centered avatar with name capsule beneath; conversation remains visible behind transparent chrome.",
+        "Separate left plus circle beside bottom rounded message field."
+      ],
+      "limits": ["Author adds device frame and tutorial marks", "No specific device model verified"]
+    },
+    {
+      "id": "idb-photos-ios27",
+      "url": "https://www.idownloadblog.com/2026/09/18/new-photos-app-features-ios-27/",
+      "author": "Ankur Thakur / iDownloadBlog",
+      "publishedOrUpdated": "2026-09-18",
+      "version": "iOS 27 per author",
+      "checkedAt": "2026-10-24",
+      "license": "Copyright retained by original creator; local reference only; not an app asset",
+      "purpose": "Author actual library and collection screenshots",
+      "artifacts": [
+        {
+          "path": "references/local/real-device/photos-idb.html",
+          "url": "https://www.idownloadblog.com/2026/09/18/new-photos-app-features-ios-27/",
+          "sha256": "73fffea81fdf6a843552ec8366717ec7a8fe48b742717ffcd50c58b718c93808"
+        },
+        {
+          "path": "references/local/real-device/ios27-photos-collections.jpg",
+          "url": "https://media.idownloadblog.com/wp-content/uploads/2026/09/Captured-by-Me-in-iOS-27-Photos-app.jpg",
+          "sha256": "dca9420508ca341eee7cd6bc584f65a7beb042012af26bfcccfc7c010907d480",
+          "directlyViewed": true
+        },
+        {
+          "path": "references/local/real-device/ios27-photos-selection.jpg",
+          "url": "https://media.idownloadblog.com/wp-content/uploads/2026/09/Seeing-only-selected-photos-on-iPhone-in-iOS-27.jpg",
+          "sha256": "792588b414faa890821f2f1141da2714cb030f698297276caeaecd103a1a892e",
+          "directlyViewed": true
+        }
+      ],
+      "observations": [
+        "Library grid underlays title and date with a darkened gradient.",
+        "Collections bottom bar has a Library/Collections capsule on left and a separate search circle on right.",
+        "Grid has thin approximately one-point separation; full library is edge to edge."
+      ]
+    },
+    {
+      "id": "tg-notes-ios26",
+      "url": "https://www.tomsguide.com/phones/iphones/i-use-notes-to-capture-ideas-on-my-iphone-these-8-tips-help-me-do-more-with-the-app",
+      "author": "Philip Michaels / Tom’s Guide",
+      "publishedOrUpdated": "2025-10-24",
+      "version": "iOS 26",
+      "checkedAt": "2026-10-24",
+      "license": "Copyright retained by original creator; local reference only; not an app asset",
+      "purpose": "First-person Notes list screenshot; explicitly older OS",
+      "artifacts": [
+        {
+          "path": "references/local/real-device/notes-tg.html",
+          "url": "https://www.tomsguide.com/phones/iphones/i-use-notes-to-capture-ideas-on-my-iphone-these-8-tips-help-me-do-more-with-the-app",
+          "sha256": "307d844c2a288ff04fa81c17f73d6d714713516444435ed886c8d7f6945aa97c"
+        },
+        {
+          "path": "references/local/real-device/ios26-notes-list.jpg",
+          "url": "https://cdn.mos.cms.futurecdn.net/TAoCBCStp8Xekh2BJyhmEQ.jpg",
+          "sha256": "87a5d42cd11386345c535a4ad4f5dc10922408420ac777274fcbc3c84b4ab062",
+          "directlyViewed": true
+        }
+      ],
+      "observations": [
+        "Gray list background, large Notes heading with count below, white date-grouped list.",
+        "Search is a bottom capsule with separate compose circle."
+      ],
+      "limits": [
+        "Not evidence that every iOS 27 detail is identical",
+        "Other downloaded notes-detail image is long-press preview, excluded from detail-screen target"
+      ]
+    },
+    {
+      "id": "idb-contacts-ios26",
+      "url": "https://www.idownloadblog.com/2026/03/03/fix-missing-iphone-contacts/",
+      "author": "Ankur Thakur / iDownloadBlog",
+      "publishedOrUpdated": "2026-10-19 updated; screenshots uploaded 2026-03",
+      "version": "Article updated for iOS 27, images predate iOS 27; treat as iOS 26-era",
+      "checkedAt": "2026-10-24",
+      "license": "Copyright retained by original creator; local reference only; not an app asset",
+      "purpose": "Actual Contacts list rows and app switcher cards",
+      "artifacts": [
+        {
+          "path": "references/local/real-device/contacts-idb.html",
+          "url": "https://www.idownloadblog.com/2026/03/03/fix-missing-iphone-contacts/",
+          "sha256": "250037c1917dd543565b3b4fd4e7085ad8318b3c90a61b37f59330d2b5caffe0"
+        },
+        {
+          "path": "references/local/real-device/ios26-contacts-list.png",
+          "url": "https://media.idownloadblog.com/wp-content/uploads/2026/03/Selecting-All-Contacts-in-iPhone-Phone-app.png",
+          "sha256": "a45ff606b97d039222f1e31712e7bbf09e7e1dd1f3981aeae1ef8d546c7d377d",
+          "directlyViewed": true
+        },
+        {
+          "path": "references/local/real-device/ios26-contacts-switcher.jpg",
+          "url": "https://media.idownloadblog.com/wp-content/uploads/2026/03/Force-closing-iOS-Contacts-app.jpg",
+          "sha256": "b3581c7babd1026050773bdcf9dc8483b183953089f54dd4633cb8325b5aa85a",
+          "directlyViewed": true
+        }
+      ],
+      "observations": [
+        "Phone Contacts tab uses circle portraits, text-aligned thin dividers and top search.",
+        "Switcher uses overlapping real app previews with app icon and name above card."
+      ],
+      "limits": [
+        "Phone Contacts tab, not standalone Contacts; bottom phone tabs should not be copied into standalone app"
+      ]
+    },
+    {
+      "id": "macrumors-ios27-beta5",
+      "url": "https://www.macrumors.com/2026/08/10/ios-27-beta-5-everything-new/",
+      "author": "Juli Clover / MacRumors",
+      "publishedOrUpdated": "2026-08-10",
+      "version": "Contacts iOS 27 beta 5; Control Center explicitly beta 4 in caption",
+      "checkedAt": "2026-10-24",
+      "license": "Copyright retained by original creator; local reference only; not an app asset",
+      "purpose": "Contemporary screenshots from beta use",
+      "artifacts": [
+        {
+          "path": "references/local/real-device/ios27-beta5-contacts.jpg",
+          "url": "https://images.macrumors.com/article-new/2026/08/ios-27-contacts-company-name.jpg",
+          "sha256": "d33c88ebd3ff8d1f7877aac521d65c9d1df99ab8254c235978a060e14802b26d",
+          "directlyViewed": true
+        },
+        {
+          "path": "references/local/real-device/ios27-beta4-control-center.jpg",
+          "url": "https://images.macrumors.com/article-new/2026/07/ios-27-control-center-5g.jpg",
+          "sha256": "bc79cab99b95aa264f4c9a4b60a205681f4ae1b83b99554a8b2f0c65ea223531",
+          "directlyViewed": true
+        }
+      ],
+      "observations": [
+        "Contacts search match displays portrait/name/company beneath.",
+        "Control Center connectivity top-left, media top-right; circular rotation/mute and Focus pill below-left, vertical brightness/volume below-right."
+      ],
+      "limits": [
+        "Control Center status area changed in beta 5: article says cellular information hidden when Wi-Fi connected",
+        "Images framed by publisher; no exact physical model claimed"
+      ]
+    },
+    {
+      "id": "wwdc18-fluid-interfaces",
+      "url": "https://developer.apple.com/videos/play/wwdc2018/803/",
+      "author": "Apple Developer / WWDC",
+      "publishedOrUpdated": "2018",
+      "version": "iOS 11-era motion design principles only",
+      "checkedAt": "2026-10-24",
+      "license": "Copyright retained by original creator; local reference only; not an app asset",
+      "purpose": "Technical reference, not advertising or iOS 27 visual target",
+      "artifacts": [
+        {
+          "path": "references/local/real-device/apple-wwdc2018-803.html",
+          "url": "https://developer.apple.com/videos/play/wwdc2018/803/",
+          "sha256": "4538ef805fe1a9fe8baf56679029f9faf161eea01d157d96fe35885c0beffccb"
+        }
+      ],
+      "timecodes": {
+        "10:41–11:33": "Deceleration / pause recognition",
+        "12:01–13:28": "Continuous movement and interaction",
+        "51:38–53:47": "Hysteresis / velocity"
+      },
+      "reviewStatus": "Downloaded official source; detailed timecodes supplied by independent motion_audit agent"
+    },
+    {
+      "id": "fluid-interfaces",
+      "url": "https://github.com/nathangitter/fluid-interfaces",
+      "author": "nathangitter/fluid-interfaces",
+      "publishedOrUpdated": null,
+      "version": "commit da5c66cc5f7986339ed29c6b6d995bbd1f8b0a8b",
+      "checkedAt": "2026-10-24",
+      "license": "Apache-2.0",
+      "purpose": "Read-only native motion implementation reference; not dependency or app code",
+      "artifacts": [
+        {
+          "path": "references/local/real-device/fluid-interfaces-da5c66cc5f7986339ed29c6b6d995bbd1f8b0a8b.tar.gz",
+          "url": "https://codeload.github.com/nathangitter/fluid-interfaces/tar.gz/da5c66cc5f7986339ed29c6b6d995bbd1f8b0a8b",
+          "sha256": "386a3d52ad501b369ffb2f813546e54a5c06a0dad1b46f383e27e9e6631e2f1a"
+        },
+        {
+          "path": "references/local/real-device/fluid-interfaces/LICENSE",
+          "url": "https://github.com/nathangitter/fluid-interfaces/blob/da5c66cc5f7986339ed29c6b6d995bbd1f8b0a8b/LICENSE",
+          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+        }
+      ],
+      "commit": "da5c66cc5f7986339ed29c6b6d995bbd1f8b0a8b",
+      "sourceRoot": "references/local/real-device/fluid-interfaces",
+      "keyFiles": [
+        "FluidInterfaces/FluidInterfaces/Spring.swift",
+        "FluidInterfaces/FluidInterfaces/Momentum.swift",
+        "FluidInterfaces/FluidInterfaces/Rubberbanding.swift"
+      ]
+    },
+    {
+      "id": "FluidInterfaceKit",
+      "url": "https://github.com/FluidGroup/FluidInterfaceKit",
+      "author": "FluidGroup/FluidInterfaceKit",
+      "publishedOrUpdated": null,
+      "version": "commit ca52622410198ea2922de935943aef1e3bba4080",
+      "checkedAt": "2026-10-24",
+      "license": "MIT",
+      "purpose": "Read-only native motion implementation reference; not dependency or app code",
+      "artifacts": [
+        {
+          "path": "references/local/real-device/FluidInterfaceKit-ca52622410198ea2922de935943aef1e3bba4080.tar.gz",
+          "url": "https://codeload.github.com/FluidGroup/FluidInterfaceKit/tar.gz/ca52622410198ea2922de935943aef1e3bba4080",
+          "sha256": "bf79b4b7e0493ff12551268cb486a5f304665498d9c2d8966e9192f84a8c0f17"
+        },
+        {
+          "path": "references/local/real-device/FluidInterfaceKit/LICENSE",
+          "url": "https://github.com/FluidGroup/FluidInterfaceKit/blob/ca52622410198ea2922de935943aef1e3bba4080/LICENSE",
+          "sha256": "8fab4e6ee0f64c310fdebd89e1e3330d026da32f85e80116876d2cc127c24409"
+        }
+      ],
+      "commit": "ca52622410198ea2922de935943aef1e3bba4080",
+      "sourceRoot": "references/local/real-device/FluidInterfaceKit",
+      "keyFiles": [
+        "Sources/FluidGesture/Drag.swift",
+        "Sources/FluidStack/Interaction/AnyRemovingInteraction+horizontalDragging.swift"
+      ]
+    }
+  ],
+  "excluded": [
+    {
+      "url": "https://pintonotes.com/blog/apple-notes-ios-27",
+      "reason": "iPhone image explicitly credited Apple, author only tested Mac; not actual iPhone user capture"
+    },
+    {
+      "path": "references/local/real-device/ios27-control-center-mirrored.jpg",
+      "reason": "Actually shows mirrored Home Screen, not Control Center; do not use as CC visual reference"
+    },
+    {
+      "path": "references/local/real-device/ios26-notes-detail.jpg",
+      "reason": "Long-press preview, not normal note detail"
+    }
+  ]
+}

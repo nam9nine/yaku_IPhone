@@ -5,22 +5,33 @@ import {
   type HorizontalDrag,
 } from './horizontalGesture';
 
+export interface HorizontalFeedback {
+  blocked: () => boolean;
+  begin: (element: HTMLElement) => void;
+  move: (offset: number) => void;
+  release: (direction: HorizontalDirection | null) => void;
+  cancel: (immediate: boolean) => void;
+}
+
 export function useHorizontalGesture({
   active,
   start,
   commit,
+  feedback,
 }: {
   active: boolean;
   start: (event: PointerEvent<HTMLElement>) => HorizontalDrag['allowed'] | null;
   commit: (direction: HorizontalDirection) => void;
+  feedback?: HorizontalFeedback;
 }) {
   const drag = useRef<HorizontalDrag | null>(null);
+  const unowned = useRef<{ pointerId: number; x: number; y: number } | null>(null);
   const captured = useRef<HTMLElement | null>(null);
   const suppressClick = useRef(false);
   const rejectedPointer = useRef<number | null>(null);
   const dimensions = useRef({ width: 0, height: 0 });
 
-  function cancel() {
+  function releasePointer() {
     const previous = drag.current;
     drag.current = null;
     if (previous && captured.current?.hasPointerCapture(previous.pointerId)) {
@@ -28,10 +39,15 @@ export function useHorizontalGesture({
     }
     captured.current = null;
   }
+  function cancel(immediate = false) {
+    releasePointer();
+    feedback?.cancel(immediate);
+  }
   const cancelActive = useEffectEvent(() => {
     if (drag.current) suppressClick.current = true;
     rejectedPointer.current = null;
-    cancel();
+    unowned.current = null;
+    cancel(true);
   });
   useEffect(() => {
     if (!active) cancelActive();
@@ -65,8 +81,14 @@ export function useHorizontalGesture({
   return {
     onPointerDownCapture(event: PointerEvent<HTMLElement>) {
       if (!active || !event.isPrimary || event.button !== 0 || drag.current) return;
+      if (feedback?.blocked()) {
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+      }
       suppressClick.current = false;
       rejectedPointer.current = null;
+      unowned.current = null;
       if (!(event.target instanceof Element)) return;
       if (
         event.target.closest(
@@ -76,13 +98,27 @@ export function useHorizontalGesture({
         return;
       if (window.getSelection()?.isCollapsed === false) return;
       const allowed = start(event);
-      if (!allowed) return;
+      if (!allowed) {
+        // Observe an unowned drag only to avoid turning it into a button click.
+        // Do not capture, prevent scrolling, or claim content pagination.
+        if (feedback)
+          unowned.current = { pointerId: event.pointerId, x: event.clientX, y: event.clientY };
+        return;
+      }
+      unowned.current = null;
       dimensions.current = { width: window.innerWidth, height: window.innerHeight };
+      feedback?.begin(event.currentTarget);
       drag.current = { pointerId: event.pointerId, x: event.clientX, y: event.clientY, allowed };
       // An outer edge gesture owns this pointer before the content pager can see it.
       event.stopPropagation();
     },
     onPointerMoveCapture(event: PointerEvent<HTMLElement>) {
+      const ignored = unowned.current;
+      if (
+        ignored?.pointerId === event.pointerId &&
+        Math.hypot(event.clientX - ignored.x, event.clientY - ignored.y) >= 8
+      )
+        suppressClick.current = true;
       if (rejectedPointer.current === event.pointerId) {
         event.preventDefault();
         window.getSelection()?.removeAllRanges();
@@ -96,7 +132,7 @@ export function useHorizontalGesture({
         dimensions.current.height !== window.innerHeight
       ) {
         suppressClick.current = true;
-        cancel();
+        cancel(true);
         return;
       }
       const result = horizontalResult(current, event.clientX, event.clientY);
@@ -112,6 +148,7 @@ export function useHorizontalGesture({
         cancel();
         return;
       }
+      if (result.moved) feedback?.move(event.clientX - current.x);
       if (result.moved && !captured.current) {
         captured.current = event.currentTarget;
         try {
@@ -123,6 +160,7 @@ export function useHorizontalGesture({
       event.stopPropagation();
     },
     onPointerUpCapture(event: PointerEvent<HTMLElement>) {
+      if (unowned.current?.pointerId === event.pointerId) unowned.current = null;
       if (rejectedPointer.current === event.pointerId) {
         rejectedPointer.current = null;
         event.preventDefault();
@@ -137,16 +175,18 @@ export function useHorizontalGesture({
         dimensions.current.height !== window.innerHeight
       ) {
         suppressClick.current = true;
-        cancel();
+        cancel(true);
         return;
       }
       const result = horizontalResult(current, event.clientX, event.clientY);
       if (result.moved) suppressClick.current = true;
-      cancel();
-      if (result.complete) commit(result.direction);
+      releasePointer();
+      if (feedback) feedback.release(result.complete ? result.direction : null);
+      else if (result.complete) commit(result.direction);
       event.stopPropagation();
     },
     onPointerCancelCapture(event: PointerEvent<HTMLElement>) {
+      if (unowned.current?.pointerId === event.pointerId) unowned.current = null;
       if (rejectedPointer.current === event.pointerId) rejectedPointer.current = null;
       if (drag.current?.pointerId === event.pointerId) {
         suppressClick.current = true;

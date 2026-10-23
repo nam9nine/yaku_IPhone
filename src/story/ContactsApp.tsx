@@ -155,6 +155,7 @@ export function ContactsApp({
                         setSelected(person.id);
                       }}
                     >
+                      <img src={person.portrait} alt="" />
                       <span>{person.name}</span>
                     </button>
                   ))}

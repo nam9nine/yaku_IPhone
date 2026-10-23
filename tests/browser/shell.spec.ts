@@ -31,7 +31,7 @@ for (const size of [
   { width: 390, height: 844 },
   { width: 430, height: 932 },
 ]) {
-  test(`앱은 전체 면에서 열리고 빠르게 위로 밀어도 최근 앱을 거쳐 홈으로 복귀한다 ${size.width}`, async ({
+  test(`앱은 전체 면에서 열리고 빠르게 위로 밀면 바로 홈으로 복귀한다 ${size.width}`, async ({
     page,
   }) => {
     await page.setViewportSize(size);
@@ -44,11 +44,9 @@ for (const size of [
     await expect(page.getByRole('heading', { name: '설정', exact: true })).toBeFocused();
     await expect(page.getByRole('button', { name: '다시 잠그기' })).toHaveCount(0);
     const start = await begin(page);
-    await page.mouse.move(start.x, start.y - 130, { steps: 8 });
+    await page.mouse.move(start.x, start.y - 130, { steps: 3 });
     await page.mouse.up();
-    await expect(page.getByTestId('system-switcher')).toBeVisible();
-    await expect(page.getByRole('button', { name: '설정 앱으로 전환', exact: true })).toBeVisible();
-    await page.keyboard.press('Escape');
+
     await expect(page.getByTestId('system-switcher')).toHaveCount(0);
     await expect(app).toBeHidden();
     await expect(page.getByRole('button', { name: '설정', exact: true })).toBeFocused();
@@ -82,6 +80,7 @@ test('짧은·수평·취소·resize·blur 드래그는 앱을 유지하고 다�
   }
   const retry = await begin(page);
   await page.mouse.move(retry.x, retry.y - 130, { steps: 8 });
+  await page.waitForTimeout(180);
   await page.mouse.up();
   await expect(page.getByTestId('system-switcher')).toBeVisible();
   await page.keyboard.press('Escape');
@@ -126,7 +125,7 @@ test('본문 드래그는 최근 앱을 열지 않으며 reduced motion과 반�
   await expect(page.getByRole('heading', { name: '설정', exact: true })).toBeFocused();
 });
 
-test('브라우저별 위로 밀기는 기다리지 않고 최근 앱을 연다: Chromium touch / WebKit pointer', async ({
+test('브라우저별 정지한 터치와 빠른 포인터가 최근 앱과 홈을 구분한다', async ({
   page,
   browserName,
 }) => {
@@ -150,12 +149,11 @@ test('브라우저별 위로 밀기는 기다리지 않고 최근 앱을 연다:
       await client.detach();
     }
   }
-  await expect(page.getByTestId('system-switcher')).toBeVisible();
-  await page.getByRole('button', { name: '설정 앱으로 전환', exact: true }).tap();
+  if (browserName === 'chromium') {
+    await expect(page.getByTestId('system-switcher')).toBeVisible();
+    await page.keyboard.press('Escape');
+  }
   await expect(page.getByTestId('system-switcher')).toHaveCount(0);
-  await expect(page.getByTestId('settings-app')).toBeVisible();
-  await expect(page.getByRole('heading', { name: '설정', exact: true })).toBeFocused();
-  await page.keyboard.press('Alt+Home');
   await expect(page.getByTestId('settings-app')).toBeHidden();
 });
 

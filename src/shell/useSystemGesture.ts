@@ -10,7 +10,7 @@ import {
 export function useSystemGesture(
   kind: SystemGestureKind,
   active: boolean,
-  onComplete: (result: NonNullable<SystemGestureResult>) => void,
+  onComplete: (result: NonNullable<SystemGestureResult>, gesture: SystemGesture) => void,
 ) {
   const gesture = useRef<SystemGesture | null>(null);
   const surface = useRef<HTMLElement | null>(null);
@@ -18,9 +18,19 @@ export function useSystemGesture(
   const viewportKey = () =>
     `${window.innerWidth}:${window.innerHeight}:${window.visualViewport?.width}:${window.visualViewport?.height}`;
   const suppress = useRef(false);
+  const frame = useRef<number | null>(null);
+  const pending = useRef(0);
   const [drag, setDrag] = useState({ active, offset: 0 });
   if (drag.active !== active) setDrag({ active, offset: 0 });
   const setOffset = (offset: number) => setDrag({ active, offset });
+  function queueOffset(offset: number) {
+    pending.current = offset;
+    if (frame.current !== null) return;
+    frame.current = requestAnimationFrame(() => {
+      frame.current = null;
+      setOffset(pending.current);
+    });
+  }
   function clearInput() {
     const current = gesture.current;
     gesture.current = null;
@@ -28,6 +38,8 @@ export function useSystemGesture(
       surface.current.releasePointerCapture(current.pointerId);
   }
   function cancel() {
+    if (frame.current !== null) cancelAnimationFrame(frame.current);
+    frame.current = null;
     clearInput();
     setOffset(0);
   }
@@ -69,8 +81,9 @@ export function useSystemGesture(
       !cancelled && active && dimensions.current === viewportKey()
         ? resolveSystemGesture(kind, final, event.timeStamp)
         : null;
+    // Let the consumer capture the presented geometry before clearing drag styles.
+    if (result) onComplete(result, final);
     cancel();
-    if (result) onComplete(result);
   }
   return {
     offset: active ? drag.offset : 0,
@@ -94,6 +107,9 @@ export function useSystemGesture(
           lastX: event.clientX,
           lastY: event.clientY,
           movedAt: event.timeStamp,
+          startedAt: event.timeStamp,
+          motionStartedAt: null,
+          samples: [{ y: event.clientY, time: event.timeStamp }],
         };
         event.currentTarget.setPointerCapture(event.pointerId);
       },
@@ -108,7 +124,7 @@ export function useSystemGesture(
         const next = moveSystemGesture(current, event.clientX, event.clientY, event.timeStamp);
         gesture.current = next;
         if (Math.hypot(next.x, next.y) > 8) suppress.current = true;
-        setOffset(kind === 'bottom' ? Math.max(0, -next.y) : Math.max(0, next.y));
+        queueOffset(kind === 'bottom' ? Math.max(0, -next.y) : Math.max(0, next.y));
       },
       onPointerUp(event: PointerEvent<HTMLElement>) {
         finish(event, false);

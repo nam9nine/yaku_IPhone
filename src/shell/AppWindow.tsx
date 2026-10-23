@@ -1,15 +1,25 @@
-import { useEffect, useEffectEvent, useRef, type ReactNode } from 'react';
+import { useEffect, useEffectEvent, useLayoutEffect, useRef, type ReactNode } from 'react';
 import { useSystemGesture } from './useSystemGesture';
 import { useViewport } from './useViewport';
 import { appNames, type LaunchRect, type RunnableApp } from './session';
 import './shell.css';
+import { draggedRect, motion, rectFrames, rectOf, reducedMotion } from './motion';
+import { upwardVelocity, type SystemGesture } from './systemGesture';
 import { HomeIndicator } from '../system/HomeIndicator';
+import { AppSnapshot } from '../system/AppSnapshot';
+import { AppIcon } from '../home/AppIcon';
+import type { CSSProperties } from 'react';
+
+const previewFor = (app: RunnableApp) =>
+  document.querySelector<HTMLElement>(`[data-app-window="${app}"]`);
 
 interface Props {
   app: RunnableApp;
   active: boolean;
   interactive?: boolean;
-  onSwitcher: () => void;
+  onSwitcher: (entry?: LaunchRect) => void;
+  parked?: boolean;
+  previousApp?: RunnableApp;
   onControl: () => void;
   onQuickSwitch: (direction: 'previous' | 'next') => void;
   origin: LaunchRect | null;
@@ -26,6 +36,8 @@ export function AppWindow({
   onSwitcher,
   onControl,
   onQuickSwitch,
+  parked = false,
+  previousApp,
   children,
 }: Props) {
   const card = useRef<HTMLElement>(null);
@@ -33,17 +45,36 @@ export function AppWindow({
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const closing = useRef(false);
   const generation = useRef(0);
-  const bottom = useSystemGesture('bottom', interactive, (result) => {
-    if (result === 'home' || result === 'switcher') onSwitcher();
+  const bottom = useSystemGesture('bottom', interactive, (result, gesture) => {
+    if (result === 'home') returnHome(gesture);
+    else if (result === 'switcher') onSwitcher(card.current ? rectOf(card.current) : undefined);
     else if (result === 'previous' || result === 'next') onQuickSwitch(result);
   });
   const drag = bottom.offset;
   const cancelGesture = bottom.cancel;
   const viewport = useViewport();
+  const width = Math.min(478, viewport.width);
+  const pose = draggedRect({ x: 0, y: 0, width, height: viewport.height }, drag);
+  const returnProgress = Math.max(0, Math.min(1, (drag / viewport.height - 0.4) / 0.35));
+  const stageOpacity = Math.min(1, drag / 90) * (1 - returnProgress);
+  const previewOpacity = Math.max(0, Math.min(1, (drag - 40) / 90)) * (1 - returnProgress);
   const homeCallback = useRef(onHome);
   useEffect(() => {
     homeCallback.current = onHome;
   }, [onHome]);
+
+  useLayoutEffect(() => {
+    if (!active) return;
+    const shell = card.current?.closest<HTMLElement>('.mobile-shell');
+    // Blur the real home layers. Nested backdrop-filter loses the backdrop in WebKit.
+    shell?.style.setProperty(
+      '--gesture-blur',
+      stageOpacity ? `blur(${stageOpacity * 20}px)` : 'none',
+    );
+    return () => {
+      shell?.style.removeProperty('--gesture-blur');
+    };
+  }, [active, stageOpacity]);
 
   const cancelClosing = useEffectEvent(() => {
     if (!closing.current) return;
@@ -56,28 +87,16 @@ export function AppWindow({
     if (!interactive) cancelClosing();
   }, [interactive]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!active || !card.current) return;
     const node = card.current;
     closing.current = false;
-    const bounds = node.getBoundingClientRect();
-    const motion = getComputedStyle(node).getPropertyValue('--motion-settle').trim();
-    if (
-      origin &&
-      parseFloat(motion) !== 0 &&
-      !matchMedia('(prefers-reduced-motion: reduce)').matches
-    ) {
-      animation.current = node.animate(
-        [
-          {
-            transform: `translate(${origin.x - bounds.x}px, ${origin.y - bounds.y}px) scale(${origin.width / bounds.width}, ${origin.height / bounds.height})`,
-            borderRadius: '28px',
-            opacity: 0.4,
-          },
-          { transform: 'none', borderRadius: '0px', opacity: 1 },
-        ],
-        { duration: 260, easing: 'cubic-bezier(0.2, 0, 0, 1)' },
-      );
+    const bounds = baseRect(node);
+    if (origin && !reducedMotion(node)) {
+      animation.current = node.animate(rectFrames(origin, bounds, bounds, [28, 0]), {
+        duration: motion.settle,
+        easing: 'linear',
+      });
     }
     node.querySelector<HTMLElement>('[data-app-title]')?.focus({ preventScroll: true });
     return () => {
@@ -88,14 +107,26 @@ export function AppWindow({
     };
   }, [active, origin]);
 
-  function returnHome() {
+  function baseRect(node: HTMLElement): LaunchRect {
+    const host = node.parentElement!.getBoundingClientRect();
+    return {
+      x: host.x + node.offsetLeft,
+      y: host.y + node.offsetTop,
+      width: node.offsetWidth,
+      height: node.offsetHeight,
+    };
+  }
+
+  function returnHome(gesture?: SystemGesture) {
     if (!interactive || closing.current || !card.current) return;
     closing.current = true;
+    const node = card.current;
+    const presented = rectOf(node);
+    const radius = parseFloat(getComputedStyle(node).borderRadius) || 0;
     cancelGesture();
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
     animation.current?.cancel();
-    const node = card.current;
-    const bounds = node.getBoundingClientRect();
+    const bounds = baseRect(node);
     const launcher = document.querySelector(`[data-launch-app="${app}"] .app-icon`);
     const destination = launcher?.getBoundingClientRect() ?? origin;
     const token = ++generation.current;
@@ -112,27 +143,22 @@ export function AppWindow({
       if (closeTimer.current) clearTimeout(closeTimer.current);
       homeCallback.current();
     };
-    const reduced =
-      parseFloat(getComputedStyle(node).getPropertyValue('--motion-settle')) === 0 ||
-      matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (!destination || reduced) {
+    if (!destination || reducedMotion(node)) {
       complete();
       return;
     }
+    const velocity = gesture ? upwardVelocity(gesture, gesture.samples.at(-1)!.time) : 0;
+    const duration = motion.home - Math.min(80, velocity * 30);
     animation.current = node.animate(
-      [
-        { transform: 'none', opacity: 1, borderRadius: '0px' },
-        {
-          transform: `translate(${destination.x - bounds.x}px, ${destination.y - bounds.y}px) scale(${destination.width / bounds.width}, ${destination.height / bounds.height})`,
-          opacity: 0,
-          borderRadius: '28px',
-        },
-      ],
-      { duration: 260, easing: 'cubic-bezier(0.2, 0, 0, 1)', fill: 'forwards' },
+      rectFrames(presented, destination, bounds, [radius, 28], true),
+      {
+        duration,
+        easing: 'linear',
+        fill: 'forwards',
+      },
     );
-    void animation.current.finished.then(complete, complete);
-    // Input state must complete even if the browser suspends animation callbacks.
-    closeTimer.current = setTimeout(complete, 320);
+    void animation.current.finished.then(complete, () => {});
+    closeTimer.current = setTimeout(complete, duration + 80);
   }
 
   const keyboardHome = useEffectEvent(() => returnHome());
@@ -152,10 +178,49 @@ export function AppWindow({
     <div
       className="app-host"
       hidden={!active}
+      data-parked={parked}
       inert={!interactive}
       aria-hidden={!interactive}
       style={{ top: viewport.top, height: viewport.height }}
     >
+      {active && (drag > 0 || closing.current) && (
+        <div className="gesture-stage" aria-hidden="true" inert style={{ width }}>
+          <div className="gesture-stage-backdrop" style={{ opacity: stageOpacity }} />
+          {previousApp && previewOpacity > 0 && (
+            <article
+              className="recent-card gesture-previous-card"
+              style={
+                {
+                  '--card-offset': -1,
+                  '--card-drag-x': '0px',
+                  '--card-drag-y': '0px',
+                  '--card-scale': 0.94,
+                  opacity: previewOpacity,
+                } as CSSProperties
+              }
+            >
+              <header className="recent-card-title">
+                <AppIcon id={previousApp} day="" weekday="" />
+                <span>{appNames[previousApp]}</span>
+              </header>
+              <div className="recent-open">
+                <AppSnapshot app={previousApp} getPreview={previewFor} viewport={viewport} />
+              </div>
+            </article>
+          )}
+          <header
+            className="recent-card-title gesture-current-title"
+            style={{
+              left: pose.x + 7,
+              top: Math.max(4, pose.y - 38),
+              opacity: previewOpacity * Math.min(1, Math.max(0, (pose.y - 12) / 30)),
+            }}
+          >
+            <AppIcon id={app} day="" weekday="" />
+            <span>{appNames[app]}</span>
+          </header>
+        </div>
+      )}
       <section
         ref={card}
         className="app-window"
@@ -166,7 +231,7 @@ export function AppWindow({
         style={
           drag
             ? {
-                transform: `translateY(${-drag * 0.25}px) scale(${1 - drag / 2000})`,
+                transform: `translate(${pose.x}px, ${pose.y}px) scale(${pose.width / width})`,
                 borderRadius: 24,
               }
             : undefined
@@ -194,7 +259,7 @@ export function AppWindow({
             tabIndex={0}
             className="system-keyboard-control"
             aria-label="최근 앱 열기"
-            onClick={onSwitcher}
+            onClick={() => onSwitcher(card.current ? rectOf(card.current) : undefined)}
           >
             최근 앱 열기
           </button>
@@ -202,7 +267,7 @@ export function AppWindow({
             tabIndex={0}
             className="system-keyboard-control"
             aria-label="홈으로 돌아가기"
-            onClick={returnHome}
+            onClick={() => returnHome()}
           >
             홈으로 돌아가기
           </button>

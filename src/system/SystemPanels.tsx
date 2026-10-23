@@ -1,6 +1,7 @@
 import {
   useEffect,
   useEffectEvent,
+  useLayoutEffect,
   useId,
   useRef,
   useState,
@@ -10,7 +11,8 @@ import {
 import { AppIcon } from '../home/AppIcon';
 import { useDisplayDate } from '../display/useDisplayDate';
 import { type DevicePreferences } from '../settings/preferences';
-import { appNames, type RunnableApp } from '../shell/session';
+import { appNames, type RunnableApp, type LaunchRect } from '../shell/session';
+import { motion, rectOf, rectFrames, reducedMotion } from '../shell/motion';
 import { AppSnapshot } from './AppSnapshot';
 import { SystemIcon } from './SystemIcon';
 import { HomeIndicator } from './HomeIndicator';
@@ -27,7 +29,8 @@ export interface SystemPanelsProps {
   activeApp: RunnableApp | null;
   preferences: DevicePreferences;
   onPreferences: (next: DevicePreferences) => void;
-  onSelectApp: (app: RunnableApp) => void;
+  onSelectApp: (app: RunnableApp, entry?: LaunchRect) => void;
+  entry?: LaunchRect | null;
   onCloseApp: (app: RunnableApp) => void;
   onDismiss: () => void;
   getPreview: (app: RunnableApp) => HTMLElement | null;
@@ -84,19 +87,34 @@ function RecentApps({
   onCloseApp,
   getPreview,
   viewport,
-}: Pick<SystemPanelsProps, 'recent' | 'onSelectApp' | 'onCloseApp' | 'getPreview' | 'viewport'>) {
+  entry,
+}: Pick<
+  SystemPanelsProps,
+  'recent' | 'onSelectApp' | 'onCloseApp' | 'getPreview' | 'viewport' | 'entry'
+>) {
+  const root = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const card = root.current?.querySelector<HTMLElement>('.recent-open');
+    if (!card || !entry || reducedMotion(card)) return;
+    const target = rectOf(card);
+    const animation = card.animate(rectFrames(entry, target, target, [24, 34]), {
+      duration: motion.settle,
+      easing: 'linear',
+    });
+    return () => animation.cancel();
+  }, [entry]);
   const [requestedIndex, setIndex] = useState(0);
   const [draggedApp, setDraggedApp] = useState<RunnableApp | null>(null);
   const index = Math.min(requestedIndex, Math.max(0, recent.length - 1));
   const move = (next: number) => setIndex(Math.max(0, Math.min(recent.length - 1, next)));
   const swipe = usePanelSwipe({
-    horizontal: (direction) => move(index + direction),
+    horizontal: (direction) => move(index - direction),
     upward: () => {
       if (draggedApp) onCloseApp(draggedApp);
     },
   });
   return (
-    <div className="recent-apps">
+    <div className="recent-apps" ref={root}>
       {!recent.length && (
         <span className="system-sr-only" role="status">
           열린 앱이 없습니다.
@@ -117,7 +135,7 @@ function RecentApps({
             event.preventDefault();
             const next = Math.max(
               0,
-              Math.min(recent.length - 1, index + (event.key === 'ArrowRight' ? 1 : -1)),
+              Math.min(recent.length - 1, index + (event.key === 'ArrowLeft' ? 1 : -1)),
             );
             move(next);
             const cards = event.currentTarget.querySelectorAll<HTMLButtonElement>('.recent-open');
@@ -138,7 +156,7 @@ function RecentApps({
               data-dragging={draggedApp === application && swipe.offset.y !== 0}
               style={
                 {
-                  '--card-offset': position - index,
+                  '--card-offset': index - position,
                   '--card-drag-x': `${swipe.offset.x * 0.6}px`,
                   '--card-drag-y': `${draggedApp === application ? swipe.offset.y : 0}px`,
                   '--card-scale': position === index ? 1 : 0.94,
@@ -164,9 +182,11 @@ function RecentApps({
                 type="button"
                 className="recent-open"
                 aria-label={`${appNames[application]} 앱으로 전환`}
-                onClick={() => onSelectApp(application)}
+                onClick={(event) => onSelectApp(application, rectOf(event.currentTarget))}
               >
-                <AppSnapshot app={application} getPreview={getPreview} viewport={viewport} />
+                {Math.abs(position - index) <= 1 && (
+                  <AppSnapshot app={application} getPreview={getPreview} viewport={viewport} />
+                )}
               </button>
             </article>
           ))}
@@ -389,9 +409,9 @@ export function SystemPanels(props: SystemPanelsProps) {
     };
   }, [kind, previous]);
 
-  const selectApp = (app: RunnableApp) => {
+  const selectApp = (app: RunnableApp, entry?: LaunchRect) => {
     restoreFocus.current = false;
-    onSelectApp(app);
+    onSelectApp(app, entry);
   };
   return (
     <div
@@ -402,6 +422,7 @@ export function SystemPanels(props: SystemPanelsProps) {
       aria-labelledby={titleId}
       data-testid={`system-${kind}`}
       data-empty-switcher={emptySwitcher}
+      data-gesture-entry={kind === 'switcher' && !!props.entry}
       data-compact={viewport.height < 620 * fontScale}
       data-tiny={viewport.height < 440 * fontScale}
       style={{ height: viewport.height, top: window.visualViewport?.offsetTop ?? 0 }}
@@ -481,6 +502,7 @@ export function SystemPanels(props: SystemPanelsProps) {
               onCloseApp={props.onCloseApp}
               getPreview={props.getPreview}
               viewport={viewport}
+              entry={props.entry}
             />
           )}
           {kind === 'notifications' && <Notifications />}
