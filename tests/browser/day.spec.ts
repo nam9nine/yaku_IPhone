@@ -30,6 +30,29 @@ async function lock(page: Page) {
   await expect(page.getByTestId('lock-screen')).toBeVisible();
 }
 
+test('알림 센터의 메시지는 가로 카드로 표시되고 대화로 연결된 뒤 읽음으로 사라진다', async ({
+  page,
+}) => {
+  await boot(page);
+  await page.getByRole('button', { name: '잠금 해제', exact: true }).tap();
+  const openNotifications = page.getByRole('button', { name: '알림 센터 열기', exact: true });
+  await openNotifications.focus();
+  await openNotifications.press('Enter');
+  const panel = page.getByTestId('system-notifications');
+  const message = panel.getByRole('button', { name: '하루카의 메시지 알림 열기' });
+  const bounds = (await message.boundingBox())!;
+  expect(bounds.width).toBeGreaterThan(300);
+  expect(bounds.height).toBeLessThan(180);
+  await message.tap();
+  await expect(panel).toHaveCount(0);
+  await expect(page.getByRole('log', { name: '사와무라 하루카와의 대화' })).toBeVisible();
+  await home(page);
+  await page.getByRole('button', { name: '알림 센터 열기', exact: true }).focus();
+  await page.keyboard.press('Enter');
+  await expect(page.getByText('이전 알림 없음', { exact: true })).toBeVisible();
+  await expect(panel.getByRole('button', { name: '하루카의 메시지 알림 열기' })).toHaveCount(0);
+});
+
 for (const width of [360, 390, 430]) {
   test(`하루카 알림에서 카레 장보기·답장·할 일 갱신·재접속까지 연결된다 ${width}`, async ({
     page,

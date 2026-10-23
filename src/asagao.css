@@ -214,11 +214,28 @@ body {
 .lock-shortcuts {
   padding-inline: 8px;
 }
-.system-panel > .day-notification,
-.system-panel-content > .day-notification {
+.system-panel--notifications .system-panel-body {
+  flex-direction: column;
+}
+.system-panel-body > .day-notification {
   pointer-events: auto;
-  margin: 12px 20px;
+  flex: 0 0 auto;
+  color: #161616;
+  margin: auto 20px 20px;
   width: calc(100% - 40px);
+}
+.system-panel--notifications .notification-center {
+  flex: 1;
+  min-height: 0;
+}
+.system-panel--notifications[data-tiny='true'] .notification-date {
+  padding: 12px 16px 0;
+}
+.system-panel--notifications[data-tiny='true'] .notification-date > span {
+  font-size: 48px;
+}
+.system-panel--notifications[data-tiny='true'] .notification-date time {
+  font-size: 16px;
 }
 .notification-center:has(+ .day-notification) .notification-empty {
   display: none;
@@ -327,6 +344,13 @@ body {
 }
 .settings-reset {
   color: #ff3b30 !important;
+}
+.settings-row.settings-reset {
+  border: 0;
+  border-radius: 12px;
+  background: var(--app-surface);
+  width: 100%;
+  text-align: left;
 }
 .settings-reset-dialog {
   width: min(300px, 90vw);

@@ -42,7 +42,7 @@ ios27-design-system은 재질·색상·치수 참고 자료다. React 패키지�
 
 ## 자산과 접근성
 
-`public/wallpapers/silver-fold.svg`는 프로젝트에서 직접 작성한 SVG다. Apple 자료의 은색·샴페인 곡면과 낮은 채도를 관찰했으며 원본 이미지·경로·외부 코드를 복사하지 않았다. 잠금 화면에서는 같은 경로의 `silver-fold-front.svg`를 시계 위에 겹친다. 두 SVG의 전경 경로·gradient는 함께 변경해야 한다. 짧은 화면에서는 전경 덮개를 숨겨 콘텐츠 가독성을 지킨다. 정확한 Apple 배경 복제품은 아니다. 색은 SVG 내부 gradient에, 화면 UI 값은 CSS 토큰에 둔다.
+현재 배경은 `src/day/media.ts`의 로컬 사진·창작 그림이다. 가로 식사 장면에는 위쪽 흐림 연장 배경을 두어 시계와 얼굴이 겹치지 않게 하고, 홈에서는 같은 사진을 흐리고 어둡게 표시한다. 사진별 위치 조정은 설정에 저장한다. 이전 `silver-fold.svg`는 초기 구현의 창작 자산 기록이며 현재 기본 배경으로 사용하지 않는다. 출처·버전·사용 조건은 [이미지 기록](asagao-assets.md)을 따른다.
 
 컨테이너는 `visualViewport` 높이(미지원 시 innerHeight)로 고정한다. 설정 목록은 세로로 스크롤한다. Safari에서 문자가 커져 넘치는 본문은 가로 페이지로 나눈다. 네 방향 `env(safe-area-inset-*)`에 기본 여백을 더하며 고정 기기 inset을 가정하지 않는다. 설정 본문은 세로 스크롤 영역과 화면별 위치 ref로 관리한다. 문서·홈·Safari의 세로 overflow를 clip하며 Safari의 필요한 내용은 `PagedContent`의 CSS column과 페이지 조작으로 접근한다. 관련 기준: [MDN viewport 단위](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Values/length), [WebKit safe area 안내](https://webkit.org/blog/7929/designing-websites-for-iphone-x/).
 
