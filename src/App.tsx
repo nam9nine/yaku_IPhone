@@ -1,4 +1,4 @@
-import { useEffect, useReducer, useState } from 'react';
+import { useEffect, useLayoutEffect, useReducer, useState } from 'react';
 import { MobileShell } from './components/MobileShell';
 import { LockScreen } from './lock/LockScreen';
 import { HomeScreen } from './home/HomeScreen';
@@ -99,19 +99,18 @@ function PhoneSession() {
     dispatch({ type: 'lock' });
     setEpoch((value) => value + 1);
   }
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (state.locked || state.activeApp || state.panel) return;
-    const frame = requestAnimationFrame(() => {
-      const launcher = state.launcher
-        ? document.querySelector<HTMLElement>(`[data-launch-app="${state.launcher}"]`)
-        : null;
-      const target =
-        launcher && !launcher.closest('[inert], [hidden]')
-          ? launcher
-          : document.querySelector<HTMLElement>('[data-home-title]');
-      target?.focus({ preventScroll: true });
-    });
-    return () => cancelAnimationFrame(frame);
+    // Restore within the visibility commit so a later user focus is never
+    // overwritten by a queued animation frame.
+    const launcher = state.launcher
+      ? document.querySelector<HTMLElement>(`[data-launch-app="${state.launcher}"]`)
+      : null;
+    const target =
+      launcher && !launcher.closest('[inert], [hidden]')
+        ? launcher
+        : document.querySelector<HTMLElement>('[data-home-title]');
+    target?.focus({ preventScroll: true });
   }, [state.locked, state.activeApp, state.launcher, state.panel]);
   useEffect(() => {
     const shortcuts = (event: KeyboardEvent) => {
