@@ -5,12 +5,26 @@ export function useDisplayDate() {
   const [date, setDate] = useState(() => getDisplayDate(new Date()));
 
   useEffect(() => {
-    const refresh = () => setDate(getDisplayDate(new Date()));
-    const interval = window.setInterval(refresh, 60_000);
-    document.addEventListener('visibilitychange', refresh);
+    let timer: number;
+    const schedule = () => {
+      timer = window.setTimeout(
+        () => {
+          setDate(getDisplayDate(new Date()));
+          schedule();
+        },
+        60_000 - (Date.now() % 60_000),
+      );
+    };
+    const resume = () => {
+      window.clearTimeout(timer);
+      setDate(getDisplayDate(new Date()));
+      schedule();
+    };
+    schedule();
+    document.addEventListener('visibilitychange', resume);
     return () => {
-      window.clearInterval(interval);
-      document.removeEventListener('visibilitychange', refresh);
+      window.clearTimeout(timer);
+      document.removeEventListener('visibilitychange', resume);
     };
   }, []);
 

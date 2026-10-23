@@ -21,6 +21,11 @@
   --font-mark: 2.5rem;
   --shadow-panel: 0 12px 40px rgb(20 18 25 / 12%);
   --motion-short: 160ms;
+  --motion-settle: 260ms;
+  --control-size: 56px;
+  --glass-fill: rgb(220 217 234 / 24%);
+  --glass-edge: rgb(255 255 255 / 45%);
+  --glass-shadow: inset 0 1px 1px rgb(255 255 255 / 20%), 0 4px 16px rgb(18 15 30 / 12%);
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
   --safe-area-top: env(safe-area-inset-top, 0px);
   --safe-area-right: env(safe-area-inset-right, 0px);
@@ -31,5 +36,6 @@
 @media (prefers-reduced-motion: reduce) {
   :root {
     --motion-short: 0ms;
+    --motion-settle: 0ms;
   }
 }
