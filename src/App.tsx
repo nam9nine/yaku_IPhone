@@ -7,6 +7,8 @@ import { initialShellState, shellReducer } from './shell/session';
 import { SettingsApp } from './settings/SettingsApp';
 import { useDevicePreferences } from './settings/useDevicePreferences';
 import { useAppearance } from './shell/useAppearance';
+import { SafariApp } from './safari/SafariApp';
+import { isOnline } from './settings/preferences';
 import './shell/appearance.css';
 
 export function App() {
@@ -60,15 +62,10 @@ export function App() {
               storageUnavailable={storageUnavailable}
             />
           ) : (
-            <div className="app-preview">
-              <h1 data-app-title tabIndex={-1}>
-                Safari
-              </h1>
-              <div className="app-preview-card">
-                <p>Safari 화면을 준비하고 있어요.</p>
-                <p>아래에서 위로 밀면 홈으로 돌아갑니다.</p>
-              </div>
-            </div>
+            <SafariApp
+              online={isOnline(preferences)}
+              active={!state.locked && state.activeApp === app}
+            />
           )}
         </AppWindow>
       ))}
