@@ -449,6 +449,300 @@
           "bytes": 2457
         }
       ]
+    },
+    {
+      "id": "apple-settings-wifi-image",
+      "type": "official-image",
+      "sourceUrl": "https://ipcdn-web.apple.com/assets/v2/web/776de408-3bc0-4744-a8be-f266e1186480",
+      "retrievedOn": "2026-10-23",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "Apple copyrighted material; local comparison reference only. Do not ship or extract product assets."
+      },
+      "purpose": "Wi-Fi settings list and connection reference",
+      "keyPaths": [],
+      "artifacts": [
+        {
+          "role": "image",
+          "url": "https://ipcdn-web.apple.com/assets/v2/web/776de408-3bc0-4744-a8be-f266e1186480",
+          "localPath": "references/upstream/apple/settings-wifi.png",
+          "sha256": "d0d713524760d304f5c80069473f2c5bc13ba105252da921e1a5119a900a21e4",
+          "bytes": 216310
+        }
+      ]
+    },
+    {
+      "id": "apple-settings-wifi",
+      "type": "official-document",
+      "sourceUrl": "https://support.apple.com/en-au/guide/iphone/iphd1cf4268/27/ios/27",
+      "retrievedOn": "2026-10-23",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "Apple copyrighted material; local comparison reference only. Do not ship or extract product assets."
+      },
+      "purpose": "Wi-Fi settings list and connection reference",
+      "keyPaths": [],
+      "artifacts": [
+        {
+          "role": "html",
+          "url": "https://support.apple.com/en-au/guide/iphone/iphd1cf4268/27/ios/27",
+          "localPath": "references/upstream/apple/settings-wifi.html",
+          "sha256": "d08b74d0a3808c19cf99126a7b0832e471790b50403cb36b54c9a252c383d041",
+          "bytes": 1391693
+        }
+      ]
+    },
+    {
+      "id": "apple-settings-search-image",
+      "type": "official-image",
+      "sourceUrl": "https://ipcdn-web.apple.com/assets/v2/web/c1af0906-095a-4b92-8bd6-3e0419c10780",
+      "retrievedOn": "2026-10-23",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "Apple copyrighted material; local comparison reference only. Do not ship or extract product assets."
+      },
+      "purpose": "Settings list typography and navigation reference; search is out of product scope",
+      "keyPaths": [],
+      "artifacts": [
+        {
+          "role": "image",
+          "url": "https://ipcdn-web.apple.com/assets/v2/web/c1af0906-095a-4b92-8bd6-3e0419c10780",
+          "localPath": "references/upstream/apple/settings-search.png",
+          "sha256": "455512637486161df3ea9b63336d69e6e2d6db5a4e3a9039baa1922d3c420941",
+          "bytes": 227650
+        }
+      ]
+    },
+    {
+      "id": "apple-settings-search",
+      "type": "official-document",
+      "sourceUrl": "https://support.apple.com/en-au/guide/iphone/iph079e1fe9d/27/ios/27",
+      "retrievedOn": "2026-10-23",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "Apple copyrighted material; local comparison reference only. Do not ship or extract product assets."
+      },
+      "purpose": "Settings list typography and navigation reference; search is out of product scope",
+      "keyPaths": [],
+      "artifacts": [
+        {
+          "role": "html",
+          "url": "https://support.apple.com/en-au/guide/iphone/iph079e1fe9d/27/ios/27",
+          "localPath": "references/upstream/apple/settings-search.html",
+          "sha256": "6c166ff1f739edade7b2824e569ad34e2d75b1fe84edf4d2a18ca947966f0936",
+          "bytes": 1391445
+        }
+      ]
+    },
+    {
+      "id": "apple-safari-compact-image",
+      "type": "official-image",
+      "sourceUrl": "https://ipcdn-web.apple.com/assets/v2/web/45b1684c-65e7-4848-83d6-1ab7257364fe",
+      "retrievedOn": "2026-10-23",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "Apple copyrighted material; local comparison reference only. Do not ship or extract product assets."
+      },
+      "purpose": "Safari Compact address and navigation controls",
+      "keyPaths": [],
+      "artifacts": [
+        {
+          "role": "image",
+          "url": "https://ipcdn-web.apple.com/assets/v2/web/45b1684c-65e7-4848-83d6-1ab7257364fe",
+          "localPath": "references/upstream/apple/safari-compact.png",
+          "sha256": "772b5a19f1255221862d8aa2021010f85916cd5f10fa5f2f143b54a6da614079",
+          "bytes": 411012
+        }
+      ]
+    },
+    {
+      "id": "apple-safari-compact",
+      "type": "official-document",
+      "sourceUrl": "https://support.apple.com/guide/iphone/browse-the-web-iph1fbef4daa/27/ios/27",
+      "retrievedOn": "2026-10-23",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "Apple copyrighted material; local comparison reference only. Do not ship or extract product assets."
+      },
+      "purpose": "Safari Compact address and navigation controls",
+      "keyPaths": [],
+      "artifacts": [
+        {
+          "role": "html",
+          "url": "https://support.apple.com/guide/iphone/browse-the-web-iph1fbef4daa/27/ios/27",
+          "localPath": "references/upstream/apple/safari-compact.html",
+          "sha256": "0430c7cf66e1a75800ad96566e3e8d7a4fc7c855f112bde392c9030737a1e088",
+          "bytes": 1457885
+        }
+      ]
+    },
+    {
+      "id": "apple-safari-start-image",
+      "type": "official-image",
+      "sourceUrl": "https://ipcdn-web.apple.com/assets/v2/web/6741da2d-4359-422a-b703-492f983645fa",
+      "retrievedOn": "2026-10-23",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "Apple copyrighted material; local comparison reference only. Do not ship or extract product assets."
+      },
+      "purpose": "Safari start-page visual structure; no bookmark feature adoption",
+      "keyPaths": [],
+      "artifacts": [
+        {
+          "role": "image",
+          "url": "https://ipcdn-web.apple.com/assets/v2/web/6741da2d-4359-422a-b703-492f983645fa",
+          "localPath": "references/upstream/apple/safari-start.png",
+          "sha256": "ec2eec38597676faf61a6755d087018bccd6fb2e83d673cfee57334e53eb4b04",
+          "bytes": 743194
+        }
+      ]
+    },
+    {
+      "id": "apple-safari-start",
+      "type": "official-document",
+      "sourceUrl": "https://support.apple.com/guide/iphone/customize-your-safari-settings-iphb3100d149/27/ios/27",
+      "retrievedOn": "2026-10-23",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "Apple copyrighted material; local comparison reference only. Do not ship or extract product assets."
+      },
+      "purpose": "Safari start-page visual structure; no bookmark feature adoption",
+      "keyPaths": [],
+      "artifacts": [
+        {
+          "role": "html",
+          "url": "https://support.apple.com/guide/iphone/customize-your-safari-settings-iphb3100d149/27/ios/27",
+          "localPath": "references/upstream/apple/safari-start.html",
+          "sha256": "019c39bb6685743efa55b660e49326b7950d20b750230b875dc0d60e5c30ee25",
+          "bytes": 1458954
+        }
+      ]
+    },
+    {
+      "id": "apple-safari-layout-settings-image",
+      "type": "official-image",
+      "sourceUrl": "https://ipcdn-web.apple.com/assets/v2/web/8c46fb0d-076a-43c6-b367-f4a89ea43ae4",
+      "retrievedOn": "2026-10-23",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "Apple copyrighted material; local comparison reference only. Do not ship or extract product assets."
+      },
+      "purpose": "Confirm Compact as chosen layout; layout selection is out of scope",
+      "keyPaths": [],
+      "artifacts": [
+        {
+          "role": "image",
+          "url": "https://ipcdn-web.apple.com/assets/v2/web/8c46fb0d-076a-43c6-b367-f4a89ea43ae4",
+          "localPath": "references/upstream/apple/safari-layout-settings.png",
+          "sha256": "b1e34b600d550cad5e1e27d26097a40521bdd28a87d2f1997e68e02f402d299d",
+          "bytes": 244030
+        }
+      ]
+    },
+    {
+      "id": "apple-safari-layout-settings",
+      "type": "official-document",
+      "sourceUrl": "https://support.apple.com/en-au/guide/iphone/ipha9ffea1a3/27/ios/27",
+      "retrievedOn": "2026-10-23",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "Apple copyrighted material; local comparison reference only. Do not ship or extract product assets."
+      },
+      "purpose": "Confirm Compact as chosen layout; layout selection is out of scope",
+      "keyPaths": [],
+      "artifacts": [
+        {
+          "role": "html",
+          "url": "https://support.apple.com/en-au/guide/iphone/ipha9ffea1a3/27/ios/27",
+          "localPath": "references/upstream/apple/safari-layout-settings.html",
+          "sha256": "e08d8107716d263b4a0ab3b47640fcd3a113f8465318984811b400ed24e8c32f",
+          "bytes": 1384570
+        }
+      ]
+    },
+    {
+      "id": "apple-safari-tabs-image",
+      "type": "official-image",
+      "sourceUrl": "https://ipcdn-web.apple.com/assets/v2/web/00e72372-5af2-4974-933c-92fdd07f8b23",
+      "retrievedOn": "2026-10-23",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "Apple copyrighted material; local comparison reference only. Do not ship or extract product assets."
+      },
+      "purpose": "Safari tab grid, close and new-tab placement",
+      "keyPaths": [],
+      "artifacts": [
+        {
+          "role": "image",
+          "url": "https://ipcdn-web.apple.com/assets/v2/web/00e72372-5af2-4974-933c-92fdd07f8b23",
+          "localPath": "references/upstream/apple/safari-tabs.png",
+          "sha256": "bcc28578f39dcc51d3c71461c52af136db6a820adaeb3c8bd91fe9b82d45c801",
+          "bytes": 443134
+        }
+      ]
+    },
+    {
+      "id": "apple-safari-tabs",
+      "type": "official-document",
+      "sourceUrl": "https://support.apple.com/en-au/guide/iphone/iph489b9313f/27/ios/27",
+      "retrievedOn": "2026-10-23",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "Apple copyrighted material; local comparison reference only. Do not ship or extract product assets."
+      },
+      "purpose": "Safari tab grid, close and new-tab placement",
+      "keyPaths": [],
+      "artifacts": [
+        {
+          "role": "html",
+          "url": "https://support.apple.com/en-au/guide/iphone/iph489b9313f/27/ios/27",
+          "localPath": "references/upstream/apple/safari-tabs.html",
+          "sha256": "219d0e36567a1597206c0d6ad05b0f76b6be9a49ba518e634a785d85e119d510",
+          "bytes": 1386846
+        }
+      ]
+    },
+    {
+      "id": "apple-home-swipe-gesture-image",
+      "type": "official-image",
+      "sourceUrl": "https://ipcdn-web.apple.com/assets/v2/web/81ab1b74-f4a5-474f-9ba7-04806c8af1ca",
+      "retrievedOn": "2026-10-23",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "Apple copyrighted material; local comparison reference only. Do not ship or extract product assets."
+      },
+      "purpose": "Bottom-edge upward swipe for home; no system indicator is copied",
+      "keyPaths": [],
+      "artifacts": [
+        {
+          "role": "image",
+          "url": "https://ipcdn-web.apple.com/assets/v2/web/81ab1b74-f4a5-474f-9ba7-04806c8af1ca",
+          "localPath": "references/upstream/apple/home-swipe-gesture.png",
+          "sha256": "ce2225b002717442bf82dde850a849aee1007d6737ca9b520361215fe8d8a479",
+          "bytes": 5915
+        }
+      ]
+    },
+    {
+      "id": "apple-home-swipe-gesture",
+      "type": "official-document",
+      "sourceUrl": "https://support.apple.com/en-au/guide/iphone/iphfdf164cac/27/ios/27",
+      "retrievedOn": "2026-10-23",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "Apple copyrighted material; local comparison reference only. Do not ship or extract product assets."
+      },
+      "purpose": "Bottom-edge upward swipe for home; no system indicator is copied",
+      "keyPaths": [],
+      "artifacts": [
+        {
+          "role": "html",
+          "url": "https://support.apple.com/en-au/guide/iphone/iphfdf164cac/27/ios/27",
+          "localPath": "references/upstream/apple/home-swipe-gesture.html",
+          "sha256": "3575b518d20e3e20bc20293fa04b923697d2aa8d8885ada2c03fdcd2c45e9fa2",
+          "bytes": 1394708
+        }
+      ]
     }
   ]
 }

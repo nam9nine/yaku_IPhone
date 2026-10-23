@@ -61,7 +61,7 @@ test('잠금 해제 후 홈으로 포커스를 옮기고 다시 잠글 수 있�
   await expect(page.getByRole('heading', { name: '홈 화면', exact: true })).toBeFocused();
   await page.getByRole('button', { name: '다시 잠그기' }).tap();
   await expect(page.getByTestId('lock-screen')).toBeVisible();
-  await expect(page.getByTestId('home-screen')).toHaveCount(0);
+  await expect(page.getByTestId('home-screen')).toBeHidden();
   await page.getByRole('button', { name: '잠금 해제', exact: true }).tap();
   await expectPage(page, 1);
 });
@@ -267,9 +267,10 @@ test('높이 600과 합성 safe area에서 Dock을 보존하고 마지막 앱까
     pagesBounds.y + pagesBounds.height + 1,
   );
   await settings.tap();
-  await expect(page.getByRole('status')).toHaveText('설정 앱은 곧 만나요');
+  await expect(page.getByTestId('settings-app')).toBeVisible();
+  await page.getByRole('button', { name: '홈으로 돌아가기' }).tap();
+  await expect(settings).toBeFocused();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
-  await page.getByRole('button', { name: '앱 안내 닫기' }).tap();
   await page.screenshot({ path: test.info().outputPath('home-short.png') });
   await page.setViewportSize({ width: 390, height: 844 });
   await expectInsideViewport(dock.getByRole('button'), 390, 844 - 34);
@@ -355,7 +356,9 @@ test('글자 200%에서도 달력의 요일·날짜·일정 안내가 서로 겹
   const settings = page.getByRole('button', { name: '설정', exact: true });
   await settings.scrollIntoViewIfNeeded();
   await settings.tap();
-  await expect(page.getByRole('status')).toHaveText('설정 앱은 곧 만나요');
+  await expect(page.getByTestId('settings-app')).toBeVisible();
+  await page.getByRole('button', { name: '홈으로 돌아가기' }).tap();
+  await expect(settings).toBeFocused();
 });
 
 test('브라우저별 실제 입력으로 홈 페이지를 넘긴다: Chromium touch / WebKit pointer', async ({
