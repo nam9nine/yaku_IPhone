@@ -27,7 +27,12 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run check
-      - run: npx playwright install --with-deps chromium webkit
+      - name: Configure official Ubuntu APT mirror
+        run: sudo "$(command -v node)" scripts/configure-apt-mirror.mjs
+      - name: Install browser system dependencies
+        run: time npx playwright install-deps chromium webkit
+      - name: Install Playwright browsers
+        run: time npx playwright install chromium webkit
       - run: npm run test:e2e -- --output=test-results/e2e
         env:
           PLAYWRIGHT_HTML_REPORT: playwright-report/e2e
