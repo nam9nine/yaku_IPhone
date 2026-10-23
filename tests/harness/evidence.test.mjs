@@ -25,9 +25,16 @@ const evidence = () => ({
   schemaVersion: 1,
   headSha,
   issue: 1,
+  environment: { platform: 'test environment', node: '24.22.0', playwright: '1.64.1' },
+  checks: ['npm run check', 'npm run test:e2e', 'npm run test:visual'].map((command) => ({
+    command,
+    result: 'pass',
+    details: 'Observed successful exit.',
+  })),
   review: review(),
   visual: {
     status: 'pass',
+    scenes: ['foundation, 390x844'],
     reason: 'Foundation fixture only.',
     references: ['apple-lock'],
     artifacts: [artifact],
@@ -62,6 +69,23 @@ beforeEach(() => {
 afterEach(() => rmSync(rootDir, { recursive: true, force: true }));
 
 describe('SHA-bound evidence', () => {
+  it.each(['environment', 'checks'])('rejects missing execution %s', (field) => {
+    const input = evidence();
+    delete input[field];
+    expect(validateEvidence(input, options).valid).toBe(false);
+  });
+  it.each(['fail', 'not-run'])('rejects required verification %s', (result) => {
+    const input = evidence();
+    input.checks[1].result = result;
+    expect(validateEvidence(input, options).errors.join('\n')).toContain(
+      'Required verification must pass',
+    );
+  });
+  it('rejects missing screenshot scenes', () => {
+    const input = evidence();
+    delete input.visual.scenes;
+    expect(validateEvidence(input, options).valid).toBe(false);
+  });
   it('accepts actual tracked screenshot evidence with a matching issue and head', () => {
     expect(validateEvidence(evidence(), options)).toEqual({
       valid: true,

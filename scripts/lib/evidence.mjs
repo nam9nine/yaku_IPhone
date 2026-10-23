@@ -174,6 +174,35 @@ export function validateEvidence(input, options = {}) {
   if (!hasClosingIssueLink(prBody, input.issue, repository))
     errors.push('PR prose must close the evidence issue with Closes/Fixes/Resolves #<issue>.');
   validateReview(input.review, 'review', author, errors);
+  if (
+    !isObject(input.environment) ||
+    ['platform', 'node', 'playwright'].some((key) => !hasText(input.environment[key]))
+  )
+    errors.push('environment must describe platform, node, and playwright versions.');
+  if (
+    !Array.isArray(input.checks) ||
+    input.checks.length === 0 ||
+    input.checks.some(
+      (check) =>
+        !isObject(check) ||
+        !hasText(check.command) ||
+        !hasText(check.details) ||
+        !['pass', 'fail', 'not-run'].includes(check.result),
+    )
+  ) {
+    errors.push('checks must record executed commands, results, and observed details.');
+  }
+  const requiredCommands = [
+    'npm run check',
+    ...(requiresVisual ? ['npm run test:e2e', 'npm run test:visual'] : []),
+  ];
+  for (const command of requiredCommands) {
+    const results = Array.isArray(input.checks)
+      ? input.checks.filter((check) => check?.command === command)
+      : [];
+    if (results.length === 0 || results.some((check) => check.result !== 'pass'))
+      errors.push(`Required verification must pass: ${command}.`);
+  }
 
   const visual = input.visual;
   if (!isObject(visual))
@@ -193,6 +222,12 @@ export function validateEvidence(input, options = {}) {
       errors.push('visual.reason must explain why visual review is not applicable.');
   }
   if (visual.status === 'pass') {
+    if (
+      !Array.isArray(visual.scenes) ||
+      visual.scenes.length === 0 ||
+      visual.scenes.some((scene) => !hasText(scene))
+    )
+      errors.push('visual.scenes must describe the captured screen states and viewport sizes.');
     if (
       !Array.isArray(visual.references) ||
       visual.references.length === 0 ||

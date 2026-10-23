@@ -1,0 +1,40 @@
+name: '기능·개선'
+description: '제품 기능 또는 개발 기반 작업의 범위와 완료 조건을 정합니다.'
+title: 'feat: '
+body:
+  - type: textarea
+    id: purpose
+    attributes:
+      label: '목적'
+      description: '누가 어떤 상황에서 무엇을 할 수 있어야 하나요? 기반 작업이면 해결할 개발 문제를 적습니다.'
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: '포함·제외 범위'
+      description: '이번 Issue에서 구현할 범위와 후속 작업을 구분합니다.'
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: '완료 조건'
+      description: '실제로 확인할 수 있는 동작이나 결과를 체크리스트로 적습니다.'
+      placeholder: '- [ ] 특정 상태에서 기대한 결과가 보인다.'
+    validations:
+      required: true
+  - type: textarea
+    id: references
+    attributes:
+      label: '레퍼런스·관련 결정'
+      description: 'references/manifest.json의 source ID, 관련 Issue, 비교할 화면과 의도한 차이를 적습니다. 해당 없으면 이유를 적습니다.'
+    validations:
+      required: true
+  - type: textarea
+    id: verification
+    attributes:
+      label: '검증 계획'
+      description: '자동 검사, 실제 조작, 화면·viewport, 독립 리뷰 범위를 적습니다. UI 변경은 캡처 비교를 포함합니다.'
+    validations:
+      required: true

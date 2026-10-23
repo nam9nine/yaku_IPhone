@@ -1,0 +1,454 @@
+{
+  "schemaVersion": 1,
+  "retrievedOn": "2026-10-23",
+  "storagePolicy": "Upstream archives, extracted sources, and snapshots are local-only, ignored by Git, and never included in application builds. fetch-references.mjs verifies recorded hashes; --extract only writes regular files and directories and never executes upstream code.",
+  "sources": [
+    {
+      "id": "macos-portfolio",
+      "type": "repository",
+      "sourceUrl": "https://github.com/kuldeeprajput-dev/macos-portfolio",
+      "commitSha": "8faf7fee1b71c8e617adac786720e7d6ed397a76",
+      "retrievedOn": "2026-10-23",
+      "license": {
+        "spdxId": "MIT",
+        "status": "license-file-reviewed",
+        "localPath": "references/licenses/macos-portfolio.LICENSE",
+        "notice": "Repository license applies to upstream code; it does not establish rights to third-party Apple icons, wallpapers, trademarks, or other assets."
+      },
+      "purpose": "Mobile iPhone shell, home-screen grid, dock and status-bar implementation reference.",
+      "keyPaths": [
+        "README.md",
+        "LICENSE",
+        "package.json",
+        "src/module/mobile/home/ui/components/MobileOS.jsx",
+        "src/module/mobile/home/ui/components/MobileOSAppGrid.jsx",
+        "src/module/mobile/dock/ui/components/MobileOSDock.jsx",
+        "src/module/mobile/statusbar/ui/components/MobileOSStatusBar.jsx"
+      ],
+      "artifacts": [
+        {
+          "role": "archive",
+          "url": "https://codeload.github.com/kuldeeprajput-dev/macos-portfolio/tar.gz/8faf7fee1b71c8e617adac786720e7d6ed397a76",
+          "localPath": "references/upstream/archives/macos-portfolio-8faf7fee1b71c8e617adac786720e7d6ed397a76.tar.gz",
+          "sha256": "8a3fc9fbd59c7a8905aeea42f84af71e511dacd36a7c548bf09089a8fa9f9acd",
+          "bytes": 21292321,
+          "archiveRoot": "macos-portfolio-8faf7fee1b71c8e617adac786720e7d6ed397a76"
+        },
+        {
+          "role": "license",
+          "url": "https://raw.githubusercontent.com/kuldeeprajput-dev/macos-portfolio/8faf7fee1b71c8e617adac786720e7d6ed397a76/LICENSE",
+          "localPath": "references/licenses/macos-portfolio.LICENSE",
+          "sha256": "cf71610c71ae60be86cba11e8ab662ca5808b61708fcebb898134e615ceaaf95",
+          "bytes": 1102
+        }
+      ],
+      "localExtractedPath": "references/upstream/sources/macos-portfolio-8faf7fee1b71c8e617adac786720e7d6ed397a76"
+    },
+    {
+      "id": "bymanos",
+      "type": "repository",
+      "sourceUrl": "https://github.com/byma4n/bymanOS",
+      "commitSha": "56747fac5473fb0d3f10051f9142287a8837a931",
+      "retrievedOn": "2026-10-23",
+      "license": {
+        "spdxId": "MIT",
+        "status": "license-file-reviewed",
+        "localPath": "references/licenses/bymanos.LICENSE",
+        "notice": "Repository license applies to upstream code; it does not establish rights to third-party Apple icons, wallpapers, trademarks, or other assets."
+      },
+      "purpose": "Responsive mobile OS-style portfolio shell and mobile navigation reference.",
+      "keyPaths": [
+        "README.md",
+        "LICENSE",
+        "package.json",
+        "src/components/mobile/MobileView.tsx",
+        "src/components/mobile/StatusBar.tsx",
+        "src/app/globals.css"
+      ],
+      "artifacts": [
+        {
+          "role": "archive",
+          "url": "https://codeload.github.com/byma4n/bymanOS/tar.gz/56747fac5473fb0d3f10051f9142287a8837a931",
+          "localPath": "references/upstream/archives/bymanos-56747fac5473fb0d3f10051f9142287a8837a931.tar.gz",
+          "sha256": "2a9a943e4a6234822f65be25562d2dcfc91ad15e8c726a280845b46a846dded5",
+          "bytes": 1070798,
+          "archiveRoot": "bymanOS-56747fac5473fb0d3f10051f9142287a8837a931"
+        },
+        {
+          "role": "license",
+          "url": "https://raw.githubusercontent.com/byma4n/bymanOS/56747fac5473fb0d3f10051f9142287a8837a931/LICENSE",
+          "localPath": "references/licenses/bymanos.LICENSE",
+          "sha256": "c002d8e043a1b012f244828df1151107b81fcdb6165e1e242e7e28bca27e9ab8",
+          "bytes": 1062
+        }
+      ],
+      "localExtractedPath": "references/upstream/sources/bymanos-56747fac5473fb0d3f10051f9142287a8837a931"
+    },
+    {
+      "id": "liquidframe",
+      "type": "repository",
+      "sourceUrl": "https://github.com/CVERInc/liquidframe",
+      "commitSha": "e0353c13f19bb5b48b567fc1e47f3d7ebf42d8ea",
+      "retrievedOn": "2026-10-23",
+      "license": {
+        "spdxId": "MIT",
+        "status": "license-file-reviewed",
+        "localPath": "references/licenses/liquidframe.LICENSE",
+        "notice": "Repository license applies to upstream code; it does not establish rights to third-party Apple icons, wallpapers, trademarks, or other assets."
+      },
+      "purpose": "MIT vanilla CSS/JavaScript Liquid Glass component reference.",
+      "keyPaths": ["README.md", "LICENSE", "liquidframe.css", "liquidframe.js", "index.html"],
+      "artifacts": [
+        {
+          "role": "archive",
+          "url": "https://codeload.github.com/CVERInc/liquidframe/tar.gz/e0353c13f19bb5b48b567fc1e47f3d7ebf42d8ea",
+          "localPath": "references/upstream/archives/liquidframe-e0353c13f19bb5b48b567fc1e47f3d7ebf42d8ea.tar.gz",
+          "sha256": "315d9691a2c8d38b60f7c8027ce5d70a713e5f08b46ec20632949e35a5b70a5c",
+          "bytes": 27933,
+          "archiveRoot": "liquidframe-e0353c13f19bb5b48b567fc1e47f3d7ebf42d8ea"
+        },
+        {
+          "role": "license",
+          "url": "https://raw.githubusercontent.com/CVERInc/liquidframe/e0353c13f19bb5b48b567fc1e47f3d7ebf42d8ea/LICENSE",
+          "localPath": "references/licenses/liquidframe.LICENSE",
+          "sha256": "c793093678d9d7ccf855a2bc9203e6832681203c0490548a52a26987e5d63ec3",
+          "bytes": 1081
+        }
+      ],
+      "localExtractedPath": "references/upstream/sources/liquidframe-e0353c13f19bb5b48b567fc1e47f3d7ebf42d8ea"
+    },
+    {
+      "id": "ios27-design-system",
+      "type": "repository",
+      "sourceUrl": "https://github.com/seunghan91/ios27-design-system",
+      "commitSha": "a112a1b76f57435ad223d926a948d88e12f4a8e7",
+      "retrievedOn": "2026-10-23",
+      "license": {
+        "spdxId": "MIT",
+        "status": "license-file-reviewed",
+        "localPath": "references/licenses/ios27-design-system.LICENSE",
+        "notice": "Repository license applies to upstream code; it does not establish rights to third-party Apple icons, wallpapers, trademarks, or other assets."
+      },
+      "purpose": "iOS 27 design-token and React/CSS component reference; not a complete iOS clone.",
+      "keyPaths": [
+        "README.md",
+        "LICENSE",
+        "packages/tokens/src/materials.json",
+        "packages/react/src/styles/ios27.css",
+        "packages/react/src/index.ts",
+        "packages/demo/index.html"
+      ],
+      "artifacts": [
+        {
+          "role": "archive",
+          "url": "https://codeload.github.com/seunghan91/ios27-design-system/tar.gz/a112a1b76f57435ad223d926a948d88e12f4a8e7",
+          "localPath": "references/upstream/archives/ios27-design-system-a112a1b76f57435ad223d926a948d88e12f4a8e7.tar.gz",
+          "sha256": "6f2fec4d45e5efef0899a54fa0b149157f0c23d70fb8145f102ee3fecc8da51a",
+          "bytes": 929324,
+          "archiveRoot": "ios27-design-system-a112a1b76f57435ad223d926a948d88e12f4a8e7"
+        },
+        {
+          "role": "license",
+          "url": "https://raw.githubusercontent.com/seunghan91/ios27-design-system/a112a1b76f57435ad223d926a948d88e12f4a8e7/LICENSE",
+          "localPath": "references/licenses/ios27-design-system.LICENSE",
+          "sha256": "72b5eb9080e5166aa9afb2396b6ccb16e3a1a4bb12630e679681fef44f15d7f4",
+          "bytes": 1082
+        }
+      ],
+      "localExtractedPath": "references/upstream/sources/ios27-design-system-a112a1b76f57435ad223d926a948d88e12f4a8e7"
+    },
+    {
+      "id": "liquid-glass-react",
+      "type": "repository",
+      "sourceUrl": "https://github.com/rdev/liquid-glass-react",
+      "commitSha": "ac48eab18d1f7f444ae30002d240cae29c863a21",
+      "retrievedOn": "2026-10-23",
+      "license": {
+        "spdxId": "MIT",
+        "status": "license-file-reviewed",
+        "localPath": "references/licenses/liquid-glass-react.LICENSE",
+        "notice": "Repository license applies to upstream code; it does not establish rights to third-party Apple icons, wallpapers, trademarks, or other assets."
+      },
+      "purpose": "React glass-effect reference; Safari/Firefox displacement limitations documented upstream.",
+      "keyPaths": [
+        "README.md",
+        "LICENSE",
+        "src/index.tsx",
+        "liquid-glass-example/src/pages/index.tsx"
+      ],
+      "artifacts": [
+        {
+          "role": "archive",
+          "url": "https://codeload.github.com/rdev/liquid-glass-react/tar.gz/ac48eab18d1f7f444ae30002d240cae29c863a21",
+          "localPath": "references/upstream/archives/liquid-glass-react-ac48eab18d1f7f444ae30002d240cae29c863a21.tar.gz",
+          "sha256": "55d6dfd2d9ec0f214720c1594c553bc146090d68ea152249be904913a1e2f9ca",
+          "bytes": 101188793,
+          "archiveRoot": "liquid-glass-react-ac48eab18d1f7f444ae30002d240cae29c863a21"
+        },
+        {
+          "role": "license",
+          "url": "https://raw.githubusercontent.com/rdev/liquid-glass-react/ac48eab18d1f7f444ae30002d240cae29c863a21/LICENSE",
+          "localPath": "references/licenses/liquid-glass-react.LICENSE",
+          "sha256": "3beea6e227a2549d48b616818e01ce303482cb0d598182add5d629b339bdb7cc",
+          "bytes": 1060
+        }
+      ],
+      "localExtractedPath": "references/upstream/sources/liquid-glass-react-ac48eab18d1f7f444ae30002d240cae29c863a21"
+    },
+    {
+      "id": "chajuhann",
+      "type": "repository",
+      "sourceUrl": "https://github.com/myjust1t1a/chajuhann",
+      "commitSha": "4c4b3deb38212eb6f1e264463f334148d3cdf9a0",
+      "retrievedOn": "2026-10-23",
+      "license": {
+        "status": "no-license-found",
+        "notice": "No LICENSE/COPYING file was found in the pinned repository tree. Local study only; no reuse permission is asserted."
+      },
+      "purpose": "Original user-supplied desktop OS-style website; retained for study, without a redistribution or reuse license.",
+      "keyPaths": ["index.html", "style.css"],
+      "artifacts": [
+        {
+          "role": "archive",
+          "url": "https://codeload.github.com/myjust1t1a/chajuhann/tar.gz/4c4b3deb38212eb6f1e264463f334148d3cdf9a0",
+          "localPath": "references/upstream/archives/chajuhann-4c4b3deb38212eb6f1e264463f334148d3cdf9a0.tar.gz",
+          "sha256": "72f16b61f27cdeb931b5ea6a78ef312c3a76869cd3040fe91edaffbc7de224f8",
+          "bytes": 19307741,
+          "archiveRoot": "chajuhann-4c4b3deb38212eb6f1e264463f334148d3cdf9a0"
+        }
+      ],
+      "localExtractedPath": "references/upstream/sources/chajuhann-4c4b3deb38212eb6f1e264463f334148d3cdf9a0"
+    },
+    {
+      "id": "apple-lock-screen",
+      "type": "official-document",
+      "sourceUrl": "https://support.apple.com/guide/iphone/access-features-from-the-lock-screen-iphcd5c65ccf/27/ios/27",
+      "retrievedOn": "2026-10-23",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "Apple copyrighted documentation; local reference snapshot only. Not MIT and not application assets."
+      },
+      "purpose": "Official iOS 27 lock-screen layout and gesture reference.",
+      "keyPaths": [],
+      "artifacts": [
+        {
+          "role": "html",
+          "url": "https://support.apple.com/guide/iphone/access-features-from-the-lock-screen-iphcd5c65ccf/27/ios/27",
+          "localPath": "references/upstream/apple/lock-screen.html",
+          "sha256": "a8cb6666543b6b2bab87d553b2d9e055f5a23ed9aaab9fde8aea81884215c542",
+          "bytes": 1454339
+        }
+      ]
+    },
+    {
+      "id": "apple-home-screen",
+      "type": "official-document",
+      "sourceUrl": "https://support.apple.com/en-euro/guide/iphone/iphca3d8b4e3/27/ios/27",
+      "retrievedOn": "2026-10-23",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "Apple copyrighted documentation; local reference snapshot only. Not MIT and not application assets."
+      },
+      "purpose": "Official default Home Screen example and basic home-screen gestures.",
+      "keyPaths": [],
+      "artifacts": [
+        {
+          "role": "html",
+          "url": "https://support.apple.com/en-euro/guide/iphone/iphca3d8b4e3/27/ios/27",
+          "localPath": "references/upstream/apple/home-screen.html",
+          "sha256": "258e48d3d72ddda2f81a0cbeb244f8ce75948e00858e7254e90ad9fa7fae897e",
+          "bytes": 1306241
+        }
+      ]
+    },
+    {
+      "id": "apple-unlock",
+      "type": "official-document",
+      "sourceUrl": "https://support.apple.com/guide/iphone/wake-unlock-and-lock-iph5a0b5b9c5/27/ios/27",
+      "retrievedOn": "2026-10-23",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "Apple copyrighted documentation; local reference snapshot only. Not MIT and not application assets."
+      },
+      "purpose": "Official swipe-up unlock interaction reference; web demo does not implement device authentication.",
+      "keyPaths": [],
+      "artifacts": [
+        {
+          "role": "html",
+          "url": "https://support.apple.com/guide/iphone/wake-unlock-and-lock-iph5a0b5b9c5/27/ios/27",
+          "localPath": "references/upstream/apple/unlock.html",
+          "sha256": "fc018fd1ec0c8013d581962df7cc3e8a16e2069af902f196d0758f38b285270f",
+          "bytes": 1454430
+        }
+      ]
+    },
+    {
+      "id": "apple-custom-lock",
+      "type": "official-document",
+      "sourceUrl": "https://support.apple.com/guide/iphone/create-a-custom-lock-screen-iph4d0e6c351/27/ios/27",
+      "retrievedOn": "2026-10-23",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "Apple copyrighted documentation; local reference snapshot only. Not MIT and not application assets."
+      },
+      "purpose": "Clock sizing and optional widget/personalization reference.",
+      "keyPaths": [],
+      "artifacts": [
+        {
+          "role": "html",
+          "url": "https://support.apple.com/guide/iphone/create-a-custom-lock-screen-iph4d0e6c351/27/ios/27",
+          "localPath": "references/upstream/apple/custom-lock.html",
+          "sha256": "dd30eb2086b17055037909b160312dfe84be455a77b55f059c0a69ab887024cb",
+          "bytes": 1453845
+        }
+      ]
+    },
+    {
+      "id": "apple-design-resources",
+      "type": "official-document",
+      "sourceUrl": "https://developer.apple.com/design/resources/",
+      "retrievedOn": "2026-10-23",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "Apple copyrighted documentation; local reference snapshot only. Not MIT and not application assets."
+      },
+      "purpose": "Official iOS 27 UI Kit entry point, for visual reference only.",
+      "keyPaths": [],
+      "artifacts": [
+        {
+          "role": "html",
+          "url": "https://developer.apple.com/design/resources/",
+          "localPath": "references/upstream/apple/design-resources.html",
+          "sha256": "66e9b417e2bcab7192baa31ef514a4b62aba9f1c9570bb3154bdbc323d67ab74",
+          "bytes": 152502
+        }
+      ]
+    },
+    {
+      "id": "apple-ios27",
+      "type": "official-document",
+      "sourceUrl": "https://www.apple.com/os/ios/",
+      "retrievedOn": "2026-10-23",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "Apple copyrighted documentation; local reference snapshot only. Not MIT and not application assets."
+      },
+      "purpose": "Current official iOS 27 overview, dated snapshot.",
+      "keyPaths": [],
+      "artifacts": [
+        {
+          "role": "html",
+          "url": "https://www.apple.com/os/ios/",
+          "localPath": "references/upstream/apple/ios27.html",
+          "sha256": "4578b71141480d9dd3769413a61926d4e1a5397be3fccc2d74c97f2aad1e4235",
+          "bytes": 270423
+        }
+      ]
+    },
+    {
+      "id": "apple-iphone18pro",
+      "type": "official-document",
+      "sourceUrl": "https://www.apple.com/iphone-18-pro/",
+      "retrievedOn": "2026-10-23",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "Apple copyrighted documentation; local reference snapshot only. Not MIT and not application assets."
+      },
+      "purpose": "Current official iPhone 18 Pro overview, without assuming iPhone 17 CSS dimensions.",
+      "keyPaths": [],
+      "artifacts": [
+        {
+          "role": "html",
+          "url": "https://www.apple.com/iphone-18-pro/",
+          "localPath": "references/upstream/apple/iphone18pro.html",
+          "sha256": "b4c47bb84493235bdf5df5f48d44bab64e4ae5f1aee6bb20678134cc71090152",
+          "bytes": 871171
+        }
+      ]
+    },
+    {
+      "id": "apple-materials",
+      "type": "official-document",
+      "sourceUrl": "https://developer.apple.com/design/human-interface-guidelines/materials",
+      "retrievedOn": "2026-10-23",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "Apple copyrighted documentation; local reference snapshot only. Not MIT and not application assets."
+      },
+      "purpose": "Official Liquid Glass design guidance; HTML may be a JavaScript documentation shell.",
+      "keyPaths": [],
+      "artifacts": [
+        {
+          "role": "html",
+          "url": "https://developer.apple.com/design/human-interface-guidelines/materials",
+          "localPath": "references/upstream/apple/materials.html",
+          "sha256": "393fce8613d8349188222c4cdb34897e387484b677b5737b0edd7b70dd8ad2c2",
+          "bytes": 18065
+        }
+      ]
+    },
+    {
+      "id": "apple-lock-screen-image",
+      "type": "official-image",
+      "sourceUrl": "https://ipcdn-web.apple.com/assets/v2/web/8313a5fa-0741-4a43-934e-17cb595d11d7",
+      "retrievedOn": "2026-10-23",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "Apple copyrighted screenshot; local visual reference only. Do not ship the screenshot, wallpaper, or extracted icons as app assets."
+      },
+      "purpose": "Official iOS 27 user-guide lock-screen screenshot.",
+      "keyPaths": [],
+      "artifacts": [
+        {
+          "role": "image",
+          "url": "https://ipcdn-web.apple.com/assets/v2/web/8313a5fa-0741-4a43-934e-17cb595d11d7",
+          "localPath": "references/upstream/apple/lock-screen.png",
+          "sha256": "4756f5c779c590e047045f51eee7e79dc802510a44360fe0320315294f9ee5bc",
+          "bytes": 522184
+        }
+      ]
+    },
+    {
+      "id": "apple-home-screen-image",
+      "type": "official-image",
+      "sourceUrl": "https://ipcdn-web.apple.com/assets/v2/web/01a5708f-f014-4888-b560-3c84ae5600c6",
+      "retrievedOn": "2026-10-23",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "Apple copyrighted screenshot; local visual reference only. Do not ship the screenshot, wallpaper, or extracted icons as app assets."
+      },
+      "purpose": "Official iOS 27 user-guide default Home Screen screenshot.",
+      "keyPaths": [],
+      "artifacts": [
+        {
+          "role": "image",
+          "url": "https://ipcdn-web.apple.com/assets/v2/web/01a5708f-f014-4888-b560-3c84ae5600c6",
+          "localPath": "references/upstream/apple/home-screen.png",
+          "sha256": "8187c20b1fcc93bcd0849e3ebcc67c80fc6327f36dfc6882fc549a3ed47c1593",
+          "bytes": 557954
+        }
+      ]
+    },
+    {
+      "id": "chajuhann-live-site",
+      "type": "reference-site",
+      "sourceUrl": "https://myjust1t1a.github.io/chajuhann/",
+      "retrievedOn": "2026-10-23",
+      "license": {
+        "status": "copyright-reference-only",
+        "notice": "User-supplied public website snapshot; no reuse permission is asserted."
+      },
+      "purpose": "Visual and interaction study of the user's original reference website.",
+      "keyPaths": [],
+      "artifacts": [
+        {
+          "role": "html",
+          "url": "https://myjust1t1a.github.io/chajuhann/",
+          "localPath": "references/upstream/chajuhann/index.html",
+          "sha256": "4430bb34f27e5225fd4010838bbb1e3289a5d30b2bb4f3f2b8fda0c3fc9813e5",
+          "bytes": 2457
+        }
+      ]
+    }
+  ]
+}

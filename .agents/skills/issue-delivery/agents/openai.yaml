@@ -1,0 +1,4 @@
+interface:
+  display_name: 'Issue 구현과 전달'
+  short_description: 'Issue부터 검증과 PR 병합, 공개 배포 확인까지 일관되게 진행합니다'
+  default_prompt: '$issue-delivery로 현재 Issue를 구현하고 실제 검사와 리뷰를 거쳐 PR 및 배포 결과를 확인해 주세요.'

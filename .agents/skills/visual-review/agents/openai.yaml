@@ -1,0 +1,4 @@
+interface:
+  display_name: 'iPhone 시각 검토'
+  short_description: '실제 화면과 기준 이미지를 비교하고 PR 시각 증거를 남깁니다'
+  default_prompt: '$visual-review로 현재 UI 변경의 실제 캡처를 비교하고 확인한 결과를 PR 증거로 정리해 주세요.'
