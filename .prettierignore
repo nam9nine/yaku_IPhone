@@ -1,0 +1,11 @@
+package-lock.json
+references/licenses/
+references/upstream/
+references/archives/
+.tooling/
+.cache/
+harness/local/
+dist/
+node_modules/
+playwright-report/
+test-results/

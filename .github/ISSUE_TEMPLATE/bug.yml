@@ -1,0 +1,51 @@
+name: '버그'
+description: '재현 가능한 문제와 기대한 동작을 기록합니다.'
+title: 'fix: '
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: '문제와 기대한 동작'
+      description: '현재 결과, 기대한 결과, 사용자 영향을 적습니다.'
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: '재현 단계'
+      description: '시작 화면·상태부터 문제까지의 조작을 순서대로 적습니다.'
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: '확인 환경'
+      description: '기기·OS·브라우저·viewport 또는 실제 iPhone 여부, 가능하면 배포 SHA를 적습니다.'
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: '관찰한 증거'
+      description: '실제 screenshot, 오류 메시지, 관련 PR·Actions 링크를 붙입니다. 확인하지 않은 원인은 추정으로 표시합니다.'
+  - type: textarea
+    id: scope
+    attributes:
+      label: '포함·제외 범위'
+      description: '이번 수정의 범위와 후속 작업을 구분합니다.'
+    validations:
+      required: true
+  - type: textarea
+    id: references
+    attributes:
+      label: '레퍼런스·관련 결정'
+      description: '비교 기준과 관련 Issue를 적습니다. 해당 없으면 이유를 적습니다.'
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: '수정 완료 조건과 검증'
+      description: '문제가 해결되었음을 확인하는 방법과 필요한 회귀 검사를 적습니다.'
+    validations:
+      required: true
