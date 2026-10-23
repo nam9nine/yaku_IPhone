@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { attachFailedInput, recordInput } from '../helpers/input-diagnostics';
+import { dragTouchWithoutFling } from '../helpers/touch';
 
 test.afterEach(async ({ page }, info) => attachFailedInput(page, info));
 
@@ -80,16 +81,7 @@ test('문자 확대와 짧은 화면에서도 세로 스크롤 없이 하단 제
   const client = browserName === 'chromium' ? await page.context().newCDPSession(page) : null;
   try {
     if (client) {
-      await client.send('Input.dispatchTouchEvent', {
-        type: 'touchStart',
-        touchPoints: [{ x: 20, y: 250 }],
-      });
-      for (let y = 230; y >= 180; y -= 10)
-        await client.send('Input.dispatchTouchEvent', {
-          type: 'touchMove',
-          touchPoints: [{ x: 20, y }],
-        });
-      await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+      await dragTouchWithoutFling(page, client, 20, 250, -70);
       await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
     } else {
       // WebKit has no CDP touch-drag API; check native scroll policy and the reachable control.

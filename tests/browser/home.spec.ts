@@ -1,5 +1,6 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { attachFailedInput, recordInput } from '../helpers/input-diagnostics';
+import { dragTouchWithoutFling } from '../helpers/touch';
 
 test.afterEach(async ({ page }, info) => attachFailedInput(page, info));
 
@@ -318,18 +319,7 @@ test('홈 본문의 세로 이동은 스크롤을 만들지 않고 가로 페이
       const x = region.x + region.width * 0.5;
       const startY = region.y + region.height * 0.85;
       const endY = region.y + region.height * 0.2;
-      const point = (y: number) => ({ x, y, id: 1, radiusX: 4, radiusY: 4, force: 1 });
-      await session.send('Input.dispatchTouchEvent', {
-        type: 'touchStart',
-        touchPoints: [point(startY)],
-      });
-      for (let step = 1; step <= 8; step++) {
-        await session.send('Input.dispatchTouchEvent', {
-          type: 'touchMove',
-          touchPoints: [point(startY + ((endY - startY) * step) / 8)],
-        });
-      }
-      await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+      await dragTouchWithoutFling(page, session, x, startY, endY - startY);
     } else {
       // Mobile WebKit exposes neither CDP touch-drag nor wheel; check scroll policy and container.
       await expect(pages).toHaveCSS('touch-action', 'pinch-zoom');
