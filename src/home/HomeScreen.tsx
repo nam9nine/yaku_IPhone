@@ -59,14 +59,13 @@ export function HomeScreen({
     if (!element) return;
     const measureLayout = () => {
       if (element.closest('[hidden]')) return;
+      // Pagination uses layout dimensions, unaffected by the home entrance transform.
       const row = Math.max(
-        ...[...element.querySelectorAll('.home-app')].map(
-          (el) => el.getBoundingClientRect().height,
-        ),
+        ...[...element.querySelectorAll<HTMLElement>('.home-app')].map((el) => el.offsetHeight),
         0,
       );
       const widget =
-        element.querySelector('.home-widgets')?.getBoundingClientRect().height ?? measure.widget;
+        element.querySelector<HTMLElement>('.home-widgets')?.offsetHeight ?? measure.widget;
       const height = element.clientHeight;
       if (!height || !row) return;
       setMeasure((current) =>

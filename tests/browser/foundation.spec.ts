@@ -77,27 +77,30 @@ test('문자 확대와 짧은 화면에서도 세로 스크롤 없이 하단 제
   ).toBe(originalSize * 2);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(360);
   await expect(page.getByTestId('lock-screen')).toHaveCSS('touch-action', 'pinch-zoom');
-  if (browserName === 'chromium') {
-    const client = await page.context().newCDPSession(page);
-    await client.send('Input.dispatchTouchEvent', {
-      type: 'touchStart',
-      touchPoints: [{ x: 20, y: 250 }],
-    });
-    for (let y = 230; y >= 180; y -= 10)
+  const client = browserName === 'chromium' ? await page.context().newCDPSession(page) : null;
+  try {
+    if (client) {
       await client.send('Input.dispatchTouchEvent', {
-        type: 'touchMove',
-        touchPoints: [{ x: 20, y }],
+        type: 'touchStart',
+        touchPoints: [{ x: 20, y: 250 }],
       });
-    await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
-    await client.detach();
-  } else {
-    // WebKit has no CDP touch-drag API; check native scroll policy and the reachable control.
-    await page.getByRole('button', { name: '잠금 해제', exact: true }).scrollIntoViewIfNeeded();
+      for (let y = 230; y >= 180; y -= 10)
+        await client.send('Input.dispatchTouchEvent', {
+          type: 'touchMove',
+          touchPoints: [{ x: 20, y }],
+        });
+      await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+      await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+    } else {
+      // WebKit has no CDP touch-drag API; check native scroll policy and the reachable control.
+      await page.getByRole('button', { name: '잠금 해제', exact: true }).scrollIntoViewIfNeeded();
+    }
+    await expect(page.getByRole('button', { name: '잠금 해제', exact: true })).toBeInViewport();
+    await page.getByRole('button', { name: '잠금 해제', exact: true }).tap();
+    await expect(page.getByTestId('home-screen')).toBeVisible();
+  } finally {
+    await client?.detach();
   }
-  await expect(page.getByRole('button', { name: '잠금 해제', exact: true })).toBeInViewport();
-  await page.getByRole('button', { name: '잠금 해제', exact: true }).tap();
-  await expect(page.getByTestId('home-screen')).toBeVisible();
 });
 
 test('분 경계와 한국 자정에 시계·날짜를 갱신한다', async ({ page }) => {
