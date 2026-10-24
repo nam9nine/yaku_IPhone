@@ -262,14 +262,6 @@
 .mobile-shell[data-reduced-motion='true'] .incoming-call-banner {
   animation: none;
 }
-.call-home-indicator {
-  position: absolute;
-  bottom: calc(var(--safe-area-bottom) + 8px);
-  left: 0;
-  right: 0;
-  display: flex;
-  justify-content: center;
-}
 .call-screen-content {
   overflow-y: auto;
   overscroll-behavior: contain;

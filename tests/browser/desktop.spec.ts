@@ -31,10 +31,13 @@ async function fillsPhone(page: Page, locator: Locator) {
   for (const key of ['x', 'y', 'width', 'height'] as const)
     await expect.poll(async () => (await bounds(locator))[key]).toBeCloseTo(outer[key], 0);
 }
-async function indicatorsInside(page: Page) {
-  const indicators = page.locator('.home-indicator:visible');
-  expect(await indicators.count()).toBeGreaterThan(0);
-  for (const indicator of await indicators.all()) await insidePhone(page, indicator);
+async function gestureAreasInside(page: Page) {
+  await expect(page.locator('.home-indicator')).toHaveCount(0);
+  const zones = page.locator(
+    '.home-system-bottom:visible, .app-home-gesture:visible, .system-dismiss-gesture:visible',
+  );
+  expect(await zones.count()).toBeGreaterThan(0);
+  for (const zone of await zones.all()) await insidePhone(page, zone);
 }
 async function beginBottom(page: Page) {
   const zone = page.getByTestId('settings-home-gesture');
@@ -54,18 +57,18 @@ test('PC에서는 390×844 폰이 중앙에 있고 모바일 크기 변경 시 �
   const phone = page.locator('.mobile-shell');
   await expect(phone).toHaveAttribute('data-framed', 'true');
   expect(await bounds(phone)).toEqual({ x: 445, y: 78, width: 390, height: 844 });
-  await indicatorsInside(page);
+  await gestureAreasInside(page);
   await insidePhone(page, page.getByTestId('control-edge'));
   await insidePhone(page, page.getByTestId('notification-edge'));
   await openSettings(page);
   await fillsPhone(page, page.getByTestId('settings-app'));
   await fillsPhone(page, page.getByTestId('brightness-overlay'));
-  await indicatorsInside(page);
+  await gestureAreasInside(page);
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(phone).toHaveAttribute('data-framed', 'false');
   expect(await bounds(phone)).toEqual({ x: 0, y: 0, width: 390, height: 844 });
   await fillsPhone(page, page.getByTestId('settings-app'));
-  await indicatorsInside(page);
+  await gestureAreasInside(page);
   await page.setViewportSize({ width: 1280, height: 1000 });
   await expect(phone).toHaveAttribute('data-framed', 'true');
   await fillsPhone(page, page.getByTestId('settings-app'));
@@ -83,7 +86,7 @@ test('PC 폰의 빠른 하단 스와이프는 홈으로, 느린 스와이프는 
   await releaseFastSwipe(page, fast.x, fast.y - 170);
   await expect(page.getByTestId('settings-app')).toBeHidden();
   await expect(page.getByTestId('system-switcher')).toHaveCount(0);
-  await indicatorsInside(page);
+  await gestureAreasInside(page);
   await openSettings(page);
   await expect(page.getByRole('heading', { name: 'Wi-Fi', exact: true })).toBeVisible();
   const slow = await beginBottom(page);
@@ -95,7 +98,7 @@ test('PC 폰의 빠른 하단 스와이프는 홈으로, 느린 스와이프는 
   await page.mouse.up();
   await expect(page.getByTestId('system-switcher')).toBeVisible();
   await fillsPhone(page, page.getByTestId('system-switcher'));
-  await indicatorsInside(page);
+  await gestureAreasInside(page);
   await page.getByRole('button', { name: '설정 앱으로 전환', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Wi-Fi', exact: true })).toBeVisible();
   await fillsPhone(page, page.getByTestId('settings-app'));
@@ -121,7 +124,7 @@ test('PC 폰에서 카드를 중간부터 끝까지 줄이며 올려도 배경�
   await page.mouse.up();
   await expect(page.getByTestId('settings-app')).toBeHidden();
   await expect(page.getByTestId('system-switcher')).toHaveCount(0);
-  await indicatorsInside(page);
+  await gestureAreasInside(page);
 });
 
 test('PC 폰 오른쪽 위 제어 센터와 키보드 조작은 프레임을 벗어나지 않는다', async ({ page }) => {
@@ -140,7 +143,7 @@ test('PC 폰 오른쪽 위 제어 센터와 키보드 조작은 프레임을 벗
     .poll(async () => (await control.boundingBox())?.y)
     .toBeCloseTo((await bounds(page.getByRole('main'))).y, 0);
   await fillsPhone(page, control);
-  await indicatorsInside(page);
+  await gestureAreasInside(page);
   const wifi = control.getByRole('switch', { name: 'Wi-Fi', exact: true });
   await insidePhone(page, wifi);
   await wifi.click();
@@ -167,5 +170,5 @@ test('PC 폰 오른쪽 위 제어 센터와 키보드 조작은 프레임을 벗
   await page.mouse.up();
   await expect(page.getByTestId('system-notifications')).toBeVisible();
   await fillsPhone(page, page.getByTestId('system-notifications'));
-  await indicatorsInside(page);
+  await gestureAreasInside(page);
 });

@@ -1,5 +1,4 @@
 import { StatusBar } from './StatusBar';
-import { HomeIndicator } from '../system/HomeIndicator';
 import type { DevicePreferences } from '../settings/preferences';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useDay } from '../day/DayContext';
@@ -221,9 +220,6 @@ export function DayCall({
               )}
             </>
           )}
-        </div>
-        <div className="call-home-indicator">
-          <HomeIndicator />
         </div>
       </dialog>
     </>

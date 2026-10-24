@@ -1,4 +1,5 @@
 import { useEffect, useEffectEvent, useRef, useState, type PointerEvent } from 'react';
+import { startSwipePath } from './swipePath';
 import {
   moveSystemGesture,
   resolveSystemGesture,
@@ -112,6 +113,7 @@ export function useSystemGesture(
           startedAt: event.timeStamp,
           motionStartedAt: null,
           samples: [{ y: localY(event.clientY), time: event.timeStamp }],
+          path: startSwipePath(),
         };
         event.currentTarget.setPointerCapture(event.pointerId);
       },

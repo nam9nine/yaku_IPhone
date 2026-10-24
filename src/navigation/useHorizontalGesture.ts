@@ -25,7 +25,7 @@ export function useHorizontalGesture({
   feedback?: HorizontalFeedback;
 }) {
   const drag = useRef<HorizontalDrag | null>(null);
-  const unowned = useRef<{ pointerId: number; x: number; y: number } | null>(null);
+  const unowned = useRef<{ pointerId: number; x: number; y: number; slop: number } | null>(null);
   const captured = useRef<HTMLElement | null>(null);
   const suppressClick = useRef(false);
   const rejectedPointer = useRef<number | null>(null);
@@ -90,6 +90,10 @@ export function useHorizontalGesture({
       rejectedPointer.current = null;
       unowned.current = null;
       if (!(event.target instanceof Element)) return;
+      // A small drift inside a button remains a tap. A clear, longer edge swipe
+      // may still begin on a full-width list row; content pagers keep their slop.
+      const slop =
+        feedback && event.target.closest('button,a,[role="button"],[role="link"]') ? 16 : 8;
       if (
         event.target.closest(
           'input, textarea, select, [contenteditable="true"], [data-no-page-gesture]',
@@ -102,13 +106,24 @@ export function useHorizontalGesture({
         // Observe an unowned drag only to avoid turning it into a button click.
         // Do not capture, prevent scrolling, or claim content pagination.
         if (feedback)
-          unowned.current = { pointerId: event.pointerId, x: event.clientX, y: event.clientY };
+          unowned.current = {
+            pointerId: event.pointerId,
+            x: event.clientX,
+            y: event.clientY,
+            slop,
+          };
         return;
       }
       unowned.current = null;
       dimensions.current = { width: window.innerWidth, height: window.innerHeight };
       feedback?.begin(event.currentTarget);
-      drag.current = { pointerId: event.pointerId, x: event.clientX, y: event.clientY, allowed };
+      drag.current = {
+        pointerId: event.pointerId,
+        x: event.clientX,
+        y: event.clientY,
+        allowed,
+        slop,
+      };
       // An outer edge gesture owns this pointer before the content pager can see it.
       event.stopPropagation();
     },
@@ -116,7 +131,7 @@ export function useHorizontalGesture({
       const ignored = unowned.current;
       if (
         ignored?.pointerId === event.pointerId &&
-        Math.hypot(event.clientX - ignored.x, event.clientY - ignored.y) >= 8
+        Math.hypot(event.clientX - ignored.x, event.clientY - ignored.y) >= ignored.slop
       )
         suppressClick.current = true;
       if (rejectedPointer.current === event.pointerId) {

@@ -334,7 +334,7 @@ for (const size of [
   { width: 360, height: 420 },
   { width: 390, height: 480 },
 ]) {
-  test(`주소 편집 중 축소 viewport에서도 이동·취소·홈 인디케이터와 키보드 복귀를 사용할 수 있다 ${size.width}x${size.height}`, async ({
+  test(`주소 편집 중 축소 viewport에서도 이동·취소·홈 제스처 영역와 키보드 복귀를 사용할 수 있다 ${size.width}x${size.height}`, async ({
     page,
   }) => {
     await openSafari(page);
@@ -398,7 +398,7 @@ test('키보드로 페이지와 주소 입력을 열고 Alt+Home으로 복귀한
   await expect(safari(page)).toBeHidden();
 });
 
-test('페이지 메뉴가 열려 있어도 키보드 홈 복귀와 인디케이터의 최근 앱 진입을 사용할 수 있다', async ({
+test('페이지 메뉴가 열려 있어도 키보드 홈 복귀와 하단 영역의 최근 앱 진입을 사용할 수 있다', async ({
   page,
 }) => {
   await openSafari(page);

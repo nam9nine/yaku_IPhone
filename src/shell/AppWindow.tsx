@@ -3,9 +3,8 @@ import { useSystemGesture } from './useSystemGesture';
 import { useViewport } from './useViewport';
 import { appNames, type LaunchRect, type RunnableApp } from './session';
 import './shell.css';
-import { draggedRect, motion, rectFrames, rectOf, reducedMotion } from './motion';
+import { draggedRect, dragMotion, motion, rectFrames, rectOf, reducedMotion } from './motion';
 import { upwardVelocity, type SystemGesture } from './systemGesture';
-import { HomeIndicator } from '../system/HomeIndicator';
 import { AppSnapshot } from '../system/AppSnapshot';
 import { AppIcon } from '../home/AppIcon';
 import type { CSSProperties } from 'react';
@@ -57,8 +56,10 @@ export function AppWindow({
   const width = Math.min(478, viewport.width);
   const pose = draggedRect({ x: 0, y: 0, width, height: viewport.height }, drag);
   const returnProgress = Math.max(0, Math.min(1, (drag / viewport.height - 0.4) / 0.35));
-  const stageOpacity = Math.min(1, drag / 90) * (1 - returnProgress);
-  const previewOpacity = Math.max(0, Math.min(1, (drag - 40) / 90)) * (1 - returnProgress);
+  const stageOpacity = Math.min(1, drag / dragMotion.stage) * (1 - returnProgress);
+  const previewOpacity =
+    Math.max(0, Math.min(1, (drag - dragMotion.previewStart) / dragMotion.previewDistance)) *
+    (1 - returnProgress);
   const homeCallback = useRef(onHome);
   useEffect(() => {
     homeCallback.current = onHome;
@@ -269,9 +270,7 @@ export function AppWindow({
             data-testid={`${app}-home-gesture`}
             aria-hidden="true"
             {...bottom.handlers}
-          >
-            <HomeIndicator />
-          </div>
+          />
           <button
             tabIndex={0}
             className="system-keyboard-control"

@@ -16,7 +16,6 @@ import { appNames, type RunnableApp, type LaunchRect } from '../shell/session';
 import { motion, rectOf, rectFrames, reducedMotion } from '../shell/motion';
 import { AppSnapshot } from './AppSnapshot';
 import { SystemIcon } from './SystemIcon';
-import { HomeIndicator } from './HomeIndicator';
 import { ControlCenter, type ControlState } from './ControlCenter';
 import { usePanelSwipe } from './usePanelSwipe';
 import './system-panels.css';
@@ -146,7 +145,7 @@ function RecentApps({
           }
         }}
       >
-        <div className="recent-track" data-dragging={swipe.offset.x !== 0}>
+        <div className="recent-track" data-dragging={swipe.offset.axis === 'x'}>
           {recent.map((application, position) => (
             <article
               key={application}
@@ -160,7 +159,7 @@ function RecentApps({
               style={
                 {
                   '--card-offset': index - position,
-                  '--card-drag-x': `${swipe.offset.x * 0.6}px`,
+                  '--card-drag-x': `${swipe.offset.axis === 'x' || draggedApp === application ? swipe.offset.x * 0.6 : 0}px`,
                   '--card-drag-y': `${draggedApp === application ? swipe.offset.y : 0}px`,
                   '--card-scale': position === index ? 1 : 0.94,
                   zIndex: recent.length - Math.abs(position - index),
@@ -535,9 +534,7 @@ export function SystemPanels(props: SystemPanelsProps) {
             aria-hidden="true"
             style={{ transform: `translateY(${Math.max(swipe.offset.y * 0.2, -36)}px)` }}
             {...swipe.handlers}
-          >
-            <HomeIndicator />
-          </div>
+          />
         </footer>
       </div>
     </div>

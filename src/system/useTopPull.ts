@@ -65,7 +65,7 @@ export function useTopPull(
       if (!root) return;
       if (
         event.target.closest(
-          'input,textarea,select,label,[contenteditable="true"],.social-scroll,.settings-content,.phone-history,.phone-keypad,.day-call,dialog[open]',
+          'button,a,[role="button"],[role="link"],input,textarea,select,label,[contenteditable="true"],.social-scroll,.settings-content,.phone-history,.phone-keypad,.day-call,dialog[open]',
         )
       )
         return;
