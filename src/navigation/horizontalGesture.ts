@@ -4,16 +4,18 @@ export interface HorizontalDrag {
   x: number;
   y: number;
   allowed: 'both' | HorizontalDirection;
+  slop?: number;
 }
 
 export function horizontalResult(drag: HorizontalDrag, x: number, y: number) {
   const dx = x - drag.x;
   const dy = y - drag.y;
-  const moved = Math.hypot(dx, dy) >= 8;
+  const moved = Math.hypot(dx, dy) >= (drag.slop ?? 8);
   const direction: HorizontalDirection = dx > 0 ? 'previous' : 'next';
   const cancelled =
-    (Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx)) ||
-    (Math.abs(dx) > 10 && drag.allowed !== 'both' && drag.allowed !== direction);
+    moved &&
+    ((Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx)) ||
+      (Math.abs(dx) > 10 && drag.allowed !== 'both' && drag.allowed !== direction));
   return {
     moved,
     cancelled,

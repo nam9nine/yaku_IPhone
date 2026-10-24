@@ -267,7 +267,7 @@ for (const size of [
   { width: 390, height: 844 },
   { width: 430, height: 932 },
 ]) {
-  test(`설정 목록과 홈 인디케이터를 보존하고 키보드 보조 조작은 포커스할 때 표시한다 ${size.width}x${size.height}`, async ({
+  test(`설정 목록과 홈 제스처 영역를 보존하고 키보드 보조 조작은 포커스할 때 표시한다 ${size.width}x${size.height}`, async ({
     page,
   }) => {
     await page.setViewportSize(size);

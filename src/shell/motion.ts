@@ -1,9 +1,13 @@
 import type { LaunchRect } from './session';
 
 export const motion = { settle: 420, home: 360, cancel: 280 };
+export const dragMotion = { stage: 64, previewStart: 12, previewDistance: 60 };
 
 export function draggedRect(base: LaunchRect, distance: number): LaunchRect {
-  const scale = Math.max(0.12, 1 - (distance / base.height) * 1.25);
+  // Reveal the card edges during a short lift, then smoothly rejoin the long
+  // upward motion. The lead fades without a threshold jump or a larger rebound.
+  const lead = 0.16 * (1 - Math.exp(-distance / 32)) * Math.exp(-distance / (base.height * 0.25));
+  const scale = Math.max(0.12, 1 - (distance / base.height) * 1.25 - lead);
   return {
     x: base.x + (base.width * (1 - scale)) / 2,
     y: base.y + base.height * (1 - scale) - distance,

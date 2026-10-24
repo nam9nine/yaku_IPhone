@@ -57,7 +57,7 @@ test('상단의 시작 위치가 제어 센터와 알림 센터를 구분하고 
   await expect(page.getByTestId('system-notifications')).toHaveCount(0);
 });
 
-test('홈 인디케이터를 빠르게 올리면 홈, 멈춘 뒤 놓으면 최근 앱이 열리고 상태를 유지한다', async ({
+test('화면 하단을 빠르게 올리면 홈, 멈춘 뒤 놓으면 최근 앱이 열리고 상태를 유지한다', async ({
   page,
 }) => {
   await page.clock.install();
@@ -65,14 +65,7 @@ test('홈 인디케이터를 빠르게 올리면 홈, 멈춘 뒤 놓으면 최�
   await open(page, 'settings');
   await page.locator('[data-settings-page=wifi]').tap();
   // Keep the trusted fast release at 16ms even when the CI protocol is delayed.
-  await drag(
-    page,
-    page.getByTestId('settings-home-gesture').locator('.home-indicator'),
-    0,
-    -140,
-    0,
-    1,
-  );
+  await drag(page, page.getByTestId('settings-home-gesture'), 0, -140, 0, 1);
   await expect(page.getByTestId('settings-app')).toBeHidden();
   await expect(page.getByTestId('system-switcher')).toHaveCount(0);
   await open(page, 'settings');
@@ -316,7 +309,7 @@ for (const screen of ['lock', 'home'] as const) {
   });
 }
 
-test('최근 앱의 카드 바깥 탭과 하단 인디케이터 상승은 홈으로 돌아간다', async ({ page }) => {
+test('최근 앱의 카드 바깥 탭과 하단 영역 상승은 홈으로 돌아간다', async ({ page }) => {
   await ready(page);
   await open(page, 'settings');
   await recent(page);
@@ -324,7 +317,7 @@ test('최근 앱의 카드 바깥 탭과 하단 인디케이터 상승은 홈으
   await expect(page.getByTestId('system-switcher')).toHaveCount(0);
   await expect(page.getByTestId('settings-app')).toBeHidden();
   await recent(page);
-  await drag(page, page.getByTestId('system-dismiss-gesture').locator('.home-indicator'), 0, -130);
+  await drag(page, page.getByTestId('system-dismiss-gesture'), 0, -130);
   await expect(page.getByTestId('system-switcher')).toHaveCount(0);
   await expect(page.getByTestId('home-screen')).toBeVisible();
   await recent(page);

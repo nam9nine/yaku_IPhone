@@ -20,6 +20,29 @@ describe('horizontal navigation intent', () => {
     expect(horizontalResult(drag, 26, 100).moved).toBe(false);
     expect(horizontalResult(drag, 30, 100)).toMatchObject({ moved: true, complete: false });
   });
+  it('keeps small button drift clickable while preserving a deliberate edge swipe', () => {
+    const button = { ...drag, slop: 16 };
+    for (const [x, y] of [
+      [29, 100],
+      [20, 109],
+      [29, 109],
+    ])
+      expect(horizontalResult(button, x, y)).toMatchObject({
+        moved: false,
+        cancelled: false,
+        complete: false,
+      });
+    expect(horizontalResult(button, 100, 102)).toMatchObject({
+      moved: true,
+      complete: true,
+      direction: 'previous',
+    });
+    expect(horizontalResult(button, 20, 125)).toMatchObject({
+      moved: true,
+      cancelled: true,
+      complete: false,
+    });
+  });
 });
 describe('inset edge ownership', () => {
   it('separates history edges from center pagination and shell areas', () => {

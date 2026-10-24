@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { launchHomeApp } from '../helpers/home';
-import { releaseFastSwipe } from '../helpers/gestureClock';
+import { dragTimedPath, releaseFastSwipe } from '../helpers/gestureClock';
 
 async function open(page: Page) {
   await page.goto('./');
@@ -65,19 +65,19 @@ for (const height of [800, 844, 932]) {
 test('멈추지 않고 느리게 올린 중간 release는 최근 앱, 짧은 드래그는 원래 크기로 복귀한다', async ({
   page,
 }) => {
+  await page.clock.install();
   await open(page);
-  let point = await start(page);
-  await page.mouse.move(point.x, point.y - 45, { steps: 3 });
+  const point = await start(page);
+  await page.mouse.move(point.x, point.y - 24, { steps: 3 });
   await page.mouse.up();
   await expect(page.getByTestId('settings-app')).toHaveAttribute('data-dragging', 'false');
   await frame(page);
   await page.getByTestId('settings-home-gesture').click({ trial: true });
-  point = await start(page);
-  for (let step = 1; step <= 10; step++) {
-    await page.mouse.move(point.x, point.y - 16 * step);
-    await page.waitForTimeout(50);
-  }
-  await page.mouse.up();
+  await dragTimedPath(
+    page,
+    page.getByTestId('settings-home-gesture'),
+    Array.from({ length: 10 }, (_, index) => ({ dx: 0, dy: -16 * (index + 1), afterMs: 50 })),
+  );
   await expect(page.getByTestId('system-switcher')).toBeVisible();
   await page.getByRole('button', { name: '설정 앱으로 전환', exact: true }).tap();
   await expect(page.getByTestId('settings-app')).toBeVisible();

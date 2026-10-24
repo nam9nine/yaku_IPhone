@@ -1,6 +1,5 @@
 import { useTopPull, type TopPanel } from './useTopPull';
 import { useSystemGesture } from '../shell/useSystemGesture';
-import { HomeIndicator } from './HomeIndicator';
 export function SystemEdges({
   active,
   onControl,
@@ -54,8 +53,6 @@ export function HomeGestures({
       aria-hidden="true"
       style={{ transform: `translateY(${-Math.min(bottom.offset * 0.2, 36)}px)` }}
       {...bottom.handlers}
-    >
-      <HomeIndicator />
-    </div>
+    />
   );
 }

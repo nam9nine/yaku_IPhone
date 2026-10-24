@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { moveSystemGesture, resolveSystemGesture, type SystemGesture } from './systemGesture';
+import { startSwipePath } from './swipePath';
 const start: SystemGesture = {
   pointerId: 1,
   startX: 180,
@@ -12,6 +13,7 @@ const start: SystemGesture = {
   startedAt: 0,
   motionStartedAt: null,
   samples: [{ y: 780, time: 0 }],
+  path: startSwipePath(),
 };
 describe('시스템 제스처 판정', () => {
   it('누른 채 기다린 시간은 느린 이동으로 세지 않고 대기 후 flick은 홈이다', () => {
@@ -44,13 +46,33 @@ describe('시스템 제스처 판정', () => {
     const top = moveSystemGesture(middle, 180, 100, 2000);
     expect(resolveSystemGesture('bottom', top, 2300)).toBe('home');
   });
-  it('짧은 상승·대각선·반대 방향은 실행하지 않는다', () => {
+  it('짧은 상승·옆으로 더 많이 이동한 직선·반대 방향은 실행하지 않는다', () => {
     for (const [x, y] of [
-      [180, 730],
-      [310, 650],
+      [180, 755],
+      [320, 670],
       [180, 900],
     ])
       expect(resolveSystemGesture('bottom', moveSystemGesture(start, x, y, 100), 500)).toBeNull();
+  });
+  it('왼쪽에서 옆으로 시작해 위로 휘면 빠른 종료는 홈, 멈추면 최근 앱이다', () => {
+    let curve = moveSystemGesture(start, 70, 774, 40);
+    curve = moveSystemGesture(curve, 30, 740, 80);
+    curve = moveSystemGesture(curve, 30, 650, 120);
+    expect(resolveSystemGesture('bottom', curve, 136)).toBe('home');
+    expect(resolveSystemGesture('bottom', curve, 300)).toBe('switcher');
+    expect(resolveSystemGesture('bottom', moveSystemGesture(curve, 30, 100, 1000), 1200)).toBe(
+      'home',
+    );
+  });
+  it('오른쪽으로 휘는 상향 동작도 유지하고 짧은 곡선과 원위치 복귀는 취소한다', () => {
+    const diagonal = moveSystemGesture(start, 280, 630, 100);
+    expect(resolveSystemGesture('bottom', diagonal, 116)).toBe('home');
+    const sideways = moveSystemGesture(start, 80, 775, 40);
+    const short = moveSystemGesture(sideways, 70, 740, 80);
+    expect(resolveSystemGesture('bottom', short, 300)).toBeNull();
+    const up = moveSystemGesture(short, 70, 650, 120);
+    const returned = moveSystemGesture(up, 180, 770, 180);
+    expect(resolveSystemGesture('bottom', returned, 400)).toBeNull();
   });
   it('하단의 수평 이동은 방향별 앱 전환이며 상단에서는 아래 방향만 실행한다', () => {
     expect(resolveSystemGesture('bottom', moveSystemGesture(start, 280, 780, 100), 120)).toBe(

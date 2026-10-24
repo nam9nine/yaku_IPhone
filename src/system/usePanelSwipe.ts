@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState, type MouseEvent, type PointerEvent } from 'react';
+import { moveSwipePath, startSwipePath, type SwipeAxis, type SwipePath } from '../shell/swipePath';
 
-type Axis = 'x' | 'y';
 interface Drag {
   id: number;
   x: number;
   y: number;
-  axis: Axis | null;
+  axis: SwipeAxis;
+  path: SwipePath;
   surface: HTMLElement;
   viewport: string;
 }
@@ -22,11 +23,19 @@ export function usePanelSwipe({
 }) {
   const drag = useRef<Drag | null>(null);
   const blockedClick = useRef(false);
-  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const [offset, setOffset] = useState<{ x: number; y: number; axis: SwipeAxis }>({
+    x: 0,
+    y: 0,
+    axis: null,
+  });
 
   const frame = useRef<number | null>(null);
-  const pendingOffset = useRef({ x: 0, y: 0 });
-  function queueOffset(next: { x: number; y: number }) {
+  const pendingOffset = useRef<{ x: number; y: number; axis: SwipeAxis }>({
+    x: 0,
+    y: 0,
+    axis: null,
+  });
+  function queueOffset(next: { x: number; y: number; axis: SwipeAxis }) {
     pendingOffset.current = next;
     if (frame.current !== null) return;
     frame.current = requestAnimationFrame(() => {
@@ -40,7 +49,7 @@ export function usePanelSwipe({
     const current = drag.current;
     drag.current = null;
     blockedClick.current ||= blockClick;
-    setOffset({ x: 0, y: 0 });
+    setOffset({ x: 0, y: 0, axis: null });
     if (current?.surface.hasPointerCapture(current.id)) {
       current.surface.releasePointerCapture(current.id);
     }
@@ -101,6 +110,7 @@ export function usePanelSwipe({
           x: event.clientX,
           y: event.clientY,
           axis: null,
+          path: startSwipePath(),
           surface: event.currentTarget,
           viewport: viewportKey(),
         };
@@ -120,20 +130,26 @@ export function usePanelSwipe({
         }
         const x = event.clientX - current.x;
         const y = event.clientY - current.y;
-        if (!current.axis && Math.max(Math.abs(x), Math.abs(y)) >= 8) {
-          current.axis = Math.abs(x) > Math.abs(y) ? 'x' : 'y';
+        current.path = moveSwipePath(current.path, x, y);
+        if (Math.max(Math.abs(x), Math.abs(y)) >= 8) {
+          // Horizontal-only control pages keep their original axis ownership.
+          // Upward surfaces can change intent after the thumb's sideways start.
+          current.axis = upward
+            ? current.path.axis
+            : (current.axis ?? (Math.abs(x) > Math.abs(y) ? 'x' : 'y'));
           blockedClick.current = true;
-          if ((current.axis === 'x' && !horizontal) || (current.axis === 'y' && !upward)) {
+          if (current.axis === 'y' && !upward) {
             reset(true);
             return;
           }
           current.surface.setPointerCapture(current.id);
         }
-        if (current.axis) {
+        if (current.axis || current.surface.hasPointerCapture(current.id)) {
           event.preventDefault();
           queueOffset({
-            x: current.axis === 'x' ? x : 0,
+            x: horizontal && current.axis ? x : 0,
             y: current.axis === 'y' ? Math.min(0, y) : 0,
+            axis: current.axis,
           });
         }
       },
@@ -142,12 +158,12 @@ export function usePanelSwipe({
         if (!current || current.id !== event.pointerId) return;
         const x = event.clientX - current.x;
         const y = event.clientY - current.y;
-        const axis = current.axis;
+        const axis = upward ? moveSwipePath(current.path, x, y).axis : current.axis;
         reset(axis !== null);
         if (current.viewport !== viewportKey()) return;
         if (axis === 'x' && Math.abs(x) >= 48 && Math.abs(x) > Math.abs(y)) {
           horizontal?.(x < 0 ? 1 : -1);
-        } else if (axis === 'y' && y <= -96 && -y > Math.abs(x)) {
+        } else if (axis === 'y' && y <= -96) {
           upward?.();
         }
       },
