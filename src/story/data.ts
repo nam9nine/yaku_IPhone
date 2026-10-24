@@ -1,6 +1,14 @@
 const asset = (path: string) => `${import.meta.env.BASE_URL}story/${path}`;
 export const contacts = [
   {
+    id: 'date',
+    name: '다테 마코토',
+    shortName: '다테 형사',
+    relation: '다테 형사',
+    about: '오래 신세를 진 사람. 다음에 오면 같이 밥을 먹자.',
+    portrait: `${import.meta.env.BASE_URL}story/date.jpg`,
+  },
+  {
     id: 'daigo',
     name: '도지마 다이고',
     shortName: '다이고',
