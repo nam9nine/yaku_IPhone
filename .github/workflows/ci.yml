@@ -28,6 +28,13 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run check
+      - name: Check portable AI data and training invariants
+        run: |
+          python3 -m venv .tooling/ai-ci
+          .tooling/ai-ci/bin/python -m pip install --require-hashes -r ai/requirements-ci.lock
+          .tooling/ai-ci/bin/ruff check ai
+          .tooling/ai-ci/bin/ruff format --check ai
+          PYTHONPATH=ai .tooling/ai-ci/bin/python -m unittest discover -s ai/tests -v
 
   browser:
     runs-on: ubuntu-24.04

@@ -1,0 +1,229 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Local evidence collection. No source is automatically approved for SFT or character memory.",
+  "sources": [
+    {
+      "id": "sega-story-zero-en",
+      "url": "https://ryu-ga-gotoku.com/asia_en/story/zero/",
+      "language": "en",
+      "kind": "official_story_summary",
+      "format": "html",
+      "scope": "zero",
+      "use": "story_reference",
+      "rights": "SEGA copyrighted reference; no redistribution permission inferred"
+    },
+    {
+      "id": "sega-story-one-en",
+      "url": "https://ryu-ga-gotoku.com/asia_en/story/one/",
+      "language": "en",
+      "kind": "official_story_summary",
+      "format": "html",
+      "scope": "one",
+      "use": "story_reference",
+      "rights": "SEGA copyrighted reference; no redistribution permission inferred"
+    },
+    {
+      "id": "sega-story-two-en",
+      "url": "https://ryu-ga-gotoku.com/asia_en/story/two/",
+      "language": "en",
+      "kind": "official_story_summary",
+      "format": "html",
+      "scope": "two",
+      "use": "story_reference",
+      "rights": "SEGA copyrighted reference; no redistribution permission inferred"
+    },
+    {
+      "id": "sega-story-three-en",
+      "url": "https://ryu-ga-gotoku.com/asia_en/story/three/",
+      "language": "en",
+      "kind": "official_story_summary",
+      "format": "html",
+      "scope": "three",
+      "use": "story_reference",
+      "rights": "SEGA copyrighted reference; no redistribution permission inferred"
+    },
+    {
+      "id": "sega-story-four-en",
+      "url": "https://ryu-ga-gotoku.com/asia_en/story/four/",
+      "language": "en",
+      "kind": "official_story_summary",
+      "format": "html",
+      "scope": "four",
+      "use": "story_reference",
+      "rights": "SEGA copyrighted reference; no redistribution permission inferred"
+    },
+    {
+      "id": "sega-story-five-en",
+      "url": "https://ryu-ga-gotoku.com/asia_en/story/five/",
+      "language": "en",
+      "kind": "official_story_summary",
+      "format": "html",
+      "scope": "five",
+      "use": "story_reference",
+      "rights": "SEGA copyrighted reference; no redistribution permission inferred"
+    },
+    {
+      "id": "sega-story-six-en",
+      "url": "https://ryu-ga-gotoku.com/asia_en/story/six/",
+      "language": "en",
+      "kind": "official_story_summary",
+      "format": "html",
+      "scope": "six",
+      "use": "story_reference",
+      "rights": "SEGA copyrighted reference; no redistribution permission inferred"
+    },
+    {
+      "id": "sega-story-seven-en",
+      "url": "https://ryu-ga-gotoku.com/asia_en/story/seven/",
+      "language": "en",
+      "kind": "official_story_summary",
+      "format": "html",
+      "scope": "seven",
+      "use": "story_reference",
+      "rights": "SEGA copyrighted reference; no redistribution permission inferred"
+    },
+    {
+      "id": "sega-story-gaiden-en",
+      "url": "https://ryu-ga-gotoku.com/asia_en/story/gaiden/",
+      "language": "en",
+      "kind": "official_story_summary",
+      "format": "html",
+      "scope": "gaiden",
+      "use": "story_reference",
+      "rights": "SEGA copyrighted reference; no redistribution permission inferred"
+    },
+    {
+      "id": "sega-story-eight-en",
+      "url": "https://ryu-ga-gotoku.com/asia_en/story/eight/",
+      "language": "en",
+      "kind": "official_story_summary",
+      "format": "html",
+      "scope": "eight",
+      "use": "story_reference",
+      "rights": "SEGA copyrighted reference; no redistribution permission inferred"
+    },
+    {
+      "id": "sega-story-pirate-en",
+      "url": "https://ryu-ga-gotoku.com/asia_en/story/pirate/",
+      "language": "en",
+      "kind": "official_story_summary",
+      "format": "html",
+      "scope": "pirate",
+      "use": "story_reference",
+      "rights": "SEGA copyrighted reference; no redistribution permission inferred"
+    },
+    {
+      "id": "sega-cast-ko",
+      "url": "https://ryu-ga-gotoku.com/kr/cast/entries.json",
+      "language": "ko",
+      "kind": "official_character_description",
+      "format": "cast_json",
+      "scope": "per-record-title-id",
+      "use": "story_reference",
+      "rights": "SEGA copyrighted reference; no redistribution permission inferred"
+    },
+    {
+      "id": "sega-cast-en",
+      "url": "https://ryu-ga-gotoku.com/asia_en/cast/entries.json",
+      "language": "en",
+      "kind": "official_character_description",
+      "format": "cast_json",
+      "scope": "per-record-title-id",
+      "use": "story_reference",
+      "rights": "SEGA copyrighted reference; no redistribution permission inferred"
+    },
+    {
+      "id": "sega-cast-ja",
+      "url": "https://ryu-ga-gotoku.com/cast/entries.json",
+      "language": "ja",
+      "kind": "official_character_description",
+      "format": "cast_json",
+      "scope": "per-record-title-id",
+      "use": "story_reference",
+      "rights": "SEGA copyrighted reference; no redistribution permission inferred"
+    },
+    {
+      "id": "sega-story-index-en",
+      "url": "https://ryu-ga-gotoku.com/asia_en/story/entries.json",
+      "language": "en",
+      "kind": "official_title_index",
+      "format": "json",
+      "scope": "portal-listed-modern-series",
+      "use": "coverage_inventory",
+      "rights": "SEGA copyrighted reference; no redistribution permission inferred"
+    },
+    {
+      "id": "sega-kiwami2-ko",
+      "url": "https://ryu-ga-gotoku.com/kiwami2/kr/",
+      "language": "ko",
+      "kind": "official_game_description",
+      "format": "html",
+      "scope": "ryu2",
+      "use": "story_reference",
+      "rights": "SEGA copyrighted reference; no redistribution permission inferred"
+    },
+    {
+      "id": "game-scripts-yakuza-kiwami-en",
+      "url": "https://game-scripts-wiki.blogspot.com/2020/03/yakuza-kiwami-full-transcript.html",
+      "language": "en",
+      "kind": "fan_transcript",
+      "format": "html",
+      "scope": "yakuza-kiwami",
+      "use": "scene_review_candidates_only",
+      "rights": "Fan transcription of SEGA game; reuse license not verified; local reference only"
+    },
+    {
+      "id": "game-scripts-yakuza-3-en",
+      "url": "https://game-scripts-wiki.blogspot.com/2021/10/yakuza-3-full-transcript.html",
+      "language": "en",
+      "kind": "fan_transcript",
+      "format": "html",
+      "scope": "yakuza-3",
+      "use": "scene_review_candidates_only",
+      "rights": "Fan transcription of SEGA game; reuse license not verified; local reference only"
+    },
+    {
+      "id": "dc-majima",
+      "url": "https://gall.dcinside.com/mgallery/board/view/?id=yakuza&no=6097",
+      "kind": "community_candidate",
+      "language": "ko",
+      "fetch": false,
+      "reason": "Platform declares AI training crawler restrictions; discovery metadata only",
+      "use": "discovery_only"
+    },
+    {
+      "id": "dc-haruka",
+      "url": "https://gall.dcinside.com/mgallery/board/view/?id=yakuza&no=10346",
+      "kind": "community_candidate",
+      "language": "ko",
+      "fetch": false,
+      "reason": "Platform declares AI training crawler restrictions; discovery metadata only",
+      "use": "discovery_only"
+    },
+    {
+      "id": "dc-mine",
+      "url": "https://gall.dcinside.com/mgallery/board/view/?id=yakuza&no=10152",
+      "kind": "community_candidate",
+      "language": "ko",
+      "fetch": false,
+      "reason": "Platform declares AI training crawler restrictions; discovery metadata only",
+      "use": "discovery_only"
+    },
+    {
+      "id": "fandom-yakuza",
+      "url": "https://yakuza.fandom.com/wiki/Yakuza_Wiki",
+      "kind": "community_candidate",
+      "language": "en",
+      "fetch": false,
+      "reason": "Automated AI collection conditions not cleared; discovery metadata only",
+      "use": "discovery_only"
+    }
+  ],
+  "explicitCoverageGaps": [
+    "historical and alternate continuities (Ishin/Kenzan/Dead Souls)",
+    "Kurohyo and ONLINE full stories",
+    "Judgment continuity",
+    "full chapters/endings/substories for all titles",
+    "official Korean dialogue attribution remains unverified"
+  ]
+}

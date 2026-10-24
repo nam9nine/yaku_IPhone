@@ -42,6 +42,7 @@ npm run refs:fetch
 - [개발 절차](docs/development.md) · [하네스](docs/harness.md) · [시각 QA](docs/visual-qa.md)
 - [구조](docs/architecture.md) · [레퍼런스](docs/references.md) · [배포](docs/deployment.md)
 - [GitHub Issues](https://github.com/nam9nine/yaku_IPhone/issues)
+- [하루카·마지마 로컬 AI 실험](ai/README.md) — 자료 검수·학습·추론 도구이며 공개 메시지 앱에는 연결하지 않았습니다.
 - 배포 대상: [GitHub Pages](https://nam9nine.github.io/yaku_IPhone/)
 
 데스크톱 Playwright WebKit의 성공을 실제 iPhone Safari 확인으로 표현하지 않습니다.
