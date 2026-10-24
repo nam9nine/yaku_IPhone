@@ -1,0 +1,17 @@
+{
+  "id": "majima-ringtone",
+  "path": "public/audio/majima-ringtone.m4a",
+  "title": "24-Hour Cinderella (Mobile Phone mix) - Yakuza Kiwami 3 & Dark Ties OST",
+  "sourceUrl": "https://www.youtube.com/watch?v=2Rh5afvXEI4",
+  "channel": "DarkSexy",
+  "confirmedAt": "2026-10-25",
+  "rangeSeconds": [0, 32],
+  "durationSeconds": 32,
+  "codec": "AAC",
+  "sampleRate": 48000,
+  "channels": 2,
+  "bytes": 1650723,
+  "sha256": "a07cc587c6647aa6dafe988fc3209ff86069b44fb7fd886df61cb9318b7b0b3c",
+  "use": "마지마 수신 전화 전용 벨소리",
+  "license": "공개 재사용 허가 미확인. 사용자 지정 영상의 구간을 추출한 파일이며 허가 확인을 뜻하지 않음."
+}

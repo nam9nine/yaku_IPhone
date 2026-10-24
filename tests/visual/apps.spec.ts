@@ -1,3 +1,4 @@
+import { unlockPhone } from '../helpers/unlock';
 import { expect, test, type Page } from '@playwright/test';
 import { checkPaged, firstContentPage, tapPaged } from '../helpers/paged-content';
 
@@ -6,7 +7,7 @@ async function start(page: Page, size: { width: number; height: number }) {
   await page.emulateMedia({ reducedMotion: 'reduce', colorScheme: 'light' });
   await page.clock.setFixedTime(new Date('2026-10-23T09:41:00+09:00'));
   await page.goto('./');
-  await page.getByRole('button', { name: '잠금 해제', exact: true }).tap();
+  await unlockPhone(page);
 }
 async function capture(page: Page, name: string) {
   await page.evaluate(async () => {

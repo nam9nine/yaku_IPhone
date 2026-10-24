@@ -1,3 +1,4 @@
+import { unlockPhone } from '../helpers/unlock';
 import { expect, test } from '@playwright/test';
 import { launchHomeApp } from '../helpers/home';
 for (const friend of [
@@ -8,7 +9,7 @@ for (const friend of [
     test(`${friend.name} ${scene} 390`, async ({ page }) => {
       await page.emulateMedia({ reducedMotion: 'reduce', colorScheme: 'dark' });
       await page.goto('./');
-      await page.getByRole('button', { name: '잠금 해제', exact: true }).tap();
+      await unlockPhone(page);
       await launchHomeApp(page, 'contacts');
       await page.locator(`[data-contact=${friend.id}]`).tap();
       if (scene === 'thread')

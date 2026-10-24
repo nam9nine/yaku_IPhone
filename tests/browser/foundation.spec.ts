@@ -1,3 +1,4 @@
+import { unlockPhone } from '../helpers/unlock';
 import { expect, test } from '@playwright/test';
 import { attachFailedInput, recordInput } from '../helpers/input-diagnostics';
 import { dragTouchWithoutFling } from '../helpers/touch';
@@ -88,7 +89,7 @@ test('문자 확대와 짧은 화면에서도 세로 스크롤 없이 하단 제
       await page.getByRole('button', { name: '잠금 해제', exact: true }).scrollIntoViewIfNeeded();
     }
     await expect(page.getByRole('button', { name: '잠금 해제', exact: true })).toBeInViewport();
-    await page.getByRole('button', { name: '잠금 해제', exact: true }).tap();
+    await unlockPhone(page);
     await expect(page.getByTestId('home-screen')).toBeVisible();
   } finally {
     await client?.detach();

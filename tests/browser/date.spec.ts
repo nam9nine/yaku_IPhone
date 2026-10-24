@@ -1,3 +1,4 @@
+import { unlockPhone } from '../helpers/unlock';
 import { expect, test } from '@playwright/test';
 import { launchHomeApp } from '../helpers/home';
 
@@ -6,7 +7,7 @@ for (const width of [360, 390, 430]) {
     await page.setViewportSize({ width, height: width === 360 ? 800 : width === 390 ? 844 : 932 });
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto('./');
-    await page.getByRole('button', { name: '잠금 해제', exact: true }).tap();
+    await unlockPhone(page);
     await expect(page.getByLabel('읽지 않은 대화 8개')).toBeVisible();
     await launchHomeApp(page, 'contacts');
     await page.getByRole('searchbox', { name: '연락처 검색' }).fill('다테 형사');
@@ -25,7 +26,7 @@ for (const width of [360, 390, 430]) {
     await expect(thread.getByText(reply, { exact: true })).toHaveCount(1);
     await expect(thread).toContainText('좋지. 하루카한테도 안부 전해 줘.');
     await page.reload();
-    await page.getByRole('button', { name: '잠금 해제', exact: true }).tap();
+    await unlockPhone(page);
     await expect(page.getByLabel('읽지 않은 대화 7개')).toBeVisible();
     await launchHomeApp(page, 'phone');
     await page.getByRole('button', { name: '연락처', exact: true }).tap();
@@ -58,7 +59,7 @@ test('기존 다섯 대화를 읽은 저장 상태에서 다테와 두 친구를
   );
   await page.reload();
   await expect(page.getByRole('button', { name: '남은 할 일 2개', exact: true })).toBeVisible();
-  await page.getByRole('button', { name: '잠금 해제', exact: true }).tap();
+  await unlockPhone(page);
   await expect(page.getByLabel('읽지 않은 대화 3개')).toBeVisible();
   await launchHomeApp(page, 'messages');
   await page.getByRole('button', { name: '읽지 않은 메시지만 보기' }).tap();

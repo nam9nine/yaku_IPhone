@@ -1,3 +1,4 @@
+import { unlockPhone } from '../helpers/unlock';
 import { expect, test, type Page } from '@playwright/test';
 import { launchHomeApp } from '../helpers/home';
 import { tapPaged, checkPaged, revealPagedControl } from '../helpers/paged-content';
@@ -17,7 +18,7 @@ async function launchSettings(page: Page) {
 async function openSettings(page: Page) {
   await page.clock.setFixedTime(new Date('2026-10-23T09:41:00+09:00'));
   await page.goto('./');
-  await tapPaged(page.getByRole('button', { name: '잠금 해제', exact: true }));
+  await unlockPhone(page);
   await launchSettings(page);
 }
 
@@ -58,7 +59,7 @@ test('연결 토글은 에어플레인 규칙을 따르고 새로고침 후 잠�
   await page.reload();
   await expect(page.getByTestId('lock-screen')).toBeVisible();
   await expect(page.getByRole('heading', { name: '설정', exact: true })).toHaveCount(0);
-  await tapPaged(page.getByRole('button', { name: '잠금 해제', exact: true }));
+  await unlockPhone(page);
   await launchSettings(page);
   await expect(airplane).toBeChecked();
   await expect(page.getByRole('button', { name: 'Wi-Fi ASAGAO_HOME', exact: true })).toBeVisible();
@@ -194,7 +195,7 @@ test('선택한 배경은 홈과 잠금 화면에 적용되고 밝기 조절은 
   await expect(page.getByTestId('lock-screen')).toBeVisible();
   await expect(shell).toHaveAttribute('data-wallpaper', 'solid');
   await expect(page.locator('.mobile-shell-foreground')).toBeHidden();
-  await tapPaged(page.getByRole('button', { name: '잠금 해제', exact: true }));
+  await unlockPhone(page);
   await launchSettings(page);
   await checkPaged(page.getByRole('radio', { name: '기본', exact: true }));
   await expect(shell).toHaveAttribute('data-wallpaper', 'default');

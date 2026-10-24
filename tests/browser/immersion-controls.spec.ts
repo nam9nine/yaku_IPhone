@@ -1,3 +1,4 @@
+import { unlockPhone } from '../helpers/unlock';
 import { expect, test, type Page } from '@playwright/test';
 import { dragTouchWithoutFling } from '../helpers/touch';
 import { launchHomeApp } from '../helpers/home';
@@ -20,7 +21,7 @@ async function pull(page: Page, browserName: string, x: number, y: number, dista
 async function boot(page: Page, unlock = true) {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('./');
-  if (unlock) await page.getByRole('button', { name: '잠금 해제', exact: true }).tap();
+  if (unlock) await unlockPhone(page);
 }
 for (const width of [360, 390, 430]) {
   for (const screen of ['lock', 'home', 'settings'] as const) {
@@ -108,7 +109,7 @@ test('설정·사진·Safari에 데모나 출처 안내가 없고 사진 배경 
   await expect(page.getByTestId('settings-app')).not.toContainText(/팬메이드|실제 Apple/);
   await page.keyboard.press('Alt+Home');
   await launchHomeApp(page, 'photos');
-  await page.getByRole('button', { name: '나팔꽃의 식사 시간', exact: true }).tap();
+  await page.getByRole('button', { name: '아이들과 함께', exact: true }).tap();
   await expect(page.getByLabel('사진 정보')).not.toContainText(/출처|SEGA|공식|임시|팬 창작/);
   await expect(page.getByLabel('사진 정보').getByRole('link')).toHaveCount(0);
   await page.getByRole('button', { name: '배경화면으로 설정', exact: true }).tap();

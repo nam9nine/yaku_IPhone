@@ -1,0 +1,32 @@
+[
+  {
+    "browser": "chromium",
+    "width": 360,
+    "errors": []
+  },
+  {
+    "browser": "chromium",
+    "width": 390,
+    "errors": []
+  },
+  {
+    "browser": "chromium",
+    "width": 430,
+    "errors": []
+  },
+  {
+    "browser": "webkit",
+    "width": 360,
+    "errors": []
+  },
+  {
+    "browser": "webkit",
+    "width": 390,
+    "errors": []
+  },
+  {
+    "browser": "webkit",
+    "width": 430,
+    "errors": []
+  }
+]

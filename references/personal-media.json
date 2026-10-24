@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 1,
+  "checkedOn": "2026-10-25",
+  "purpose": "Selected personal photo library for Kiryu’s iPhone; captions are original fan-made text, not official game dialogue.",
+  "images": [
+    {
+      "id": "personal-asagao-family",
+      "path": "public/asagao/selected/personal-asagao-family.jpg",
+      "source": "User-supplied image attachment, 2026-10-25",
+      "sourceUrl": null,
+      "originalFilename": "upload-01.jpg",
+      "sha256": "567ea28008b7200a7be0d11aed10396adbcb703d3fc70a83b6d7854e197f1fa0",
+      "width": 596,
+      "height": 335,
+      "transformations": [],
+      "rights": "Third-party game imagery supplied by the user. Public reuse permission was not established by receipt of the attachment.",
+      "copyrightMarkPreserved": null
+    },
+    {
+      "id": "cabaret-group",
+      "path": "public/asagao/selected/cabaret-group.jpg",
+      "source": "User-supplied image attachment, 2026-10-25",
+      "sourceUrl": null,
+      "originalFilename": "upload-02.jpg",
+      "sha256": "5be40150b52b7ed8797a9ccaa10db76f7d769e1c9c17985edfc42f96f8146a42",
+      "width": 1140,
+      "height": 439,
+      "transformations": [],
+      "rights": "Third-party game imagery supplied by the user. Public reuse permission was not established by receipt of the attachment.",
+      "copyrightMarkPreserved": null
+    },
+    {
+      "id": "kazama-kiryu-nishiki",
+      "path": "public/asagao/selected/kazama-kiryu-nishiki.png",
+      "source": "User-supplied image attachment, 2026-10-25",
+      "sourceUrl": null,
+      "originalFilename": "upload-03.png",
+      "sha256": "d8aa0db3ee39a9032594d327ec82a4417c61de13daf5bb5e804547f72189f846",
+      "width": 500,
+      "height": 410,
+      "transformations": [],
+      "rights": "Third-party game imagery supplied by the user. Public reuse permission was not established by receipt of the attachment.",
+      "copyrightMarkPreserved": null
+    },
+    {
+      "id": "pocket-circuit",
+      "path": "public/asagao/selected/pocket-circuit.jpg",
+      "source": "User-supplied image attachment, 2026-10-25",
+      "sourceUrl": null,
+      "originalFilename": "upload-04.jpg",
+      "sha256": "a2a8d9269d4db8f5a26dee8538ba4de759d3e3583c6f7d17b7912a75744b5780",
+      "width": 640,
+      "height": 359,
+      "transformations": [],
+      "rights": "Third-party game imagery supplied by the user. Public reuse permission was not established by receipt of the attachment.",
+      "copyrightMarkPreserved": null
+    },
+    {
+      "id": "sotenbori-selfie",
+      "path": "public/asagao/selected/sotenbori-selfie.jpg",
+      "source": "User-supplied image attachment, 2026-10-25",
+      "sourceUrl": null,
+      "originalFilename": "upload-05.jpg",
+      "sha256": "7a15f0f44f4766fd822c66d397b77051783db8e74b1e0fbc567e78a42e89a0be",
+      "width": 1920,
+      "height": 1080,
+      "transformations": [],
+      "rights": "Third-party game imagery supplied by the user. Public reuse permission was not established by receipt of the attachment.",
+      "copyrightMarkPreserved": true
+    },
+    {
+      "id": "mame",
+      "path": "public/asagao/selected/mame.jpg",
+      "source": "User-supplied image attachment, 2026-10-25",
+      "sourceUrl": null,
+      "originalFilename": "upload-06.jpg",
+      "sha256": "55b99d6b5946e8d76b6b8f3f5efdbbbe26856cb18a32a2e62481618382ed2a8e",
+      "width": 708,
+      "height": 360,
+      "transformations": [],
+      "rights": "Third-party game imagery supplied by the user. Public reuse permission was not established by receipt of the attachment.",
+      "copyrightMarkPreserved": null
+    }
+  ]
+}

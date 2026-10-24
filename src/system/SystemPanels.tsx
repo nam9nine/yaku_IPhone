@@ -359,7 +359,7 @@ export function SystemPanels(props: SystemPanelsProps) {
     if (!node || preview) return;
     heading.current?.focus({ preventScroll: true });
     const keydown = (event: KeyboardEvent) => {
-      if (document.querySelector('.day-call[open]')) return;
+      if (document.querySelector('.day-call[open], .passcode-screen[open]')) return;
       if (event.key === 'Escape') {
         event.preventDefault();
         event.stopPropagation();
@@ -392,7 +392,7 @@ export function SystemPanels(props: SystemPanelsProps) {
       targets[next].focus({ preventScroll: true });
     };
     const focusin = (event: FocusEvent) => {
-      if (document.querySelector('.day-call[open]')) return;
+      if (document.querySelector('.day-call[open], .passcode-screen[open]')) return;
       if (event.target instanceof Node && !node.contains(event.target))
         heading.current?.focus({ preventScroll: true });
     };

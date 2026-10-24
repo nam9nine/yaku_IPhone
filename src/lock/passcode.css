@@ -1,0 +1,171 @@
+.passcode-screen {
+  position: fixed;
+  inset: auto;
+  top: var(--phone-top);
+  left: var(--phone-left);
+  width: var(--phone-width);
+  height: var(--phone-height);
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: inherit;
+  overflow: hidden;
+  color: white;
+  background: rgb(20 22 29 / 66%);
+  backdrop-filter: blur(28px) saturate(0.8);
+  -webkit-backdrop-filter: blur(28px) saturate(0.8);
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.passcode-screen::backdrop {
+  background: rgb(0 0 0 / 10%);
+}
+.mobile-shell:has(.passcode-screen[open]) .base-screens,
+.mobile-shell:has(.passcode-screen[open]) .system-panel,
+.mobile-shell:has(.passcode-screen[open]) > .phone-status-bar {
+  visibility: hidden;
+}
+.mobile-shell:has(.passcode-screen[open]) .mobile-shell-wallpaper {
+  filter: blur(24px);
+}
+.passcode-content {
+  --passcode-key-size: clamp(44px, calc((var(--phone-height) - 200px) / 7), 78px);
+  --passcode-row-gap: clamp(8px, calc((var(--phone-height) - 440px) / 18), 18px);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: max(18px, var(--safe-area-top)) 24px max(24px, var(--safe-area-bottom));
+}
+.passcode-content h1 {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 500;
+  line-height: 1.3;
+}
+.passcode-dots {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  margin-top: 24px;
+}
+.passcode-dots span {
+  width: 13px;
+  height: 13px;
+  border: 1.3px solid white;
+  border-radius: 50%;
+}
+.passcode-dots span[data-filled='true'] {
+  background: white;
+}
+.passcode-feedback {
+  min-height: 1.5em;
+  margin: 12px 0 20px;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  text-align: center;
+}
+.passcode-keypad {
+  display: grid;
+  grid-template-columns: repeat(3, var(--passcode-key-size));
+  gap: var(--passcode-row-gap) clamp(18px, 7vw, 32px);
+}
+.passcode-key {
+  width: var(--passcode-key-size);
+  height: var(--passcode-key-size);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 50%;
+  color: inherit;
+  background: rgb(255 255 255 / 15%);
+  transition: background 100ms linear;
+  -webkit-tap-highlight-color: transparent;
+}
+.passcode-key > span {
+  font-size: clamp(1.6rem, calc(var(--passcode-key-size) * 0.5), 2.5rem);
+  line-height: 1;
+  font-weight: 300;
+}
+.passcode-key small {
+  margin-top: 3px;
+  font-size: 0.625rem;
+  line-height: 1;
+  letter-spacing: 0.12em;
+  font-weight: 600;
+}
+.passcode-key[data-passcode-digit='0'] {
+  grid-column: 2;
+}
+.passcode-key:active {
+  background: rgb(255 255 255 / 42%);
+}
+.passcode-actions {
+  width: calc(var(--passcode-key-size) * 3 + clamp(18px, 7vw, 32px) * 2);
+  display: flex;
+  justify-content: space-between;
+  margin-top: 22px;
+}
+.passcode-actions button {
+  min-width: 72px;
+  min-height: 44px;
+  padding: 8px;
+  border: 0;
+  border-radius: 22px;
+  color: inherit;
+  background: none;
+  font-size: 0.9rem;
+}
+.passcode-screen button:focus-visible {
+  outline: 2px solid white;
+  outline-offset: 4px;
+}
+.passcode-error {
+  animation: passcode-shake 280ms ease-out;
+}
+@keyframes passcode-shake {
+  20%,
+  60% {
+    transform: translateX(-9px);
+  }
+  40%,
+  80% {
+    transform: translateX(9px);
+  }
+}
+@media (max-height: 540px) {
+  .passcode-content h1 {
+    font-size: 1.15rem;
+  }
+  .passcode-dots {
+    margin-top: 14px;
+  }
+  .passcode-feedback {
+    margin: 6px 0 8px;
+    font-size: 0.75rem;
+  }
+  .passcode-actions {
+    margin-top: 8px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .passcode-error {
+    animation: none;
+  }
+  .passcode-key {
+    transition: none;
+  }
+}
+.mobile-shell[data-reduced-motion='true'] .passcode-error {
+  animation: none;
+}
+.mobile-shell[data-reduced-motion='true'] .passcode-key {
+  transition: none;
+}

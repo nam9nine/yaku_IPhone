@@ -1,3 +1,4 @@
+import { unlockPhone } from '../helpers/unlock';
 import { expect, test } from '@playwright/test';
 import { launchHomeApp } from '../helpers/home';
 const scenes = [
@@ -24,7 +25,7 @@ for (const width of [360, 390, 430])
       await page.emulateMedia({ reducedMotion: 'reduce', colorScheme: 'dark' });
       await page.clock.install({ time: new Date('2026-10-24T16:40:00+09:00') });
       await page.goto('./');
-      await page.getByRole('button', { name: '잠금 해제', exact: true }).tap();
+      await unlockPhone(page);
       if (scene === 'incoming' || scene === 'locked-call' || scene === 'missed-lock') {
         await launchHomeApp(page, 'notes');
         await page.locator('[data-note-id=curry]').tap();

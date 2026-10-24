@@ -1,0 +1,56 @@
+[
+  {
+    "id": "personal-asagao-family",
+    "src": "selected/personal-asagao-family.jpg",
+    "title": "아이들과 함께",
+    "date": "",
+    "caption": "모두 같이 찍었다.",
+    "position": "50% 50%",
+    "landscape": true
+  },
+  {
+    "id": "cabaret-group",
+    "src": "selected/cabaret-group.jpg",
+    "title": "다 같이 한 장",
+    "date": "",
+    "caption": "사진을 찍을 때도 쉽지 않다.",
+    "position": "50% 50%",
+    "landscape": true
+  },
+  {
+    "id": "kazama-kiryu-nishiki",
+    "src": "selected/kazama-kiryu-nishiki.png",
+    "title": "오래된 사진",
+    "date": "",
+    "caption": "소중히 보관할 것.",
+    "position": "50% 45%",
+    "landscape": true
+  },
+  {
+    "id": "pocket-circuit",
+    "src": "selected/pocket-circuit.jpg",
+    "title": "파이터와 함께",
+    "date": "",
+    "caption": "다음에도 한 판 더.",
+    "position": "50% 50%",
+    "landscape": true
+  },
+  {
+    "id": "sotenbori-selfie",
+    "src": "selected/sotenbori-selfie.jpg",
+    "title": "소텐보리에서",
+    "date": "",
+    "caption": "하루카가 뒤에 있었군.",
+    "position": "50% 50%",
+    "landscape": true
+  },
+  {
+    "id": "mame",
+    "src": "selected/mame.jpg",
+    "title": "마메",
+    "date": "",
+    "caption": "밥 먹을 시간이다.",
+    "position": "50% 50%",
+    "landscape": true
+  }
+]

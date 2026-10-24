@@ -1,7 +1,7 @@
 import { useEffect, useEffectEvent, useLayoutEffect, useRef, useState } from 'react';
 import { useEdgeNavigation } from '../navigation/EdgeNavigation';
 import { useHorizontalGesture } from '../navigation/useHorizontalGesture';
-import { dayPhotos as photos } from '../day/media';
+import { dayPhotos as photos, galleryKnownIds } from '../day/media';
 import { useStoredState } from './useStoredState';
 import './personal.css';
 import './photos18.css';
@@ -46,7 +46,7 @@ export function PhotosApp({
     (value: unknown) =>
       Array.isArray(value) &&
       new Set(value).size === value.length &&
-      value.every((id) => typeof id === 'string' && photos.some((photo) => photo.id === id)),
+      value.every((id) => typeof id === 'string' && galleryKnownIds.includes(id)),
   );
   const [tab, setTab] = useState<'library' | 'collections'>('library');
   const [favoriteOnly, setFavoriteOnly] = useState(false);
@@ -307,7 +307,7 @@ export function PhotosApp({
                     <PhotoIcon name="heart" />
                   </span>
                   <strong>즐겨찾는 항목</strong>
-                  <span>{favorites.length}</span>
+                  <span>{photos.filter((photo) => favorites.includes(photo.id)).length}</span>
                   <PhotoIcon name="next" />
                 </button>
               </div>

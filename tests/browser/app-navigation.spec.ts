@@ -1,3 +1,4 @@
+import { unlockPhone } from '../helpers/unlock';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { launchHomeApp } from '../helpers/home';
 
@@ -11,7 +12,7 @@ type EdgeViewportWindow = Window & { __edgeViewportProbe?: EdgeViewportProbe };
 
 async function openApp(page: Page, name: '설정' | 'Safari') {
   await page.goto('./');
-  await page.getByRole('button', { name: '잠금 해제', exact: true }).tap();
+  await unlockPhone(page);
   await launchHomeApp(page, name === '설정' ? 'settings' : 'safari');
   await expect(page.getByTestId(name === '설정' ? 'settings-app' : 'safari-app')).toBeVisible();
   await page.evaluate(async () => {
