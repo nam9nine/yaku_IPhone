@@ -129,7 +129,6 @@ test('확인 전 초기화는 취소되고 확인 후 대화·체크·배경을 
   await page.getByRole('button', { name: '배경화면', exact: true }).tap();
   await page.getByRole('radio', { name: '아이들이 그린 그림', exact: true }).check();
   await page.getByRole('button', { name: '설정 목록으로 돌아가기', exact: true }).tap();
-  await page.getByRole('button', { name: '데모 안내', exact: true }).tap();
   await page.getByRole('button', { name: '처음 상태로 되돌리기', exact: true }).tap();
   const dialog = page.getByRole('dialog');
   await expect(dialog).toBeVisible();
@@ -186,8 +185,8 @@ test('사진에서 배경을 선택하고 설정에서 위치·다른 배경을 
   await launchHomeApp(page, 'photos');
   await page.getByRole('button', { name: '재봉틀 앞에서', exact: true }).tap();
   await expect(page.getByText('실이 풀리지 않게. 이번에는 제대로.', { exact: true })).toBeVisible();
-  await expect(page.locator('.photo-caption small').first()).toBeVisible();
-  await expect(page.locator('.photo-caption small').first()).not.toBeEmpty();
+  await expect(page.getByLabel('사진 정보').getByRole('link')).toHaveCount(0);
+  await expect(page.getByLabel('사진 정보')).not.toContainText(/출처|팬 창작/);
   await page.getByRole('button', { name: '배경화면으로 설정', exact: true }).tap();
   await expect(page.locator('.mobile-shell')).toHaveAttribute('data-wallpaper', 'sewing');
   await page.reload();
@@ -225,11 +224,12 @@ test('잠금 위젯은 해당 앱으로 연결되고 키보드로 할 일과 사
   await page.getByRole('button', { name: /오늘 저녁 카레 메모 열기/ }).press('Enter');
   await expect(page.locator('.note-paper h2')).toHaveText('오늘 저녁 카레');
   await lock(page);
-  const weather = page.getByRole('button', { name: '가상 날씨 27도 안내 열기', exact: true });
+  const weather = page.getByRole('button', { name: '나팔꽃 날씨 27도 열기', exact: true });
   await weather.focus();
   await weather.press('Enter');
-  await expect(page.locator('.settings-demo')).toContainText('가상 데이터');
-  await lock(page);
+  const detail = page.getByRole('dialog', { name: '나팔꽃 날씨', exact: true });
+  await expect(detail).toContainText('27° · 맑음');
+  await detail.getByRole('button', { name: '닫기', exact: true }).click();
   const reminders = page.getByRole('button', { name: '남은 할 일 3개', exact: true });
   await reminders.focus();
   await reminders.press('Enter');

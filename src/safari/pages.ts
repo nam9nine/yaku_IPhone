@@ -76,13 +76,13 @@ export const internalPages = [
   },
   {
     id: 'guide',
-    title: '시작 안내',
+    title: '휴대폰 사용법',
     url: 'https://yaku.test/guide',
-    description: '익숙한 동작으로 새로운 화면을 만나보세요.',
+    description: '하루카가 적어 둔 휴대폰 사용 메모.',
   },
   {
     id: 'example',
-    title: '예제 페이지',
+    title: '주말 산책',
     url: 'https://yaku.test/example',
     description: '조용한 하루를 위한 작은 아이디어.',
   },

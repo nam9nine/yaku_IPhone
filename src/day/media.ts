@@ -7,9 +7,6 @@ export type DayPhoto = {
   date: string;
   caption: string;
   placeholder: boolean;
-  sourceLabel?: string;
-  sourceUrl?: string;
-  licenseUrl?: string;
   landscape?: boolean;
   blur?: boolean;
   position: string;
@@ -18,15 +15,13 @@ export const dayPhotos: DayPhoto[] = gamePhotos.map((photo) => ({
   ...photo,
   src: `${import.meta.env.BASE_URL}asagao/${photo.src}`,
   placeholder: false,
-  sourceLabel: '용과 같이 극3 공식 게임 장면 · ©SEGA · 사진 설명은 팬 창작',
-  sourceUrl: 'https://ryu-ga-gotoku.com/kiwami3/kr/',
 }));
 const drawing: DayPhoto = {
   id: 'family-drawing',
   title: '아저씨와 우리',
   src: `${import.meta.env.BASE_URL}asagao/family-drawing.svg`,
   date: '',
-  caption: '프로젝트의 창작 그림',
+  caption: '아저씨도 같이 그렸다. 내가 이렇게 무섭게 생겼나.',
   placeholder: false,
   position: '50% 50%',
 };

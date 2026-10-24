@@ -32,7 +32,7 @@ for (const size of [
       await start(page, size);
       await page.locator('[data-launch-app=safari]').tap();
       if (scene === 'guide')
-        await page.getByRole('button', { name: '시작 안내', exact: true }).tap();
+        await page.getByRole('button', { name: '휴대폰 사용법', exact: true }).tap();
       await capture(page, `safari-${scene}-${size.width}x${size.height}.png`);
     });
   }
@@ -49,10 +49,10 @@ test('다크 설정과 큰 글자', async ({ page }) => {
 test('Safari 두 탭', async ({ page }) => {
   await start(page, { width: 390, height: 844 });
   await page.locator('[data-launch-app=safari]').tap();
-  await page.getByRole('button', { name: '시작 안내', exact: true }).tap();
+  await page.getByRole('button', { name: '휴대폰 사용법', exact: true }).tap();
   await page.getByRole('button', { name: '페이지 메뉴', exact: true }).tap();
   await page.getByRole('dialog').getByRole('button', { name: '새 탭', exact: true }).tap();
-  await page.getByRole('button', { name: '예제 페이지', exact: true }).tap();
+  await page.getByRole('button', { name: '주말 산책', exact: true }).tap();
   await page.getByRole('button', { name: '탭 보기, 2개', exact: true }).tap();
   await capture(page, 'safari-tabs-390x844.png');
 });

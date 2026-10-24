@@ -14,7 +14,6 @@ type SettingsPage =
   | 'brightness'
   | 'wallpaper'
   | 'accessibility'
-  | 'demo'
   | 'profile';
 const pageTitles: Record<SettingsPage, string> = {
   main: '설정',
@@ -25,7 +24,6 @@ const pageTitles: Record<SettingsPage, string> = {
   brightness: '디스플레이 및 밝기',
   wallpaper: '배경화면',
   accessibility: '손쉬운 사용',
-  demo: '데모 안내',
   profile: 'Apple 계정',
 };
 
@@ -92,23 +90,14 @@ export function SettingsApp({
   active,
   storageUnavailable = false,
   onReset,
-  requestedPage = null,
 }: {
   preferences: DevicePreferences;
   onChange: (next: DevicePreferences) => void;
   active: boolean;
   storageUnavailable?: boolean;
   onReset: () => void;
-  requestedPage?: { page: 'demo'; key: number } | null;
 }) {
-  const [history, setHistory] = useState<SettingsPage[]>(
-    requestedPage ? ['main', 'demo'] : ['main'],
-  );
-  const [lastRequest, setLastRequest] = useState(requestedPage);
-  if (lastRequest !== requestedPage) {
-    setLastRequest(requestedPage);
-    if (requestedPage) setHistory(['main', requestedPage.page]);
-  }
+  const [history, setHistory] = useState<SettingsPage[]>(['main']);
   const resetDialog = useRef<HTMLDialogElement>(null);
   useLayoutEffect(() => {
     if (!active) resetDialog.current?.close();
@@ -161,7 +150,7 @@ export function SettingsApp({
         data-settings-page={next}
         onClick={() => navigate(next)}
       >
-        <SettingsIcon name={next === 'demo' || next === 'profile' ? 'accessibility' : next} />
+        <SettingsIcon name={next === 'profile' ? 'accessibility' : next} />
         <span className="settings-row-label">{pageTitles[next]}</span>
         {value && <span className="settings-row-value">{value}</span>}
         <Chevron />
@@ -233,13 +222,11 @@ export function SettingsApp({
               {destination('bluetooth', preferences.bluetooth ? '켬' : '끔')}
               {destination('cellular', !preferences.airplane && preferences.cellular ? '켬' : '끔')}
             </Group>
-            <p className="settings-footnote">연결 설정은 이 웹 체험 안에서만 적용됩니다.</p>
             <Group>
               {destination('appearance')}
               {destination('brightness')}
               {destination('wallpaper')}
               {destination('accessibility')}
-              {destination('demo')}
             </Group>
             <Group>
               <button
@@ -273,10 +260,6 @@ export function SettingsApp({
                 <span className="settings-row-value">나팔꽃 아이들</span>
               </div>
             </Group>
-            <p className="settings-footnote">
-              하루카가 설정과 화면 정리를 도와줬습니다. 이 프로필은 팬메이드 설정이며 실제 Apple
-              계정에 연결되지 않습니다.
-            </p>
           </>
         )}
         {page === 'wifi' && (
@@ -297,9 +280,7 @@ export function SettingsApp({
                 </div>
               </Group>
             )}
-            <p className="settings-footnote">
-              이 웹 체험의 Wi-Fi 연결을 켜거나 끕니다. 에어플레인 모드에서도 Wi-Fi를 켤 수 있습니다.
-            </p>
+            <p className="settings-footnote">에어플레인 모드에서도 Wi-Fi를 켤 수 있습니다.</p>
           </>
         )}
         {page === 'bluetooth' && (
@@ -311,9 +292,6 @@ export function SettingsApp({
                 onChange={(value) => update('bluetooth', value)}
               />
             </Group>
-            <p className="settings-footnote">
-              이 웹 체험의 Bluetooth 설정입니다. 실제 주변 기기를 검색하거나 연결하지 않습니다.
-            </p>
           </>
         )}
         {page === 'cellular' && (
@@ -326,11 +304,11 @@ export function SettingsApp({
                 onChange={(value) => update('cellular', value)}
               />
             </Group>
-            <p className="settings-footnote">라라라 모바일 · 이 웹 체험의 가상 통신사 표시</p>
+            <p className="settings-footnote">라라라 모바일</p>
             <p className="settings-footnote">
               {preferences.airplane
                 ? '에어플레인 모드를 끄면 이전 셀룰러 설정이 다시 적용됩니다.'
-                : 'Wi-Fi가 꺼져 있을 때 이 웹 체험에서 셀룰러 연결을 사용합니다.'}
+                : 'Wi-Fi가 꺼져 있을 때 셀룰러 데이터를 사용합니다.'}
             </p>
           </>
         )}
@@ -432,9 +410,6 @@ export function SettingsApp({
                 </div>
               </div>
             </Group>
-            <p className="settings-footnote">
-              이 웹 화면의 밝기를 조절합니다. 기기 자체의 화면 밝기는 바뀌지 않습니다.
-            </p>
           </>
         )}
 
@@ -482,9 +457,6 @@ export function SettingsApp({
               <>
                 <p className="settings-footnote">
                   현재 배경: {getWallpaper(preferences.wallpaper).title}
-                  {getWallpaper(preferences.wallpaper).placeholder
-                    ? ' · 교체 가능한 임시 이미지'
-                    : ''}
                 </p>
                 <div
                   className="settings-crop-preview"
@@ -534,46 +506,6 @@ export function SettingsApp({
               </>
             )}
           </>
-        )}
-
-        {page === 'demo' && (
-          <article className="settings-demo">
-            <h2>
-              키류의 iPhone
-              <br />
-              나팔꽃의 평범한 하루
-            </h2>
-            <p>하루카가 화면을 정리해 준, 키류의 개인 휴대폰을 살펴보는 팬메이드 웹 체험입니다.</p>
-            <h3>토요일 오후 4:40</h3>
-            <p>
-              2026년 10월 24일 토요일 16:40을 가상 시각으로 사용합니다. 날씨 27°도 가상
-              데이터입니다. 방문 시간과 관계없이 직접 조작하며 이야기를 볼 수 있습니다.
-            </p>
-            <h3>이 휴대폰에 담긴 것</h3>
-            <p>
-              대사·메모·일정과 ASAGAO_HOME은 창작 설정입니다. 현대 iPhone으로 재해석했으며 원작의
-              정확한 연도나 공식 대사를 재현한다고 주장하지 않습니다.
-            </p>
-            <p>
-              이미지의 출처는 사진 상세에서 확인할 수 있습니다. 게임 이미지의 권리는 SEGA에 있으며
-              이 휴대폰의 대사·사진 설명·일정은 팬 창작입니다.
-            </p>
-            <h3>이 웹사이트 안에서만</h3>
-            <p>
-              실제 통화·SMS·기기 설정 변경은 하지 않습니다. 카메라·마이크·위치·연락처 권한을
-              요청하지 않으며 음원·음성·로그인·AI API를 사용하지 않습니다.
-            </p>
-            <p>
-              체크한 항목, 읽음과 선택한 배경은 이 브라우저에 저장됩니다. 저장이 차단되어도 현재
-              접속 중에는 이용할 수 있습니다.
-            </p>
-            <button
-              className="settings-row settings-reset"
-              onClick={() => resetDialog.current?.showModal()}
-            >
-              처음 상태로 되돌리기
-            </button>
-          </article>
         )}
 
         {page === 'accessibility' && (

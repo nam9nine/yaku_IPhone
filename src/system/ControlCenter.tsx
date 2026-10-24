@@ -68,14 +68,14 @@ const detailText: Record<
 > = {
   media: { title: '재생 중이 아님', message: '재생할 미디어가 없습니다.' },
   controls: { title: '제어 항목', message: '연결, 밝기와 화면 모드를 조절할 수 있어요.' },
-  power: { title: '전원', message: '기기 전원은 실제 iPhone에서 조작해 주세요.' },
-  flashlight: { title: '손전등', message: '이 웹 체험은 기기 손전등을 켜지 않아요.' },
-  timer: { title: '타이머', message: '타이머는 아직 준비 중이에요.' },
-  calculator: { title: '계산기', message: '계산기는 아직 준비 중이에요.' },
-  camera: { title: '카메라', message: '이 웹 체험은 기기 카메라를 열지 않아요.' },
+  power: { title: '전원', message: '전원을 끌 수 없습니다.' },
+  flashlight: { title: '손전등', message: '손전등을 사용할 수 없습니다.' },
+  timer: { title: '타이머', message: '설정된 타이머가 없습니다.' },
+  calculator: { title: '계산기', message: '계산기를 열 수 없습니다.' },
+  camera: { title: '카메라', message: '카메라를 사용할 수 없습니다.' },
   mirror: { title: '화면 미러링', message: '연결된 화면이 없습니다.' },
-  qr: { title: '코드 스캔', message: '이 웹 체험은 카메라로 코드를 스캔하지 않아요.' },
-  focus: { title: '집중 모드', message: '이 웹 체험에는 차단할 알림이 없습니다.' },
+  qr: { title: '코드 스캔', message: '카메라를 사용할 수 없습니다.' },
+  focus: { title: '집중 모드', message: '설정된 집중 모드가 없습니다.' },
 };
 
 /** Layout reference: apple-control-center-image. Artwork is original SVG. */
@@ -205,7 +205,7 @@ export function ControlCenter({
       label="화면 회전 잠금"
       onClick={() => {
         onControls({ ...controls, rotation: !rotation });
-        setNotice('회전 잠금은 체험 안의 표시 상태입니다.');
+        setNotice(rotation ? '세로 화면 방향 고정: 끔' : '세로 화면 방향 고정: 켬');
       }}
       active={rotation}
     />
@@ -216,7 +216,7 @@ export function ControlCenter({
       label="무음 모드"
       onClick={() => {
         onControls({ ...controls, silent: !silent });
-        setNotice('무음 모드는 기기 소리를 바꾸지 않습니다.');
+        setNotice(silent ? '무음 모드: 끔' : '무음 모드: 켬');
       }}
       active={silent}
     />
@@ -274,8 +274,7 @@ export function ControlCenter({
       <div className="cc-slider-fill" />
       <input
         type="range"
-        aria-label="체험 음량"
-        aria-description="기기 음량은 바뀌지 않습니다"
+        aria-label="음량"
         aria-orientation="vertical"
         min={0}
         max={100}
@@ -283,7 +282,6 @@ export function ControlCenter({
         value={volume}
         onChange={(event) => {
           onControls({ ...controls, volume: Number(event.target.value) });
-          setNotice('체험 음량입니다. 기기 음량은 바뀌지 않아요.');
         }}
       />
       <ControlIcon name="volume" />
@@ -476,7 +474,6 @@ export function ControlCenter({
                 {connection('cellular', '셀룰러 데이터')}
                 {connection('bluetooth', 'Bluetooth')}
               </div>
-              <p>웹 안에서만 적용됩니다.</p>
             </div>
           ) : (
             <p>{detailText[detail].message}</p>

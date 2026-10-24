@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useDisplayDate } from '../display/useDisplayDate';
 import { useUnlockGesture } from './useUnlockGesture';
 import { useDay } from '../day/DayContext';
@@ -13,7 +13,6 @@ export function LockScreen({
   onCall,
   onCalendar,
   onReminders,
-  onWeather,
 }: {
   onUnlock: () => void;
   autoFocus?: boolean;
@@ -22,11 +21,12 @@ export function LockScreen({
   onCall: () => void;
   onCalendar: () => void;
   onReminders: () => void;
-  onWeather: () => void;
 }) {
   const date = useDisplayDate();
   const { remaining } = useDay();
   const [notice, setNotice] = useState('');
+  const weather = useRef<HTMLDialogElement>(null);
+  const weatherTrigger = useRef<HTMLButtonElement>(null);
   const { offset, dragging, bind, unlock } = useUnlockGesture({ onUnlock, active });
   return (
     <section className="lock-screen" aria-label="잠금 화면" data-testid="lock-screen" {...bind}>
@@ -51,8 +51,9 @@ export function LockScreen({
           </button>
           <button
             className="lock-round-widget"
-            onClick={onWeather}
-            aria-label="가상 날씨 27도 안내 열기"
+            ref={weatherTrigger}
+            onClick={() => weather.current?.showModal()}
+            aria-label="나팔꽃 날씨 27도 열기"
           >
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <circle cx="12" cy="12" r="4" />
@@ -79,7 +80,7 @@ export function LockScreen({
           <button
             className="glass-button"
             aria-label="손전등 안내"
-            onClick={() => setNotice('손전등은 이 웹 화면에서 사용할 수 없어요.')}
+            onClick={() => setNotice('손전등을 사용할 수 없습니다.')}
           >
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M8 3h8M7 6h10l-3 5v9h-4v-9L7 6Z" />
@@ -89,7 +90,7 @@ export function LockScreen({
           <button
             className="glass-button"
             aria-label="카메라 안내"
-            onClick={() => setNotice('카메라 권한을 사용하지 않는 웹 체험입니다.')}
+            onClick={() => setNotice('카메라를 사용할 수 없습니다.')}
           >
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M3 7h4l2-3h6l2 3h4v13H3V7Z" />
@@ -110,6 +111,17 @@ export function LockScreen({
           위로 쓸어올려서 열기
         </button>
       </div>
+      <dialog
+        ref={weather}
+        className="settings-reset-dialog lock-weather"
+        aria-label="나팔꽃 날씨"
+        data-unlock-ignore
+        onClose={() => weatherTrigger.current?.focus({ preventScroll: true })}
+      >
+        <h2>나팔꽃</h2>
+        <p>27° · 맑음</p>
+        <button onClick={() => weather.current?.close()}>닫기</button>
+      </dialog>
     </section>
   );
 }

@@ -121,7 +121,7 @@ for (const size of [
     await page.getByRole('button', { name: 'Safari', exact: true }).tap();
     await enterAddress(page, 'https://yaku.test/guide');
     await expectNoVerticalClip(safariBody(page));
-    const link = page.getByRole('button', { name: '예제 페이지 둘러보기', exact: true });
+    const link = page.getByRole('button', { name: '주말 산책 읽기', exact: true });
     await revealWithPages(safariBody(page), link, 'Safari 본문 다음 페이지');
     await link.tap();
     await expect(address(page)).toHaveText('yaku.test/example');
@@ -160,7 +160,7 @@ test('200% 글자와 짧은 높이에서도 설정 조작과 Safari 마지막 �
   });
   await enterAddress(page, 'https://yaku.test/guide');
   await expectNoVerticalClip(safariBody(page));
-  const link = page.getByRole('button', { name: '예제 페이지 둘러보기', exact: true });
+  const link = page.getByRole('button', { name: '주말 산책 읽기', exact: true });
   await revealWithPages(safariBody(page), link, 'Safari 본문 다음 페이지');
   await link.tap();
   await expect(address(page)).toHaveText('yaku.test/example');
@@ -298,7 +298,7 @@ for (const interruption of [
 test('본문의 짧은 가로 드래그는 링크 클릭을 억제하고 다음 탭은 정상 동작한다', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 420 });
   await openApp(page, 'Safari');
-  const link = page.getByRole('button', { name: '시작 안내', exact: true });
+  const link = page.getByRole('button', { name: '휴대폰 사용법', exact: true });
   await revealWithPages(safariBody(page), link, 'Safari 본문 다음 페이지');
   const before = await safariBody(page).getAttribute('data-page');
   const rect = (await link.boundingBox())!;
@@ -352,7 +352,7 @@ test('본문 페이지와 가장자리는 실제 터치에서도 구분하고 �
   await drag(x, y, -100, 0);
   await expect(safariBody(page)).toHaveAttribute('data-page', '2');
   await expect(address(page)).toHaveText('yaku.test/guide');
-  const link = page.getByRole('button', { name: '예제 페이지 둘러보기', exact: true });
+  const link = page.getByRole('button', { name: '주말 산책 읽기', exact: true });
   await revealWithPages(safariBody(page), link, 'Safari 본문 다음 페이지');
   const linkBox = (await link.boundingBox())!;
   await drag(linkBox.x + linkBox.width / 2, linkBox.y + linkBox.height / 2, 25, 0);
@@ -371,7 +371,7 @@ test('선택한 텍스트를 가장자리 제스처가 가로채지 않고 선�
 }) => {
   await openApp(page, 'Safari');
   await enterAddress(page, 'https://yaku.test/guide');
-  await page.getByRole('heading', { name: /작은 화면/ }).evaluate((element) => {
+  await page.getByRole('heading', { name: /아저씨,/ }).evaluate((element) => {
     const range = document.createRange();
     range.selectNodeContents(element);
     window.getSelection()?.removeAllRanges();
@@ -405,7 +405,7 @@ test('작은 높이와 200% 글자에서 Safari 메뉴·탭·오류도 세로 �
   await page.getByRole('button', { name: '탭 보기, 2개', exact: true }).tap();
   pager = page.getByRole('region', { name: '탭 목록', exact: true });
   await expectNoVerticalClip(pager);
-  const select = page.getByRole('button', { name: '예제 페이지 탭 선택', exact: true });
+  const select = page.getByRole('button', { name: '주말 산책 탭 선택', exact: true });
   await revealWithPages(pager, select, '탭 목록 다음 페이지');
   await select.tap();
   await enterAddress(page, 'javascript:alert(1)');

@@ -12,7 +12,7 @@ export function StatusBar({
     <div
       className="phone-status-bar"
       data-app={appVisible}
-      aria-label={`${date.accessibleTime}, ${preferences.airplane ? '에어플레인 모드, ' : ''}${preferences.wifi ? 'Wi-Fi 연결, ' : ''}배터리 80%, 데모 표시`}
+      aria-label={`${date.accessibleTime}, ${preferences.airplane ? '에어플레인 모드, ' : ''}${preferences.wifi ? 'Wi-Fi 연결, ' : ''}배터리 80%`}
     >
       <time>{date.clock}</time>
       <div className="phone-status-icons">

@@ -81,7 +81,7 @@ test('홈 인디케이터를 빠르게 올리면 홈, 멈춘 뒤 놓으면 최�
   await expect(page.getByRole('heading', { name: 'Wi-Fi', exact: true })).toBeVisible();
   await page.keyboard.press('Alt+Home');
   await open(page, 'safari');
-  await page.getByRole('button', { name: '시작 안내', exact: true }).tap();
+  await page.getByRole('button', { name: '휴대폰 사용법', exact: true }).tap();
   await recent(page);
   await drag(page, page.getByRole('button', { name: 'Safari 앱으로 전환', exact: true }), 110, 0);
   await page.getByRole('button', { name: '설정 앱으로 전환', exact: true }).tap();
@@ -96,7 +96,7 @@ test('하단 좌우는 최근 앱을 왕복하고 카드 위로 닫기는 해당
   await page.locator('[data-settings-page=wifi]').tap();
   await page.keyboard.press('Alt+Home');
   await open(page, 'safari');
-  await page.getByRole('button', { name: '시작 안내', exact: true }).tap();
+  await page.getByRole('button', { name: '휴대폰 사용법', exact: true }).tap();
   await drag(page, page.getByTestId('safari-home-gesture'), 100, 0);
   await expect(page.getByRole('heading', { name: 'Wi-Fi', exact: true })).toBeVisible();
   await drag(page, page.getByTestId('settings-home-gesture'), -100, 0);
@@ -110,7 +110,7 @@ test('하단 좌우는 최근 앱을 왕복하고 카드 위로 닫기는 해당
   await expect(page.getByRole('heading', { name: 'Wi-Fi', exact: true })).toBeVisible();
   await page.keyboard.press('Alt+Home');
   await open(page, 'safari');
-  await expect(page.getByRole('button', { name: '시작 안내', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: '휴대폰 사용법', exact: true })).toBeVisible();
 });
 
 test('홈 아래 당김 검색은 지원 앱을 열고 입력창은 누르기 전 포커스되지 않는다', async ({
@@ -373,10 +373,10 @@ test('제어 상세의 Escape는 제어 센터로 복귀하고 세로 밝기 입
   await expect(page.getByRole('button', { name: '디스플레이 설정', exact: true })).toBeFocused();
 });
 
-test('제어 센터를 다시 열어도 체험 음량과 회전·무음 표시가 유지된다', async ({ page }) => {
+test('제어 센터를 다시 열어도 음량과 회전·무음 표시가 유지된다', async ({ page }) => {
   await ready(page);
   await page.keyboard.press('Alt+c');
-  const volume = page.getByRole('slider', { name: '체험 음량' });
+  const volume = page.getByRole('slider', { name: '음량' });
   await volume.focus();
   await page.keyboard.press('ArrowUp');
   await page.getByRole('button', { name: '화면 회전 잠금', exact: true }).tap();

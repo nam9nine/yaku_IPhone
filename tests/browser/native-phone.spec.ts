@@ -36,7 +36,7 @@ for (const size of [
     await page.getByRole('button', { name: '번호 한 자리 지우기' }).tap();
     await expect(page.getByLabel('입력한 전화번호')).toHaveText('01');
     await page.getByRole('button', { name: '전화 걸기', exact: true }).tap();
-    await expect(page.getByRole('dialog')).toContainText('실제 전화에 연결하지 않는');
+    await expect(page.getByRole('dialog')).toContainText('연결할 수 없습니다.');
     await page.getByRole('button', { name: '확인', exact: true }).tap();
     await page.keyboard.press('Alt+Home');
     await page.locator('[data-launch-app=contacts]').tap();
@@ -73,7 +73,7 @@ test('전화 응답은 통화 화면으로 이어지고 종료하면 기존 메�
   await boot(page);
   await trigger(page);
   await page.getByRole('button', { name: '전화 응답', exact: true }).tap();
-  const call = page.getByRole('dialog', { name: '마지마 형님과 통화 시뮬레이션' });
+  const call = page.getByRole('dialog', { name: '마지마 형님과 통화' });
   await expect(call).toBeVisible();
   await call.getByRole('button', { name: '소리 끔', exact: true }).tap();
   await expect(call.getByRole('button', { name: '소리 끔', exact: true })).toHaveAttribute(
@@ -211,5 +211,5 @@ test('통화 중 높이가 줄어도 종료 버튼을 눌러 나갈 수 있다',
   await page.getByRole('button', { name: '전화 응답', exact: true }).tap();
   await page.setViewportSize({ width: 390, height: 320 });
   await page.getByRole('button', { name: '통화 종료', exact: true }).tap();
-  await expect(page.getByRole('dialog', { name: '마지마 형님과 통화 시뮬레이션' })).toHaveCount(0);
+  await expect(page.getByRole('dialog', { name: '마지마 형님과 통화' })).toHaveCount(0);
 });

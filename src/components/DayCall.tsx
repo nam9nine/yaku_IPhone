@@ -94,7 +94,7 @@ export function DayCall({
           const index = buttons.indexOf(document.activeElement as HTMLButtonElement);
           buttons[(index + (event.shiftKey ? -1 : 1) + buttons.length) % buttons.length].focus();
         }}
-        aria-label={connected ? '마지마 형님과 통화 시뮬레이션' : '마지마 형님 전화 수신'}
+        aria-label={connected ? '마지마 형님과 통화' : '마지마 형님 전화 수신'}
         onCancel={(event) => {
           event.preventDefault();
           decline();
@@ -125,7 +125,6 @@ export function DayCall({
                   <span>◖))</span>스피커
                 </button>
               </div>
-              <p className="call-demo">통화 화면 체험 · 실제 연결과 음성은 없습니다.</p>
               <button
                 className="call-action call-decline call-end"
                 aria-label="통화 종료"
