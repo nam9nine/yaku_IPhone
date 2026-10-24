@@ -20,6 +20,7 @@ export function useTopPull(
       kind: TopPanel;
       dragging: boolean;
       progress: number;
+      slop: number;
     } | null = null;
     let frame = 0;
     let timer = 0;
@@ -65,7 +66,7 @@ export function useTopPull(
       if (!root) return;
       if (
         event.target.closest(
-          'button,a,[role="button"],[role="link"],input,textarea,select,label,[contenteditable="true"],.social-scroll,.settings-content,.phone-history,.phone-keypad,.day-call,dialog[open]',
+          'input,textarea,select,label,[contenteditable="true"],.social-scroll,.settings-content,.phone-history,.phone-keypad,.day-call,dialog[open]',
         )
       )
         return;
@@ -89,6 +90,9 @@ export function useTopPull(
         kind: x >= 0.65 ? 'control' : 'notifications',
         dragging: false,
         progress: 0,
+        // Preserve small in-button tap drift without removing the top pull
+        // available on photo widgets and header buttons.
+        slop: event.target.closest('button,a,[role="button"],[role="link"]') ? 16 : 8,
       };
       suppress = false;
     }
@@ -106,7 +110,7 @@ export function useTopPull(
           finish();
           return;
         }
-        if (dy < 8) return;
+        if (dy < current.slop) return;
         current.dragging = true;
         current.root.setPointerCapture(current.id);
         delete current.root.dataset.topSettling;

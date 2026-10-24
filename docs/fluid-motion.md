@@ -31,6 +31,6 @@ iDownloadBlog의 iOS 27 메시지·사진 실제 사용 캡처와 MacRumors iOS 
 
 하단의 유효 상승 거리는 48px로 낮춘다. 빠르게 놓으면 홈, 느리게 움직이거나 잠깐 멈추면 최근 앱, 끝까지 계속 올리면 홈이라는 구분은 유지한다. 12px부터 이전 앱 미리보기를 드러내고 짧은 상승에서도 현재 앱의 가장자리가 연속적으로 보이게 한다. 카드 삭제는 실수로 닫지 않도록 기존 96px를 유지한다. 이 수치는 이 웹 화면의 조정값이며 Apple의 비공개 제스처 상수가 아니다.
 
-버튼 안에서 9px 아래 또는 오른쪽으로 움직인 탭을 상단 pull과 edge navigation이 가로채는 문제가 실제 브라우저 입력으로 재현되었다. 상단 pull은 버튼·링크에서 시작하지 않는다. Edge navigation은 버튼·링크의 16px 미만 이동을 탭으로 남기고 충분히 긴 가장자리 스와이프는 계속 처리한다. 일반 본문 페이지 넘기기의 카드 드래그는 유지한다. capture·취소·클릭 전달의 의미는 [W3C Pointer Events](https://www.w3.org/TR/pointerevents3/)를 따른다.
+버튼 안에서 9px 아래 또는 오른쪽으로 움직인 탭을 상단 pull과 edge navigation이 가로채는 문제가 실제 브라우저 입력으로 재현되었다. 버튼·링크의 작은 이동은 탭으로 남기고, 상단 pull은 아래로 16px 이상 움직인 뒤 시작한다. 일반 상단 영역은 기존 8px 기준을 유지한다. Edge navigation도 버튼·링크의 16px 미만 이동을 탭으로 남기고 충분히 긴 가장자리 스와이프는 계속 처리한다. 사진 위젯·헤더 버튼의 긴 하향 pull과 일반 본문 페이지 넘기기의 카드 드래그는 유지한다. capture·취소·클릭 전달의 의미는 [W3C Pointer Events](https://www.w3.org/TR/pointerevents3/)를 따른다.
 
 속도 검사는 [Playwright Clock](https://playwright.dev/docs/clock)으로 이동 경로 전체의 시간과 마지막 release 간격을 고정한다. 이벤트의 `isTrusted`와 `timeStamp` 간격도 검사하여 CI 통신 지연이 빠른 동작을 멈춘 동작으로 바꾸지 않게 한다. 실제 iPhone Safari에서 손가락 촉감을 확인한 결과와 구별한다.
