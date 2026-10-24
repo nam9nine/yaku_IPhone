@@ -12,7 +12,7 @@ import {
   writeFile,
 } from 'node:fs/promises';
 import path from 'node:path';
-import { compose, Readable } from 'node:stream';
+import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { createGunzip, createGzip } from 'node:zlib';
 import { normalizeRecord } from './yakuza-normalize.mjs';
@@ -30,7 +30,15 @@ const increment = (object, key) => {
 const json = (value) => `${JSON.stringify(value)}\n`;
 
 export async function* readJsonlGzip(filename) {
-  const input = compose(createReadStream(filename), createGunzip());
+  const source = createReadStream(filename);
+  const input = createGunzip();
+  let pipelineError;
+  // Consume Gunzip itself so its async iterator owns late decompression errors,
+  // including errors raised while a caller is awaiting work after a yielded row.
+  // Attach rejection handling immediately, then propagate it after consumption.
+  const completed = pipeline(source, input).catch((error) => {
+    pipelineError = error;
+  });
   const decoder = new TextDecoder('utf-8', { fatal: true });
   let pending = '';
   let lineNumber = 0;
@@ -51,13 +59,19 @@ export async function* readJsonlGzip(filename) {
       }
       if (pending.length > 8 * 1024 ** 2) throw new Error('JSONL record exceeds limit.');
     }
+    await completed;
+    if (pipelineError) throw pipelineError;
     pending += decoder.decode();
     if (pending.length) {
       if (!pending.trim()) throw new Error('Blank final JSONL record.');
       yield { row: JSON.parse(pending), lineNumber: ++lineNumber, rawRowHash: hash(pending) };
     }
   } finally {
+    source.destroy();
     input.destroy();
+    // Await closure on success, parser failure and consumer cancellation. A
+    // cleanup AbortError must not replace the parser/caller's original error.
+    await completed;
   }
 }
 
