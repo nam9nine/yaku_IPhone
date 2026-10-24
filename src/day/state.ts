@@ -11,6 +11,7 @@ export interface DayState {
   reminders: { garden: boolean; mame: boolean };
   readThreads: ContactId[];
   replies: ContactId[];
+  aiReplies: ContactId[];
   replySent: boolean;
   missedCall: boolean;
   missedCallRead: boolean;
@@ -20,7 +21,7 @@ export type DayAction =
   | { type: 'read-thread'; id: string }
   | { type: 'ingredient'; id: IngredientId; done: boolean }
   | { type: 'reminder'; id: ReminderId; done: boolean }
-  | { type: 'reply'; id: string }
+  | { type: 'reply'; id: string; source?: 'ai' }
   | { type: 'read-call' }
   | { type: 'answer-call' }
   | { type: 'miss-call' }
@@ -32,6 +33,7 @@ export function initialDay(): DayState {
     reminders: { garden: false, mame: false },
     readThreads: [],
     replies: [],
+    aiReplies: [],
     replySent: false,
     missedCall: false,
     missedCallRead: false,
@@ -100,6 +102,7 @@ export function dayReducer(state: DayState, action: DayAction): DayState {
       return {
         ...state,
         replies: [...state.replies, action.id],
+        aiReplies: action.source === 'ai' ? [...state.aiReplies, action.id] : state.aiReplies,
         replySent: state.replySent || action.id === 'haruka',
         readThreads: state.readThreads.includes(action.id)
           ? state.readThreads
@@ -144,6 +147,7 @@ export function validDay(value: unknown): value is DayState {
   if (
     !contactsArray(value.readThreads) ||
     !contactsArray(value.replies) ||
+    !contactsArray(value.aiReplies) ||
     typeof value.replySent !== 'boolean' ||
     typeof value.missedCall !== 'boolean' ||
     typeof value.missedCallRead !== 'boolean' ||
@@ -158,6 +162,7 @@ export function validDay(value: unknown): value is DayState {
   )
     return false;
   if (!value.replies.every((id) => (value.readThreads as ContactId[]).includes(id))) return false;
+  if (!value.aiReplies.every((id) => (value.replies as ContactId[]).includes(id))) return false;
   return !ingredients.every(({ id }) => items[id]) || value.missedCall;
 }
 export function loadDay(storage: Pick<Storage, 'getItem'>): {
@@ -171,6 +176,7 @@ export function loadDay(storage: Pick<Storage, 'getItem'>): {
       // Old v1 records had no incoming phase. A page reload never rings again.
       if (record(value) && !('callStatus' in value))
         value.callStatus = value.missedCall ? 'missed' : null;
+      if (record(value) && !('aiReplies' in value)) value.aiReplies = [];
       if (validDay(value))
         return {
           state: value.callStatus === 'ringing' ? { ...value, callStatus: 'missed' } : value,

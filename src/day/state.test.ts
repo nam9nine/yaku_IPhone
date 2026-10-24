@@ -88,6 +88,13 @@ describe('나팔꽃의 공유된 하루', () => {
     expect(dayReducer(state, { type: 'read-thread', id: 'haruka' })).toBe(state);
     expect(dayReducer(state, { type: 'read-thread', id: 'stranger' })).toBe(state);
   });
+  it('preserves the AI source through reload without turning it into a demo reply', () => {
+    const state = dayReducer(completeShopping(), { type: 'reply', id: 'haruka', source: 'ai' });
+    expect(state.replySent).toBe(true);
+    expect(state.aiReplies).toEqual(['haruka']);
+    expect(loadDay({ getItem: () => JSON.stringify(state) }).state.aiReplies).toEqual(['haruka']);
+    expect(dayReducer(state, { type: 'reset' }).aiReplies).toEqual([]);
+  });
   it('offers other contact replies once without advancing the curry event', () => {
     const state = dayReducer(initialDay(), { type: 'reply', id: 'majima' });
     expect(state.replies).toEqual(['majima']);
