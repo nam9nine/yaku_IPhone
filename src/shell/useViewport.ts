@@ -19,7 +19,10 @@ export function useViewport() {
     window.addEventListener('resize', resize);
     window.visualViewport?.addEventListener('resize', resize);
     window.visualViewport?.addEventListener('scroll', resize);
+    // Reconcile a resize between the initial render and listener registration.
+    const initialFrame = window.requestAnimationFrame(resize);
     return () => {
+      window.cancelAnimationFrame(initialFrame);
       window.removeEventListener('resize', resize);
       window.visualViewport?.removeEventListener('resize', resize);
       window.visualViewport?.removeEventListener('scroll', resize);

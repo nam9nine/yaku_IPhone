@@ -442,6 +442,42 @@
       "modification": "원본 바이트 그대로 저장. 앱 표시에서 object-fit 및 object-position만 사용 가능.",
       "suggestedObjectPosition": "50% 35%",
       "visualIdentityVerified": true
+    },
+    {
+      "localPath": "public/story/akiyama.jpg",
+      "url": "https://ryu-ga-gotoku.com/six/assets/img/cast/akiyama/ss01.jpg",
+      "sha256": "e69437b6e052c39caeef8bae5870f3261d36746705f98edc34cea2621063943f",
+      "bytes": 76214,
+      "id": "akiyama",
+      "title": "아키야마 슌",
+      "type": "portrait",
+      "sourcePage": "https://ryu-ga-gotoku.com/six/cast/cast09/",
+      "version": "Yakuza 6 official Japanese cast page",
+      "retrievedOn": "2026-10-24",
+      "rightsHolder": "SEGA",
+      "license": "Copyright SEGA. No open-source or Creative Commons license found; not covered by the project code license.",
+      "purpose": "사용자 요청 키류의 폰 팬 프로젝트에서 연락처 사진 또는 사진 보관함에 표시",
+      "modification": "원본 바이트 그대로 저장. 앱 표시에서 object-fit 및 object-position만 사용 가능.",
+      "suggestedObjectPosition": "50% 35%",
+      "visualIdentityVerified": true
+    },
+    {
+      "localPath": "public/story/nishiki.jpg",
+      "url": "https://ryu-ga-gotoku.com/kiwami/img/cast/cast03_p01.jpg",
+      "sha256": "0ded74c410d8e7027e74f7a69c7a6ed45a5d803b989e1ffd6abb96797741c4b3",
+      "bytes": 195442,
+      "id": "nishiki",
+      "title": "니시키야마 아키라",
+      "type": "portrait",
+      "sourcePage": "https://ryu-ga-gotoku.com/kiwami/",
+      "version": "Yakuza Kiwami official Japanese cast page",
+      "retrievedOn": "2026-10-24",
+      "rightsHolder": "SEGA",
+      "license": "Copyright SEGA. No open-source or Creative Commons license found; not covered by the project code license.",
+      "purpose": "사용자 요청 키류의 폰 팬 프로젝트에서 연락처 사진 또는 사진 보관함에 표시",
+      "modification": "원본 바이트 그대로 저장. 앱 표시에서 object-fit 및 object-position만 사용 가능.",
+      "suggestedObjectPosition": "50% 35%",
+      "visualIdentityVerified": true
     }
   ]
 }
