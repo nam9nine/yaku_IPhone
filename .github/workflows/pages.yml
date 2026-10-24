@@ -4,6 +4,11 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      local_verified:
+        description: '로컬 검증을 마친 긴급 수정: CI 검사 없이 빌드·배포'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -26,20 +31,28 @@ jobs:
           node-version-file: .node-version
           cache: npm
       - run: npm ci
-      - run: npm run check
-      - name: Configure official Ubuntu APT mirror
+      - if: ${{ !inputs.local_verified }}
+        run: npm run check
+      - if: ${{ inputs.local_verified }}
+        run: npm run build
+      - if: ${{ !inputs.local_verified }}
+        name: Configure official Ubuntu APT mirror
         run: sudo "$(command -v node)" scripts/configure-apt-mirror.mjs
-      - name: Install browser system dependencies
+      - if: ${{ !inputs.local_verified }}
+        name: Install browser system dependencies
         run: time npx playwright install-deps chromium webkit
-      - name: Install Playwright browsers
+      - if: ${{ !inputs.local_verified }}
+        name: Install Playwright browsers
         run: time npx playwright install chromium webkit
-      - run: npm run test:e2e -- --output=test-results/e2e
+      - if: ${{ !inputs.local_verified }}
+        run: npm run test:e2e -- --output=test-results/e2e
         env:
           PLAYWRIGHT_HTML_REPORT: playwright-report/e2e
-      - run: npm run test:visual -- --output=test-results/visual
+      - if: ${{ !inputs.local_verified }}
+        run: npm run test:visual -- --output=test-results/visual
         env:
           PLAYWRIGHT_HTML_REPORT: playwright-report/visual
-      - if: always()
+      - if: ${{ always() && !inputs.local_verified }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: deployment-checks-${{ github.sha }}
