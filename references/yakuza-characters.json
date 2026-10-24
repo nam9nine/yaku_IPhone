@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "purpose": "검토 우선순위용 언급 별칭. 전체 인물 명단이나 화자 라벨이 아니며 목록 밖의 모든 행도 보존한다. 언급은 관계/발화자 증명이 아니다.",
+  "sources": ["src/story/data.ts", "https://github.com/nam9nine/yaku_IPhone/issues/41"],
+  "characters": [
+    {
+      "id": "kiryu",
+      "label": "키류 카즈마",
+      "aliases": ["키류", "桐生", "Kazuma Kiryu", "Kiryu"]
+    },
+    {
+      "id": "haruka",
+      "label": "사와무라 하루카",
+      "aliases": ["하루카", "澤村遥", "澤村 遥", "Haruka Sawamura", "Haruka"]
+    },
+    {
+      "id": "majima",
+      "label": "마지마 고로",
+      "aliases": ["마지마", "真島", "Goro Majima", "Majima"]
+    },
+    {
+      "id": "daigo",
+      "label": "도지마 다이고",
+      "aliases": ["다이고", "堂島大吾", "堂島 大吾", "大吾", "Daigo Dojima", "Daigo"]
+    },
+    {
+      "id": "mine",
+      "label": "미네 요시타카",
+      "aliases": ["미네", "峯義孝", "峯 義孝", "Yoshitaka Mine"]
+    },
+    {
+      "id": "saejima",
+      "label": "사에지마 타이가",
+      "aliases": ["사에지마", "冴島", "Taiga Saejima", "Saejima"]
+    },
+    {
+      "id": "date",
+      "label": "다테 마코토",
+      "aliases": ["다테", "伊達", "Makoto Date"]
+    },
+    {
+      "id": "akiyama",
+      "label": "아키야마 슌",
+      "aliases": ["아키야마", "秋山", "Shun Akiyama", "Akiyama"]
+    },
+    {
+      "id": "nishiki",
+      "label": "니시키야마 아키라",
+      "aliases": ["니시키야마", "니시키", "錦山", "Akira Nishikiyama", "Nishikiyama", "Nishiki"]
+    }
+  ]
+}

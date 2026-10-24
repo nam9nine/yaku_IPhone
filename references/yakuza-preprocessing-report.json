@@ -1,0 +1,443 @@
+{
+  "schemaVersion": 1,
+  "checkedDate": "2026-10-24",
+  "scope": "MNBVC Yakuza pinned 8-file collection and first-pass preprocessing; all original characters/languages retained",
+  "runId": "284224254b0e44d9534b15f1",
+  "codeFingerprint": "d9ccc916ceee162a3e9e177e8de6e559a51fce288ce9f6d7aac6ef32b5c993d2",
+  "datasetRevision": "c153d877b4af9c66026ee6fa4eefbc29dd8c11b0",
+  "archiveBytes": 66641322,
+  "counts": {
+    "input": 285971,
+    "normalized": 285971,
+    "trainingEligible": 0
+  },
+  "nonemptyKoreanRows": 168649,
+  "dialogueReviewCandidates": 52290,
+  "trainingReady": false,
+  "reproducedIdentically": true,
+  "localResult": "references/local/yakuza-corpus/processed/284224254b0e44d9534b15f1",
+  "files": [
+    {
+      "id": "like-a-dragon8",
+      "input": 57452,
+      "normalized": 57452,
+      "languages": {
+        "cht": 57206,
+        "de": 57435,
+        "en": 57371,
+        "es": 57435,
+        "fr": 57435,
+        "it": 57435,
+        "ja": 57208,
+        "ko": 57220,
+        "pt": 57435,
+        "ru": 57435,
+        "zh": 57219
+      },
+      "classifications": {
+        "name_candidate": 12456,
+        "ui_candidate": 12231,
+        "unknown": 15450,
+        "dialogue_candidate": 17248,
+        "mail_candidate": 67
+      },
+      "routes": {
+        "other_review": 34046,
+        "quality_review": 6300,
+        "dialogue_review": 16874,
+        "no_korean": 232
+      },
+      "warnings": {
+        "unresolved_template_variable": 3399,
+        "unrecognized_angle_tag": 1935
+      },
+      "changes": {},
+      "mentions": {
+        "kiryu": 884,
+        "date": 79,
+        "akiyama": 34,
+        "majima": 57,
+        "haruka": 38,
+        "daigo": 54,
+        "saejima": 43,
+        "nishiki": 18,
+        "mine": 15
+      },
+      "upstreamDuplicateTrue": 13121,
+      "unlocated": 39348,
+      "scenes": 471
+    },
+    {
+      "id": "gaiden",
+      "input": 26869,
+      "normalized": 26869,
+      "languages": {
+        "cht": 26857,
+        "de": 26867,
+        "en": 26854,
+        "es": 26867,
+        "fr": 26867,
+        "it": 26867,
+        "ja": 26799,
+        "ko": 26857,
+        "pt": 26868,
+        "ru": 26866,
+        "zh": 26857
+      },
+      "classifications": {
+        "dialogue_candidate": 10451,
+        "ui_candidate": 5424,
+        "unknown": 7412,
+        "name_candidate": 3528,
+        "mail_candidate": 54
+      },
+      "routes": {
+        "dialogue_review": 10377,
+        "other_review": 14335,
+        "quality_review": 2145,
+        "no_korean": 12
+      },
+      "warnings": {
+        "unrecognized_angle_tag": 486,
+        "unresolved_template_variable": 574
+      },
+      "changes": {},
+      "mentions": {
+        "majima": 14,
+        "kiryu": 176,
+        "mine": 6,
+        "daigo": 23,
+        "saejima": 14,
+        "haruka": 10,
+        "nishiki": 2,
+        "date": 3
+      },
+      "upstreamDuplicateTrue": 4617,
+      "unlocated": 15117,
+      "scenes": 241
+    },
+    {
+      "id": "yakuza3",
+      "input": 9436,
+      "normalized": 9436,
+      "languages": {
+        "cht": 9431,
+        "en": 9417,
+        "ja": 9436,
+        "ko": 9422
+      },
+      "classifications": {
+        "ui_candidate": 1760,
+        "dialogue_candidate": 3021,
+        "unknown": 1825,
+        "name_candidate": 2830
+      },
+      "routes": {
+        "other_review": 6188,
+        "quality_review": 222,
+        "dialogue_review": 3012,
+        "no_korean": 14
+      },
+      "warnings": {
+        "unresolved_template_variable": 138,
+        "unrecognized_angle_tag": 2
+      },
+      "changes": {
+        "removed_action_controls": 45,
+        "removed_color_controls": 60
+      },
+      "mentions": {
+        "kiryu": 142,
+        "daigo": 77,
+        "date": 27,
+        "mine": 71,
+        "haruka": 34,
+        "majima": 27,
+        "nishiki": 17,
+        "akiyama": 1
+      },
+      "upstreamDuplicateTrue": 9435,
+      "unlocated": 1534,
+      "scenes": 196
+    },
+    {
+      "id": "yakuza4",
+      "input": 8192,
+      "normalized": 8192,
+      "languages": {
+        "cht": 8191,
+        "en": 4907,
+        "ja": 8192,
+        "ko": 8192
+      },
+      "classifications": {
+        "ui_candidate": 1355,
+        "name_candidate": 2593,
+        "dialogue_candidate": 3191,
+        "unknown": 1053
+      },
+      "routes": {
+        "other_review": 4916,
+        "dialogue_review": 3191,
+        "quality_review": 85
+      },
+      "warnings": {
+        "unresolved_template_variable": 34,
+        "unrecognized_angle_tag": 15
+      },
+      "changes": {
+        "removed_color_controls": 7,
+        "removed_action_controls": 12
+      },
+      "mentions": {
+        "majima": 48,
+        "saejima": 83,
+        "kiryu": 59,
+        "daigo": 15,
+        "akiyama": 74,
+        "date": 9,
+        "mine": 11,
+        "haruka": 22,
+        "nishiki": 5
+      },
+      "upstreamDuplicateTrue": 8191,
+      "unlocated": 1563,
+      "scenes": 196
+    },
+    {
+      "id": "yakuza5",
+      "input": 12807,
+      "normalized": 12807,
+      "languages": {
+        "cht": 12795,
+        "ja": 12803,
+        "ko": 12795,
+        "en": 8118
+      },
+      "classifications": {
+        "dialogue_candidate": 4689,
+        "name_candidate": 6359,
+        "unknown": 680,
+        "ui_candidate": 1079
+      },
+      "routes": {
+        "dialogue_review": 4679,
+        "other_review": 8005,
+        "quality_review": 111,
+        "no_korean": 12
+      },
+      "warnings": {
+        "unresolved_template_variable": 5,
+        "unrecognized_angle_tag": 48
+      },
+      "changes": {},
+      "mentions": {
+        "majima": 69,
+        "haruka": 113,
+        "saejima": 82,
+        "kiryu": 174,
+        "daigo": 37,
+        "akiyama": 36,
+        "date": 2
+      },
+      "upstreamDuplicateTrue": 12806,
+      "unlocated": 2632,
+      "scenes": 237
+    },
+    {
+      "id": "yakuza6",
+      "input": 57650,
+      "normalized": 57650,
+      "languages": {
+        "cht": 57556,
+        "en": 56818,
+        "ja": 57650
+      },
+      "classifications": {
+        "dialogue_candidate": 43890,
+        "unknown": 4469,
+        "ui_candidate": 5893,
+        "name_candidate": 2720,
+        "mail_candidate": 678
+      },
+      "routes": {
+        "no_korean": 57650
+      },
+      "warnings": {},
+      "changes": {},
+      "mentions": {
+        "kiryu": 3911,
+        "haruka": 637,
+        "date": 130,
+        "saejima": 38,
+        "akiyama": 212,
+        "majima": 24,
+        "daigo": 43,
+        "nishiki": 8,
+        "mine": 2
+      },
+      "upstreamDuplicateTrue": 57649,
+      "unlocated": 14103,
+      "scenes": 320
+    },
+    {
+      "id": "kiwami2",
+      "input": 59342,
+      "normalized": 59342,
+      "languages": {
+        "en": 59342,
+        "ja": 59342
+      },
+      "classifications": {
+        "ui_candidate": 8325,
+        "dialogue_candidate": 38401,
+        "unknown": 8030,
+        "name_candidate": 4420,
+        "mail_candidate": 166
+      },
+      "routes": {
+        "no_korean": 59342
+      },
+      "warnings": {},
+      "changes": {},
+      "mentions": {
+        "haruka": 152,
+        "kiryu": 3110,
+        "date": 129,
+        "majima": 379,
+        "nishiki": 33,
+        "daigo": 108,
+        "akiyama": 4,
+        "saejima": 7
+      },
+      "upstreamDuplicateTrue": 59341,
+      "unlocated": 22851,
+      "scenes": 346
+    },
+    {
+      "id": "like-a-dragon7",
+      "input": 54223,
+      "normalized": 54223,
+      "languages": {
+        "cht": 54156,
+        "de": 50799,
+        "en": 50823,
+        "es": 50799,
+        "fr": 50800,
+        "it": 50799,
+        "ja": 53973,
+        "ko": 54163,
+        "pt": 50815,
+        "ru": 50815,
+        "zh": 54156
+      },
+      "classifications": {
+        "name_candidate": 7044,
+        "ui_candidate": 9124,
+        "unknown": 10221,
+        "dialogue_candidate": 27646,
+        "mail_candidate": 188
+      },
+      "routes": {
+        "other_review": 23516,
+        "quality_review": 16490,
+        "dialogue_review": 14157,
+        "no_korean": 60
+      },
+      "warnings": {
+        "unrecognized_angle_tag": 541,
+        "unresolved_template_variable": 1459
+      },
+      "changes": {
+        "line_endings_lf": 2
+      },
+      "mentions": {
+        "kiryu": 1613,
+        "date": 31,
+        "nishiki": 19,
+        "daigo": 28,
+        "akiyama": 5,
+        "majima": 100,
+        "haruka": 9,
+        "mine": 23,
+        "saejima": 38
+      },
+      "upstreamDuplicateTrue": 11156,
+      "unlocated": 25596,
+      "scenes": 398
+    }
+  ],
+  "outputChecksums": {
+    "configuration.json": {
+      "bytes": 5325,
+      "sha256": "e93493165152e4ca291bdf3a9feae1188cdc611d5c712ddc41ffd2e40cec852b"
+    },
+    "dialogue-candidates.jsonl": {
+      "bytes": 21367017,
+      "sha256": "5478db7f2cd53e7e07c4cc338874801421fb04be25023243ca62777fe035a1e6"
+    },
+    "gaiden.normalized.jsonl.gz": {
+      "bytes": 16639215,
+      "sha256": "6945f877f194eb60f6426409667130d3ba33495ee0355129f08ad76f88f9ad8d"
+    },
+    "kiwami2.normalized.jsonl.gz": {
+      "bytes": 16481311,
+      "sha256": "61c0ded039b18d5afe5edafbaaf57685335c067641cde9b9f37b6af9e5a2d7ac"
+    },
+    "like-a-dragon7.normalized.jsonl.gz": {
+      "bytes": 30580103,
+      "sha256": "3abed56e99e237f9a380bbaa1cc5bdb0c8c44e1a5788214079caf4c7b0b20140"
+    },
+    "like-a-dragon8.normalized.jsonl.gz": {
+      "bytes": 36760090,
+      "sha256": "0d07899def3a57793396cad7fac7700abaeb5f08c7c1220dd922abeed0356867"
+    },
+    "mentions.jsonl": {
+      "bytes": 7186357,
+      "sha256": "b5ebe32a31e433028a38ae37441cd6375e66b7608e0ad8f72b5bc552157742cc"
+    },
+    "names.jsonl": {
+      "bytes": 32719710,
+      "sha256": "d666dd6047d36a9e429df0802d59fa9df919beb275d1730be917dab6142ea59a"
+    },
+    "quarantine.jsonl": {
+      "bytes": 71335007,
+      "sha256": "551743b5068808d5ad6e1ad18db872e132f5fb17c632b416c9e044aaa91ce780"
+    },
+    "report.json": {
+      "bytes": 8405,
+      "sha256": "c11c853f873bdf1f0f3319ae87d5a68beec146fd71c1f0bf3d59161e6d992ef0"
+    },
+    "review-samples.jsonl": {
+      "bytes": 853607,
+      "sha256": "11c91efc7279a307749e9594232a40a8634b75c4f9fa1c328f77d3eeb8ba9d79"
+    },
+    "scenes.jsonl": {
+      "bytes": 750984,
+      "sha256": "8e98a43ccc4f4a16616517aec9038e70db45cb472036ebeeadd6e3bd861ea8d1"
+    },
+    "yakuza3.normalized.jsonl.gz": {
+      "bytes": 2866667,
+      "sha256": "bcbe649a5f0238a3db12d9ef17e218c9fb4a8f4d4afad35bbb73b36c204c96e8"
+    },
+    "yakuza4.normalized.jsonl.gz": {
+      "bytes": 2413431,
+      "sha256": "1bfa04d2911e6e57989b1916c0cbec2a6be145a927364090361f06c56e94f9a1"
+    },
+    "yakuza5.normalized.jsonl.gz": {
+      "bytes": 3776547,
+      "sha256": "6771ac1d0c348914fc4d88ba9ca135dea162822357e34a151da423deb732b7a9"
+    },
+    "yakuza6.normalized.jsonl.gz": {
+      "bytes": 17920722,
+      "sha256": "8702c23c00ea0a4460393dfb1212de8f0297f71156c987e4af4d8e5935af1c0c"
+    }
+  },
+  "limits": [
+    "한국어 열 존재는 공식 번역 일치 검증이 아니다.",
+    "dialogue_review는 경로 기반 검토 후보이며 확정된 화자/청자/대화순서가 없다.",
+    "인물별 mentions는 모든 언어의 별칭 검색으로 오탐을 포함하며 발화수/고유인물수가 아니다.",
+    "모든 원문은 로컬에 보관. 공개 파일은 텍스트 없는 집계/해시뿐.",
+    "6/극2의 한국어는 0행. 니시키 주요 등장편0/1/극1은 이8개소스에 없음."
+  ]
+}

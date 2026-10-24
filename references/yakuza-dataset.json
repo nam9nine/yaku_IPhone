@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "dataset": "liwu/MNBVC",
+  "revision": "c153d877b4af9c66026ee6fa4eefbc29dd8c11b0",
+  "checkedDate": "2026-10-24",
+  "source": "https://huggingface.co/datasets/liwu/MNBVC/tree/c153d877b4af9c66026ee6fa4eefbc29dd8c11b0/game/Yakuza/20230924",
+  "scope": "해당 Yakuza 디렉터리의 8개 파일 전체. MNBVC 전체 데이터셋은 아니다.",
+  "license": {
+    "datasetCardLabel": "MIT",
+    "gameTextRights": "원 게임 텍스트의 권리는 별도이며 공개 재배포 허가를 확인한 것으로 간주하지 않는다. 원문/정제문은 ignored 로컬에만 저장한다."
+  },
+  "files": [
+    {
+      "id": "like-a-dragon8",
+      "path": "game/Yakuza/20230924/LikeADragon8_ParManager_reARMP_dedup.jsonl.gz",
+      "bytes": 23564507,
+      "sha256": "fe43c845140a9a38b219e4333b7f9892d4136d330ba4dfc9183fda75464299b2",
+      "gitBlobOid": "8bdff3b5bb058b7ce83276bee39dc8f64efe9e96",
+      "editionStatus": "unverified"
+    },
+    {
+      "id": "gaiden",
+      "path": "game/Yakuza/20230924/LikeADragonGaiden7Side_ParManager_reARMP_dedup.jsonl.gz",
+      "bytes": 10483251,
+      "sha256": "f4397320e07dd19e24a50971076007e414b231b8b4438989315c45a31d58aa66",
+      "gitBlobOid": "2b6284b5ccb274562bbc681ad14d2d353cc2785a",
+      "editionStatus": "unverified"
+    },
+    {
+      "id": "yakuza3",
+      "path": "game/Yakuza/20230924/Yakuza3_ParManager_reARMP_dedup.jsonl.gz",
+      "bytes": 921293,
+      "sha256": "4a1834a90479571bbe192c37673b53e03c88526a02de8d75a7765581f0c103dd",
+      "gitBlobOid": "6b7a44474550996cf4b76db79477cf9fb4a33df4",
+      "editionStatus": "unverified"
+    },
+    {
+      "id": "yakuza4",
+      "path": "game/Yakuza/20230924/Yakuza4_ParManager_reARMP_dedup.jsonl.gz",
+      "bytes": 732291,
+      "sha256": "b44a4a028f7d0c7056b758551c38556b998f861004070f67a579b7ae552c4983",
+      "gitBlobOid": "7cd12b1ea499911c25b9c4562499f7e2be0ac598",
+      "editionStatus": "unverified"
+    },
+    {
+      "id": "yakuza5",
+      "path": "game/Yakuza/20230924/Yakuza5_ParManager_reARMP_dedup.jsonl.gz",
+      "bytes": 1195706,
+      "sha256": "e38d0cf34651b68b1daf117962465d8b758afd71213cfe3f9456ebc82693434d",
+      "gitBlobOid": "9148df68c2903ef458b5c79b67e031cbf03c91db",
+      "editionStatus": "unverified"
+    },
+    {
+      "id": "yakuza6",
+      "path": "game/Yakuza/20230924/Yakuza6TheSongOfLife_ParManager_reARMP_dedup.jsonl.gz",
+      "bytes": 6319095,
+      "sha256": "f25d174d4ded88d229dcf4a4c58d6dbcd69680a72f1e62c19b078bc54baf6cf1",
+      "gitBlobOid": "37d52766c63c62887175897cd47bf216000b6eb3",
+      "editionStatus": "unverified"
+    },
+    {
+      "id": "kiwami2",
+      "path": "game/Yakuza/20230924/YakuzaKiwami2_ParManager_reARMP_dedup.jsonl.gz",
+      "bytes": 5176457,
+      "sha256": "edb4d3b027c981691b5098406545d125eea84c26ba3edc5ff0e9cfb9ce936064",
+      "gitBlobOid": "041029b01cc5f3ced9c8ee8b7c5d350a3cf29239",
+      "editionStatus": "unverified"
+    },
+    {
+      "id": "like-a-dragon7",
+      "path": "game/Yakuza/20230924/YakuzaLikeADragon7_ParManager_reARMP_dedup.jsonl.gz",
+      "bytes": 18248722,
+      "sha256": "05e042fa5b31c36585b93e16b6f1de00ec20a16ffb61a156e77196e988bafed6",
+      "gitBlobOid": "b8c5d673e06a44132f426211327571769da30b1c",
+      "editionStatus": "unverified"
+    }
+  ]
+}
