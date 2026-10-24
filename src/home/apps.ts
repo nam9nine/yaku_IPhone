@@ -1,4 +1,7 @@
 export type AppId =
+  | 'taxi'
+  | 'cooking'
+  | 'karaoke'
   | 'contacts'
   | 'facetime'
   | 'calendar'
@@ -41,6 +44,10 @@ export const homePages: readonly (readonly HomeApp[])[] = [
     { id: 'reminders', name: '미리 알림' },
     { id: 'settings', name: '설정' },
     { id: 'contacts', name: '연락처' },
+    { id: 'music', name: '음악' },
+    { id: 'taxi', name: '택시' },
+    { id: 'cooking', name: '드래곤 카레' },
+    { id: 'karaoke', name: '가라오케관' },
   ],
 ];
 export const dockApps: readonly HomeApp[] = [

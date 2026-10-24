@@ -14,6 +14,41 @@ const flowerColors = [
 
 function IconArtwork({ id, day, weekday }: { id: AppId; day: string; weekday: string }): ReactNode {
   switch (id) {
+    case 'karaoke':
+      return (
+        <image href={`${import.meta.env.BASE_URL}apps/karaokekan.jpg`} width="64" height="64" />
+      );
+    case 'taxi':
+      return (
+        <>
+          <rect width="64" height="64" fill="#ffd633" />
+          <path d="m14 29 5-12h26l5 12v19H14Z" fill="#191919" />
+          <path d="m21 21-3 9h28l-3-9Z" fill="#ffd633" />
+          <circle cx="21" cy="39" r="3" fill="white" />
+          <circle cx="43" cy="39" r="3" fill="white" />
+          <path
+            d="M19 47v5m26-5v5M27 12h10"
+            stroke="#191919"
+            strokeWidth="5"
+            strokeLinecap="round"
+          />
+        </>
+      );
+    case 'cooking':
+      return (
+        <>
+          <rect width="64" height="64" fill="#ee6b26" />
+          <path
+            d="M13 28h38v10c0 12-38 12-38 0Zm-5-3h48M27 13h10m-5 0v8"
+            fill="none"
+            stroke="white"
+            strokeWidth="4"
+            strokeLinecap="round"
+          />
+          <path d="M19 53h26" stroke="white" strokeWidth="3" strokeLinecap="round" />
+        </>
+      );
+
     case 'calendar':
       return (
         <>

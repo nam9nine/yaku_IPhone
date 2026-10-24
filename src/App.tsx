@@ -29,6 +29,7 @@ import { PhoneApp } from './story/PhoneApp';
 import { DayProvider, useDay } from './day/DayContext';
 import { RemindersApp } from './day/RemindersApp';
 import { CalendarApp } from './day/CalendarApp';
+import { MusicApp, TaxiApp, CookingApp } from './lifestyle/LifestyleApps';
 import { DayCall } from './components/DayCall';
 import { DayNotification } from './components/DayNotification';
 import { resetStoryStorage } from './story/useStoredState';
@@ -257,6 +258,15 @@ function PhoneSession() {
             />
           ) : app === 'calendar' ? (
             <CalendarApp
+              active={!state.locked && state.activeApp === app && !state.panel}
+              onOpenNote={openNote}
+            />
+          ) : app === 'music' ? (
+            <MusicApp active={!state.locked && state.activeApp === app && !state.panel} />
+          ) : app === 'taxi' ? (
+            <TaxiApp active={!state.locked && state.activeApp === app && !state.panel} />
+          ) : app === 'cooking' ? (
+            <CookingApp
               active={!state.locked && state.activeApp === app && !state.panel}
               onOpenNote={openNote}
             />

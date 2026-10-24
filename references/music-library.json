@@ -1,0 +1,9 @@
+{
+  "checkedAt": "2026-10-25",
+  "source": "https://music.apple.com/us/album/1492276149",
+  "metadata": "https://itunes.apple.com/lookup?id=1492276149&entity=song&country=us",
+  "artwork": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/d6/39/ba/d639ba39-5272-3e78-0595-d6ca845e75cf/080039_J.jpg/600x600bb.jpg",
+  "localPath": "public/apps/kiryu-album.jpg",
+  "sha256": "dfad9d940e69216ba103b567ab08da89dae28723f4ed0266ecdadddc34dc82a8",
+  "license": "℗ SEGA. No open license claimed. User-requested music library; links to Apple Music, no audio redistribution."
+}

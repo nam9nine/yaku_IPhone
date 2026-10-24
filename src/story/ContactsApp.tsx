@@ -47,12 +47,10 @@ export function ContactsApp({
   const { extraContacts, setExtraContacts } = useDay();
   const people = useMemo(
     () => [
-      ...contacts,
+      ...contacts.map((person) => ({ ...person, phone: '' })),
       ...extraContacts.map((person) => ({
         ...person,
         shortName: person.name,
-        relation: person.phone || '연락처',
-        about: '연락처',
         portrait: '',
       })),
     ],
@@ -78,16 +76,13 @@ export function ContactsApp({
             id: 'kiryu',
             name: '키류 카즈마',
             portrait: `${import.meta.env.BASE_URL}story/kiryu.jpg`,
-            relation: '나팔꽃',
-            about: '키류의 iPhone · 하루카가 정리를 도와줬다.',
+            phone: '',
           }
         : people.find((person) => person.id === selected),
     [myCard, people, selected],
   );
   const filtered = people
-    .filter((person) =>
-      `${person.name} ${person.shortName} ${person.relation}`.includes(query.trim()),
-    )
+    .filter((person) => `${person.name} ${person.shortName} ${person.phone}`.includes(query.trim()))
     .sort((a, b) => a.name.localeCompare(b.name, 'ko'));
   const groups = [...new Set(filtered.map((person) => initial(person.name)))];
   useLayoutEffect(() => {
@@ -206,16 +201,14 @@ export function ContactsApp({
                 </button>
               )}
             </div>
-            <dl className="contact-fields">
-              <div>
-                <dt>관계</dt>
-                <dd>{contact.relation}</dd>
-              </div>
-              <div>
-                <dt>메모</dt>
-                <dd>{contact.about}</dd>
-              </div>
-            </dl>
+            {contact.phone && (
+              <dl className="contact-fields">
+                <div>
+                  <dt>전화번호</dt>
+                  <dd>{contact.phone}</dd>
+                </div>
+              </dl>
+            )}
           </>
         ) : (
           <>

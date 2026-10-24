@@ -50,7 +50,7 @@ export function CalendarApp({
           )}
         </div>
         <h1 data-app-title ref={title} tabIndex={-1}>
-          {detail ? '이벤트' : '2026년 10월'}
+          {detail ? '이벤트' : '10월'}
         </h1>
         <span className="day-calendar-header-space" />
       </header>
@@ -60,7 +60,7 @@ export function CalendarApp({
             <h2>{shoppingEvent.title}</h2>
             <p>{shoppingEvent.location}</p>
             <div className="day-event-dates">
-              <span>2026년 10월 24일 토요일</span>
+              <span>10월 24일 토요일</span>
               <strong>오후 5:00</strong>
             </div>
             <h3>메모</h3>
@@ -71,7 +71,7 @@ export function CalendarApp({
           </article>
         ) : (
           <>
-            <div className="day-calendar-month" aria-label="2026년 10월 달력">
+            <div className="day-calendar-month" aria-label="10월 달력">
               <div className="day-calendar-weekdays">
                 {['일', '월', '화', '수', '목', '금', '토'].map((day) => (
                   <span key={day}>{day}</span>
