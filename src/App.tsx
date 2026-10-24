@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useReducer, useState } from 'react';
 import { MobileShell } from './components/MobileShell';
 import { LockScreen } from './lock/LockScreen';
+import { PasscodeScreen } from './lock/PasscodeScreen';
 import { HomeScreen } from './home/HomeScreen';
 import { AppWindow } from './shell/AppWindow';
 import {
@@ -52,6 +53,10 @@ function PhoneSession() {
   const [conversation, setConversation] = useState<string | null>(null);
   const [controls, setControls] = useState({ volume: 50, rotation: false, silent: false });
   const [state, dispatch] = useReducer(shellReducer, initialShellState);
+  const [unlockRequest, setUnlockRequest] = useState<{
+    app: RunnableApp | null;
+    origin: LaunchRect | null;
+  } | null>(null);
   const { preferences, setPreferences, storageUnavailable } = useDevicePreferences();
   const appearance = useAppearance(preferences);
   const viewport = useViewport();
@@ -66,13 +71,23 @@ function PhoneSession() {
     const rect = document
       .querySelector(`[data-launch-app="${app}"] .app-icon`)
       ?.getBoundingClientRect();
-    if (state.locked) dispatch({ type: 'unlock' });
+    if (state.locked) {
+      setUnlockRequest({ app, origin: entry ?? null });
+      return;
+    }
     dispatch({
       type: 'open',
       app,
       origin:
         entry ?? (rect ? { x: rect.x, y: rect.y, width: rect.width, height: rect.height } : null),
     });
+  }
+  function finishUnlock() {
+    if (!unlockRequest) return;
+    dispatch({ type: 'unlock' });
+    if (unlockRequest.app)
+      dispatch({ type: 'open', app: unlockRequest.app, origin: unlockRequest.origin });
+    setUnlockRequest(null);
   }
   function openNote(id: string) {
     setNote(id);
@@ -87,6 +102,7 @@ function PhoneSession() {
     openApp('messages');
   }
   function resetPhone() {
+    setUnlockRequest(null);
     day.reset();
     resetStoryStorage();
     setPreferences({ ...defaultPreferences });
@@ -112,7 +128,8 @@ function PhoneSession() {
   }, [state.locked, state.activeApp, state.launcher, state.panel]);
   useEffect(() => {
     const shortcuts = (event: KeyboardEvent) => {
-      if (document.querySelector('.day-call[open], .lock-weather[open]')) return;
+      if (document.querySelector('.day-call[open], .lock-weather[open], .passcode-screen[open]'))
+        return;
       if (state.panel) return;
       if (event.altKey && event.key.toLowerCase() === 'c') {
         event.preventDefault();
@@ -147,8 +164,8 @@ function PhoneSession() {
       <div className="base-screens" inert={Boolean(state.panel)} aria-hidden={Boolean(state.panel)}>
         {state.locked && (
           <LockScreen
-            active={!state.panel}
-            onUnlock={() => dispatch({ type: 'unlock' })}
+            active={!state.panel && !unlockRequest}
+            onUnlock={() => setUnlockRequest({ app: null, origin: null })}
             autoFocus={state.hasUnlocked}
             onMessage={openHaruka}
             onCall={openPhone}
@@ -264,7 +281,7 @@ function PhoneSession() {
           )}
         </AppWindow>
       ))}
-      {!state.panel && (
+      {!state.panel && !unlockRequest && (
         <SystemEdges
           onPreview={setTopPull}
           active
@@ -294,6 +311,8 @@ function PhoneSession() {
         />
       )}
       <DayCall
+        silent={controls.silent}
+        volume={controls.volume}
         preferences={preferences}
         key={epoch}
         locked={state.locked}
@@ -302,6 +321,13 @@ function PhoneSession() {
           openApp('messages');
         }}
       />
+      {unlockRequest && (
+        <PasscodeScreen
+          preferences={preferences}
+          onSuccess={finishUnlock}
+          onCancel={() => setUnlockRequest(null)}
+        />
+      )}
     </MobileShell>
   );
 }

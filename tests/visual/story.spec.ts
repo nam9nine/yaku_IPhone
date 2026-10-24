@@ -1,3 +1,4 @@
+import { unlockPhone } from '../helpers/unlock';
 import { expect, test } from '@playwright/test';
 import { launchHomeApp } from '../helpers/home';
 for (const size of [
@@ -23,7 +24,7 @@ for (const size of [
       await page.emulateMedia({ reducedMotion: 'reduce', colorScheme: 'light' });
       await page.clock.setFixedTime(new Date('2026-10-24T16:40:00+09:00'));
       await page.goto('./');
-      await page.getByRole('button', { name: '잠금 해제', exact: true }).tap();
+      await unlockPhone(page);
       const app =
         scene === 'profile'
           ? 'contacts'
@@ -40,7 +41,7 @@ for (const size of [
       if (scene === 'thread') await page.locator('[data-conversation=haruka]').tap();
       if (scene === 'note') await page.locator('[data-note-id=curry]').tap();
       if (scene === 'photo')
-        await page.getByRole('button', { name: '나팔꽃의 식사 시간', exact: true }).tap();
+        await page.getByRole('button', { name: '아이들과 함께', exact: true }).tap();
       await page.evaluate(async () => {
         await document.fonts.ready;
         await Promise.all([...document.images].map((img) => img.decode()));

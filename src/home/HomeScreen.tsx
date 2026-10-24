@@ -30,7 +30,9 @@ export function HomeScreen({
   const date = useDisplayDate();
   const { shoppingDone, state: dayState } = useDay();
   const unreadCount = contactIds.filter((id) => !dayState.readThreads.includes(id)).length;
-  const widgetPhoto = dayPhotos[shoppingDone ? 1 : 0];
+  const widgetPhoto = shoppingDone
+    ? (dayPhotos.find((photo) => photo.id === 'mame') ?? dayPhotos[0])
+    : dayPhotos[0];
   const day = String(Number(date.isoDate.slice(-2)));
   const weekday = date.label.split(' ').at(-1) ?? '';
   const [selectedPage, setPage] = useState(0);

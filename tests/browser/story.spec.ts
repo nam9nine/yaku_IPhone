@@ -1,10 +1,11 @@
+import { unlockPhone } from '../helpers/unlock';
 import { expect, test, type Page } from '@playwright/test';
 import { launchHomeApp } from '../helpers/home';
 
 async function start(page: Page) {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('./');
-  await page.getByRole('button', { name: '잠금 해제', exact: true }).tap();
+  await unlockPhone(page);
 }
 async function home(page: Page) {
   await page.keyboard.press('Alt+Home');
@@ -72,7 +73,7 @@ test('메모의 체크·편집·생성·삭제와 사진 즐겨찾기를 보존�
   await expect(page.getByText('내일 할 일', { exact: true })).toHaveCount(0);
   await home(page);
   await launchHomeApp(page, 'photos');
-  await page.getByRole('button', { name: '나팔꽃의 식사 시간', exact: true }).tap();
+  await page.getByRole('button', { name: '아이들과 함께', exact: true }).tap();
   await page.getByRole('button', { name: '즐겨찾기', exact: true }).tap();
   await expect(page.getByRole('button', { name: '즐겨찾기', exact: true })).toHaveAttribute(
     'aria-pressed',
@@ -95,7 +96,7 @@ test('메모의 체크·편집·생성·삭제와 사진 즐겨찾기를 보존�
   await launchHomeApp(page, 'photos');
   await page.getByRole('button', { name: '모음', exact: true }).tap();
   await page.getByRole('button', { name: /즐겨찾는 항목/ }).tap();
-  await expect(page.getByRole('button', { name: '나팔꽃의 식사 시간', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: '아이들과 함께', exact: true })).toBeVisible();
 });
 
 for (const size of [

@@ -1,9 +1,10 @@
+import { unlockPhone } from '../helpers/unlock';
 import { expect, test, type Page } from '@playwright/test';
 import { launchHomeApp } from '../helpers/home';
 async function boot(page: Page) {
   await page.emulateMedia({ reducedMotion: 'reduce', colorScheme: 'dark' });
   await page.goto('./');
-  await page.getByRole('button', { name: '잠금 해제', exact: true }).tap();
+  await unlockPhone(page);
 }
 async function trigger(page: Page) {
   await launchHomeApp(page, 'notes');
@@ -65,7 +66,7 @@ test('별도 연락처와 전화 연락처는 추가한 연락처를 공유하�
   await page.getByRole('button', { name: '연락처', exact: true }).tap();
   await expect(page.getByRole('button', { name: '나팔꽃 상점', exact: true })).toBeVisible();
   await page.reload();
-  await page.getByRole('button', { name: '잠금 해제', exact: true }).tap();
+  await unlockPhone(page);
   await page.locator('[data-launch-app=contacts]').tap();
   await expect(page.getByRole('button', { name: '나팔꽃 상점', exact: true })).toBeVisible();
 });
@@ -150,15 +151,15 @@ test('상단 드래그는 안쪽에서 시작하고 이동 중 패널이 손가�
   await page.getByRole('button', { name: '키류 카즈마 프로필' }).tap();
   await expect(page.getByRole('heading', { name: 'Apple 계정', exact: true })).toBeVisible();
 });
-test('갤러리는 26개의 서로 다른 로컬 게임 원본을 표시한다', async ({ page }) => {
+test('갤러리는 선택한 6개의 서로 다른 로컬 게임 원본을 표시한다', async ({ page }) => {
   await boot(page);
   await launchHomeApp(page, 'photos');
   const images = page.locator('.photo-grid img');
-  await expect(images).toHaveCount(26);
+  await expect(images).toHaveCount(6);
   const sources = await images.evaluateAll((els) => els.map((el) => (el as HTMLImageElement).src));
-  expect(new Set(sources).size).toBe(26);
+  expect(new Set(sources).size).toBe(6);
   for (const source of sources) expect(source).toContain('/asagao/');
-  await expect(page.getByRole('button', { name: '재봉틀 앞에서', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: '마메', exact: true })).toBeVisible();
 });
 
 test('제어 센터 위에 전체 수신 화면이 떠도 키보드 포커스는 수신 화면에서 순환한다', async ({

@@ -1,3 +1,4 @@
+import { unlockPhone } from '../helpers/unlock';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { attachFailedInput, recordInput } from '../helpers/input-diagnostics';
 import { dragTouchWithoutFling } from '../helpers/touch';
@@ -12,7 +13,7 @@ const viewports = [
 async function openHome(page: Page) {
   await page.clock.setFixedTime(new Date('2026-10-24T16:40:00+09:00'));
   await page.goto('./');
-  await page.getByRole('button', { name: '잠금 해제', exact: true }).tap();
+  await unlockPhone(page);
   await expect(page.getByTestId('home-screen')).toBeVisible();
   await page.evaluate(async () => {
     await Promise.all(document.getAnimations().map((animation) => animation.finished));
@@ -91,7 +92,7 @@ test('잠금 해제 후 홈으로 포커스를 옮기고 숨겨진 키보드 보
   await page.keyboard.press('Enter');
   await expect(page.getByTestId('lock-screen')).toBeVisible();
   await expect(page.getByTestId('home-screen')).toBeHidden();
-  await page.getByRole('button', { name: '잠금 해제', exact: true }).tap();
+  await unlockPhone(page);
   await expectPage(page, 1);
 });
 
@@ -166,7 +167,7 @@ test('사진 위젯은 현재 표시된 생활사진을 실제 사진 앱에서 
   await widget.tap();
   await expect(page.getByTestId('photos-app')).toBeVisible();
   await expect(page.getByTestId('photo-viewer').locator('img')).toHaveAttribute('src', source!);
-  await expect(page.getByRole('heading').filter({ hasText: '나팔꽃의 식사 시간' })).toBeVisible();
+  await expect(page.getByRole('heading').filter({ hasText: '아이들과 함께' })).toBeVisible();
 });
 
 test('한 페이지뿐인 일반 높이에서 좌우 스와이프는 가장자리를 넘어가지 않는다', async ({ page }) => {

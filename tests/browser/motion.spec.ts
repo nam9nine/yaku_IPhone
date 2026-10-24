@@ -1,10 +1,11 @@
+import { unlockPhone } from '../helpers/unlock';
 import { expect, test, type Page } from '@playwright/test';
 import { launchHomeApp } from '../helpers/home';
 import { dragTimedPath, releaseFastSwipe } from '../helpers/gestureClock';
 
 async function open(page: Page) {
   await page.goto('./');
-  await page.getByRole('button', { name: '잠금 해제', exact: true }).tap();
+  await unlockPhone(page);
   await launchHomeApp(page, 'settings');
   await page.evaluate(async () =>
     Promise.all(document.getAnimations().map((animation) => animation.finished.catch(() => {}))),

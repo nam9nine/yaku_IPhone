@@ -1,3 +1,4 @@
+import { enterPasscode, unlockPhone } from '../helpers/unlock';
 import { expect, test, type Page } from '@playwright/test';
 import { launchHomeApp } from '../helpers/home';
 
@@ -11,6 +12,7 @@ async function home(page: Page) {
 }
 async function openCurryFromNotification(page: Page) {
   await page.getByRole('button', { name: '하루카의 메시지 알림 열기', exact: true }).tap();
+  await enterPasscode(page);
   await expect(page.getByRole('log', { name: '사와무라 하루카와의 대화' })).toBeVisible();
   await expect(page.getByRole('button', { name: '다 샀다. 보내기', exact: true })).toBeDisabled();
   await page
@@ -34,7 +36,7 @@ test('알림 센터의 메시지는 가로 카드로 표시되고 대화로 연�
   page,
 }) => {
   await boot(page);
-  await page.getByRole('button', { name: '잠금 해제', exact: true }).tap();
+  await unlockPhone(page);
   const openNotifications = page.getByRole('button', { name: '알림 센터 열기', exact: true });
   await openNotifications.focus();
   await openNotifications.press('Enter');
@@ -90,7 +92,7 @@ for (const width of [360, 390, 430]) {
     await expect(
       page.getByRole('button', { name: '하루카의 메시지 알림 열기', exact: true }),
     ).toHaveCount(0);
-    await page.getByRole('button', { name: '잠금 해제', exact: true }).tap();
+    await unlockPhone(page);
     await launchHomeApp(page, 'notes');
     await page.locator('[data-note-id=curry]').tap();
     for (const item of ['감자', '양파', '고기', '카레'])
@@ -181,17 +183,17 @@ test('사진에서 배경을 선택하고 설정에서 위치·다른 배경을 
   page,
 }) => {
   await boot(page);
-  await page.getByRole('button', { name: '잠금 해제', exact: true }).tap();
+  await unlockPhone(page);
   await launchHomeApp(page, 'photos');
-  await page.getByRole('button', { name: '재봉틀 앞에서', exact: true }).tap();
-  await expect(page.getByText('실이 풀리지 않게. 이번에는 제대로.', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: '마메', exact: true }).tap();
+  await expect(page.getByText('밥 먹을 시간이다.', { exact: true })).toBeVisible();
   await expect(page.getByLabel('사진 정보').getByRole('link')).toHaveCount(0);
   await expect(page.getByLabel('사진 정보')).not.toContainText(/출처|팬 창작/);
   await page.getByRole('button', { name: '배경화면으로 설정', exact: true }).tap();
-  await expect(page.locator('.mobile-shell')).toHaveAttribute('data-wallpaper', 'sewing');
+  await expect(page.locator('.mobile-shell')).toHaveAttribute('data-wallpaper', 'mame');
   await page.reload();
-  await expect(page.locator('.mobile-shell')).toHaveAttribute('data-wallpaper', 'sewing');
-  await page.getByRole('button', { name: '잠금 해제', exact: true }).tap();
+  await expect(page.locator('.mobile-shell')).toHaveAttribute('data-wallpaper', 'mame');
+  await unlockPhone(page);
   await launchHomeApp(page, 'settings');
   await page.getByRole('button', { name: '배경화면', exact: true }).tap();
   await page.getByRole('slider', { name: '사진 가로 위치', exact: true }).fill('35');
@@ -201,7 +203,7 @@ test('사진에서 배경을 선택하고 설정에서 위치·다른 배경을 
     'object-position',
     '35% 65%',
   );
-  await page.getByRole('button', { name: '잠금 해제', exact: true }).tap();
+  await unlockPhone(page);
   await launchHomeApp(page, 'settings');
   await page.getByRole('button', { name: '배경화면', exact: true }).tap();
   await page.getByRole('radio', { name: '저녁 바다', exact: true }).check();
@@ -218,6 +220,7 @@ test('잠금 위젯은 해당 앱으로 연결되고 키보드로 할 일과 사
   });
   await calendar.focus();
   await calendar.press('Enter');
+  await enterPasscode(page);
   await expect(page.getByRole('region', { name: '캘린더 화면' })).toBeVisible();
   await page.locator('.day-calendar-event').press('Enter');
   await expect(page.locator('.day-event-detail h2')).toHaveText('저녁 장보기');
@@ -233,6 +236,7 @@ test('잠금 위젯은 해당 앱으로 연결되고 키보드로 할 일과 사
   const reminders = page.getByRole('button', { name: '남은 할 일 3개', exact: true });
   await reminders.focus();
   await reminders.press('Enter');
+  await enterPasscode(page);
   const garden = page.getByRole('checkbox', { name: '텃밭 물 주기 완료', exact: true });
   await garden.focus();
   await garden.press('Space');
@@ -244,7 +248,7 @@ test('잠금 위젯은 해당 앱으로 연결되고 키보드로 할 일과 사
   await photo.press('Enter');
   await expect(page.getByTestId('photo-viewer').getByRole('img')).toHaveAttribute(
     'alt',
-    '나팔꽃의 식사 시간',
+    '아이들과 함께',
   );
 });
 
@@ -253,7 +257,7 @@ test('낮은 화면과 큰 글자에서 캘린더 상세는 맨 위로 열리고
 }) => {
   await page.setViewportSize({ width: 360, height: 420 });
   await boot(page);
-  await page.getByRole('button', { name: '잠금 해제', exact: true }).tap();
+  await unlockPhone(page);
   await launchHomeApp(page, 'settings');
   await page.getByRole('button', { name: '화면 모드', exact: true }).tap();
   await page.getByRole('radio', { name: /더 크게/ }).check();
@@ -276,7 +280,7 @@ test('긴 메모 아래에서 홈을 거쳐 하루카의 링크를 열면 카레
 }) => {
   await page.setViewportSize({ width: 360, height: 420 });
   await boot(page);
-  await page.getByRole('button', { name: '잠금 해제', exact: true }).tap();
+  await unlockPhone(page);
   await launchHomeApp(page, 'notes');
   await page.getByRole('button', { name: '새로운 메모', exact: true }).tap();
   await page.getByRole('textbox', { name: '메모 제목', exact: true }).fill('긴 메모');
@@ -303,7 +307,7 @@ test('긴 메모 아래에서 홈을 거쳐 하루카의 링크를 열면 카레
 
 test('초기화 확인 중 홈·제어 센터·최근 앱으로 이동하면 모달이 남지 않는다', async ({ page }) => {
   await boot(page);
-  await page.getByRole('button', { name: '잠금 해제', exact: true }).tap();
+  await unlockPhone(page);
   for (const shortcut of ['Alt+Home', 'Alt+c', 'Alt+a']) {
     await launchHomeApp(page, 'settings');
     await page.getByRole('button', { name: '처음 상태로 되돌리기', exact: true }).tap();

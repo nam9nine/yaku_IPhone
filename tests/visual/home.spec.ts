@@ -1,3 +1,4 @@
+import { unlockPhone } from '../helpers/unlock';
 import { expect, test } from '@playwright/test';
 
 for (const size of [
@@ -12,7 +13,7 @@ for (const size of [
       await page.emulateMedia({ reducedMotion: 'reduce' });
       await page.clock.setFixedTime(new Date('2026-10-23T09:41:00+09:00'));
       await page.goto('./');
-      await page.getByRole('button', { name: '잠금 해제', exact: true }).tap();
+      await unlockPhone(page);
       await expect(page.getByTestId('home-screen')).toBeVisible();
       for (const img of await page.locator('main img').all()) {
         await expect(img).toHaveJSProperty('complete', true);

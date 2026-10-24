@@ -1,3 +1,4 @@
+import { unlockPhone } from '../helpers/unlock';
 import { expect, test } from '@playwright/test';
 import { launchHomeApp } from '../helpers/home';
 
@@ -28,7 +29,7 @@ for (const friend of friends) {
       });
       await page.emulateMedia({ reducedMotion: 'reduce' });
       await page.goto('./');
-      await page.getByRole('button', { name: '잠금 해제', exact: true }).tap();
+      await unlockPhone(page);
       await launchHomeApp(page, 'contacts');
       await page.getByRole('searchbox', { name: '연락처 검색' }).fill(friend.search);
       await page.locator(`[data-contact=${friend.id}]`).tap();
@@ -43,7 +44,7 @@ for (const friend of friends) {
       await expect(thread.getByText(friend.reply, { exact: true })).toHaveCount(1);
       await expect(thread).toContainText(friend.response);
       await page.reload();
-      await page.getByRole('button', { name: '잠금 해제', exact: true }).tap();
+      await unlockPhone(page);
       await expect(page.getByLabel('읽지 않은 대화 7개')).toBeVisible();
       await launchHomeApp(page, 'phone');
       await page.getByRole('button', { name: '연락처', exact: true }).tap();
@@ -79,7 +80,7 @@ test('기존 여섯 대화의 읽음과 답장을 보존하고 두 새 대화만
     ),
   );
   await page.reload();
-  await page.getByRole('button', { name: '잠금 해제', exact: true }).tap();
+  await unlockPhone(page);
   await expect(page.getByLabel('읽지 않은 대화 2개')).toBeVisible();
   await launchHomeApp(page, 'messages');
   await page.getByRole('button', { name: '읽지 않은 메시지만 보기' }).tap();

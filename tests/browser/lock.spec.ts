@@ -1,3 +1,4 @@
+import { enterPasscode, unlockPhone } from '../helpers/unlock';
 import { expect, test, type Page } from '@playwright/test';
 
 async function drag(page: Page, x: number, y: number, endX: number, endY: number) {
@@ -14,6 +15,7 @@ test.beforeEach(async ({ page }) => {
 
 test('위로 충분히 밀면 홈으로 한 번 전환한다', async ({ page }) => {
   await drag(page, 195, 460, 195, 260);
+  await enterPasscode(page);
   await expect(page.getByTestId('home-screen')).toBeVisible();
   await expect(page.getByTestId('lock-screen')).toHaveCount(0);
   await expect(page.getByRole('heading', { name: '홈 화면', exact: true })).toBeFocused();
@@ -48,6 +50,7 @@ for (const event of ['pointercancel', 'lostpointercapture']) {
     await page.mouse.up();
     await expect(page.getByTestId('lock-screen')).toBeVisible();
     await drag(page, 195, 460, 195, 260);
+    await enterPasscode(page);
     await expect(page.getByTestId('home-screen')).toBeVisible();
   });
 }
@@ -56,6 +59,7 @@ test('키보드 해제와 reduced motion은 애니메이션 완료에 의존하�
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.getByRole('button', { name: '잠금 해제', exact: true }).focus();
   await page.keyboard.press('Enter');
+  await enterPasscode(page);
   await expect(page.getByTestId('home-screen')).toBeVisible();
   expect(await page.evaluate(() => document.getAnimations().length)).toBe(0);
 });
@@ -80,12 +84,13 @@ for (const distance of [40, 180]) {
       await hint.focus();
       await page.keyboard.press('Enter');
     }
+    await enterPasscode(page);
     await expect(page.getByTestId('home-screen')).toBeVisible();
   });
 }
 
 test('안내를 터치 탭해서도 해제한다', async ({ page }) => {
-  await page.getByRole('button', { name: '잠금 해제', exact: true }).tap();
+  await unlockPhone(page);
   await expect(page.getByTestId('home-screen')).toBeVisible();
 });
 
@@ -107,5 +112,6 @@ test('모바일 입력으로 위로 쓸어올려 해제한다', async ({ page, b
     // Desktop WebKit has no CDP touch-drag API; pointer input checks the same handler.
     await drag(page, 195, 460, 195, 260);
   }
+  await enterPasscode(page);
   await expect(page.getByTestId('home-screen')).toBeVisible();
 });

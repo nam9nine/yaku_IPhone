@@ -1,9 +1,10 @@
+import { unlockPhone } from '../helpers/unlock';
 import { expect, test, type Page, type Locator } from '@playwright/test';
 import { releaseFastSwipe } from '../helpers/gestureClock';
 async function ready(page: Page) {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('./');
-  await page.getByRole('button', { name: '잠금 해제', exact: true }).tap();
+  await unlockPhone(page);
 }
 async function drag(page: Page, locator: Locator, dx: number, dy: number, pause = 0, steps = 8) {
   const r = (await locator.boundingBox())!;
@@ -293,7 +294,7 @@ for (const screen of ['lock', 'home'] as const) {
   test(`${screen} 드래그 중 시스템 화면을 열면 뒤의 입력을 취소한다`, async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto('./');
-    if (screen === 'home') await page.getByRole('button', { name: '잠금 해제', exact: true }).tap();
+    if (screen === 'home') await unlockPhone(page);
     await page.mouse.move(screen === 'lock' ? 200 : 300, screen === 'lock' ? 600 : 350);
     await page.mouse.down();
     await page.mouse.move(screen === 'lock' ? 200 : 190, screen === 'lock' ? 430 : 350, {

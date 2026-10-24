@@ -127,6 +127,13 @@
   font-size: 1.25rem;
   color: #ffffffa8;
 }
+.call-identity .call-time {
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 6px;
+}
+.call-identity .call-kind {
+  font-size: 1rem;
+}
 .call-secondary {
   display: flex;
   width: 100%;

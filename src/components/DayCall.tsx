@@ -4,19 +4,27 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useDay } from '../day/DayContext';
 import { PhoneIcon } from '../story/PhoneIcon';
 import { contacts } from '../story/data';
+import { useDisplayDate } from '../display/useDisplayDate';
+import { useRingtone } from './useRingtone';
 import './day-call.css';
 const caller = contacts.find((person) => person.id === 'majima')!;
 export function DayCall({
   locked,
   onMessage,
   preferences,
+  silent,
+  volume,
 }: {
   locked: boolean;
   onMessage: () => void;
   preferences: DevicePreferences;
+  silent: boolean;
+  volume: number;
 }) {
   const { state, dispatch } = useDay();
   const ringing = state.callStatus === 'ringing';
+  const date = useDisplayDate();
+  useRingtone(ringing, silent, volume);
   const [connected, setConnected] = useState(false);
   const [seconds, setSeconds] = useState(0);
   const [muted, setMuted] = useState(false);
@@ -68,7 +76,7 @@ export function DayCall({
             <img src={caller.portrait} alt="" />
             <span>
               <small>iPhone · 전화</small>
-              <strong>마지마 형님</strong>
+              <strong>마지마형님</strong>
             </span>
           </button>
           <button className="call-action call-decline" aria-label="전화 거절" onClick={decline}>
@@ -104,12 +112,13 @@ export function DayCall({
         <div className="call-screen-content">
           <div className="call-identity">
             <img src={caller.portrait} alt="" />
-            <h1>마지마 형님</h1>
-            <p>
+            <p className="call-time" aria-label={connected ? '통화 시간' : '현재 시각'}>
               {connected
                 ? `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`
-                : '휴대전화'}
+                : date.clock}
             </p>
+            <h1>마지마형님</h1>
+            {!connected && <p className="call-kind">휴대전화</p>}
           </div>
           {connected ? (
             <>

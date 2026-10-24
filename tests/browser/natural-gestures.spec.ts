@@ -1,3 +1,4 @@
+import { unlockPhone } from '../helpers/unlock';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { dragTimedPath } from '../helpers/gestureClock';
 import { launchHomeApp } from '../helpers/home';
@@ -6,7 +7,7 @@ async function ready(page: Page) {
   await page.clock.install();
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('./');
-  await page.getByRole('button', { name: '잠금 해제', exact: true }).tap();
+  await unlockPhone(page);
 }
 
 const curve = [
@@ -225,7 +226,7 @@ for (const app of ['settings', 'messages', 'contacts', 'notes', 'photos'] as con
         await page.locator('[data-note-id=phone-help]').tap();
         back = page.getByRole('button', { name: '메모 목록으로 돌아가기', exact: true });
       } else {
-        await page.getByRole('button', { name: '나팔꽃의 식사 시간', exact: true }).tap();
+        await page.getByRole('button', { name: '아이들과 함께', exact: true }).tap();
         back = page.getByRole('button', { name: '사진 보관함으로 돌아가기', exact: true });
       }
       await driftTap(page, back, browserName, dx, dy);

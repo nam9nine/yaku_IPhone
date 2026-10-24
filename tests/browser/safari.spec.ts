@@ -1,3 +1,4 @@
+import { unlockPhone } from '../helpers/unlock';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { tapPaged } from '../helpers/paged-content';
 
@@ -10,7 +11,7 @@ const addressDisplay = (page: Page) =>
 async function openHome(page: Page) {
   await page.clock.setFixedTime(new Date('2026-10-23T09:41:00+09:00'));
   await page.goto('./');
-  await page.getByRole('button', { name: '잠금 해제', exact: true }).tap();
+  await unlockPhone(page);
   await expect(page.getByTestId('home-screen')).toBeVisible();
 }
 
@@ -236,7 +237,7 @@ test('홈을 거쳐 재진입하면 탭·가로 페이지가 유지되고 전체
   await expect(safari(page).getByRole('textbox')).toHaveCount(0);
 
   await page.reload();
-  await page.getByRole('button', { name: '잠금 해제', exact: true }).tap();
+  await unlockPhone(page);
   await launchSafari(page);
   await expect(
     safari(page).getByRole('heading', { name: '시작 페이지', exact: true }),

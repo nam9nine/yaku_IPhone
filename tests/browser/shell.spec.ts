@@ -1,10 +1,11 @@
+import { unlockPhone } from '../helpers/unlock';
 import { expect, test, type Page } from '@playwright/test';
 import { dragTouchWithoutFling } from '../helpers/touch';
 import { releaseFastSwipe } from '../helpers/gestureClock';
 
 async function home(page: Page) {
   await page.goto('./');
-  await page.getByRole('button', { name: '잠금 해제', exact: true }).tap();
+  await unlockPhone(page);
   await expect(page.getByTestId('home-screen')).toBeVisible();
 }
 async function open(page: Page, app: 'settings' | 'safari' = 'settings') {
@@ -170,7 +171,7 @@ test('실행 아이콘이 다른 페이지에 있으면 다시 잠금 해제할 
   await page.getByRole('button', { name: '1페이지로 이동' }).tap();
   await page.getByRole('button', { name: '다시 잠그기', exact: true }).focus();
   await page.keyboard.press('Enter');
-  await page.getByRole('button', { name: '잠금 해제', exact: true }).tap();
+  await unlockPhone(page);
   await expect(page.getByTestId('home-pages')).toHaveAttribute('data-page', '1');
   await expect(page.locator('[data-home-title]')).toBeFocused();
 });

@@ -1,3 +1,4 @@
+import { unlockPhone } from '../helpers/unlock';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { releaseFastSwipe } from '../helpers/gestureClock';
 
@@ -7,7 +8,7 @@ async function ready(page: Page) {
   await page.setViewportSize({ width: 1280, height: 1000 });
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('./');
-  await page.getByRole('button', { name: '잠금 해제', exact: true }).click();
+  await unlockPhone(page);
 }
 async function openSettings(page: Page) {
   await page.locator('[data-launch-app=settings]').click();
