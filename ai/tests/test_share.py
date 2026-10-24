@@ -1,10 +1,38 @@
+import os
+import threading
 import unittest
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from unittest.mock import patch
 from urllib.parse import parse_qs, urlsplit
 
-from kiryu_ai.share import invite_url, tunnel_endpoint
+from kiryu_ai.share import invite_url, local_health, tunnel_endpoint
 
 
 class ShareTests(unittest.TestCase):
+    def test_owned_health_probe_bypasses_environment_proxy(self):
+        class Handler(BaseHTTPRequestHandler):
+            def do_GET(self):
+                self.send_response(200)
+                self.end_headers()
+                self.wfile.write(b'{"status":"ready"}')
+
+            def log_message(self, *_args):
+                pass
+
+        with HTTPServer(("127.0.0.1", 0), Handler) as server:
+            worker = threading.Thread(target=server.serve_forever, daemon=True)
+            worker.start()
+            try:
+                with patch.dict(
+                    os.environ, {"http_proxy": "http://127.0.0.1:1", "no_proxy": ""}
+                ):
+                    self.assertEqual(
+                        local_health(server.server_port), {"status": "ready"}
+                    )
+            finally:
+                server.shutdown()
+                worker.join()
+
     def test_invite_keeps_secret_out_of_server_query_and_path(self):
         link = invite_url("https://example.trycloudflare.com", "private+/=&key")
         parsed = urlsplit(link)

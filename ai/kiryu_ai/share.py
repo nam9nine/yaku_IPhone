@@ -13,7 +13,14 @@ from datetime import UTC, datetime
 from pathlib import Path
 from urllib.error import URLError
 from urllib.parse import urlencode, urlsplit
-from urllib.request import urlopen
+from urllib.request import ProxyHandler, build_opener
+
+
+def local_health(port):
+    # This probe must reach the process we own, even with HTTP(S)_PROXY set.
+    opener = build_opener(ProxyHandler({}))
+    with opener.open(f"http://127.0.0.1:{port}/v1/health", timeout=2) as response:
+        return json.load(response)
 
 
 def tunnel_endpoint(log):
@@ -120,10 +127,7 @@ def run(args):
             if server.poll() is not None:
                 raise RuntimeError(f"API process exited; see {folder / 'server.log'}")
             try:
-                with urlopen(
-                    f"http://127.0.0.1:{args.port}/v1/health", timeout=2
-                ) as response:
-                    health = json.load(response)
+                health = local_health(args.port)
                 if health.get("service") != "kiryu-character-chat-v1":
                     raise RuntimeError(
                         "Unexpected service responded on the requested port"
