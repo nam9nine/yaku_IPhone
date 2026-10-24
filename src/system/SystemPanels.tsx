@@ -389,7 +389,22 @@ export function SystemPanels(props: SystemPanelsProps) {
             ? targets.length - 1
             : 0
           : (current + (event.shiftKey ? -1 : 1) + targets.length) % targets.length;
-      targets[next].focus({ preventScroll: true });
+      const target = targets[next];
+      target.focus({ preventScroll: true });
+      if (kind === 'search') {
+        const results = target.closest<HTMLElement>('.system-search-results');
+        if (results) {
+          const viewport = results.getBoundingClientRect();
+          const item = target.getBoundingClientRect();
+          const left =
+            item.left < viewport.left
+              ? item.left - viewport.left
+              : item.right > viewport.right
+                ? item.right - viewport.right
+                : 0;
+          if (left) results.scrollBy({ left, top: 0, behavior: 'instant' });
+        }
+      }
     };
     const focusin = (event: FocusEvent) => {
       if (document.querySelector('.day-call[open], .passcode-screen[open]')) return;
