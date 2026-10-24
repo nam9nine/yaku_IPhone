@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "stage": "pilot-development",
+  "characters": ["haruka", "majima"],
+  "purpose": "Provisional engineering criteria recorded before the pilot model outputs are reviewed. Passing is not fan approval or statistical evidence of broad superiority.",
+  "training": {
+    "rows": 200,
+    "microsteps": 400,
+    "accumulation": 8,
+    "optimizerUpdates": 50,
+    "interpretation": "Initial budget only. Diagnose mask, updates, small-set adaptation and generalization separately before attributing failure."
+  },
+  "quality": {
+    "unit": "Each character and facts-off/on condition; report raw numerators and denominators.",
+    "contextItemAccuracy": 0.9,
+    "contextBothConditionsPairAccuracy": 0.8,
+    "providedFactAccuracy": 0.9,
+    "allowedLoreAccuracy": 0.9,
+    "unknownHandlingAccuracy": 0.9,
+    "boundaryHandlingAccuracy": 1.0,
+    "reviewRequired": true,
+    "fanStyleStatus": "pending",
+    "allowedLoreMeaning": "Some cases supply the answer in known_context; this is not closed-book lore recall."
+  },
+  "adapterSelection": {
+    "minimumNetWinFraction": 0.1,
+    "maximumTieFractionExclusive": 0.5,
+    "maximumAggregateContextRegression": 0.05,
+    "maximumAggregateFactRegression": 0.05,
+    "rule": "Report all wins/ties/losses. Prefer adapter only with a clear measured benefit and no material context/fact regression; retain base otherwise. If neither meets quality criteria, any default remains an experimental candidate."
+  },
+  "latency": {
+    "status": "provisional_engineering_target_not_user_accepted_SLA",
+    "singleRequestFirstTextP95Seconds": 3,
+    "singleRequestCompletionP95Seconds": 10,
+    "fourRequestBurstArrivalToFinishP95Seconds": 30,
+    "minimumRequestsForP95Interpretation": 30,
+    "executor": "one process, one loaded model, serial FIFO, fresh per-request KV cache",
+    "report": [
+      "sample_count",
+      "actual_output_tokens",
+      "load_time",
+      "queue_time",
+      "first_token",
+      "first_text",
+      "completion",
+      "errors",
+      "length_stops"
+    ]
+  },
+  "finalSet": "Remain sealed during development and model selection. Do not count development cases as held-out final results.",
+  "productDecision": "Local execution, learning effect, fan style quality and public application integration are separate outcomes."
+}

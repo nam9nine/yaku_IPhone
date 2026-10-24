@@ -1,0 +1,6 @@
+mlx-lm==0.32.2
+mlx==0.32.2 ; sys_platform == 'darwin'
+transformers==5.7.0
+huggingface-hub==1.33.0
+beautifulsoup4==4.15.0
+ruff==0.17.2

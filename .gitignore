@@ -11,3 +11,5 @@ references/upstream/
 references/archives/
 references/local/
 harness/local/
+__pycache__/
+*.py[cod]
