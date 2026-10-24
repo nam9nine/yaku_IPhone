@@ -50,9 +50,6 @@ export function SafariContent({
               ))}
           </div>
         </section>
-        <p className="safari-start-note">
-          저장된 검색 기록과 가상 페이지입니다. 실제 인터넷 검색은 하지 않습니다.
-        </p>
       </div>
     );
   }
@@ -60,7 +57,7 @@ export function SafariContent({
     const results = searchPages(page.query);
     return (
       <div className="safari-search-page">
-        <span className="safari-eyebrow">이 앱의 페이지 검색</span>
+        <span className="safari-eyebrow">저장된 페이지 검색</span>
         <h2>{page.query}</h2>
         <p className="safari-secondary">검색 결과 {results.length}개</p>
         {results.length ? (
@@ -131,7 +128,6 @@ export function SafariContent({
           <button className="safari-text-link" onClick={() => visit({ kind: 'start' })}>
             검색 기록으로 돌아가기 <SafariIcon name="arrow" />
           </button>
-          <footer>팬메이드 창작 페이지 · 실제 웹사이트나 인터넷 검색 결과가 아닙니다.</footer>
         </div>
       </article>
     );
@@ -140,20 +136,20 @@ export function SafariContent({
     return (
       <article className="safari-article safari-guide">
         <header className="safari-site-header">
-          <span>yaku</span>
-          <span>시작 안내</span>
+          <span>하루카</span>
+          <span>휴대폰 사용법</span>
         </header>
         <div className="safari-article-body">
-          <span className="safari-eyebrow">HELLO, YAKU</span>
+          <span className="safari-eyebrow">아저씨께</span>
           <h2>
-            작은 화면,
+            아저씨,
             <br />
-            새로운 하루.
+            이것만 기억하세요.
           </h2>
           <p className="safari-lead">
-            손끝에 익숙한 동작으로
+            하루카가 적어 둔
             <br />
-            나만의 공간을 둘러보세요.
+            휴대폰 사용 메모.
           </p>
           <div className="safari-guide-art" aria-hidden="true">
             <span />
@@ -164,8 +160,8 @@ export function SafariContent({
             <span className="safari-step">01</span>
             <h3>사용하던 앱으로</h3>
             <p>
-              하단 막대를 위로 올려 최근 앱을 확인하세요. 카드를 누르면 이어서 사용하고, 빈 배경을
-              누르면 홈으로 돌아가요.
+              하단 막대를 빠르게 올리면 홈으로 돌아가요. 올리다 멈추면 최근 앱이 보여요. 카드를
+              누르면 쓰던 앱이 다시 열려요.
             </p>
           </section>
           <section>
@@ -189,9 +185,8 @@ export function SafariContent({
             className="safari-primary-button"
             onClick={() => visit({ kind: 'internal', id: 'example' })}
           >
-            예제 페이지 둘러보기 <SafariIcon name="arrow" />
+            주말 산책 읽기 <SafariIcon name="arrow" />
           </button>
-          <footer>YAKU · 이 앱 안에서 제공하는 예제 페이지</footer>
         </div>
       </article>
     );
@@ -200,7 +195,7 @@ export function SafariContent({
     <article className="safari-article safari-example">
       <header className="safari-site-header">
         <span>slow day</span>
-        <span>예제 페이지</span>
+        <span>주말 산책</span>
       </header>
       <div className="safari-example-art" aria-hidden="true">
         <span />
@@ -238,9 +233,8 @@ export function SafariContent({
           className="safari-text-link"
           onClick={() => visit({ kind: 'internal', id: 'guide' })}
         >
-          시작 안내로 돌아가기 <SafariIcon name="arrow" />
+          휴대폰 사용법으로 돌아가기 <SafariIcon name="arrow" />
         </button>
-        <footer>YAKU · 이 앱 안에서 제공하는 예제 페이지</footer>
       </div>
     </article>
   );

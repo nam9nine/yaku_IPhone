@@ -52,7 +52,7 @@ export function ContactsApp({
         ...person,
         shortName: person.name,
         relation: person.phone || '연락처',
-        about: '이 웹 휴대폰에 추가한 연락처',
+        about: '연락처',
         portrait: '',
       })),
     ],
@@ -332,7 +332,6 @@ export function ContactsApp({
               onChange={(event) => setPhone(event.target.value)}
             />
           </label>
-          <p>이 웹 휴대폰에만 저장됩니다.</p>
           <button type="submit" disabled={!name.trim() || extraContacts.length >= 100}>
             완료
           </button>

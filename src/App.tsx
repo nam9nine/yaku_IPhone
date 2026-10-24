@@ -48,7 +48,6 @@ function PhoneSession() {
   const [epoch, setEpoch] = useState(0);
   const [note, setNote] = useState<string | null>(null);
   const [photo, setPhoto] = useState<string | null>(null);
-  const [settingsEntry, setSettingsEntry] = useState<{ page: 'demo'; key: number } | null>(null);
   const [phoneEntry, setPhoneEntry] = useState(0);
   const [conversation, setConversation] = useState<string | null>(null);
   const [controls, setControls] = useState({ volume: 50, rotation: false, silent: false });
@@ -94,7 +93,6 @@ function PhoneSession() {
     setConversation(null);
     setNote(null);
     setPhoto(null);
-    setSettingsEntry(null);
     for (const app of state.visited) dispatch({ type: 'close-app', app });
     dispatch({ type: 'lock' });
     setEpoch((value) => value + 1);
@@ -114,7 +112,7 @@ function PhoneSession() {
   }, [state.locked, state.activeApp, state.launcher, state.panel]);
   useEffect(() => {
     const shortcuts = (event: KeyboardEvent) => {
-      if (document.querySelector('.day-call[open]')) return;
+      if (document.querySelector('.day-call[open], .lock-weather[open]')) return;
       if (state.panel) return;
       if (event.altKey && event.key.toLowerCase() === 'c') {
         event.preventDefault();
@@ -156,10 +154,6 @@ function PhoneSession() {
             onCall={openPhone}
             onCalendar={() => openApp('calendar')}
             onReminders={() => openApp('reminders')}
-            onWeather={() => {
-              setSettingsEntry({ page: 'demo', key: Date.now() });
-              openApp('settings');
-            }}
           />
         )}
         {state.hasUnlocked && (
@@ -211,7 +205,6 @@ function PhoneSession() {
               active={!state.locked && state.activeApp === app && !state.panel}
               storageUnavailable={storageUnavailable || day.storageUnavailable}
               onReset={resetPhone}
-              requestedPage={settingsEntry}
             />
           ) : app === 'safari' ? (
             <SafariApp

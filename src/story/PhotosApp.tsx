@@ -172,19 +172,6 @@ export function PhotosApp({
           </div>
           <div className="photo-caption" aria-label="사진 정보">
             <p>{selected.caption}</p>
-            <small>{selected.sourceLabel ?? '임시 이미지 · 교체 가능한 창작 일러스트'}</small>
-            {selected.sourceUrl && (
-              <small className="photo-attribution">
-                <a href={selected.sourceUrl} target="_blank" rel="noreferrer noopener">
-                  원본 출처
-                </a>
-                {selected.licenseUrl && (
-                  <a href={selected.licenseUrl} target="_blank" rel="noreferrer noopener">
-                    이용 조건
-                  </a>
-                )}
-              </small>
-            )}
             <button
               className="photo-wallpaper-action"
               onClick={() => {
@@ -196,7 +183,7 @@ export function PhotosApp({
             </button>
             {wallpaperNotice === selected.id && (
               <span className="photo-wallpaper-notice" role="status">
-                이 웹사이트의 잠금·홈 배경으로 설정했어요.
+                배경화면으로 설정되었습니다.
               </span>
             )}
           </div>

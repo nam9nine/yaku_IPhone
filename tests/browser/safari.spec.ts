@@ -104,8 +104,8 @@ test('Safari 진입은 키보드를 열지 않고 두 내부 페이지와 뒤로
   ).toBeVisible();
   await expect(safari(page).getByRole('button', { name: '뒤로', exact: true })).toBeDisabled();
 
-  await tapPaged(safari(page).getByRole('button', { name: '시작 안내', exact: true }));
-  await expect(safari(page).getByRole('heading', { name: /작은 화면/ })).toBeVisible();
+  await tapPaged(safari(page).getByRole('button', { name: '휴대폰 사용법', exact: true }));
+  await expect(safari(page).getByRole('heading', { name: /아저씨,/ })).toBeVisible();
   await expect(addressDisplay(page)).toHaveText('yaku.test/guide');
   await documentView(page)
     .getByRole('button', { name: 'Safari 본문 다음 페이지', exact: true })
@@ -134,10 +134,10 @@ test('검색은 내부 페이지 제목만 찾고 외부 주소는 명시적인 
   page,
 }) => {
   await openSafari(page);
-  await enterAddress(page, '예제');
+  await enterAddress(page, '산책');
   await expect(safari(page).getByText('검색 결과 1개', { exact: true })).toBeVisible();
   await safari(page)
-    .getByRole('button', { name: /https:\/\/yaku.test\/example.*예제 페이지/ })
+    .getByRole('button', { name: /https:\/\/yaku.test\/example.*주말 산책/ })
     .tap();
   await expect(addressDisplay(page)).toHaveText('yaku.test/example');
   await enterAddress(page, '없는 제목');
@@ -181,7 +181,7 @@ test('탭마다 페이지와 방문 위치가 남고 마지막 탭을 닫으면 
   page,
 }) => {
   await openSafari(page);
-  await tapPaged(safari(page).getByRole('button', { name: '시작 안내', exact: true }));
+  await tapPaged(safari(page).getByRole('button', { name: '휴대폰 사용법', exact: true }));
   await documentView(page)
     .getByRole('button', { name: 'Safari 본문 다음 페이지', exact: true })
     .tap();
@@ -191,19 +191,19 @@ test('탭마다 페이지와 방문 위치가 남고 마지막 탭을 닫으면 
     safari(page).getByRole('heading', { name: '시작 페이지', exact: true }),
   ).toBeVisible();
   await expect(safari(page).getByRole('textbox')).toHaveCount(0);
-  await tapPaged(safari(page).getByRole('button', { name: '예제 페이지', exact: true }));
+  await tapPaged(safari(page).getByRole('button', { name: '주말 산책', exact: true }));
   let tabs = await showTabs(page, 2);
-  await tapPaged(tabs.getByRole('button', { name: '시작 안내 탭 선택', exact: true }));
+  await tapPaged(tabs.getByRole('button', { name: '휴대폰 사용법 탭 선택', exact: true }));
   await expect(addressDisplay(page)).toHaveText('yaku.test/guide');
   await expect(documentView(page)).toHaveAttribute('data-page', '2');
 
   tabs = await showTabs(page, 2);
-  await tapPaged(tabs.getByRole('button', { name: '예제 페이지 탭 닫기', exact: true }));
+  await tapPaged(tabs.getByRole('button', { name: '주말 산책 탭 닫기', exact: true }));
   await expect(tabs.getByRole('heading', { name: '탭 1개', exact: true })).toBeVisible();
   await tapPaged(safari(page).getByRole('button', { name: '완료', exact: true }));
   await expect(addressDisplay(page)).toHaveText('yaku.test/guide');
   tabs = await showTabs(page, 1);
-  await tapPaged(tabs.getByRole('button', { name: '시작 안내 탭 닫기', exact: true }));
+  await tapPaged(tabs.getByRole('button', { name: '휴대폰 사용법 탭 닫기', exact: true }));
   await expect(
     safari(page).getByRole('heading', { name: '시작 페이지', exact: true }),
   ).toBeVisible();
@@ -220,7 +220,7 @@ test('홈을 거쳐 재진입하면 탭·가로 페이지가 유지되고 전체
 }) => {
   await openSafari(page);
   await menuAction(page, '새 탭');
-  await tapPaged(safari(page).getByRole('button', { name: '시작 안내', exact: true }));
+  await tapPaged(safari(page).getByRole('button', { name: '휴대폰 사용법', exact: true }));
   await documentView(page)
     .getByRole('button', { name: 'Safari 본문 다음 페이지', exact: true })
     .tap();
@@ -250,10 +250,10 @@ test('설정의 오프라인 전환은 현재 페이지를 보존하고 Wi-Fi �
   page,
 }) => {
   await openSafari(page);
-  await tapPaged(safari(page).getByRole('button', { name: '시작 안내', exact: true }));
+  await tapPaged(safari(page).getByRole('button', { name: '휴대폰 사용법', exact: true }));
   await setAirplaneMode(page, true);
   await expect(safari(page).getByText('오프라인', { exact: true })).toBeVisible();
-  await expect(safari(page).getByRole('heading', { name: /작은 화면/ })).toBeVisible();
+  await expect(safari(page).getByRole('heading', { name: /아저씨,/ })).toBeVisible();
   await enterAddress(page, 'https://yaku.test/example');
   await expect(safari(page).getByRole('heading', { name: '연결할 수 없습니다' })).toBeVisible();
   await expect(addressDisplay(page)).toHaveText('yaku.test/guide');
@@ -310,13 +310,13 @@ test('오프라인에서도 빈 탭 생성과 기존 탭 선택이 가능하고 
   page,
 }) => {
   await openSafari(page);
-  await tapPaged(safari(page).getByRole('button', { name: '시작 안내', exact: true }));
+  await tapPaged(safari(page).getByRole('button', { name: '휴대폰 사용법', exact: true }));
   await menuAction(page, '새 탭');
-  await tapPaged(safari(page).getByRole('button', { name: '예제 페이지', exact: true }));
+  await tapPaged(safari(page).getByRole('button', { name: '주말 산책', exact: true }));
   await setAirplaneMode(page, true);
   const tabs = await showTabs(page, 2);
-  await tapPaged(tabs.getByRole('button', { name: '시작 안내 탭 선택', exact: true }));
-  await expect(safari(page).getByRole('heading', { name: /작은 화면/ })).toBeVisible();
+  await tapPaged(tabs.getByRole('button', { name: '휴대폰 사용법 탭 선택', exact: true }));
+  await expect(safari(page).getByRole('heading', { name: /아저씨,/ })).toBeVisible();
   await enterAddress(page, 'https://yaku.test/example');
   await expect(safari(page).getByRole('heading', { name: '연결할 수 없습니다' })).toBeVisible();
   await menuAction(page, '새 탭');
@@ -325,7 +325,7 @@ test('오프라인에서도 빈 탭 생성과 기존 탭 선택이 가능하고 
   ).toBeVisible();
   await expect(safari(page).getByRole('heading', { name: '연결할 수 없습니다' })).toHaveCount(0);
   await showTabs(page, 3);
-  await tapPaged(safari(page).getByRole('button', { name: '시작 안내 탭 선택', exact: true }));
+  await tapPaged(safari(page).getByRole('button', { name: '휴대폰 사용법 탭 선택', exact: true }));
   await expect(addressDisplay(page)).toHaveText('yaku.test/guide');
   await expect(safari(page).getByRole('heading', { name: '연결할 수 없습니다' })).toBeVisible();
 });
@@ -371,7 +371,7 @@ for (const size of [
 
 test('키보드로 페이지와 주소 입력을 열고 Alt+Home으로 복귀한다', async ({ page }) => {
   await openSafari(page);
-  const guide = safari(page).getByRole('button', { name: '시작 안내', exact: true });
+  const guide = safari(page).getByRole('button', { name: '휴대폰 사용법', exact: true });
   for (let step = 0; step < 8; step++) {
     await page.keyboard.press('Tab');
     if (await guide.evaluate((el) => el === document.activeElement)) break;
@@ -391,7 +391,7 @@ test('키보드로 페이지와 주소 입력을 열고 Alt+Home으로 복귀한
   await page.keyboard.press('Enter');
   const input = safari(page).getByRole('textbox', { name: '주소 또는 검색어', exact: true });
   await expect(input).toBeFocused();
-  await input.fill('예제');
+  await input.fill('산책');
   await page.keyboard.press('Enter');
   await expect(safari(page).getByText('검색 결과 1개', { exact: true })).toBeVisible();
   await page.keyboard.press('Alt+Home');

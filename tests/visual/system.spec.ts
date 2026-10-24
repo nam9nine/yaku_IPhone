@@ -31,7 +31,7 @@ for (const [width, height] of [
     await page.locator('[data-settings-page=wifi]').tap();
     await page.keyboard.press('Alt+Home');
     await page.locator('[data-launch-app=safari]').tap();
-    await page.getByRole('button', { name: '시작 안내', exact: true }).tap();
+    await page.getByRole('button', { name: '휴대폰 사용법', exact: true }).tap();
     await page.keyboard.press('Alt+a');
     await capture(page, `switcher-${width}x${height}.png`);
   });

@@ -227,13 +227,6 @@
   width: 30px;
   height: 30px;
 }
-.call-demo {
-  font-size: 0.75rem;
-  color: #fff9;
-  text-align: center;
-  line-height: 1.5;
-  margin: 28px 0;
-}
 @keyframes call-banner-enter {
   from {
     transform: translateY(-120%);

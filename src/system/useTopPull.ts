@@ -65,7 +65,7 @@ export function useTopPull(
       if (!root) return;
       if (
         event.target.closest(
-          'button,a,input,textarea,select,label,[contenteditable="true"],.social-scroll,.settings-content,.phone-history,.phone-keypad,.day-call',
+          'input,textarea,select,label,[contenteditable="true"],.social-scroll,.settings-content,.phone-history,.phone-keypad,.day-call,dialog[open]',
         )
       )
         return;
@@ -73,7 +73,14 @@ export function useTopPull(
       const x = (event.clientX - box.left) / box.width;
       const y = event.clientY - box.top;
       const safe = parseFloat(getComputedStyle(root).getPropertyValue('--safe-area-top')) || 0;
-      if (y < TOP_PULL_START + safe || y > TOP_PULL_END + safe || (x > 0.35 && x < 0.65)) return;
+      // The visible status row is also a start target. Keep the larger, lowered
+      // 40–112px band so users need not touch the device's native top edge.
+      const statusRow = y >= safe + 5 && y <= safe + 31;
+      if (
+        (!statusRow && (y < TOP_PULL_START + safe || y > TOP_PULL_END + safe)) ||
+        (x > 0.35 && x < 0.65)
+      )
+        return;
       input = {
         id: event.pointerId,
         x: event.clientX,
@@ -124,6 +131,11 @@ export function useTopPull(
     function cancelled(event: PointerEvent) {
       if (input?.id === event.pointerId) finish(false);
     }
+    function lostCapture(event: PointerEvent) {
+      // Touch starts with implicit capture on the child. Taking capture on the
+      // shell releases that child; only losing our own capture cancels the pull.
+      if (event.target === input?.root) cancelled(event);
+    }
     function reset() {
       finish(false, true);
     }
@@ -141,7 +153,7 @@ export function useTopPull(
     window.addEventListener('pointermove', move, { capture: true, passive: false });
     window.addEventListener('pointerup', up, true);
     window.addEventListener('pointercancel', cancelled, true);
-    window.addEventListener('lostpointercapture', cancelled, true);
+    window.addEventListener('lostpointercapture', lostCapture, true);
     window.addEventListener('click', click, true);
     window.addEventListener('blur', reset);
     window.addEventListener('resize', reset);
@@ -155,7 +167,7 @@ export function useTopPull(
       window.removeEventListener('pointermove', move, true);
       window.removeEventListener('pointerup', up, true);
       window.removeEventListener('pointercancel', cancelled, true);
-      window.removeEventListener('lostpointercapture', cancelled, true);
+      window.removeEventListener('lostpointercapture', lostCapture, true);
       window.removeEventListener('click', click, true);
       window.removeEventListener('blur', reset);
       window.removeEventListener('resize', reset);

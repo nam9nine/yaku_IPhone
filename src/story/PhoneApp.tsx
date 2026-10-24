@@ -287,7 +287,7 @@ export function PhoneApp({
         }}
       >
         <h2>{call?.name}</h2>
-        <p>실제 전화에 연결하지 않는 웹 체험입니다.</p>
+        <p>연결할 수 없습니다. 잠시 후 다시 시도하십시오.</p>
         {call?.id && (
           <button
             onClick={() => {

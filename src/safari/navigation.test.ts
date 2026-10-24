@@ -23,9 +23,11 @@ describe('Safari 주소 입력', () => {
     expect(resolveAddress('https://yaku.test/guide/')).toEqual({ page: guide });
   });
   it('두 내부 페이지의 제목만 검색한다', () => {
-    expect(resolveAddress('시작 안내')).toEqual({ page: { kind: 'search', query: '시작 안내' } });
-    expect(searchPages('안내').map((page) => page.id)).toEqual(['guide']);
-    expect(searchPages('예제').map((page) => page.id)).toEqual(['example']);
+    expect(resolveAddress('휴대폰 사용법')).toEqual({
+      page: { kind: 'search', query: '휴대폰 사용법' },
+    });
+    expect(searchPages('사용법').map((page) => page.id)).toEqual(['guide']);
+    expect(searchPages('산책').map((page) => page.id)).toEqual(['example']);
     expect(searchPages('조용한')).toEqual([]);
   });
   it('외부 http(s) 주소는 자동 실행하지 않고 외부 안내 대상 URL로 반환한다', () => {

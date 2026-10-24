@@ -62,10 +62,10 @@ test('키보드 해제와 reduced motion은 애니메이션 완료에 의존하�
 
 test('바로가기는 실제 기기 권한을 사용하지 않고 안내한다', async ({ page }) => {
   await page.getByRole('button', { name: '손전등 안내' }).click();
-  await expect(page.getByRole('status')).toContainText('사용할 수 없어요');
+  await expect(page.getByRole('status')).toContainText('사용할 수 없습니다.');
   await expect(page.getByTestId('lock-screen')).toBeVisible();
   await page.getByRole('button', { name: '카메라 안내' }).click();
-  await expect(page.getByRole('status')).toHaveText('카메라 권한을 사용하지 않는 웹 체험입니다.');
+  await expect(page.getByRole('status')).toHaveText('카메라를 사용할 수 없습니다.');
 });
 
 for (const distance of [40, 180]) {

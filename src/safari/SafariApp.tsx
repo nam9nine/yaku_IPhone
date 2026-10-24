@@ -422,7 +422,6 @@ export function SafariApp({ online, active }: { online: boolean; active: boolean
               <div className="safari-page-info">
                 <strong>{pageTitle(page)}</strong>
                 <span>{pageAddress(page) || '시작 페이지'}</span>
-                {page.kind === 'internal' && <small>이 앱에서 제공하는 예제 페이지</small>}
               </div>
               <button tabIndex={0} className="safari-menu-row" onClick={editAddress}>
                 <SafariIcon name="search" />
