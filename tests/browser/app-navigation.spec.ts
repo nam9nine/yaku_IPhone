@@ -1,6 +1,14 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { launchHomeApp } from '../helpers/home';
 
+interface EdgeViewportProbe {
+  blockResize: boolean;
+  holdLeaving: boolean;
+  blockedEvents: number;
+  animations: Animation[];
+}
+type EdgeViewportWindow = Window & { __edgeViewportProbe?: EdgeViewportProbe };
+
 async function openApp(page: Page, name: '설정' | 'Safari') {
   await page.goto('./');
   await page.getByRole('button', { name: '잠금 해제', exact: true }).tap();
@@ -613,5 +621,97 @@ for (const interruption of ['resize', 'control'] as const) {
     await expect(page.getByRole('heading', { name: 'Wi-Fi', exact: true })).toBeVisible();
     await edgeSwipe(page, app, 'back');
     await expect(page.getByRole('heading', { name: '설정', exact: true })).toBeVisible();
+  });
+}
+
+for (const direction of ['back', 'forward'] as const) {
+  test(`resize 이벤트가 늦어도 실제 화면 크기가 바뀌면 ${direction} 확정을 취소한다`, async ({
+    page,
+  }) => {
+    await page.clock.install();
+    await page.addInitScript(() => {
+      const probe = {
+        blockResize: false,
+        holdLeaving: false,
+        blockedEvents: 0,
+        animations: [] as Animation[],
+      };
+      Object.assign(window, { __edgeViewportProbe: probe });
+      const block = (event: Event) => {
+        if (!probe.blockResize) return;
+        probe.blockedEvents += 1;
+        event.stopImmediatePropagation();
+      };
+      // Install before React: layout really changes, but neither resize listener
+      // can cancel the gesture on behalf of the completion-time viewport guard.
+      window.addEventListener('resize', block, true);
+      window.visualViewport?.addEventListener('resize', block, true);
+      const animate = Element.prototype.animate;
+      Element.prototype.animate = function (...args) {
+        const animation = animate.apply(this, args);
+        if (probe.holdLeaving && this.closest('[data-edge-motion="leaving"]')) {
+          // Pause the actual WAAPI animation, not its completion callback. This
+          // makes the viewport change happen before completion even on slow CI.
+          animation.pause();
+          probe.animations.push(animation);
+        }
+        return animation;
+      };
+    });
+    await openApp(page, 'Safari');
+    await enterAddress(page, 'https://yaku.test/guide');
+    await enterAddress(page, 'https://yaku.test/example');
+    const app = page.locator('.safari-app');
+    if (direction === 'forward') {
+      await edgeSwipe(page, app, 'back');
+      await expect(address(page)).toHaveText('yaku.test/guide');
+      await expect(app).not.toHaveAttribute('data-edge-motion');
+    }
+    const unchanged = direction === 'back' ? 'yaku.test/example' : 'yaku.test/guide';
+    const destination = direction === 'back' ? 'yaku.test/guide' : 'yaku.test/example';
+    // Hold the fallback timer too, so only the explicitly finished real
+    // animation can attempt the pending history transition.
+    await page.clock.pauseAt(await page.evaluate(() => Date.now() + 1000));
+    await page.evaluate(() => {
+      const probe = (window as EdgeViewportWindow).__edgeViewportProbe!;
+      probe.blockResize = true;
+      probe.holdLeaving = true;
+    });
+    await edgeSwipe(page, app, direction);
+    await expect(app).toHaveAttribute('data-edge-motion', 'leaving');
+    await page.setViewportSize({ width: 360, height: 800 });
+    expect(await page.evaluate(() => [innerWidth, innerHeight])).toEqual([360, 800]);
+    const pausedAnimations = await page.evaluate(() => {
+      const probe = (window as EdgeViewportWindow).__edgeViewportProbe!;
+      const paused = probe.animations.filter(
+        (animation) => animation.playState === 'paused',
+      ).length;
+      probe.holdLeaving = false;
+      probe.animations.forEach((animation) => animation.finish());
+      return paused;
+    });
+    expect(pausedAnimations).toBeGreaterThan(0);
+    await page.clock.runFor(400);
+    await expect(app).not.toHaveAttribute('data-edge-motion');
+    await expect(address(page)).toHaveText(unchanged);
+    await expect
+      .poll(() =>
+        page.evaluate(() => (window as EdgeViewportWindow).__edgeViewportProbe!.blockedEvents),
+      )
+      .toBeGreaterThan(0);
+    await page.evaluate(() => {
+      const probe = (window as EdgeViewportWindow).__edgeViewportProbe!;
+      probe.blockResize = false;
+      // Deliver the delayed notifications only after cancellation was verified.
+      // The shell also uses them to measure its new width for the next gesture.
+      window.dispatchEvent(new Event('resize'));
+      window.visualViewport?.dispatchEvent(new Event('resize'));
+    });
+    await page.clock.runFor(32);
+    await page.clock.resume();
+    await expect(app).toHaveCSS('width', '360px');
+    await edgeSwipe(page, app, direction);
+    await expect(address(page)).toHaveText(destination);
+    await expect(app).not.toHaveAttribute('data-edge-motion');
   });
 }

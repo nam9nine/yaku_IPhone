@@ -4,9 +4,19 @@ import { edgeDirection, type HorizontalDirection } from './horizontalGesture';
 import { useHorizontalGesture } from './useHorizontalGesture';
 import './navigation.css';
 
+function viewportSize() {
+  return {
+    width: window.innerWidth,
+    height: window.innerHeight,
+    visualWidth: window.visualViewport?.width ?? null,
+    visualHeight: window.visualViewport?.height ?? null,
+  };
+}
+
 interface EdgeMotion {
   node: HTMLElement;
   width: number;
+  viewport: ReturnType<typeof viewportSize>;
   offset: number;
   targets: { node: HTMLElement; translate: string; opacity: string }[];
   animations: Animation[];
@@ -67,11 +77,27 @@ export function useEdgeNavigation({
     );
   }
 
+  function viewportUnchanged(current: EdgeMotion) {
+    const viewport = viewportSize();
+    return (
+      current.viewport.width === viewport.width &&
+      current.viewport.height === viewport.height &&
+      current.viewport.visualWidth === viewport.visualWidth &&
+      current.viewport.visualHeight === viewport.visualHeight
+    );
+  }
+
   function settle(current: EdgeMotion, frames: Keyframe[], duration: number, complete: () => void) {
     const token = ++generation.current;
     let finished = false;
     const finish = () => {
       if (finished || token !== generation.current || motion.current !== current) return;
+      // Geometry can change before the browser delivers its resize event. A
+      // stale animation or fallback timer must not commit that gesture's history.
+      if (!viewportUnchanged(current)) {
+        reset();
+        return;
+      }
       finished = true;
       if (current.timer) clearTimeout(current.timer);
       complete();
@@ -177,6 +203,7 @@ export function useEdgeNavigation({
         motion.current = {
           node,
           width: node.clientWidth,
+          viewport: viewportSize(),
           offset: 0,
           targets: collect(node),
           animations: [],
@@ -194,6 +221,12 @@ export function useEdgeNavigation({
       release(direction) {
         const current = motion.current;
         if (!current) return;
+        // Also cover visual-viewport changes before an immediate reduced-motion
+        // transition, where no animation completion will recheck the geometry.
+        if (!viewportUnchanged(current)) {
+          reset();
+          return;
+        }
         if (!direction) {
           cancel(false);
           return;
