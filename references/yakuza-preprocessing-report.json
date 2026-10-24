@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "checkedDate": "2026-10-24",
   "scope": "MNBVC Yakuza pinned 8-file collection and first-pass preprocessing; all original characters/languages retained",
-  "runId": "284224254b0e44d9534b15f1",
-  "codeFingerprint": "d9ccc916ceee162a3e9e177e8de6e559a51fce288ce9f6d7aac6ef32b5c993d2",
+  "runId": "19ecc5cef2b47ca30326eeb2",
+  "codeFingerprint": "7a86d9da70c52f8ecd879c3133d644441ff826cea926dd9dcecb6a255b5a81a8",
   "datasetRevision": "c153d877b4af9c66026ee6fa4eefbc29dd8c11b0",
   "archiveBytes": 66641322,
   "counts": {
@@ -15,7 +15,7 @@
   "dialogueReviewCandidates": 52290,
   "trainingReady": false,
   "reproducedIdentically": true,
-  "localResult": "references/local/yakuza-corpus/processed/284224254b0e44d9534b15f1",
+  "localResult": "references/local/yakuza-corpus/processed/19ecc5cef2b47ca30326eeb2",
   "files": [
     {
       "id": "like-a-dragon8",
@@ -370,7 +370,7 @@
   "outputChecksums": {
     "configuration.json": {
       "bytes": 5325,
-      "sha256": "e93493165152e4ca291bdf3a9feae1188cdc611d5c712ddc41ffd2e40cec852b"
+      "sha256": "dc2dd8f8a5991940c2d4b3bd548aa749e64a546e34e88156093b3f4d85e25186"
     },
     "dialogue-candidates.jsonl": {
       "bytes": 21367017,
@@ -406,7 +406,7 @@
     },
     "report.json": {
       "bytes": 8405,
-      "sha256": "c11c853f873bdf1f0f3319ae87d5a68beec146fd71c1f0bf3d59161e6d992ef0"
+      "sha256": "4ef545c66d18d81b8be03379034897146de32afce418bcd42b15332addfecfbb"
     },
     "review-samples.jsonl": {
       "bytes": 853607,
@@ -439,5 +439,34 @@
     "인물별 mentions는 모든 언어의 별칭 검색으로 오탐을 포함하며 발화수/고유인물수가 아니다.",
     "모든 원문은 로컬에 보관. 공개 파일은 텍스트 없는 집계/해시뿐.",
     "6/극2의 한국어는 0행. 니시키 주요 등장편0/1/극1은 이8개소스에 없음."
-  ]
+  ],
+  "previousRunId": "284224254b0e44d9534b15f1",
+  "payloadComparison": {
+    "previousRunId": "284224254b0e44d9534b15f1",
+    "runId": "19ecc5cef2b47ca30326eeb2",
+    "unchangedPayloadFiles": [
+      "dialogue-candidates.jsonl",
+      "gaiden.normalized.jsonl.gz",
+      "kiwami2.normalized.jsonl.gz",
+      "like-a-dragon7.normalized.jsonl.gz",
+      "like-a-dragon8.normalized.jsonl.gz",
+      "mentions.jsonl",
+      "names.jsonl",
+      "quarantine.jsonl",
+      "review-samples.jsonl",
+      "scenes.jsonl",
+      "yakuza3.normalized.jsonl.gz",
+      "yakuza4.normalized.jsonl.gz",
+      "yakuza5.normalized.jsonl.gz",
+      "yakuza6.normalized.jsonl.gz"
+    ],
+    "changedProvenanceFiles": ["configuration.json", "report.json"],
+    "counts": {
+      "input": 285971,
+      "normalized": 285971,
+      "trainingEligible": 0
+    },
+    "allOutputChecksumsVerified": true,
+    "temporaryProcessEntries": []
+  }
 }

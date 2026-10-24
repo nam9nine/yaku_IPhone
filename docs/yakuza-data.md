@@ -21,6 +21,8 @@ node scripts/preprocess-yakuza.mjs
 
 정제 실행은 입력 manifest, 별칭, 구현 코드로 run ID를 만든다. 임시 디렉터리에서 전 파일 처리가 성공한 후에만 결과와 `latest.json`을 게시한다. 같은 명령을 다시 실행하면 전수 재처리한 해시를 기존 결과와 비교한다. 결과가 다르면 기존 파일을 보존하고 실패한다.
 
+gzip 오류는 소비자가 한 행을 받은 뒤 비동기 작업 중이어도 호출자에게 전달한다. 스트림 종료는 정상 완료·파싱 실패·소비 중단 모두에서 기다린다. 손상 입력으로 실행이 실패하면 이전 정상 run과 `latest.json`을 유지하고 처리 lock과 임시 run을 정리한다. [Issue 47 검증](../harness/evidence/issue-47-yakuza-reprocessing.md)은 합성 오류 반복과 실제 8개 원본 재처리를 구분해 기록한다.
+
 ## 산출물
 
 | 파일                                                  | 의미                                                                    |

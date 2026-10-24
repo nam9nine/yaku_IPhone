@@ -1,13 +1,20 @@
+import { execFile } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { mkdtemp, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { promisify } from 'node:util';
 import { gzipSync, gunzipSync } from 'node:zlib';
 import { afterEach, describe, expect, it } from 'vitest';
 import { fetchDataset, validateManifest } from '../scripts/lib/yakuza-download.mjs';
 import { preprocessDataset, readJsonlGzip } from '../scripts/lib/yakuza-pipeline.mjs';
 
 const directories = [];
+const execFileAsync = promisify(execFile);
+const lifecycleFixture = fileURLToPath(
+  new URL('./fixtures/yakuza-stream-lifecycle.mjs', import.meta.url),
+);
 async function temp() {
   const dir = await mkdtemp(path.join(os.tmpdir(), 'yakuza-test-'));
   directories.push(dir);
@@ -52,6 +59,43 @@ async function dataset(rows) {
   await writeFile(path.join(dir, 'raw', 'Synthetic.jsonl.gz'), bytes);
   return { dir, bytes, manifest };
 }
+
+async function lifecycleProbe(scenario, delayMs = 0) {
+  const directory = await temp();
+  // A child process makes an uncaught stream error or hung iterator a normal
+  // test failure instead of poisoning the Vitest worker. Keep its bound below
+  // the existing 5-second test timeout; do not tolerate retries or lost errors.
+  const { stdout, stderr } = await execFileAsync(
+    process.execPath,
+    ['--unhandled-rejections=strict', lifecycleFixture, scenario, directory, String(delayMs)],
+    { timeout: 4000, killSignal: 'SIGKILL' },
+  );
+  expect(stderr).toBe('');
+  return JSON.parse(stdout);
+}
+
+describe('gzip stream lifecycle', () => {
+  it.each([0, 1, 5, 25])(
+    'rejects truncated gzip with %ims of consumer work without uncaught errors',
+    async (delayMs) => {
+      const result = await lifecycleProbe('truncated', delayMs);
+      expect(result).toMatchObject({ delayMs, iterations: 40, opened: 40, closed: 40 });
+      expect(result.yielded).toBeGreaterThan(0);
+    },
+  );
+  it.each([
+    'normal',
+    'missing-file',
+    'invalid-json',
+    'invalid-utf8',
+    'early-break',
+    'consumer-error',
+  ])('closes the source and preserves the result of %s', async (scenario) => {
+    const result = await lifecycleProbe(scenario);
+    expect(result.opened).toBe(scenario === 'missing-file' ? 0 : 1);
+    expect(result.closed).toBe(result.opened);
+  });
+});
 
 describe('pinned archive collection', () => {
   it('verifies a cached file and never silently trusts corruption', async () => {
@@ -176,6 +220,30 @@ describe('full corpus processing', () => {
       await expect(preprocessDataset(manifestFor(bytes), { dataDir: dir })).rejects.toThrow();
       expect(await readdir(path.join(dir, 'processed'))).toEqual([]);
       expect(await readdir(dir)).not.toContain('latest.json');
+      expect(await readdir(dir)).not.toContain('latest.json.tmp');
+    },
+  );
+  it.each(['truncated-gzip', 'invalid-json', 'invalid-record'])(
+    'preserves an earlier run and releases the lock after %s',
+    async (kind) => {
+      const { dir, bytes, manifest } = await dataset([row('정상 결과 보존을 확인하는 합성 문장')]);
+      const first = await preprocessDataset(manifest, { dataDir: dir });
+      const latest = await readFile(path.join(dir, 'latest.json'));
+      const checksums = await readFile(path.join(first.directory, 'checksums.json'));
+      const broken =
+        kind === 'truncated-gzip'
+          ? gzipSync('{}\n').subarray(0, -4)
+          : gzipSync(kind === 'invalid-json' ? '{broken}\n' : 'null\n');
+      const filename = path.join(dir, 'raw', 'Synthetic.jsonl.gz');
+      await writeFile(filename, broken);
+      await expect(preprocessDataset(manifestFor(broken), { dataDir: dir })).rejects.toThrow();
+      expect(await readdir(path.join(dir, 'processed'))).toEqual([first.report.runId]);
+      expect(await readFile(path.join(dir, 'latest.json'))).toEqual(latest);
+      expect(await readFile(path.join(first.directory, 'checksums.json'))).toEqual(checksums);
+      expect(await readdir(dir)).not.toContain('latest.json.tmp');
+      expect(await readFile(filename)).toEqual(broken);
+      await writeFile(filename, bytes);
+      expect((await preprocessDataset(manifest, { dataDir: dir })).reproduced).toBe(true);
     },
   );
   it('rejects corruption of an existing output rather than replacing it silently', async () => {
@@ -190,9 +258,16 @@ describe('full corpus processing', () => {
   it('accepts a final JSON record without newline and records its position', async () => {
     const dir = await temp();
     const filename = path.join(dir, 'fixture.gz');
-    await writeFile(filename, gzipSync('{}\n{"ko_text":"합성"}'));
+    const lines = ['{}\r', '{"ko_text":"합성"}'];
+    await writeFile(filename, gzipSync(lines.join('\n')));
     const result = [];
     for await (const item of readJsonlGzip(filename)) result.push(item);
-    expect(result.map((r) => r.lineNumber)).toEqual([1, 2]);
+    expect(result).toEqual(
+      lines.map((line, index) => ({
+        row: JSON.parse(line),
+        lineNumber: index + 1,
+        rawRowHash: sha(line),
+      })),
+    );
   });
 });
