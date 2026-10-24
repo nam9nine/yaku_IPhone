@@ -8,3 +8,5 @@
 - 비교 자료: `apple-contact-card`, `apple-messages` 및 기존 사용자 요청을 반영한 다크 UI. 이번 변경은 인물/대화 추가이며 iPhone UI 전체 일치도를 완료로 판정하지 않는다.
 - 실제 게임 사진은 로컬 자산이며 출처·SHA256·권리 정보는 `references/story-sources.json`에 보관한다. 대화는 새로 작성한 일상 창작이다. 제품 화면에 출처나 데모 안내를 추가하지 않았다.
 - Linux 기준·최종 SHA 독립 검토·배포 결과는 PR에 기록한다. 실제 iPhone Safari는 미검증이다.
+- 일반 모션 로컬 preview 추가 확인: 두 엔진에서 제어센터·설정·사진·다테 및 새 두 인물의 프로필/답장/재접속을 조작하고 오류가 없었다. 390폭 Chromium native touch로 긴 연락처를 끝까지 스크롤해 아키야마와 연락처 8개 표시가 보이는 것을 확인했다. 모바일 WebKit의 wheel 입력은 Playwright가 지원하지 않으므로 이를 실제 iPhone 터치 검증으로 간주하지 않는다.
+- 같은 preview의 WebKit에서는 End 키로 목록 끝까지 이동한 뒤 두 사람에게 답장하고 재접속 상태를 확인했다. 최종 추가 smoke는 두 엔진 모두 통과했다.
