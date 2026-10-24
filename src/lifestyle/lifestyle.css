@@ -1,0 +1,244 @@
+.lifestyle-app {
+  --lifestyle-accent: #ff375f;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  color: var(--app-text);
+  background: var(--app-background);
+}
+.lifestyle-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 18px 20px 12px;
+}
+.lifestyle-header h1 {
+  font-size: 1.875rem;
+  letter-spacing: -1px;
+  margin: 0;
+}
+.lifestyle-header button {
+  border: 0;
+  background: none;
+  color: var(--lifestyle-accent);
+  font-size: 1.7rem;
+  min-width: 40px;
+  min-height: 44px;
+}
+.lifestyle-content {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 8px 20px 32px;
+}
+.lifestyle-content h2 {
+  font-size: 1.3rem;
+  margin: 24px 0 8px;
+}
+.lifestyle-secondary,
+.lifestyle-list small {
+  color: var(--app-secondary);
+  line-height: 1.5;
+}
+.lifestyle-search {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  border-radius: 12px;
+  background: var(--app-surface);
+  padding: 10px 12px;
+}
+.lifestyle-search input {
+  background: none;
+  border: 0;
+  color: inherit;
+  width: 100%;
+  min-width: 0;
+  font: inherit;
+}
+.music-album {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin: 28px 0;
+}
+.music-album strong {
+  font-size: 1.2rem;
+}
+.music-album p {
+  color: var(--app-secondary);
+  font-size: 0.875rem;
+}
+.music-cover {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 10px;
+}
+.music-cover--large {
+  display: block;
+  width: min(100%, 280px);
+  height: auto;
+  aspect-ratio: 1;
+  margin: 20px auto;
+  box-shadow: 0 12px 28px #0003;
+}
+.lifestyle-list {
+  border-radius: 14px;
+  background: var(--app-surface);
+  overflow: hidden;
+}
+.lifestyle-list > button {
+  display: flex;
+  align-items: center;
+  text-align: left;
+  gap: 12px;
+  width: 100%;
+  padding: 16px 12px;
+  min-height: 66px;
+  background: none;
+  color: inherit;
+  border: 0;
+  border-bottom: 0.5px solid var(--app-separator);
+  font: inherit;
+}
+.lifestyle-list > button:last-child {
+  border-bottom: 0;
+}
+.lifestyle-list > button > span:nth-child(2) {
+  flex: 1;
+  min-width: 0;
+}
+.lifestyle-list strong,
+.lifestyle-list small {
+  display: block;
+}
+.lifestyle-list strong {
+  font-weight: 500;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+.lifestyle-list small {
+  font-size: 0.8rem;
+}
+.music-note {
+  color: var(--lifestyle-accent);
+  font-size: 1.6rem;
+}
+.lifestyle-action {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  border: 0;
+  border-radius: 14px;
+  padding: 15px;
+  margin-top: 24px;
+  text-align: center;
+  text-decoration: none;
+  background: var(--lifestyle-accent);
+  color: white;
+  font: inherit;
+  font-weight: 600;
+}
+.lifestyle-link {
+  display: block;
+  margin: 8px auto 0;
+  border: 0;
+  background: none;
+  color: var(--lifestyle-accent);
+  min-height: 44px;
+  font: inherit;
+}
+.taxi-app {
+  --lifestyle-accent: #292929;
+}
+.taxi-route {
+  display: flex;
+  gap: 20px;
+  border-radius: 22px;
+  background: #ffdc57;
+  color: #181818;
+  padding: 28px;
+  margin-top: 10px;
+}
+.taxi-route > div:last-child {
+  display: grid;
+  gap: 8px;
+}
+.taxi-route strong {
+  font-size: 1.4rem;
+}
+.taxi-route small:nth-of-type(2) {
+  margin-top: 24px;
+}
+.taxi-route-line {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  padding: 24px 0 8px;
+}
+.taxi-route-line i {
+  width: 10px;
+  height: 10px;
+  border: 3px solid #181818;
+  border-radius: 50%;
+}
+.taxi-route-line span {
+  flex: 1;
+  border-left: 2px dotted #181818;
+}
+.destination-symbol {
+  font-size: 1.7rem;
+  width: 32px;
+  text-align: center;
+}
+.cooking-app {
+  --lifestyle-accent: #b94a15;
+}
+.recipe-symbol {
+  font-size: 2rem;
+}
+.cooking-memo {
+  background: var(--app-surface);
+  padding: 18px;
+  border-radius: 14px;
+  line-height: 1.6;
+  margin: 24px 0;
+}
+.recipe-ingredients {
+  padding-left: 24px;
+  line-height: 1.9;
+}
+.recipe-step h2 {
+  font-size: 1.6rem;
+  line-height: 1.5;
+}
+.recipe-step-buttons {
+  display: flex;
+  gap: 14px;
+  margin-top: 32px;
+}
+.recipe-step-buttons button {
+  flex: 1;
+  padding: 14px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--lifestyle-accent);
+  color: white;
+  font: inherit;
+}
+.recipe-step-buttons button:disabled {
+  opacity: 0.4;
+}
+.lifestyle-app button:active {
+  filter: brightness(0.85);
+}
+.taxi-app .lifestyle-header button {
+  color: var(--app-text);
+}
+.mobile-shell[data-theme='dark'] .cooking-app .lifestyle-link,
+.mobile-shell[data-theme='dark'] .cooking-app .lifestyle-header button {
+  color: #ff9f55;
+}

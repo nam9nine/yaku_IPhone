@@ -160,6 +160,7 @@ export function HomeScreen({
 
   function openApp(app: HomeApp, button: HTMLButtonElement) {
     const target = app.id;
+    if (target === 'karaoke') return;
     if (onOpenApp && isRunnableApp(target)) {
       const bounds =
         button.querySelector('.app-icon')?.getBoundingClientRect() ??
