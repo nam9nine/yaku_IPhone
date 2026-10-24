@@ -1,0 +1,179 @@
+{
+  "schemaVersion": 1,
+  "checkedDate": "2026-10-24",
+  "scope": "Derived annotation review only; all source rows retained; no SFT or train/eval split",
+  "runId": "5566cae09b9221bf7e4eea04",
+  "inputRunId": "19ecc5cef2b47ca30326eeb2",
+  "codeFingerprint": "8e8b2d44f63fd66ec24330ba9dae4c9c36e655d5172e89a329b914a5464df127",
+  "counts": {
+    "input": 285971,
+    "candidates": 47588,
+    "held": 238383,
+    "trainingEligible": 0
+  },
+  "lanes": {
+    "dialogue_context_review": 47588,
+    "gameplay_context_review": 4416,
+    "mail_name_review": 30,
+    "mail_review": 256,
+    "name_review": 33229,
+    "no_korean": 117322,
+    "other_review": 26632,
+    "quality_review": 25353,
+    "ui_review": 31145
+  },
+  "files": {
+    "like-a-dragon8": {
+      "input": 57452,
+      "lanes": {
+        "dialogue_context_review": 14629,
+        "gameplay_context_review": 2178,
+        "mail_name_review": 9,
+        "mail_review": 58,
+        "name_review": 11572,
+        "no_korean": 232,
+        "other_review": 10326,
+        "quality_review": 6300,
+        "ui_review": 12148
+      }
+    },
+    "gaiden": {
+      "input": 26869,
+      "lanes": {
+        "dialogue_context_review": 9326,
+        "gameplay_context_review": 1013,
+        "mail_name_review": 9,
+        "mail_review": 29,
+        "name_review": 3322,
+        "no_korean": 12,
+        "other_review": 4828,
+        "quality_review": 2145,
+        "ui_review": 6185
+      }
+    },
+    "yakuza3": {
+      "input": 9436,
+      "lanes": {
+        "dialogue_context_review": 3012,
+        "name_review": 2822,
+        "no_korean": 14,
+        "other_review": 1713,
+        "quality_review": 222,
+        "ui_review": 1653
+      }
+    },
+    "yakuza4": {
+      "input": 8192,
+      "lanes": {
+        "dialogue_context_review": 3191,
+        "name_review": 2569,
+        "other_review": 1048,
+        "quality_review": 85,
+        "ui_review": 1299
+      }
+    },
+    "yakuza5": {
+      "input": 12807,
+      "lanes": {
+        "dialogue_context_review": 4679,
+        "name_review": 6298,
+        "no_korean": 12,
+        "other_review": 655,
+        "quality_review": 111,
+        "ui_review": 1052
+      }
+    },
+    "yakuza6": {
+      "input": 57650,
+      "lanes": {
+        "no_korean": 57650
+      }
+    },
+    "kiwami2": {
+      "input": 59342,
+      "lanes": {
+        "no_korean": 59342
+      }
+    },
+    "like-a-dragon7": {
+      "input": 54223,
+      "lanes": {
+        "dialogue_context_review": 12751,
+        "gameplay_context_review": 1225,
+        "mail_name_review": 12,
+        "mail_review": 169,
+        "name_review": 6646,
+        "no_korean": 60,
+        "other_review": 8062,
+        "quality_review": 16490,
+        "ui_review": 8808
+      }
+    }
+  },
+  "sampling": {
+    "method": "sha256-ranked-within-game-lane-typed-review-strata",
+    "stratumTypes": ["mention", "review_reason", "korean_warning"],
+    "unmentionedValue": null,
+    "seed": "yakuza-review-v1",
+    "samplesPerStratum": 3,
+    "strata": 268,
+    "records": 711,
+    "accuracyEstimate": false
+  },
+  "duplicateGroups": {
+    "sameContext": 3052,
+    "crossContext": 18386,
+    "rowsRemoved": 0
+  },
+  "duplicateDefinition": "Exact normalized ko-column string match over all nonempty ko rows; language and source context unverified; no deletion",
+  "allOutputChecksumsVerified": true,
+  "reproducedIdentically": true,
+  "trainingReady": false,
+  "localResult": "references/local/yakuza-corpus/reviews/5566cae09b9221bf7e4eea04",
+  "outputChecksums": {
+    "configuration.json": {
+      "bytes": 2580,
+      "sha256": "e16ab4d57a1c53b58fd78f26815c8141fa6e4197fdd7b0b3defdafa72657baf3"
+    },
+    "duplicate-groups.jsonl": {
+      "bytes": 23191986,
+      "sha256": "afe27edc55a0e18768e41feac469f7f7e0cc2ddb4ad67afbada359437d850403"
+    },
+    "report.json": {
+      "bytes": 201973,
+      "sha256": "9081dbe86b6e7473cab3ca7758b1f2803080b55a0683e3ff3e42f41481a3a22e"
+    },
+    "review-candidates.jsonl": {
+      "bytes": 76931312,
+      "sha256": "58ff5c3401fc78cc78e8b70ad2bcbd9a514f4bd198e40ec4639725d1becca58a"
+    },
+    "review-held.jsonl": {
+      "bytes": 360944039,
+      "sha256": "3e13cff27bf2b4e5857a387d359e4c6d82131c3a5cb4f75ee3db8f535cfaf706"
+    },
+    "review-samples.jsonl": {
+      "bytes": 1240505,
+      "sha256": "7e1d8315e75b43d9a2b346d68a0890c09e679ed7003cca767d711de084952ab0"
+    }
+  },
+  "limits": [
+    "Candidate is a review queue, not a speaker-labelled training example.",
+    "Speaker, recipient, story time and dialogue order remain unverified.",
+    "Priority-name mentions do not identify speakers and do not filter the corpus.",
+    "6 and Kiwami2 have no nonempty ko text in this source.",
+    "Scene identifiers and same/cross-context duplicate grouping are unverified source groups.",
+    "All game text stays in ignored local files, not Git/Pages/CI artifacts.",
+    "Dialogue-context candidates can include narration; mail_review can mix subjects and content; name_review includes object names."
+  ],
+  "previousReviewRun": "2fd0a8d07c12472b66a4bcaf",
+  "corePayloadsUnchanged": [
+    "review-candidates.jsonl",
+    "review-held.jsonl",
+    "duplicate-groups.jsonl"
+  ],
+  "mixedField21Samples": {
+    "dialogue_context_review": 3,
+    "gameplay_context_review": 3,
+    "quality_review": 3
+  }
+}
