@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import { releaseFastSwipe } from '../helpers/gestureClock';
 
 test.use({ isMobile: false, hasTouch: false });
 
@@ -74,12 +75,12 @@ test('PC에서는 390×844 폰이 중앙에 있고 모바일 크기 변경 시 �
 test('PC 폰의 빠른 하단 스와이프는 홈으로, 느린 스와이프는 폰 안의 최근 앱으로 간다', async ({
   page,
 }) => {
+  await page.clock.install();
   await ready(page);
   await openSettings(page);
   await page.locator('[data-settings-page=wifi]').click();
   const fast = await beginBottom(page);
-  await page.mouse.move(fast.x, fast.y - 170, { steps: 2 });
-  await page.mouse.up();
+  await releaseFastSwipe(page, fast.x, fast.y - 170);
   await expect(page.getByTestId('settings-app')).toBeHidden();
   await expect(page.getByTestId('system-switcher')).toHaveCount(0);
   await indicatorsInside(page);
@@ -114,9 +115,9 @@ test('PC 폰에서 카드를 중간부터 끝까지 줄이며 올려도 배경�
   expect(middle.width).toBeLessThan(phone.width);
   await insidePhone(page, page.locator('.gesture-stage-backdrop'));
   await page.mouse.move(start.x, phone.y + 70, { steps: 12 });
-  await page.waitForTimeout(180);
-  const end = await bounds(page.getByTestId('settings-app'));
-  expect(end.width).toBeLessThan(middle.width);
+  await expect
+    .poll(async () => (await bounds(page.getByTestId('settings-app'))).width)
+    .toBeLessThan(middle.width);
   await page.mouse.up();
   await expect(page.getByTestId('settings-app')).toBeHidden();
   await expect(page.getByTestId('system-switcher')).toHaveCount(0);

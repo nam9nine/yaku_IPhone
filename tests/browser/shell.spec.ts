@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { dragTouchWithoutFling } from '../helpers/touch';
+import { releaseFastSwipe } from '../helpers/gestureClock';
 
 async function home(page: Page) {
   await page.goto('./');
@@ -35,6 +36,7 @@ for (const size of [
     page,
   }) => {
     await page.setViewportSize(size);
+    await page.clock.install();
     await home(page);
     await open(page);
     const app = page.getByTestId('settings-app');
@@ -44,8 +46,7 @@ for (const size of [
     await expect(page.getByRole('heading', { name: '설정', exact: true })).toBeFocused();
     await expect(page.getByRole('button', { name: '다시 잠그기' })).toHaveCount(0);
     const start = await begin(page);
-    await page.mouse.move(start.x, start.y - 130, { steps: 3 });
-    await page.mouse.up();
+    await releaseFastSwipe(page, start.x, start.y - 130);
 
     await expect(page.getByTestId('system-switcher')).toHaveCount(0);
     await expect(app).toBeHidden();
@@ -130,6 +131,7 @@ test('브라우저별 정지한 터치와 빠른 포인터가 최근 앱과 홈�
   page,
   browserName,
 }) => {
+  await page.clock.install();
   await home(page);
   await open(page);
   const bounds = (await page.getByTestId('settings-home-gesture').boundingBox())!;
@@ -138,8 +140,7 @@ test('브라우저별 정지한 터치와 빠른 포인터가 최근 앱과 홈�
   if (browserName !== 'chromium') {
     await page.mouse.move(x, y);
     await page.mouse.down();
-    await page.mouse.move(x, y - 128, { steps: 8 });
-    await page.mouse.up();
+    await releaseFastSwipe(page, x, y - 128);
   } else {
     const client = await page.context().newCDPSession(page);
     try {

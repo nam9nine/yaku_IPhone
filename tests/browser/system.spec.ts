@@ -1,4 +1,5 @@
 import { expect, test, type Page, type Locator } from '@playwright/test';
+import { releaseFastSwipe } from '../helpers/gestureClock';
 async function ready(page: Page) {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('./');
@@ -10,6 +11,10 @@ async function drag(page: Page, locator: Locator, dx: number, dy: number, pause 
     y = r.y + r.height / 2;
   await page.mouse.move(x, y);
   await page.mouse.down();
+  if (pause === 0 && steps === 1) {
+    await releaseFastSwipe(page, x + dx, y + dy);
+    return;
+  }
   await page.mouse.move(x + dx, y + dy, { steps });
   if (pause) await page.waitForTimeout(pause);
   await page.mouse.up();
@@ -55,10 +60,11 @@ test('상단의 시작 위치가 제어 센터와 알림 센터를 구분하고 
 test('홈 인디케이터를 빠르게 올리면 홈, 멈춘 뒤 놓으면 최근 앱이 열리고 상태를 유지한다', async ({
   page,
 }) => {
+  await page.clock.install();
   await ready(page);
   await open(page, 'settings');
   await page.locator('[data-settings-page=wifi]').tap();
-  // Multiple rendered mouse steps can turn a fast swipe into a slow swipe on CI.
+  // Keep the trusted fast release at 16ms even when the CI protocol is delayed.
   await drag(
     page,
     page.getByTestId('settings-home-gesture').locator('.home-indicator'),

@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { launchHomeApp } from '../helpers/home';
+import { releaseFastSwipe } from '../helpers/gestureClock';
 
 async function open(page: Page) {
   await page.goto('./');
@@ -175,11 +176,11 @@ test('최근 앱으로 전환해도 제목의 정렬과 글꼴이 바뀌지 않�
 test('하단을 누르고 대기한 뒤 빠르게 올리면 대기 시간을 느린 이동으로 오인하지 않는다', async ({
   page,
 }) => {
+  await page.clock.install();
   await open(page);
   const { x, y } = await start(page);
   await page.waitForTimeout(400);
-  await page.mouse.move(x, y - 140);
-  await page.mouse.up();
+  await releaseFastSwipe(page, x, y - 140);
   await expect(page.getByTestId('settings-app')).toBeHidden();
   await expect(page.getByTestId('system-switcher')).toHaveCount(0);
 });
