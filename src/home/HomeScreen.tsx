@@ -8,6 +8,7 @@ import { homeLayout } from './homeLayout';
 import { isRunnableApp, type LaunchRect, type RunnableApp } from '../shell/session';
 import { dayPhotos } from '../day/media';
 import { useDay } from '../day/DayContext';
+import { contactIds } from '../day/content';
 
 export function HomeScreen({
   onLock,
@@ -28,6 +29,7 @@ export function HomeScreen({
 }) {
   const date = useDisplayDate();
   const { shoppingDone, state: dayState } = useDay();
+  const unreadCount = contactIds.filter((id) => !dayState.readThreads.includes(id)).length;
   const widgetPhoto = dayPhotos[shoppingDone ? 1 : 0];
   const day = String(Number(date.isoDate.slice(-2)));
   const weekday = date.label.split(' ').at(-1) ?? '';
@@ -178,12 +180,9 @@ export function HomeScreen({
       >
         <span className="home-icon-wrap">
           <AppIcon id={app.id} day={day} weekday={weekday.replace('요일', '')} />
-          {app.id === 'messages' && dayState.readThreads.length < 5 && (
-            <span
-              className="home-badge"
-              aria-label={`읽지 않은 대화 ${5 - dayState.readThreads.length}개`}
-            >
-              {5 - dayState.readThreads.length}
+          {app.id === 'messages' && unreadCount > 0 && (
+            <span className="home-badge" aria-label={`읽지 않은 대화 ${unreadCount}개`}>
+              {unreadCount}
             </span>
           )}
           {app.id === 'phone' && dayState.callStatus === 'missed' && !dayState.missedCallRead && (

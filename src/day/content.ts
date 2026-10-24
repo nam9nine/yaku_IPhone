@@ -20,7 +20,7 @@ export const reminders = [
   { id: 'mame', title: '마메 밥 주기', detail: '저녁 먹기 전에' },
 ] as const;
 export type ReminderId = (typeof reminders)[number]['id'];
-export const contactIds = ['haruka', 'majima', 'daigo', 'saejima', 'mine'] as const;
+export const contactIds = ['haruka', 'majima', 'daigo', 'saejima', 'mine', 'date'] as const;
 export type ContactId = (typeof contactIds)[number];
 export interface DayMessage {
   id: string;
@@ -30,6 +30,14 @@ export interface DayMessage {
   noteId?: string;
 }
 export const dayMessages: Record<ContactId, DayMessage[]> = {
+  date: [
+    {
+      id: 'date1',
+      text: '키류, 아이들은 잘 지내나? 너도 끼니 거르지 말고.',
+      outgoing: false,
+      time: '15:45',
+    },
+  ],
   haruka: [
     { id: 'h1', text: '아저씨, 오늘 저녁은 카레 어때요?', outgoing: false, time: '16:25' },
     { id: 'h2', text: '좋다. 장은 내가 봐 오겠다.', outgoing: true, time: '16:28' },
@@ -75,6 +83,10 @@ export const dayMessages: Record<ContactId, DayMessage[]> = {
   ],
 };
 export const replyChoices: Record<ContactId, { text: string; response: string }> = {
+  date: {
+    text: '다들 잘 지냅니다. 다음에 오시면 같이 식사하시죠.',
+    response: '좋지. 하루카한테도 안부 전해 줘.',
+  },
   haruka: { text: '다 샀다.', response: '고마워요. 밥은 해둘게요.' },
   majima: {
     text: '오늘은 카레입니다. 아이들은 잘 지냅니다.',
