@@ -263,8 +263,40 @@ for (const [width, height, font] of [
     await page.keyboard.press('Alt+s');
     const search = page.getByTestId('system-search');
     await expect(search.getByRole('textbox')).toBeInViewport();
-    for (const item of await search.getByRole('button', { name: /^(설정|Safari)$/ }).all())
-      await expect(item).toBeInViewport();
+    const results = search.locator('.system-search-results');
+    await search.getByRole('textbox').focus();
+    // Short screens use a horizontal result strip. Keyboard focus must reveal
+    // every app even as the catalog grows beyond the initially visible items.
+    const apps = await results.getByRole('button').all();
+    for (const item of apps) {
+      await page.keyboard.press('Tab');
+      await expect(item).toBeFocused();
+      await expect(item).toBeInViewport({ ratio: 1 });
+    }
+    if (height <= 480) expect(await results.evaluate((el) => el.scrollLeft)).toBeGreaterThan(0);
+    await page.screenshot({ path: test.info().outputPath('system-search-keyboard-end.png') });
+    for (const item of apps.slice(0, -1).reverse()) {
+      await page.keyboard.press('Shift+Tab');
+      await expect(item).toBeFocused();
+      await expect(item).toBeInViewport({ ratio: 1 });
+    }
+    if (height <= 480) expect(await results.evaluate((el) => el.scrollLeft)).toBeLessThanOrEqual(3);
+    expect(await results.evaluate((el) => el.scrollTop)).toBe(0);
+    expect(await search.evaluate((el) => el.scrollTop)).toBe(0);
+    expect(await page.evaluate(() => ({ x: scrollX, y: scrollY }))).toEqual({ x: 0, y: 0 });
+    for (const [name, app] of [
+      ['설정', 'settings-app'],
+      ['Safari', 'safari-app'],
+    ]) {
+      await search.getByRole('textbox').fill(name);
+      await expect(results.getByRole('button')).toHaveCount(1);
+      await expect(results.getByRole('button', { name, exact: true })).toBeInViewport({ ratio: 1 });
+      await page.keyboard.press('Enter');
+      await expect(page.getByTestId(app)).toBeVisible();
+      await expect(search).toHaveCount(0);
+      await page.keyboard.press('Alt+Home');
+      await page.keyboard.press('Alt+s');
+    }
     await page.screenshot({ path: test.info().outputPath('system-small.png') });
   });
 }
