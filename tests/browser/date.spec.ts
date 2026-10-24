@@ -7,7 +7,7 @@ for (const width of [360, 390, 430]) {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto('./');
     await page.getByRole('button', { name: '잠금 해제', exact: true }).tap();
-    await expect(page.getByLabel('읽지 않은 대화 6개')).toBeVisible();
+    await expect(page.getByLabel('읽지 않은 대화 8개')).toBeVisible();
     await launchHomeApp(page, 'contacts');
     await page.getByRole('searchbox', { name: '연락처 검색' }).fill('다테 형사');
     await page.locator('[data-contact=date]').tap();
@@ -26,7 +26,7 @@ for (const width of [360, 390, 430]) {
     await expect(thread).toContainText('좋지. 하루카한테도 안부 전해 줘.');
     await page.reload();
     await page.getByRole('button', { name: '잠금 해제', exact: true }).tap();
-    await expect(page.getByLabel('읽지 않은 대화 5개')).toBeVisible();
+    await expect(page.getByLabel('읽지 않은 대화 7개')).toBeVisible();
     await launchHomeApp(page, 'phone');
     await page.getByRole('button', { name: '연락처', exact: true }).tap();
     await page.locator('[data-contact=date]').tap();
@@ -36,7 +36,9 @@ for (const width of [360, 390, 430]) {
   });
 }
 
-test('기존 다섯 대화를 읽은 저장 상태에서 다테만 새 대화로 표시한다', async ({ page }) => {
+test('기존 다섯 대화를 읽은 저장 상태에서 다테와 두 친구를 새 대화로 표시한다', async ({
+  page,
+}) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('./');
   await page.evaluate(() =>
@@ -57,13 +59,13 @@ test('기존 다섯 대화를 읽은 저장 상태에서 다테만 새 대화로
   await page.reload();
   await expect(page.getByRole('button', { name: '남은 할 일 2개', exact: true })).toBeVisible();
   await page.getByRole('button', { name: '잠금 해제', exact: true }).tap();
-  await expect(page.getByLabel('읽지 않은 대화 1개')).toBeVisible();
+  await expect(page.getByLabel('읽지 않은 대화 3개')).toBeVisible();
   await launchHomeApp(page, 'messages');
   await page.getByRole('button', { name: '읽지 않은 메시지만 보기' }).tap();
-  await expect(page.locator('[data-conversation]')).toHaveCount(1);
+  await expect(page.locator('[data-conversation]')).toHaveCount(3);
   await page.locator('[data-conversation=date]').tap();
   await page.keyboard.press('Alt+Home');
-  await expect(page.locator('[data-launch-app=messages] .home-badge')).toHaveCount(0);
+  await expect(page.getByLabel('읽지 않은 대화 2개')).toBeVisible();
   await launchHomeApp(page, 'notes');
   await page.locator('[data-note-id=curry]').tap();
   await expect(page.getByRole('checkbox', { name: '감자 완료', exact: true })).toBeChecked();

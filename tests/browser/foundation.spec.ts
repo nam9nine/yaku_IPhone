@@ -125,3 +125,27 @@ test('PC에서는 가운데 기기 프레임을 표시하고 모바일 크기로
   await expect(phone).toHaveAttribute('data-framed', 'false');
   expect(await phone.boundingBox()).toEqual({ x: 0, y: 0, width: 390, height: 844 });
 });
+
+test('초기 렌더와 viewport 구독 사이 크기가 바뀌어도 현재 높이로 맞춘다', async ({ page }) => {
+  await page.addInitScript(() => {
+    const viewport = window.visualViewport;
+    if (!viewport) throw new Error('visualViewport is required for this regression');
+    let height = 844;
+    Object.defineProperty(viewport, 'height', { configurable: true, get: () => height });
+    const subscribe = window.addEventListener;
+    let changed = false;
+    window.addEventListener = new Proxy(subscribe, {
+      apply(target, thisArg, args) {
+        // Model the browser resizing after render, before the resize listener exists.
+        if (args[0] === 'resize' && !changed) {
+          changed = true;
+          height = 600;
+        }
+        return Reflect.apply(target, thisArg, args);
+      },
+    });
+  });
+  await page.goto('./');
+  await expect(page.getByRole('main')).toHaveCSS('height', '600px');
+  await expect(page.getByRole('button', { name: '잠금 해제', exact: true })).toBeInViewport();
+});

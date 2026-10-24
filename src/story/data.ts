@@ -1,6 +1,14 @@
 const asset = (path: string) => `${import.meta.env.BASE_URL}story/${path}`;
 export const contacts = [
   {
+    id: 'nishiki',
+    name: '니시키야마 아키라',
+    shortName: '니시키',
+    relation: '오랜 친구',
+    about: '어릴 때부터 함께한 친구. 다음에는 느긋하게 밥이나 먹자.',
+    portrait: `${import.meta.env.BASE_URL}story/nishiki.jpg`,
+  },
+  {
     id: 'date',
     name: '다테 마코토',
     shortName: '다테 형사',
@@ -39,6 +47,14 @@ export const contacts = [
     relation: '사에지마조 조장',
     about: '의리를 잊지 않는 사나이. 마지마 형님의 형제.',
     portrait: `${import.meta.env.BASE_URL}story/saejima.png`,
+  },
+  {
+    id: 'akiyama',
+    name: '아키야마 슌',
+    shortName: '아키야마',
+    relation: '스카이 파이낸스',
+    about: '여러모로 신세를 졌다. 아이들 간식까지 챙겨 주는 사람.',
+    portrait: `${import.meta.env.BASE_URL}story/akiyama.jpg`,
   },
   {
     id: 'haruka',
