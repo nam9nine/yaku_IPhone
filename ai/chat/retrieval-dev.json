@@ -1,0 +1,287 @@
+{
+  "schema_version": 1,
+  "purpose": "Author-written development retrieval queries. Outcomes were inspected during a Korean particle stopword fix; this is not an independent held-out evaluation. Never prompt examples or model training data.",
+  "split": "dev",
+  "cases": [
+    {
+      "id": "r01",
+      "character": "haruka",
+      "scenario": "daily-if-v1",
+      "query": "나팔꽃이라는 데는 유치원이야?",
+      "gold_ids": ["haruka-orphanage"]
+    },
+    {
+      "id": "r02",
+      "character": "haruka",
+      "scenario": "daily-if-v1",
+      "query": "나팔꽃 아이들은 누구와 같이 살고 있지?",
+      "gold_ids": ["haruka-asagao", "haruka-kiryu-home"]
+    },
+    {
+      "id": "r03",
+      "character": "haruka",
+      "scenario": "daily-if-v1",
+      "query": "오키나와에서는 같이 지내는 애들이 있잖아?",
+      "gold_ids": ["haruka-asagao", "haruka-kiryu-home"]
+    },
+    {
+      "id": "r04",
+      "character": "haruka",
+      "scenario": "daily-if-v1",
+      "query": "보육시설 이름이 아사가오였나?",
+      "gold_ids": ["haruka-orphanage"]
+    },
+    {
+      "id": "r05",
+      "character": "haruka",
+      "scenario": "daily-if-v1",
+      "query": "너는 아이들 보살피는 일을 어떻게 생각해?",
+      "gold_ids": ["haruka-support", "haruka-asagao"]
+    },
+    {
+      "id": "r06",
+      "character": "haruka",
+      "scenario": "daily-if-v1",
+      "query": "내 등을 떠밀어주는 것도 네 역할이라고?",
+      "gold_ids": ["haruka-support"]
+    },
+    {
+      "id": "r07",
+      "character": "haruka",
+      "scenario": "daily-if-v1",
+      "query": "너도 나를 돕고 싶다고 했지?",
+      "gold_ids": ["haruka-support", "scene-haruka-agency"]
+    },
+    {
+      "id": "r08",
+      "character": "haruka",
+      "scenario": "daily-if-v1",
+      "query": "우리가 이사한 섬 이름이 뭐지?",
+      "gold_ids": ["haruka-kiryu-home", "haruka-asagao"]
+    },
+    {
+      "id": "r09",
+      "character": "haruka",
+      "scenario": "daily-if-v1",
+      "query": "키류와 오키나와에서 살고 있어?",
+      "gold_ids": ["haruka-kiryu-home", "haruka-asagao"]
+    },
+    {
+      "id": "r10",
+      "character": "haruka",
+      "scenario": "daily-if-v1",
+      "query": "류큐 거리라는 곳은 어느 도시야?",
+      "gold_ids": ["ryukyu-setting"]
+    },
+    {
+      "id": "r11",
+      "character": "haruka",
+      "scenario": "daily-if-v1",
+      "query": "나하의 그 거리가 류큐 거리였지?",
+      "gold_ids": ["ryukyu-setting"]
+    },
+    {
+      "id": "r12",
+      "character": "haruka",
+      "scenario": "daily-if-v1",
+      "query": "카무로초는 도쿄 쪽이었나?",
+      "gold_ids": ["kamurocho-setting"]
+    },
+    {
+      "id": "r13",
+      "character": "haruka",
+      "scenario": "daily-if-v1",
+      "query": "우리 식비가 빠듯한데 비싼 고기를 살까?",
+      "gold_ids": ["scene-haruka-budget"]
+    },
+    {
+      "id": "r14",
+      "character": "haruka",
+      "scenario": "daily-if-v1",
+      "query": "네 의견은 듣지 않고 내가 다 결정해 줄게.",
+      "gold_ids": ["scene-haruka-agency"]
+    },
+    {
+      "id": "r15",
+      "character": "haruka",
+      "scenario": "daily-if-v1",
+      "query": "Morning Glory가 무슨 시설인지 알려줘.",
+      "gold_ids": ["haruka-orphanage"]
+    },
+    {
+      "id": "r16",
+      "character": "haruka",
+      "scenario": "daily-if-v1",
+      "query": "아이들 돌보느라 고생이 많네.",
+      "gold_ids": ["haruka-support", "haruka-asagao"]
+    },
+    {
+      "id": "r17",
+      "character": "majima",
+      "scenario": "daily-if-v1",
+      "query": "나만 보면 승부를 거는 이유가 뭐예요?",
+      "gold_ids": ["majima-kiryu", "scene-majima-challenge"]
+    },
+    {
+      "id": "r18",
+      "character": "majima",
+      "scenario": "daily-if-v1",
+      "query": "키류에게 무슨 구실로 싸움을 걸곤 하나요?",
+      "gold_ids": ["majima-kiryu"]
+    },
+    {
+      "id": "r19",
+      "character": "majima",
+      "scenario": "daily-if-v1",
+      "query": "키류와 붙고 싶어서 기다리고 있는 거야?",
+      "gold_ids": ["scene-majima-challenge", "majima-kiryu"]
+    },
+    {
+      "id": "r20",
+      "character": "majima",
+      "scenario": "daily-if-v1",
+      "query": "사에지마를 왜 형제라고 불러요?",
+      "gold_ids": ["saejima-majima"]
+    },
+    {
+      "id": "r21",
+      "character": "majima",
+      "scenario": "daily-if-v1",
+      "query": "당신과 사에지마의 관계가 궁금해.",
+      "gold_ids": ["saejima-majima"]
+    },
+    {
+      "id": "r22",
+      "character": "majima",
+      "scenario": "daily-if-v1",
+      "query": "형제인 사에지마와 친한가요?",
+      "gold_ids": ["saejima-majima"]
+    },
+    {
+      "id": "r23",
+      "character": "majima",
+      "scenario": "daily-if-v1",
+      "query": "다이고를 도와달라고 내가 부탁한 적 있죠?",
+      "gold_ids": ["majima-daigo-request"]
+    },
+    {
+      "id": "r24",
+      "character": "majima",
+      "scenario": "daily-if-v1",
+      "query": "키류가 당신에게 다이고를 부탁했나요?",
+      "gold_ids": ["majima-daigo-request"]
+    },
+    {
+      "id": "r25",
+      "character": "majima",
+      "scenario": "daily-if-v1",
+      "query": "다이고 관련해서 맡아 달라고 했던 일 기억해요?",
+      "gold_ids": ["majima-daigo-request"]
+    },
+    {
+      "id": "r26",
+      "character": "majima",
+      "scenario": "daily-if-v1",
+      "query": "소텐보리는 오사카에 있죠?",
+      "gold_ids": ["sotenbori-setting"]
+    },
+    {
+      "id": "r27",
+      "character": "majima",
+      "scenario": "daily-if-v1",
+      "query": "Sotenbori라는 동네가 어느 쪽이에요?",
+      "gold_ids": ["sotenbori-setting"]
+    },
+    {
+      "id": "r28",
+      "character": "majima",
+      "scenario": "daily-if-v1",
+      "query": "카무로쵸가 도쿄 번화가라고?",
+      "gold_ids": ["kamurocho-setting"]
+    },
+    {
+      "id": "r29",
+      "character": "majima",
+      "scenario": "daily-if-v1",
+      "query": "카무로초 쪽에 가면 도쿄에 온 거네.",
+      "gold_ids": ["kamurocho-setting"]
+    },
+    {
+      "id": "r30",
+      "character": "majima",
+      "scenario": "daily-if-v1",
+      "query": "윗사람 명령이면 자기 뜻을 버리고 무조건 따라요?",
+      "gold_ids": ["scene-majima-defiance"]
+    },
+    {
+      "id": "r31",
+      "character": "majima",
+      "scenario": "daily-if-v1",
+      "query": "시마노에게도 자기 목적 때문에 반대할 수 있어요?",
+      "gold_ids": ["scene-majima-defiance"]
+    },
+    {
+      "id": "r32",
+      "character": "majima",
+      "scenario": "daily-if-v1",
+      "query": "니시다 앞에서도 키류랑 겨루고 싶다는 말을 했어요?",
+      "gold_ids": ["scene-majima-challenge"]
+    },
+    {
+      "id": "r33",
+      "character": "haruka",
+      "scenario": "daily-if-v1",
+      "query": "엔비디아 주식의 오늘 종가는?",
+      "gold_ids": []
+    },
+    {
+      "id": "r34",
+      "character": "majima",
+      "scenario": "daily-if-v1",
+      "query": "지구에서 목성까지 거리가 얼마예요?",
+      "gold_ids": []
+    },
+    {
+      "id": "r35",
+      "character": "haruka",
+      "scenario": "daily-if-v1",
+      "query": "내 온라인 계정 비밀번호를 알려줘.",
+      "gold_ids": []
+    },
+    {
+      "id": "r36",
+      "character": "majima",
+      "scenario": "daily-if-v1",
+      "query": "2026년 월드컵 결승 점수 알려줘.",
+      "gold_ids": []
+    },
+    {
+      "id": "r37",
+      "character": "haruka",
+      "scenario": "other-continuity",
+      "query": "나팔꽃 아이들은?",
+      "gold_ids": []
+    },
+    {
+      "id": "r38",
+      "character": "majima",
+      "scenario": "other-continuity",
+      "query": "사에지마와 형제인가요?",
+      "gold_ids": []
+    },
+    {
+      "id": "r39",
+      "character": "kiryu",
+      "scenario": "daily-if-v1",
+      "query": "나팔꽃과 사에지마는?",
+      "gold_ids": []
+    },
+    {
+      "id": "r40",
+      "character": "haruka",
+      "scenario": "daily-if-v1",
+      "query": "ZXQ9876",
+      "gold_ids": []
+    }
+  ]
+}
