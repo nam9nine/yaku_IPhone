@@ -90,3 +90,7 @@ OCR은 Apple Vision accurate revision3, `ko-KR`·`en-US`, 언어 자동 보정 �
 ```sh
 PYTHONPATH=ai python3 -m unittest ai/tests/test_community_inputs.py ai/tests/test_ocr.py -v
 ```
+
+## 검수 후 확정
+
+원문·OCR 의미 검토 이후의 학습 내보내기와 작품별 스토리 검색은 [검수 자료 확정 절차](CURATION.md)를 따른다. 원문을 변경하지 않는 검토된 발화 병합, 익명 화자 문맥 복원, 현재 후보 SHA의 승인과 출처 범위 검증을 포함한다.
