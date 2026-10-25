@@ -61,7 +61,7 @@ PYTHONPATH=ai python3 -m kiryu_ai.community_inputs \
   --output references/local/community/inputs-v1
 ```
 
-출력 폴더는 없거나 비어 있어야 한다. `canonical-messages.jsonl`과 각 train/dev/test 파일은 원문 이어쓰기 과제다. `user`에는 실제 화자명이 있는 이전 발화 기록을, 마지막 `assistant`에는 원문 응답을 넣는다. 다른 인물의 말을 키류의 문자로 바꾸지 않는다. 원문 SHA와 발화 범위를 재구성해 검증하고 기존 사건 분할을 보존한다. 직전 화자는 기록하지만 수신인을 확정하지 않는다. 이 입력은 현재 문자 앱의 추론 입력과 다른 과제이며 자동으로 학습 파일에 합치지 않는다.
+출력 폴더는 아직 존재하지 않아야 한다. `canonical-messages.jsonl`과 각 train/dev/test 파일은 원문 이어쓰기 과제다. `user`에는 실제 화자명이 있는 이전 발화 기록을, 마지막 `assistant`에는 원문 응답을 넣는다. 다른 인물의 말을 키류의 문자로 바꾸지 않는다. 원문 SHA와 발화 범위를 재구성해 검증하고 기존 사건 분할을 보존한다. 직전 화자는 기록하지만 수신인을 확정하지 않는다. 이 입력은 현재 문자 앱의 추론 입력과 다른 과제이며 자동으로 학습 파일에 합치지 않는다.
 
 별도 작성한 문자 각색은 `--sms <sms-adaptations.jsonl> --profiles <profiles.json>`으로 검사할 수 있다. 각색은 `authored_if`, `official_quote:false`이며 부모 원문 ID·SHA·분할·관계 변경·가시 정보 근거를 요구한다. 다른 상대를 키류로 바꾼 `authored_relationship_adaptation`과 같은 관계에서 새로 쓴 `authored_sms_adaptation`을 구분한다. 원문 답변을 그대로 복제해 창작으로 표시하는 것은 거부한다. `sms-messages.jsonl`은 기존 `build_messages`를 사용하므로 실제 문자 입력 조립 방식과 같다. 두 출력 모두 최초 상태는 `training_eligible:false`다. 형식 검증은 의미·말투·팬 검토 승인이 아니다.
 
