@@ -1,0 +1,238 @@
+{
+  "macos": [
+    {
+      "path": "tests/visual/baselines/darwin/chromium/story-thread-360.png",
+      "before_sha256": "f04cdfeec8382a53da3ebf01f88ec976aa29c8cc6d5cf47199aa2f6c4d7d95a6",
+      "after_sha256": "22cf1d4ae4875769d82b724a1032f8a1a17b44d9ead62ebbc96b47f38ff66bbc",
+      "reviewer": "/root/gemma_rag",
+      "review": "direct expected/actual/diff comparison; approved service disclosure and free composer only"
+    },
+    {
+      "path": "tests/visual/baselines/darwin/webkit/native-thread-390.png",
+      "before_sha256": "b187139fc31a060543367f029f793b5af2133f97ac75747a5285fd7683822eec",
+      "after_sha256": "d7e715544ec5fc0dbdf1e21314b1ec6316ab43563f88bc110a28ee58b1418485",
+      "reviewer": "/root/gemma_rag",
+      "review": "direct expected/actual/diff comparison; approved service disclosure and free composer only"
+    },
+    {
+      "path": "tests/visual/baselines/darwin/chromium/native-thread-390.png",
+      "before_sha256": "6fbf5157a49d0606f3ed4bdd02f69f73ce0231e15038abe42d1e63add33413d9",
+      "after_sha256": "7b1e59c0bf8234804b83547afa9ae6b8a455923cd128ff96fb9689ec623aa192",
+      "reviewer": "/root/gemma_rag",
+      "review": "direct expected/actual/diff comparison; approved service disclosure and free composer only"
+    },
+    {
+      "path": "tests/visual/baselines/darwin/webkit/story-thread-390.png",
+      "before_sha256": "8b5d9604bb9a42a18b4db435f7deb1bfd15eced2af3e270483803e6cc22c46fc",
+      "after_sha256": "bb2030042f5e388dd1e054c6e02087aa862da15e00e80dd6b955b692bda1584a",
+      "reviewer": "/root/gemma_rag",
+      "review": "direct expected/actual/diff comparison; approved service disclosure and free composer only"
+    },
+    {
+      "path": "tests/visual/baselines/darwin/chromium/day-desktop-haruka.png",
+      "before_sha256": "8df2062bf2eee4098e160e13d9907bb07ed931e3fd8890d50ccac182bada82e5",
+      "after_sha256": "f929256fd1c763ae77215e87eb084d3302daeb41e17c5feaeffe460c813a01bf",
+      "reviewer": "/root/gemma_rag",
+      "review": "direct expected/actual/diff comparison; approved service disclosure and free composer only"
+    },
+    {
+      "path": "tests/visual/baselines/darwin/webkit/story-thread-430.png",
+      "before_sha256": "b2b6e2a607f2c62fc2a3e28610b6bfef8ae406f76ef7c24fc7f166af041374a8",
+      "after_sha256": "4ca46101cc605dbe0963fed9d1748ce02bba6a8c171aaf36eabddb439d23fa5d",
+      "reviewer": "/root/gemma_rag",
+      "review": "direct expected/actual/diff comparison; approved service disclosure and free composer only"
+    },
+    {
+      "path": "tests/visual/baselines/darwin/chromium/story-thread-430.png",
+      "before_sha256": "9c6d72ea750a4c6404229836f14212e11b27b735bb3486bfa6d2a15af48c34b6",
+      "after_sha256": "3929cf8168ccbb47aa80ffe49228717d51a200d11440a655500de8fd62c4b3da",
+      "reviewer": "/root/gemma_rag",
+      "review": "direct expected/actual/diff comparison; approved service disclosure and free composer only"
+    },
+    {
+      "path": "tests/visual/baselines/darwin/chromium/story-thread-390.png",
+      "before_sha256": "2ad4a2b485f3839cbfe4416b274a74320396ce07fa8ac1811d5a6ffb6088c99b",
+      "after_sha256": "bf0780872621213b9d306b5a817d5ae7a144ddbd51b6cfb1a9b72fee67459721",
+      "reviewer": "/root/gemma_rag",
+      "review": "direct expected/actual/diff comparison; approved service disclosure and free composer only"
+    },
+    {
+      "path": "tests/visual/baselines/darwin/webkit/day-desktop-haruka.png",
+      "before_sha256": "b849b7e9dc1ce713d49716c431064b770670e2d5cf340fd84f3bbcb7bf4f7316",
+      "after_sha256": "6fd185bb467697082870d7075f773c35737ef69201d01c6a0e28e499f69bfd32",
+      "reviewer": "/root/gemma_rag",
+      "review": "direct expected/actual/diff comparison; approved service disclosure and free composer only"
+    },
+    {
+      "path": "tests/visual/baselines/darwin/webkit/story-thread-360.png",
+      "before_sha256": "b68d30d3feb8f5b25da5b1c4a4beb8a6a4a96538ffd4bcdaf7fb70e5b5f557a7",
+      "after_sha256": "0d25a79c90037106a3331da1ba23116a54711842a91e029733ce71abfee5eb2b",
+      "reviewer": "/root/gemma_rag",
+      "review": "direct expected/actual/diff comparison; approved service disclosure and free composer only"
+    }
+  ],
+  "linux": {
+    "schema_version": 1,
+    "issue": 74,
+    "reviewer": "independent agent /root/gemma_rag",
+    "source_run_id": 40233505839,
+    "source_artifact_id": 12614581939,
+    "source_commit": "b607224ea584f96838e6e0d7e5485f135bb261ee",
+    "environment": "Linux, CI artifact, separate Chromium and WebKit baselines",
+    "verdict": "approve_exact_10_actual_pngs_only",
+    "scope": "Direct before/after/diff visual review of all 10 sets; byte identity of existing Linux baseline to CI expected verified for all 10. No baseline writes, regeneration, or tolerance changes performed by reviewer.",
+    "observations": [
+      "Old fixed-date heading changes to 이전 대화 without invented time.",
+      "Preset 다 샀다. and shopping checklist restriction are replaced by 메시지 composer and storage disclosure immediately above.",
+      "Composer occupies its intentional lower placement with safe area intact at 360×800, 390×844, 430×932; no clipping or overlap observed.",
+      "Message bubbles, attachment, portrait, back control, dark mode and desktop frame remain visually unchanged outside the intended labels/composer region."
+    ],
+    "limitations": [
+      "Review is of deterministic fixtures, not proof of actual AI service output.",
+      "Desktop WebKit is not actual iPhone Safari validation.",
+      "Approval applies only to listed actual SHA-256 values from run 40233505839."
+    ],
+    "candidates": [
+      {
+        "scene": "day-desktop-haruka",
+        "browser": "chromium",
+        "source_actual": ".tooling/gemma-delivery/linux74-initial/test-results/visual/day-PC-프레임-haruka-chromium/day-desktop-haruka-actual.png",
+        "source_expected": ".tooling/gemma-delivery/linux74-initial/test-results/visual/day-PC-프레임-haruka-chromium/day-desktop-haruka-expected.png",
+        "source_diff": ".tooling/gemma-delivery/linux74-initial/test-results/visual/day-PC-프레임-haruka-chromium/day-desktop-haruka-diff.png",
+        "target_baseline": "tests/visual/baselines/linux/chromium/day-desktop-haruka.png",
+        "actual_sha256": "e6aca8254be2c04919797457461081c9e394e0c3efc03df50206be6ad92dcefb",
+        "expected_sha256": "2034a7400b47544cec4e0a8ceb418c388b24a850c65807b483bf75643daf3336",
+        "diff_sha256": "408a6b0d7352154a22de2e0eec92e56b9e4d1a0c9b7997990db6814d9eb221e0",
+        "target_existing_matches_expected_bytes": true,
+        "directly_viewed": ["expected", "actual", "diff"],
+        "verdict": "approved_intentional_change"
+      },
+      {
+        "scene": "day-desktop-haruka",
+        "browser": "webkit",
+        "source_actual": ".tooling/gemma-delivery/linux74-initial/test-results/visual/day-PC-프레임-haruka-webkit/day-desktop-haruka-actual.png",
+        "source_expected": ".tooling/gemma-delivery/linux74-initial/test-results/visual/day-PC-프레임-haruka-webkit/day-desktop-haruka-expected.png",
+        "source_diff": ".tooling/gemma-delivery/linux74-initial/test-results/visual/day-PC-프레임-haruka-webkit/day-desktop-haruka-diff.png",
+        "target_baseline": "tests/visual/baselines/linux/webkit/day-desktop-haruka.png",
+        "actual_sha256": "ee33c2a3273bce4a8ca5a82ab94c73e7580c4367cc1d20db115dd794563d150b",
+        "expected_sha256": "e110c217894f2fd034b8a1c63a5ad78a0af6b76cb6cb22fc7a42cf1f3185f07c",
+        "diff_sha256": "4600ac071210ec5c43ed5209f5335602e76224134afb0edc84f1620ec3636516",
+        "target_existing_matches_expected_bytes": true,
+        "directly_viewed": ["expected", "actual", "diff"],
+        "verdict": "approved_intentional_change"
+      },
+      {
+        "scene": "native-thread-390",
+        "browser": "chromium",
+        "source_actual": ".tooling/gemma-delivery/linux74-initial/test-results/visual/native-phone-실사용-캡처-기준-다크-thread-390-chromium/native-thread-390-actual.png",
+        "source_expected": ".tooling/gemma-delivery/linux74-initial/test-results/visual/native-phone-실사용-캡처-기준-다크-thread-390-chromium/native-thread-390-expected.png",
+        "source_diff": ".tooling/gemma-delivery/linux74-initial/test-results/visual/native-phone-실사용-캡처-기준-다크-thread-390-chromium/native-thread-390-diff.png",
+        "target_baseline": "tests/visual/baselines/linux/chromium/native-thread-390.png",
+        "actual_sha256": "cb60b2d69bd23e8f31e678cf0a5675b7b253793f22db32b0d809a12a101abcf7",
+        "expected_sha256": "2646fa661119d8a1e0d6221dc710b734156ff6c5084eeb21c8f8ef82cb984ecc",
+        "diff_sha256": "40cbb694554c182700eefc961c45a5bba64941949c639ea56cdae736649ccfa3",
+        "target_existing_matches_expected_bytes": true,
+        "directly_viewed": ["expected", "actual", "diff"],
+        "verdict": "approved_intentional_change"
+      },
+      {
+        "scene": "native-thread-390",
+        "browser": "webkit",
+        "source_actual": ".tooling/gemma-delivery/linux74-initial/test-results/visual/native-phone-실사용-캡처-기준-다크-thread-390-webkit/native-thread-390-actual.png",
+        "source_expected": ".tooling/gemma-delivery/linux74-initial/test-results/visual/native-phone-실사용-캡처-기준-다크-thread-390-webkit/native-thread-390-expected.png",
+        "source_diff": ".tooling/gemma-delivery/linux74-initial/test-results/visual/native-phone-실사용-캡처-기준-다크-thread-390-webkit/native-thread-390-diff.png",
+        "target_baseline": "tests/visual/baselines/linux/webkit/native-thread-390.png",
+        "actual_sha256": "36635e96b9d754ff4fcd1b06ff3200aae89bf8559a35f4eeb6b7bd79d676ad2c",
+        "expected_sha256": "a7ed5ab16a2fc14c1adb0e3dfb0bf46ea84cd178e8c531d50d26098ac859db15",
+        "diff_sha256": "3953ec11c9dc63cf5e2b23d1db4431d29fdda1de5ab687789f6050b794e6d568",
+        "target_existing_matches_expected_bytes": true,
+        "directly_viewed": ["expected", "actual", "diff"],
+        "verdict": "approved_intentional_change"
+      },
+      {
+        "scene": "story-thread-360",
+        "browser": "chromium",
+        "source_actual": ".tooling/gemma-delivery/linux74-initial/test-results/visual/story-키류-thread-360-chromium/story-thread-360-actual.png",
+        "source_expected": ".tooling/gemma-delivery/linux74-initial/test-results/visual/story-키류-thread-360-chromium/story-thread-360-expected.png",
+        "source_diff": ".tooling/gemma-delivery/linux74-initial/test-results/visual/story-키류-thread-360-chromium/story-thread-360-diff.png",
+        "target_baseline": "tests/visual/baselines/linux/chromium/story-thread-360.png",
+        "actual_sha256": "3adfe56b26927dfc494bc015b57673ad58341183b557d03db68381c722d05d27",
+        "expected_sha256": "ff8b11ffcd4e7294dc827d3547d6ea4a0d007556175251e80f17663ceabcde1b",
+        "diff_sha256": "cf4f82414f83d9012bf1519041bc9ec7088b8ca6aed41f69d884d38090a2254b",
+        "target_existing_matches_expected_bytes": true,
+        "directly_viewed": ["expected", "actual", "diff"],
+        "verdict": "approved_intentional_change"
+      },
+      {
+        "scene": "story-thread-360",
+        "browser": "webkit",
+        "source_actual": ".tooling/gemma-delivery/linux74-initial/test-results/visual/story-키류-thread-360-webkit/story-thread-360-actual.png",
+        "source_expected": ".tooling/gemma-delivery/linux74-initial/test-results/visual/story-키류-thread-360-webkit/story-thread-360-expected.png",
+        "source_diff": ".tooling/gemma-delivery/linux74-initial/test-results/visual/story-키류-thread-360-webkit/story-thread-360-diff.png",
+        "target_baseline": "tests/visual/baselines/linux/webkit/story-thread-360.png",
+        "actual_sha256": "b37a077cb86d3f61650140d23e4c84ba48ab1da88e41a959414b126d0ad05dec",
+        "expected_sha256": "c55191e55ca1bbffb1e05b33289abe988d57b40b4182dbfb47f0d23f4427c0a3",
+        "diff_sha256": "6503a7641b0b730a0f77eca6a8d75512a9c1d16f833c6f3da5eb55815510ae4b",
+        "target_existing_matches_expected_bytes": true,
+        "directly_viewed": ["expected", "actual", "diff"],
+        "verdict": "approved_intentional_change"
+      },
+      {
+        "scene": "story-thread-390",
+        "browser": "chromium",
+        "source_actual": ".tooling/gemma-delivery/linux74-initial/test-results/visual/story-키류-thread-390-chromium/story-thread-390-actual.png",
+        "source_expected": ".tooling/gemma-delivery/linux74-initial/test-results/visual/story-키류-thread-390-chromium/story-thread-390-expected.png",
+        "source_diff": ".tooling/gemma-delivery/linux74-initial/test-results/visual/story-키류-thread-390-chromium/story-thread-390-diff.png",
+        "target_baseline": "tests/visual/baselines/linux/chromium/story-thread-390.png",
+        "actual_sha256": "739ff0294b35804646a6042cbc195d8a57ea3bd7fc5a68caea8cd6239baa8f2e",
+        "expected_sha256": "bdfb3de1463cf769af204754567a5c8e33f520c5aaf5f1e95a676478fda66a77",
+        "diff_sha256": "a1489dae2c53d5215010a27bb2428a4ec9ad9bf318a0a77bc9c646717e798d46",
+        "target_existing_matches_expected_bytes": true,
+        "directly_viewed": ["expected", "actual", "diff"],
+        "verdict": "approved_intentional_change"
+      },
+      {
+        "scene": "story-thread-390",
+        "browser": "webkit",
+        "source_actual": ".tooling/gemma-delivery/linux74-initial/test-results/visual/story-키류-thread-390-webkit/story-thread-390-actual.png",
+        "source_expected": ".tooling/gemma-delivery/linux74-initial/test-results/visual/story-키류-thread-390-webkit/story-thread-390-expected.png",
+        "source_diff": ".tooling/gemma-delivery/linux74-initial/test-results/visual/story-키류-thread-390-webkit/story-thread-390-diff.png",
+        "target_baseline": "tests/visual/baselines/linux/webkit/story-thread-390.png",
+        "actual_sha256": "63174bc38cbab27b3f6f940bd95b8eda54864726c3284cea79d3ac78163b9847",
+        "expected_sha256": "f9d0fd55317ce05e48406bca87a7f2b621e09182476c2901ac6f4346cc092565",
+        "diff_sha256": "cb64263852542cebe582b6814bf23770b62418b009a953e3dc86347a3957e03a",
+        "target_existing_matches_expected_bytes": true,
+        "directly_viewed": ["expected", "actual", "diff"],
+        "verdict": "approved_intentional_change"
+      },
+      {
+        "scene": "story-thread-430",
+        "browser": "chromium",
+        "source_actual": ".tooling/gemma-delivery/linux74-initial/test-results/visual/story-키류-thread-430-chromium/story-thread-430-actual.png",
+        "source_expected": ".tooling/gemma-delivery/linux74-initial/test-results/visual/story-키류-thread-430-chromium/story-thread-430-expected.png",
+        "source_diff": ".tooling/gemma-delivery/linux74-initial/test-results/visual/story-키류-thread-430-chromium/story-thread-430-diff.png",
+        "target_baseline": "tests/visual/baselines/linux/chromium/story-thread-430.png",
+        "actual_sha256": "765944f10f96eb81d3ea1ad9bee3194bde3039b7aa25b6f67ce7a0c39a690eb6",
+        "expected_sha256": "fa38afdfd2a79ef40a300613e82b534d8a37029ba90c738977d412c5e3771896",
+        "diff_sha256": "2164549ed95d7852634e46e6ba4b38f54c5fb95b75f6cf2f49e93ac9c3054b3a",
+        "target_existing_matches_expected_bytes": true,
+        "directly_viewed": ["expected", "actual", "diff"],
+        "verdict": "approved_intentional_change"
+      },
+      {
+        "scene": "story-thread-430",
+        "browser": "webkit",
+        "source_actual": ".tooling/gemma-delivery/linux74-initial/test-results/visual/story-키류-thread-430-webkit/story-thread-430-actual.png",
+        "source_expected": ".tooling/gemma-delivery/linux74-initial/test-results/visual/story-키류-thread-430-webkit/story-thread-430-expected.png",
+        "source_diff": ".tooling/gemma-delivery/linux74-initial/test-results/visual/story-키류-thread-430-webkit/story-thread-430-diff.png",
+        "target_baseline": "tests/visual/baselines/linux/webkit/story-thread-430.png",
+        "actual_sha256": "1f13e1c96c8e0e2e134670fa2993074aaae5bdb266378934d2f155c29a238d68",
+        "expected_sha256": "f5c848f354ad01ba9d1a787688a5b7e4cd4e5f3d120f31a77b914eaffd72d5f7",
+        "diff_sha256": "a0dda58e3dddaf2f4eaa46b56413b344a6a24aec2554b58727a5aad633133c87",
+        "target_existing_matches_expected_bytes": true,
+        "directly_viewed": ["expected", "actual", "diff"],
+        "verdict": "approved_intentional_change"
+      }
+    ]
+  }
+}
