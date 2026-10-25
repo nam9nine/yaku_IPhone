@@ -51,3 +51,42 @@ JSONL의 각 문서는 다음 필드를 가진다.
 ```sh
 PYTHONPATH=ai python3 -m unittest ai/tests/test_community.py -v
 ```
+
+## 원문을 모델 입력으로 변환
+
+```sh
+PYTHONPATH=ai python3 -m kiryu_ai.community_inputs \
+  --documents references/local/community/documents.jsonl \
+  --prepared references/local/community/prepared-v1 \
+  --output references/local/community/inputs-v1
+```
+
+출력 폴더는 아직 존재하지 않아야 한다. `canonical-messages.jsonl`과 각 train/dev/test 파일은 원문 이어쓰기 과제다. `user`에는 실제 화자명이 있는 이전 발화 기록을, 마지막 `assistant`에는 원문 응답을 넣는다. 다른 인물의 말을 키류의 문자로 바꾸지 않는다. 원문 SHA와 발화 범위를 재구성해 검증하고 기존 사건 분할을 보존한다. 직전 화자는 기록하지만 수신인을 확정하지 않는다. 이 입력은 현재 문자 앱의 추론 입력과 다른 과제이며 자동으로 학습 파일에 합치지 않는다.
+
+별도 작성한 문자 각색은 `--sms <sms-adaptations.jsonl> --profiles <profiles.json>`으로 검사할 수 있다. 각색은 `authored_if`, `official_quote:false`이며 부모 원문 ID·SHA·분할·관계 변경·가시 정보 근거를 요구한다. 다른 상대를 키류로 바꾼 `authored_relationship_adaptation`과 같은 관계에서 새로 쓴 `authored_sms_adaptation`을 구분한다. 원문 답변을 그대로 복제해 창작으로 표시하는 것은 거부한다. `sms-messages.jsonl`은 기존 `build_messages`를 사용하므로 실제 문자 입력 조립 방식과 같다. 두 출력 모두 최초 상태는 `training_eligible:false`다. 형식 검증은 의미·말투·팬 검토 승인이 아니다.
+
+실제 토큰 검사는 `masking.tokenize_sample`, `masking.audit_sample`, `training.audit_actual_batches`를 사용한다. 모델의 실제 템플릿에서 추론 접두부 일치, 답변 첫 토큰부터 종료 토큰까지 포함, 이전 발화·패딩·종료 뒤 개행 제외를 검사한다. 최대 길이를 넘으면 잘라내지 않고 보류한다.
+
+## 이미지 수집과 한국어 OCR
+
+Python 3.11 이상과 macOS의 Swift·Vision을 사용한다. 원문 이미지 URL이 있는 JSONL에는 `source_id`, `source_url`, `url`이 필요하며 순서와 나머지 필드는 출처 연결로 보존한다.
+
+```sh
+PYTHONPATH=ai python3 -m kiryu_ai.ocr download \
+  --input references/local/community/ocr-backlog.jsonl \
+  --output references/local/community/images-v1
+swiftc -O ai/tools/vision_ocr.swift -o /tmp/yaku-vision-ocr
+PYTHONPATH=ai python3 -m kiryu_ai.ocr recognize \
+  --output references/local/community/images-v1 \
+  --binary /tmp/yaku-vision-ocr
+```
+
+다운로드는 URL SHA로 재개하며 이미지 내용 SHA로 저장·OCR 중복을 제거한다. 기본 동시 요청은 전체4개·호스트2개다. 401/403/429 및 연속3회 5xx/비이미지 응답은 해당 호스트를 중단하고 다른 URL로 우회하지 않는다. 실패를 재시도하려면 `--retry-failures`, 중단 호스트는 추가로 `--retry-stopped-host <host>`가 필요하다. 성공 자료는 해시를 검사해 재사용한다. 원본 목록이 바뀌면 별도 출력 폴더를 사용한다. 접근 실패와 미시도·호스트 중단을 구분해 보고한다.
+
+OCR은 Apple Vision accurate revision3, `ko-KR`·`en-US`, 언어 자동 보정 비활성화를 사용한다. 문자열·대안·신뢰도·정규화 좌표·크기·환경·코드/바이너리 SHA를 저장한다. [Apple의 보정 옵션](https://developer.apple.com/documentation/vision/vnrecognizetextrequest/useslanguagecorrection)을 기록해 인식 문구와 별도 교정문을 혼동하지 않는다. 소스 또는 바이너리가 바뀌면 새 `--result-dir`에 기록한다. 각 실행은 시작 시점의 다운로드 receipt를 대상으로 하며 이후 다시 실행해 추가 이미지를 처리할 수 있다.
+
+`ocr-results.jsonl`은 이미지별 원시 인식, `ocr-source-links.jsonl`은 원문 출처·이미지 순서와 인식 결과 연결이다. `ocr-report.json`은 성공·실패·빈 인식·여러 프레임 이미지를 별도 집계한다. 현재 여러 프레임 이미지는 첫 프레임만 처리한다. OCR 문자열에는 자막 외 UI·배경 글자가 섞이므로 대사 수로 보고하지 않는다. 화자·수신인·장면을 자동 추정하지 않으며 학습 승인은 모두 false로 남긴다. 실제 이미지와의 대조, 자막 범위·줄 연결·화자·상황 검수가 필요하다.
+
+```sh
+PYTHONPATH=ai python3 -m unittest ai/tests/test_community_inputs.py ai/tests/test_ocr.py -v
+```
