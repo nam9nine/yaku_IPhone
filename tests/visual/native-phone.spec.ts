@@ -1,6 +1,11 @@
 import { unlockPhone } from '../helpers/unlock';
 import { expect, test } from '@playwright/test';
 import { launchHomeApp } from '../helpers/home';
+import { mockStoryAi, openStoryAi } from '../helpers/mock-story-ai';
+
+test.beforeEach(async ({ page }) => {
+  await mockStoryAi(page);
+});
 const scenes = [
   'phone',
   'keypad',
@@ -54,7 +59,8 @@ for (const width of [360, 390, 430])
           await page.getByRole('button', { name: '키패드', exact: true }).tap();
         if (scene === 'profile')
           await page.getByRole('button', { name: '키류 카즈마 프로필' }).tap();
-        if (scene === 'thread') await page.locator('[data-conversation=haruka]').tap();
+        if (scene === 'thread')
+          await openStoryAi(page, () => page.locator('[data-conversation=haruka]').tap());
       }
       await page.evaluate(async () => {
         await document.fonts.ready;

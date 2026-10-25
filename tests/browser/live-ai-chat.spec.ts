@@ -1,12 +1,12 @@
 import { expect, test, type Page, type Route } from '@playwright/test';
+import { AI_ENDPOINT } from '../../src/ai/config';
 import { replyChoices } from '../../src/day/content';
 import { DAY_STORAGE_KEY, dayReducer, initialDay } from '../../src/day/state';
 import { launchHomeApp } from '../helpers/home';
 import { unlockPhone } from '../helpers/unlock';
 
-const endpoint = 'https://ai-test.example';
+const endpoint = AI_ENDPOINT;
 const token = 'test-session-token';
-const inviteKey = 'test-invite-key';
 type Character = 'haruka' | 'majima';
 interface ChatRequest {
   character: Character;
@@ -17,7 +17,10 @@ interface Message {
   id: string;
   role: 'user' | 'assistant';
   content: string;
-  time: string;
+  time: string | null;
+  status?: string;
+  request_id?: string;
+  job_id?: string;
 }
 interface Job {
   id: string;
@@ -30,6 +33,8 @@ async function mockMac(page: Page) {
   const state = {
     chats: [] as ChatRequest[],
     sessions: 0,
+    unavailable: false,
+    expireOnce: false,
     requests: [] as { method: string; url: string; authorization?: string }[],
     hold: new Set<Character>(),
     loseResponseOnce: false,
@@ -59,12 +64,17 @@ async function mockMac(page: Page) {
       url: request.url(),
       authorization: request.headers().authorization,
     });
+    if (state.unavailable) return json(route, {}, 503);
     if (url.pathname === '/v1/health') return json(route, { status: 'ready' });
     if (url.pathname === '/v1/sessions') {
       state.sessions += 1;
-      expect(request.postDataJSON()).toEqual({ invite_key: inviteKey });
+      expect(request.postDataJSON()).toEqual({});
       expect(request.headers().authorization).toBeUndefined();
       return json(route, { token });
+    }
+    if (state.expireOnce) {
+      state.expireOnce = false;
+      return json(route, {}, 401);
     }
     expect(request.headers().authorization).toBe(`Bearer ${token}`);
     if (url.pathname === '/v1/history') {
@@ -72,7 +82,14 @@ async function mockMac(page: Page) {
       const pending = [...state.jobs.values()].find(
         (job) => job.request.character === character && !job.finished,
       );
-      return json(route, { messages: state.history[character], pending_job: pending?.id ?? null });
+      const older = url.searchParams.has('cursor');
+      return json(route, {
+        messages: older
+          ? state.history[character].slice(0, -50)
+          : state.history[character].slice(-50),
+        pending_job: pending?.id ?? null,
+        next_cursor: !older && state.history[character].length > 50 ? 'older-page' : null,
+      });
     }
     if (url.pathname === '/v1/chat') {
       const chat = request.postDataJSON() as ChatRequest;
@@ -92,6 +109,15 @@ async function mockMac(page: Page) {
         };
         state.failJobOnce = null;
         state.jobs.set(chat.request_id, job);
+        state.history[chat.character].push({
+          id: `${job.id}-user`,
+          role: 'user',
+          content: chat.message,
+          time: '2026-10-25T00:00:00Z',
+          status: 'queued',
+          request_id: chat.request_id,
+          job_id: job.id,
+        });
       }
       if (state.loseResponseOnce) {
         state.loseResponseOnce = false;
@@ -103,31 +129,38 @@ async function mockMac(page: Page) {
       const job = [...state.jobs.values()].find((candidate) => url.pathname.endsWith(candidate.id));
       if (!job) return json(route, {}, 404);
       const character = job.request.character;
+      const requestMeta = {
+        id: job.request.request_id,
+        message: job.request.message,
+        time: '2026-10-25T00:00:00Z',
+      };
       if (state.hold.has(character))
-        return json(route, { job_id: job.id, character, status: 'generating' });
+        return json(route, {
+          job_id: job.id,
+          character,
+          status: 'generating',
+          request: requestMeta,
+        });
       if (!job.finished) {
         job.finished = true;
+        const accepted = state.history[character].find(
+          (message) => message.id === `${job.id}-user`,
+        )!;
+        accepted.status = job.error ? 'error' : 'complete';
         if (!job.error) {
-          state.history[character].push(
-            {
-              id: `${job.id}-user`,
-              role: 'user',
-              content: job.request.message,
-              time: '2026-10-25T00:00:00Z',
-            },
-            {
-              id: `${job.id}-assistant`,
-              role: 'assistant',
-              content: replyFor(character, job.request.message),
-              time: '2026-10-25T00:00:01Z',
-            },
-          );
+          state.history[character].push({
+            id: `${job.id}-assistant`,
+            role: 'assistant',
+            content: replyFor(character, job.request.message),
+            time: '2026-10-25T00:00:01Z',
+          });
         }
       }
       return json(route, {
         job_id: job.id,
         character,
         status: job.error ? 'error' : 'complete',
+        request: requestMeta,
         ...(job.error ? { error: { code: job.error, message: 'private-test-trace' } } : {}),
         messages: state.history[character],
       });
@@ -145,15 +178,6 @@ async function start(page: Page, fragment = '') {
   await page.goto(`./${fragment}`);
   await unlockPhone(page);
   await launchHomeApp(page, 'messages');
-}
-async function connect(page: Page) {
-  await page.getByRole('button', { name: '편집', exact: true }).tap();
-  await page.getByRole('button', { name: 'Mac 연결', exact: true }).tap();
-  const dialog = page.getByRole('dialog', { name: 'Mac 연결', exact: true });
-  await dialog.getByLabel('Mac 서버 주소').fill(endpoint);
-  await dialog.getByLabel('접속 키').fill(inviteKey);
-  await dialog.getByRole('button', { name: '연결', exact: true }).tap();
-  await expect(dialog).toBeHidden();
 }
 async function openThread(page: Page, character: Character) {
   const back = page.getByRole('button', { name: '메시지 목록으로 돌아가기', exact: true });
@@ -176,35 +200,104 @@ function bubble(page: Page, text: string) {
   return page.locator('.message-bubble').getByText(text, { exact: true });
 }
 
-test('초대 주소는 즉시 정리하고 명시적인 연결 전에는 서버 요청을 보내지 않는다', async ({
+test('기존 주소와 오래된 초대 주소 모두 설정 없이 열며 AI 연락처에서만 자동 연결한다', async ({
   page,
 }) => {
   const mac = await mockMac(page);
-  await page.goto(`./#keep=yes&aiEndpoint=${encodeURIComponent(endpoint)}&aiInvite=${inviteKey}`);
-  await expect(page.getByRole('button', { name: '잠금 해제', exact: true })).toBeVisible();
+  await page.goto('./#keep=yes&aiEndpoint=https%3A%2F%2Fevil.example&aiInvite=discarded');
   expect(new URL(page.url()).hash).toBe('#keep=yes');
   expect(mac.requests).toEqual([]);
   await unlockPhone(page);
   await launchHomeApp(page, 'messages');
-  const dialog = page.getByRole('dialog', { name: 'Mac 연결', exact: true });
-  await expect(dialog).toBeVisible();
-  await expect(dialog.getByText('연결할 서버: ai-test.example', { exact: true })).toBeVisible();
-  await expect(dialog.getByLabel('접속 키')).toHaveValue(inviteKey);
-  expect(mac.sessions).toBe(0);
   expect(mac.requests).toEqual([]);
-  await dialog.getByRole('button', { name: '연결', exact: true }).tap();
-  await expect(dialog).toBeHidden();
+  await expect(page.getByRole('button', { name: 'Mac 연결', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('dialog', { name: 'Mac 연결', exact: true })).toHaveCount(0);
   await openThread(page, 'haruka');
-  expect(mac.sessions).toBe(1);
+  await expect(
+    page.getByText('대화는 서비스 개선을 위해 저장됩니다', { exact: true }),
+  ).toBeVisible();
+  await expect.poll(() => mac.sessions).toBe(1);
   expect(mac.chats).toEqual([]);
-  expect(
-    await page.evaluate(() =>
-      JSON.parse(localStorage.getItem('yaku-iphone.ai.connection.v1') ?? 'null'),
-    ),
-  ).toEqual({ endpoint, origin: endpoint, token });
-  expect(mac.requests.every(({ url }) => !url.includes(token) && !url.includes(inviteKey))).toBe(
+  const saved = await page.evaluate(() =>
+    JSON.parse(localStorage.getItem('yaku-iphone.ai.session.v2') ?? 'null'),
+  );
+  expect(saved).toEqual({ service: 'kiryu-character-chat-v2', token });
+  expect(mac.requests.every(({ url }) => url.startsWith(endpoint) && !url.includes(token))).toBe(
     true,
   );
+});
+
+test('새로고침 후 같은 토큰과 기록을 복원하며 초안은 전송하지 않는다', async ({ page }) => {
+  const mac = await mockMac(page);
+  await start(page);
+  await openThread(page, 'haruka');
+  await input(page).fill('남겨둘 대화');
+  await send(page).tap();
+  await expect(bubble(page, replyFor('haruka', '남겨둘 대화'))).toBeVisible();
+  await input(page).fill('보내지 않은 초안');
+  await page.reload();
+  await unlockPhone(page);
+  await launchHomeApp(page, 'messages');
+  await openThread(page, 'haruka');
+  await expect(bubble(page, replyFor('haruka', '남겨둘 대화'))).toBeVisible();
+  expect(mac.sessions).toBe(1);
+  expect(mac.chats).toHaveLength(1);
+});
+
+test('구 토큰은 고정 API에서 확인하고 만료됐으면 익명 세션을 한 번 갱신한다', async ({ page }) => {
+  await page.addInitScript(() =>
+    localStorage.setItem(
+      'yaku-iphone.ai.connection.v1',
+      JSON.stringify({ endpoint: 'https://untrusted.example', token: 'expired-token' }),
+    ),
+  );
+  const mac = await mockMac(page);
+  mac.expireOnce = true;
+  await start(page);
+  await openThread(page, 'majima');
+  await input(page).fill('자동 연결 확인');
+  await send(page).tap();
+  await expect(bubble(page, replyFor('majima', '자동 연결 확인'))).toBeVisible();
+  expect(mac.sessions).toBe(1);
+  expect(mac.requests.every(({ url }) => url.startsWith(endpoint))).toBe(true);
+});
+
+test('서버가 꺼져도 연결 설정을 요구하지 않고 재시도로 복구한다', async ({ page }) => {
+  const mac = await mockMac(page);
+  mac.unavailable = true;
+  await start(page);
+  await openThread(page, 'haruka');
+  await expect(page.getByRole('button', { name: '다시 시도', exact: true })).toBeVisible();
+  await input(page).fill('복구 후 전송할 초안');
+  await expect(send(page)).toBeDisabled();
+  await expect(page.getByLabel('접속 키')).toHaveCount(0);
+  mac.unavailable = false;
+  await page.getByRole('button', { name: '다시 시도', exact: true }).tap();
+  await expect(send(page)).toBeEnabled();
+  expect(mac.chats).toEqual([]);
+  await send(page).tap();
+  await expect(bubble(page, replyFor('haruka', '복구 후 전송할 초안'))).toBeVisible();
+});
+
+test('이전 대화를 추가해도 중복하거나 오래된 null 시간을 새 날짜로 만들지 않는다', async ({
+  page,
+}) => {
+  const mac = await mockMac(page);
+  mac.history.haruka = Array.from({ length: 56 }, (_, i) => ({
+    id: `past-${i}`,
+    role: i % 2 ? 'assistant' : 'user',
+    content: `저장된 문자 ${i}`,
+    time: null,
+    status: 'complete',
+  }));
+  await start(page);
+  await openThread(page, 'haruka');
+  await expect(bubble(page, '저장된 문자 55')).toBeVisible();
+  await page.getByRole('button', { name: '이전 대화 더 보기', exact: true }).tap();
+  await expect(bubble(page, '저장된 문자 0')).toHaveCount(1);
+  await expect(bubble(page, '저장된 문자 55')).toHaveCount(1);
+  await expect(page.locator('.message-ai-date')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: '이전 대화 더 보기', exact: true })).toHaveCount(0);
 });
 
 test('두 인물의 자유 입력과 한글 조합·줄바꿈을 처리하고 연속 전송을 한 번만 보낸다', async ({
@@ -212,7 +305,6 @@ test('두 인물의 자유 입력과 한글 조합·줄바꿈을 처리하고 �
 }) => {
   const mac = await mockMac(page);
   await start(page);
-  await connect(page);
   for (const character of ['haruka', 'majima'] as const) {
     await openThread(page, character);
     await input(page).fill(`${character}에게 인사`);
@@ -244,7 +336,6 @@ test('답장 대기 중 홈과 다른 대화로 이동해도 원래 대화에만
   const mac = await mockMac(page);
   mac.hold.add('haruka');
   await start(page);
-  await connect(page);
   await openThread(page, 'haruka');
   await input(page).fill('집에 돌아가고 있어');
   await send(page).tap();
@@ -267,12 +358,11 @@ test('서버가 수락한 POST 응답이 유실되어도 같은 요청으로 재
   const mac = await mockMac(page);
   mac.loseResponseOnce = true;
   await start(page);
-  await connect(page);
   await openThread(page, 'majima');
   await input(page).fill('저녁에 뵙겠습니다');
   await send(page).tap();
   await expect(
-    page.getByText('Mac에 연결할 수 없습니다. 서버와 인터넷 연결을 확인해 주세요.', {
+    page.getByText('지금은 대화에 연결할 수 없습니다. 잠시 후 다시 시도해 주세요.', {
       exact: true,
     }),
   ).toBeVisible();
@@ -291,7 +381,6 @@ test('영구 입력 오류와 답변 길이 오류는 원문을 다시 작성해
   const mac = await mockMac(page);
   mac.rejectOnce = 422;
   await start(page);
-  await connect(page);
   await openThread(page, 'haruka');
   await expect(input(page)).toHaveAttribute('maxlength', '1000');
   await input(page).fill('원래 질문');
@@ -324,12 +413,11 @@ test('장보기와 마지마 스토리 답장도 모델에 전송하고 오류�
   });
   const mac = await mockMac(page);
   await start(page);
-  await connect(page);
   await openThread(page, 'haruka');
   mac.rejectOnce = 503;
   await page.locator('.message-story-reply').tap();
   await expect(
-    page.getByText('Mac의 모델이 준비되지 않았습니다. 서버 상태를 확인해 주세요.', { exact: true }),
+    page.getByText('지금은 답장을 받을 수 없습니다. 잠시 후 다시 시도해 주세요.', { exact: true }),
   ).toBeVisible();
   await expect(bubble(page, replyChoices.haruka.response)).toHaveCount(0);
   expect(mac.chats[0].message).toBe(replyChoices.haruka.text);
@@ -352,13 +440,6 @@ test('장보기와 마지마 스토리 답장도 모델에 전송하고 오류�
     )
     .toBe(true);
   await page.getByRole('button', { name: '메시지 목록으로 돌아가기', exact: true }).tap();
-  await page.getByRole('button', { name: '편집', exact: true }).tap();
-  await page.getByRole('button', { name: 'Mac 연결', exact: true }).tap();
-  await page.getByRole('button', { name: '연결 해제', exact: true }).tap();
-  await page.locator('[data-conversation=haruka]').tap();
-  await expect(bubble(page, replyChoices.haruka.response)).toHaveCount(0);
-  await page.getByRole('button', { name: '메시지 목록으로 돌아가기', exact: true }).tap();
-  await connect(page);
   await openThread(page, 'majima');
   await page.locator('.message-story-reply').tap();
   await expect(bubble(page, replyFor('majima', replyChoices.majima.text))).toBeVisible();
@@ -366,12 +447,9 @@ test('장보기와 마지마 스토리 답장도 모델에 전송하고 오류�
   expect(mac.chats.at(-1)?.message).toBe(replyChoices.majima.text);
 });
 
-test('가상 오프라인에서는 전송을 막고 복구 후 보낸 뒤 접속 정보를 삭제할 수 있다', async ({
-  page,
-}) => {
+test('가상 오프라인에서는 전송을 막고 복구해도 초안을 자동으로 보내지 않는다', async ({ page }) => {
   const mac = await mockMac(page);
   await start(page);
-  await connect(page);
   await openThread(page, 'majima');
   await home(page);
   await launchHomeApp(page, 'settings');
@@ -391,16 +469,6 @@ test('가상 오프라인에서는 전송을 막고 복구 후 보낸 뒤 접속
   await expect(send(page)).toBeEnabled();
   await send(page).tap();
   await expect(bubble(page, replyFor('majima', '연결 후 전송'))).toBeVisible();
-  await page.getByRole('button', { name: '메시지 목록으로 돌아가기', exact: true }).tap();
-  await page.getByRole('button', { name: '편집', exact: true }).tap();
-  await page.getByRole('button', { name: 'Mac 연결', exact: true }).tap();
-  await page.getByRole('button', { name: '연결 해제', exact: true }).tap();
-  expect(
-    await page.evaluate(() => localStorage.getItem('yaku-iphone.ai.connection.v1')),
-  ).toBeNull();
-  await page.locator('[data-conversation=majima]').tap();
-  await expect(page.locator('.message-choice')).toBeVisible();
-  await expect(input(page)).toHaveCount(0);
   expect(mac.chats).toHaveLength(1);
 });
 
@@ -411,7 +479,6 @@ for (const width of [360, 390, 430]) {
     await page.setViewportSize({ width, height: 844 });
     await mockMac(page);
     await start(page);
-    await connect(page);
     await openThread(page, 'majima');
     await input(page).fill('여러 줄 메시지\n'.repeat(12).trim());
     const field = await input(page).boundingBox();

@@ -1,6 +1,11 @@
+import { mockStoryAi } from '../helpers/mock-story-ai';
 import { unlockPhone } from '../helpers/unlock';
 import { expect, test, type Page } from '@playwright/test';
 import { launchHomeApp } from '../helpers/home';
+
+test.beforeEach(async ({ page }) => {
+  await mockStoryAi(page);
+});
 
 async function start(page: Page) {
   await page.emulateMedia({ reducedMotion: 'reduce' });
@@ -39,19 +44,26 @@ test('다섯 연락처의 프로필에서 선택형 답장을 보내고 새로�
     await page.getByRole('button', { name, exact: true }).tap();
     await expect(page.getByRole('img', { name: `${name} 프로필` })).toBeVisible();
     await page.getByRole('button', { name: `${name}에게 메시지 보내기` }).tap();
-    const choice = page.locator('.message-choice');
-    const text = await choice.locator('span').first().innerText();
+    const ai = name === '마지마 고로' || name === '사와무라 하루카';
+    const choice = page.locator(ai ? '.message-story-reply' : '.message-choice');
+    const text = ai ? await choice.innerText() : await choice.locator('span').first().innerText();
     await expect(choice).toBeEnabled();
     await choice.tap();
     await expect(page.locator('.message-bubble').getByText(text, { exact: true })).toBeVisible();
-    await expect(page.locator('.message-choice')).toHaveCount(0);
+    await expect(choice).toHaveCount(0);
+    if (ai)
+      await expect(
+        page.getByText(`검증용 ${name === '사와무라 하루카' ? '하루카' : '마지마'} 답장`, {
+          exact: true,
+        }),
+      ).toBeVisible();
     await home(page);
   }
   await start(page);
   await launchHomeApp(page, 'messages');
   await page.locator('[data-conversation=haruka]').tap();
   await expect(page.getByText('다 샀다.', { exact: true })).toBeVisible();
-  await expect(page.getByText('고마워요. 밥은 해둘게요.', { exact: true })).toBeVisible();
+  await expect(page.getByText('검증용 하루카 답장', { exact: true })).toBeVisible();
   await expect(page.locator('.message-choice')).toHaveCount(0);
 });
 
@@ -125,7 +137,7 @@ test('연결이 끊기면 선택형 답장을 막고 복구 후 한 번 보낸�
   await home(page);
   await launchHomeApp(page, 'messages');
   await page.locator('[data-conversation=majima]').tap();
-  await expect(page.locator('.message-choice')).toBeDisabled();
+  await expect(page.locator('.message-story-reply')).toBeDisabled();
   await home(page);
   await launchHomeApp(page, 'settings');
   await page.getByRole('switch', { name: '에어플레인 모드', exact: true }).uncheck();
@@ -133,10 +145,12 @@ test('연결이 끊기면 선택형 답장을 막고 복구 후 한 번 보낸�
   await page.getByRole('switch', { name: 'Wi-Fi', exact: true }).check();
   await home(page);
   await launchHomeApp(page, 'messages');
-  await expect(page.locator('.message-choice')).toBeEnabled();
-  await page.locator('.message-choice').tap();
+  await expect(page.locator('.message-story-reply')).toBeEnabled();
+  await page.locator('.message-story-reply').tap();
   await expect(
-    page.getByText('오늘은 카레입니다. 아이들은 잘 지냅니다.', { exact: true }),
+    page
+      .locator('.message-bubble')
+      .getByText('오늘은 카레입니다. 아이들은 잘 지냅니다.', { exact: true }),
   ).toBeVisible();
 });
 
@@ -150,11 +164,13 @@ test('저장소 쓰기 거부와 낮은 화면에서도 메모·메시지를 사
   await start(page);
   await launchHomeApp(page, 'messages');
   await page.locator('[data-conversation=majima]').tap();
-  const send = page.locator('.message-choice');
+  const send = page.locator('.message-story-reply');
   await expect(send).toBeInViewport();
   await send.tap();
   await expect(
-    page.getByText('오늘은 카레입니다. 아이들은 잘 지냅니다.', { exact: true }),
+    page
+      .locator('.message-bubble')
+      .getByText('오늘은 카레입니다. 아이들은 잘 지냅니다.', { exact: true }),
   ).toBeVisible();
   await home(page);
   await launchHomeApp(page, 'notes');

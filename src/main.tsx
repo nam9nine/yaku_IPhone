@@ -1,11 +1,11 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
-import { consumeAiInvite } from './ai/connection';
+import { clearLegacyAiFragment } from './ai/connection';
 import './styles.css';
 import './asagao.css';
 
-consumeAiInvite();
+clearLegacyAiFragment();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

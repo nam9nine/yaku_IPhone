@@ -1,340 +1,457 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { AiMessenger } from './messenger';
+import { AI_ENDPOINT } from './config';
+import type { AiCharacter, AiMessage } from './client';
 
-const connection = { endpoint: 'https://mac.example.test', token: 'session-secret' };
+const connection = { endpoint: AI_ENDPOINT, token: 'existing-session' };
 const stores: AiMessenger[] = [];
 const flush = async () => {
-  for (let index = 0; index < 20; index++) await Promise.resolve();
+  for (let i = 0; i < 40; i++) await Promise.resolve();
 };
-const history = { messages: [], pending_job: null };
-
-function readyFetch(url: string) {
-  if (url.endsWith('/v1/health')) return Promise.resolve(Response.json({ status: 'ready' }));
-  if (url.includes('/v1/history')) return Promise.resolve(Response.json(history));
-  throw new Error('Unexpected request');
-}
-async function readyStore(fetch = vi.fn(readyFetch)) {
+function mockService() {
+  const state = {
+    chats: [] as { character: AiCharacter; message: string; request_id: string }[],
+    history: { haruka: [], majima: [] } as Record<AiCharacter, AiMessage[]>,
+    sessions: 0,
+    polls: 0,
+    hold: false,
+    queued: false,
+    losePost: false,
+    reject: 0,
+    fail: '',
+    nextCursor: null as string | null,
+    old: [] as AiMessage[],
+  };
+  const fetch = vi.fn(async (url: string, options?: RequestInit): Promise<Response> => {
+    if (url.endsWith('/v1/health')) return Response.json({ status: 'ready' });
+    if (url.endsWith('/v1/sessions')) {
+      state.sessions++;
+      return Response.json({ token: 'new-session' });
+    }
+    if (url.includes('/v1/history')) {
+      const query = new URL(url).searchParams;
+      const character = query.get('character') as AiCharacter;
+      const pending = state.history[character].find((message) =>
+        ['queued', 'generating'].includes(message.status ?? ''),
+      );
+      return Response.json({
+        messages: query.has('cursor') ? state.old : state.history[character],
+        pending_job: pending?.job_id ?? null,
+        next_cursor: query.has('cursor') ? null : state.nextCursor,
+      });
+    }
+    if (url.endsWith('/v1/chat')) {
+      const body = JSON.parse(String(options?.body));
+      state.chats.push(body);
+      if (state.reject) return Response.json({}, { status: state.reject });
+      if (
+        !state.history[body.character as AiCharacter].some(
+          (message) => message.request_id === body.request_id,
+        )
+      )
+        state.history[body.character as AiCharacter].push({
+          id: 'job-1-user',
+          role: 'user',
+          content: body.message,
+          time: '2026-10-26T00:00:00Z',
+          status: 'queued',
+          request_id: body.request_id,
+          job_id: 'job-1',
+        });
+      if (state.losePost) {
+        state.losePost = false;
+        throw new Error('connection lost');
+      }
+      return Response.json({ job_id: 'job-1', status: 'queued' });
+    }
+    if (url.endsWith('/v1/jobs/job-1')) {
+      state.polls++;
+      const character = state.history.haruka.some((m) => m.job_id === 'job-1')
+        ? 'haruka'
+        : 'majima';
+      const user = state.history[character].find((m) => m.job_id === 'job-1')!;
+      const status = state.hold
+        ? state.queued
+          ? 'queued'
+          : 'generating'
+        : state.fail
+          ? 'error'
+          : 'complete';
+      user.status = status;
+      if (
+        status === 'complete' &&
+        !state.history[character].some((m) => m.id === 'job-1-assistant')
+      )
+        state.history[character].push({
+          id: 'job-1-assistant',
+          role: 'assistant',
+          content: '실제 응답 자리',
+          time: '2026-10-26T00:00:01Z',
+          status: 'complete',
+        });
+      return Response.json({
+        job_id: 'job-1',
+        character,
+        status,
+        request: { id: user.request_id, message: user.content, time: user.time },
+        ...(state.fail ? { error: { code: state.fail, message: 'private server trace' } } : {}),
+      });
+    }
+    throw new Error('Unexpected request: ' + url);
+  });
   vi.stubGlobal('fetch', fetch);
-  const store = new AiMessenger(connection);
-  stores.push(store);
-  await store.refresh();
-  return { store, fetch };
+  return { state, fetch };
+}
+function store(initial: typeof connection | null = connection) {
+  const value = new AiMessenger(initial);
+  stores.push(value);
+  return value;
 }
 beforeEach(() => {
   vi.useFakeTimers();
   vi.stubGlobal('localStorage', { getItem: () => null, setItem: vi.fn(), removeItem: vi.fn() });
 });
 afterEach(() => {
-  stores.splice(0).forEach((store) => store.stop());
+  stores.splice(0).forEach((value) => value.stop());
   vi.useRealTimers();
   vi.unstubAllGlobals();
 });
 
-it('연속 전송을 즉시 막고 늦은 답장은 해당 대화에만 넣는다', async () => {
-  let resolvePost!: (response: Response) => void;
-  const fetch = vi.fn((url: string) => {
-    if (url.endsWith('/v1/chat'))
-      return new Promise<Response>((resolve) => {
-        resolvePost = resolve;
+it('AI 연락처를 열기 전에는 요청·익명 세션을 만들지 않는다', async () => {
+  const { fetch, state } = mockService();
+  const value = store(null);
+  await value.activate(null);
+  await value.refresh();
+  expect(fetch).not.toHaveBeenCalled();
+  await value.activate('haruka');
+  expect(state.sessions).toBe(1);
+  expect(value.getSnapshot().threads.haruka.loaded).toBe(true);
+  expect(value.getSnapshot().threads.majima.loaded).toBe(false);
+  expect(value.getSnapshot().status).toBe('ready');
+});
+it('한 번 만든 토큰을 재사용하고 방문자가 키나 URL을 입력하지 않는다', async () => {
+  const { state, fetch } = mockService();
+  const value = store(null);
+  await value.activate('haruka');
+  await value.activate('majima');
+  await value.refresh();
+  expect(state.sessions).toBe(1);
+  const session = fetch.mock.calls.find(([url]) => url.endsWith('/v1/sessions'))!;
+  expect(JSON.parse(String(session[1]?.body))).toEqual({});
+  expect(fetch.mock.calls.every(([url]) => url.startsWith(AI_ENDPOINT))).toBe(true);
+});
+it.each(['/v1/health', '/v1/history?character=haruka'])(
+  '초기 %s 중 빠른 오프라인·온라인 전환은 새 연결로 기록을 복구한다',
+  async (pendingPath) => {
+    const { fetch, state } = mockService();
+    const real = fetch.getMockImplementation()!;
+    let held = false;
+    fetch.mockImplementation((url, options) => {
+      if (!held && url.endsWith(pendingPath)) {
+        held = true;
+        return new Promise((_, reject) => {
+          options?.signal?.addEventListener('abort', () => reject(new Error('aborted')), {
+            once: true,
+          });
+        });
+      }
+      return real(url, options);
+    });
+    const value = store(null);
+    const initial = value.activate('haruka');
+    await flush();
+    expect(held).toBe(true);
+    value.setOnline(false);
+    value.setOnline(true);
+    await initial;
+    await flush();
+    expect(value.getSnapshot().status).toBe('ready');
+    expect(value.getSnapshot().threads.haruka.loaded).toBe(true);
+    expect(value.getSnapshot().threads.haruka.loading).toBe(false);
+    expect(fetch.mock.calls.filter(([url]) => url.endsWith('/v1/health'))).toHaveLength(2);
+    expect(state.sessions).toBe(1);
+    expect(state.chats).toEqual([]);
+  },
+);
+it('중단한 기록 요청의 로딩 상태가 다른 연락처 활성화 뒤 원래 연락처를 막지 않는다', async () => {
+  const { fetch } = mockService();
+  const real = fetch.getMockImplementation()!;
+  let held = false;
+  fetch.mockImplementation((url, options) => {
+    if (!held && url.endsWith('/v1/history?character=haruka')) {
+      held = true;
+      return new Promise((_, reject) => {
+        options?.signal?.addEventListener('abort', () => reject(new Error('aborted')), {
+          once: true,
+        });
       });
-    if (url.endsWith('/v1/jobs/job-1'))
-      return Promise.resolve(
-        Response.json({
-          job_id: 'job-1',
-          character: 'haruka',
-          status: 'complete',
-          messages: [
-            { id: 'u1', role: 'user', content: '오늘 어때?', time: '17:00' },
-            { id: 'a1', role: 'assistant', content: '잘 지내고 있어요.', time: '17:01' },
-          ],
-        }),
-      );
-    return readyFetch(url);
-  });
-  const { store } = await readyStore(fetch);
-  expect(store.send('haruka', '오늘 어때?', true, true)).toBe(true);
-  expect(store.send('haruka', '오늘 어때?', true, true)).toBe(false);
-  expect(store.send('majima', '숨겨진 앱', false, true)).toBe(false);
-  resolvePost(Response.json({ job_id: 'job-1', status: 'queued' }));
-  await flush();
-  expect(store.getSnapshot().threads.haruka.messages.at(-1)?.content).toBe('잘 지내고 있어요.');
-  expect(store.getSnapshot().threads.majima.messages).toEqual([]);
-  expect(store.getSnapshot().threads.haruka.pending).toBeNull();
-  expect(fetch.mock.calls.filter(([url]) => url.endsWith('/v1/chat'))).toHaveLength(1);
-});
-
-it('POST 응답 유실 후 같은 request_id로 재시도한다', async () => {
-  const bodies: Record<string, string>[] = [];
-  const fetch = vi.fn((url: string, options?: RequestInit) => {
-    if (url.endsWith('/v1/chat')) {
-      bodies.push(JSON.parse(String(options?.body)));
-      return bodies.length === 1
-        ? Promise.reject(new TypeError('lost response'))
-        : Promise.resolve(Response.json({ job_id: 'job-1', status: 'queued' }));
     }
-    if (url.includes('/v1/jobs/'))
-      return Promise.resolve(
-        Response.json({ job_id: 'job-1', character: 'majima', status: 'generating' }),
-      );
-    return readyFetch(url);
+    return real(url, options);
   });
-  const { store } = await readyStore(fetch);
-  store.send('majima', '형님', true, true);
+  const value = store();
+  const initial = value.activate('haruka');
   await flush();
-  expect(store.getSnapshot().threads.majima.pending?.phase).toBe('failed');
-  store.retry('majima', true, true);
-  await flush();
-  expect(bodies).toHaveLength(2);
-  expect(bodies[1]).toEqual(bodies[0]);
-  expect(store.getSnapshot().threads.majima.pending?.jobId).toBe('job-1');
+  expect(value.getSnapshot().threads.haruka.loading).toBe(true);
+  value.stop();
+  await value.activate('majima');
+  await initial;
+  await value.activate('haruka');
+  expect(value.getSnapshot().status).toBe('ready');
+  expect(value.getSnapshot().threads.haruka.loaded).toBe(true);
+  expect(value.getSnapshot().threads.majima.loaded).toBe(true);
 });
-
-it('복구된 pending job은 재전송 없이 조회하고 polling 실패도 같은 job으로 재시도한다', async () => {
-  let polls = 0;
-  const fetch = vi.fn((url: string) => {
-    if (url.endsWith('character=haruka'))
-      return Promise.resolve(Response.json({ messages: [], pending_job: 'restored-job' }));
-    if (url.includes('/v1/jobs/')) {
-      polls += 1;
-      if (polls === 1) return Promise.reject(new TypeError('offline'));
-      return Promise.resolve(
-        Response.json({
-          job_id: 'restored-job',
-          character: 'haruka',
-          status: 'complete',
-          messages: [],
-        }),
-      );
-    }
-    return readyFetch(url);
-  });
-  const { store } = await readyStore(fetch);
-  await flush();
-  expect(store.getSnapshot().threads.haruka.pending?.phase).toBe('failed');
-  store.retry('haruka', true, true);
-  await flush();
-  expect(store.getSnapshot().threads.haruka.pending).toBeNull();
-  expect(fetch.mock.calls.some(([url]) => url.endsWith('/v1/chat'))).toBe(false);
-  expect(polls).toBe(2);
-});
-
-it('연결 해제 후 도착한 응답과 polling은 버리고 토큰을 삭제한다', async () => {
-  let resolvePost!: (response: Response) => void;
-  const fetch = vi.fn((url: string) =>
-    url.endsWith('/v1/chat')
-      ? new Promise<Response>((resolve) => {
-          resolvePost = resolve;
-        })
-      : readyFetch(url),
+it('이전 연결의 늦은 종료가 새 연결의 공유 Promise를 지우지 않는다', async () => {
+  const { fetch, state } = mockService();
+  const real = fetch.getMockImplementation()!;
+  const healthReplies: ((response: Response) => void)[] = [];
+  fetch.mockImplementation((url, options) =>
+    url.endsWith('/v1/health')
+      ? new Promise((resolve) => healthReplies.push(resolve))
+      : real(url, options),
   );
-  const { store } = await readyStore(fetch);
-  store.send('haruka', '안녕', true, true);
-  store.disconnect();
-  resolvePost(Response.json({ job_id: 'late-job', status: 'queued' }));
-  await flush();
-  await vi.advanceTimersByTimeAsync(2000);
-  expect(store.getSnapshot().connection).toBeNull();
-  expect(store.getSnapshot().threads.haruka.messages).toEqual([]);
-  expect(fetch.mock.calls.some(([url]) => url.includes('/v1/jobs/'))).toBe(false);
-  expect(localStorage.removeItem).toHaveBeenCalledWith('yaku-iphone.ai.connection.v1');
+  const value = store(null);
+  const initial = value.activate('haruka');
+  value.stop();
+  const reactivated = value.activate('haruka');
+  const current = value.refresh();
+  expect(healthReplies).toHaveLength(2);
+  healthReplies[0](Response.json({ status: 'ready' }));
+  await initial;
+  expect(value.refresh()).toBe(current);
+  expect(healthReplies).toHaveLength(2);
+  healthReplies[1](Response.json({ status: 'ready' }));
+  await Promise.all([reactivated, current]);
+  expect(value.getSnapshot().status).toBe('ready');
+  expect(value.getSnapshot().threads.haruka.loaded).toBe(true);
+  expect(state.sessions).toBe(1);
 });
-
-it('모델 미준비·오프라인·비활성 화면에서는 전송하지 않고 가짜 답변을 만들지 않는다', async () => {
-  const { store, fetch } = await readyStore();
-  expect(store.send('haruka', '안녕', false, true)).toBe(false);
-  expect(store.send('haruka', '안녕', true, false)).toBe(false);
-  store.setOnline(false);
-  expect(store.send('haruka', '안녕', true, true)).toBe(false);
-  fetch.mockImplementation(() => Promise.resolve(Response.json({ status: 'loading' })));
-  store.setOnline(true);
-  await flush();
-  expect(store.getSnapshot().status).toBe('loading');
-  expect(store.send('haruka', '안녕', true, true)).toBe(false);
-  expect(store.getSnapshot().threads.haruka.messages).toEqual([]);
-  expect(fetch.mock.calls.some(([url]) => url.endsWith('/v1/chat'))).toBe(false);
+it('첫 401은 자동 갱신하고 새 토큰까지 거부되면 반복 발급하지 않는다', async () => {
+  let sessions = 0;
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string) => {
+      if (url.endsWith('/v1/health')) return Response.json({ status: 'ready' });
+      if (url.endsWith('/v1/sessions')) {
+        sessions++;
+        return Response.json({ token: 'new-session' });
+      }
+      return Response.json({}, { status: 401 });
+    }),
+  );
+  const value = store();
+  await value.activate('haruka');
+  expect(sessions).toBe(1);
+  expect(value.getSnapshot().status).toBe('error');
+  await value.refresh();
+  expect(sessions).toBe(1);
 });
-
-it('서버 생성 오류는 안내하고 다음 메시지를 허용한다', async () => {
-  const fetch = vi.fn((url: string) => {
-    if (url.endsWith('/v1/chat'))
-      return Promise.resolve(Response.json({ job_id: 'failed-job', status: 'queued' }));
-    if (url.includes('/v1/jobs/'))
-      return Promise.resolve(
-        Response.json({
-          job_id: 'failed-job',
-          character: 'haruka',
-          status: 'error',
-          messages: [{ id: 'u1', role: 'user', content: '안녕', time: '17:00' }],
-          error: { code: 'generation_failed', message: 'failure' },
-        }),
-      );
-    return readyFetch(url);
-  });
-  const { store } = await readyStore(fetch);
-  store.send('haruka', '안녕', true, true);
-  await flush();
-  expect(store.getSnapshot().threads.haruka.pending).toBeNull();
-  expect(store.getSnapshot().threads.haruka.error).toContain('답장을 만들지 못했습니다');
-  expect(store.getSnapshot().threads.haruka.messages).toHaveLength(1);
-  expect(store.send('haruka', '다시 안녕', true, true)).toBe(true);
+it('만료된 토큰의 401 뒤 자동 발급한 토큰으로 기록을 복구한다', async () => {
+  let sessions = 0;
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string, options?: RequestInit) => {
+      if (url.endsWith('/v1/health')) return Response.json({ status: 'ready' });
+      if (url.endsWith('/v1/sessions')) {
+        sessions++;
+        return Response.json({ token: 'new-session' });
+      }
+      if ((options?.headers as Record<string, string>).Authorization === 'Bearer existing-session')
+        return Response.json({}, { status: 401 });
+      return Response.json({ messages: [], pending_job: null, next_cursor: null });
+    }),
+  );
+  const value = store();
+  await value.activate('haruka');
+  expect(sessions).toBe(1);
+  expect(value.getSnapshot().status).toBe('ready');
+  expect(value.getSnapshot().connection?.token).toBe('new-session');
 });
-
-it('저장 실패가 발생해도 새 접속 정보는 현재 세션에서 유지한다', async () => {
-  const { store } = await readyStore();
+it('연속·다른 인물 동시 전송을 막고 답장은 원래 대화에 넣는다', async () => {
+  const { state } = mockService();
+  state.hold = true;
+  const value = store();
+  await value.activate('haruka');
+  expect(value.send('haruka', '오늘 어때?', true, true)).toBe(true);
+  expect(value.send('haruka', '연속 입력', true, true)).toBe(false);
+  await flush();
+  await value.activate('majima');
+  expect(value.send('majima', '다른 대화', true, true)).toBe(false);
+  state.hold = false;
+  await vi.advanceTimersByTimeAsync(1000);
+  await flush();
+  expect(value.getSnapshot().threads.haruka.messages.at(-1)?.content).toBe('실제 응답 자리');
+  expect(value.getSnapshot().threads.majima.messages).toEqual([]);
+  expect(state.chats).toHaveLength(1);
+});
+it('POST 응답 유실 후 같은 UUID로 재시도한다', async () => {
+  const { state } = mockService();
+  state.losePost = true;
+  state.hold = true;
+  const value = store();
+  await value.activate('majima');
+  value.send('majima', '형님', true, true);
+  await flush();
+  expect(value.getSnapshot().threads.majima.pending?.phase).toBe('failed');
+  value.retry('majima', true, true);
+  await flush();
+  expect(state.chats).toHaveLength(2);
+  expect(state.chats[1]).toEqual(state.chats[0]);
+  expect(state.history.majima).toHaveLength(1);
+});
+it('유실된 접수는 새로고침으로 복구하고 재전송하지 않는다', async () => {
+  const { state } = mockService();
+  state.losePost = true;
+  state.hold = true;
+  const value = store();
+  await value.activate('haruka');
+  value.send('haruka', '보존할 문자', true, true);
+  await flush();
+  await value.refresh();
+  await flush();
+  expect(value.getSnapshot().threads.haruka.pending?.jobId).toBe('job-1');
+  expect(state.chats).toHaveLength(1);
+});
+it('오래된 이관 메시지의 null job_id가 미접수 문자를 지우지 않는다', async () => {
+  const { state, fetch } = mockService();
+  state.history.haruka = [
+    { id: 'legacy', role: 'user', content: '옛 질문', time: null, job_id: null },
+  ];
+  const real = fetch.getMockImplementation()!;
+  fetch.mockImplementation((url, options) =>
+    url.endsWith('/v1/chat') ? Promise.reject(new Error('offline')) : real(url, options),
+  );
+  const value = store();
+  await value.activate('haruka');
+  value.send('haruka', '새 질문', true, true);
+  await flush();
+  await value.refresh();
+  expect(value.getSnapshot().threads.haruka.pending?.message).toBe('새 질문');
+});
+it('실패 원문은 서버 기록과 중복하지 않고 생성 실패 출력을 답장으로 표시하지 않는다', async () => {
+  const { state } = mockService();
+  state.fail = 'response_truncated';
+  const value = store();
+  await value.activate('haruka');
+  value.send('haruka', '원래 질문', true, true);
+  await flush();
+  const thread = value.getSnapshot().threads.haruka;
+  expect(thread.messages).toHaveLength(1);
+  expect(thread.failedMessage?.historyId).toBe('job-1-user');
+  expect(thread.error).toContain('답장이 길이 한도');
+  expect(thread.error).not.toContain('private server trace');
+  expect(thread.pending).toBeNull();
+  expect(value.takeFailedMessage('haruka', true)?.message).toBe('원래 질문');
+});
+it.each([400, 413, 422])(
+  '입력 거절 %s은 수정할 원문을 남기고 새 요청을 허용한다',
+  async (status) => {
+    const { state } = mockService();
+    state.reject = status;
+    const value = store();
+    await value.activate('haruka');
+    value.send('haruka', '수정할 문자', true, true);
+    await flush();
+    expect(value.getSnapshot().threads.haruka.pending).toBeNull();
+    expect(value.takeFailedMessage('haruka', false)).toBeNull();
+    expect(value.takeFailedMessage('haruka', true)?.message).toBe('수정할 문자');
+    state.reject = 0;
+    value.send('haruka', '짧은 문자', true, true);
+    await flush();
+    expect(state.chats[0].request_id).not.toBe(state.chats[1].request_id);
+  },
+);
+it('이전 페이지를 중복 없이 붙이고 최신 기록 복구 때 지우지 않는다', async () => {
+  const { state } = mockService();
+  state.nextCursor = 'signed-cursor';
+  state.history.haruka = [{ id: 'recent', role: 'assistant', content: '최신 답장', time: null }];
+  state.old = [
+    { id: 'old', role: 'user', content: '옛 질문', time: null },
+    state.history.haruka[0],
+  ];
+  const value = store();
+  await value.activate('haruka');
+  await value.loadOlder('haruka');
+  expect(value.getSnapshot().threads.haruka.messages.map((m) => m.id)).toEqual(['old', 'recent']);
+  await value.refresh();
+  expect(value.getSnapshot().threads.haruka.messages.map((m) => m.id)).toEqual(['old', 'recent']);
+  expect(value.getSnapshot().threads.haruka.nextCursor).toBeNull();
+});
+it('대기 상태 조회는 점점 늦추고 생성 상태는 1초마다 조회한다', async () => {
+  const { state } = mockService();
+  state.hold = true;
+  state.queued = true;
+  const value = store();
+  await value.activate('haruka');
+  value.send('haruka', '질문', true, true);
+  await flush();
+  expect(state.polls).toBe(1);
+  await vi.advanceTimersByTimeAsync(1000);
+  expect(state.polls).toBe(2);
+  await vi.advanceTimersByTimeAsync(1000);
+  expect(state.polls).toBe(2);
+  state.queued = false;
+  await vi.advanceTimersByTimeAsync(1000);
+  expect(state.polls).toBe(3);
+  await vi.advanceTimersByTimeAsync(1000);
+  expect(state.polls).toBe(4);
+});
+it('숨겨진 화면은 조회를 줄이고 복귀하면 즉시 작업 상태를 확인한다', async () => {
+  const { state } = mockService();
+  state.hold = true;
+  const value = store();
+  await value.activate('haruka');
+  value.send('haruka', '질문', true, true);
+  await flush();
+  value.setVisible(false);
+  await vi.advanceTimersByTimeAsync(5000);
+  expect(state.polls).toBe(1);
+  value.setVisible(true);
+  await vi.advanceTimersByTimeAsync(1);
+  expect(state.polls).toBe(2);
+});
+it('가상 오프라인·비활성·길이 제한은 전송을 막고 복구해도 초안을 보내지 않는다', async () => {
+  const { state } = mockService();
+  const value = store();
+  await value.activate('haruka');
+  expect(value.send('haruka', '안녕', false, true)).toBe(false);
+  expect(value.send('haruka', '안녕', true, false)).toBe(false);
+  expect(value.send('haruka', '가'.repeat(1001), true, true)).toBe(false);
+  value.setOnline(false);
+  expect(value.send('haruka', '안녕', true, true)).toBe(false);
+  value.setOnline(true);
+  await flush();
+  expect(state.chats).toEqual([]);
+});
+it('저장 거부에도 발급한 토큰은 현재 화면에서 유지한다', async () => {
+  const { state } = mockService();
   vi.stubGlobal('localStorage', {
     setItem: () => {
       throw new Error('denied');
     },
+    removeItem: vi.fn(),
   });
-  store.connect({ endpoint: 'https://new.example.test', token: 'new-session' });
-  await flush();
-  expect(store.getSnapshot().connection).toEqual({
-    endpoint: 'https://new.example.test',
-    token: 'new-session',
-  });
-  expect(store.getSnapshot().storageUnavailable).toBe(true);
+  const value = store(null);
+  await value.activate('haruka');
+  await value.activate('majima');
+  expect(state.sessions).toBe(1);
+  expect(value.getSnapshot().storageUnavailable).toBe(true);
 });
-
-it('상태 확인이 POST를 중단해도 원 요청을 다시 시도할 수 있다', async () => {
-  const bodies: Record<string, string>[] = [];
-  const fetch = vi.fn((url: string, options?: RequestInit) => {
-    if (url.endsWith('/v1/chat')) {
-      bodies.push(JSON.parse(String(options?.body)));
-      return new Promise<Response>(() => {});
-    }
-    return readyFetch(url);
-  });
-  const { store } = await readyStore(fetch);
-  store.send('haruka', '안녕', true, true);
-  await store.refresh();
-  expect(store.getSnapshot().threads.haruka.pending?.phase).toBe('failed');
-  store.retry('haruka', true, true);
-  expect(bodies).toHaveLength(2);
-  expect(bodies[0]).toEqual(bodies[1]);
-});
-
-it('토큰 삭제를 거부한 저장소는 연결 해제 후에도 명시적으로 안내한다', async () => {
-  const { store } = await readyStore();
-  vi.stubGlobal('localStorage', {
-    removeItem: () => {
-      throw new Error('denied');
-    },
-  });
-  store.disconnect();
-  expect(store.getSnapshot().connection).toBeNull();
-  expect(store.getSnapshot().storageError).toContain('저장된 접속 정보를 지우지 못했습니다');
-});
-
-it.each(['새 질문', '이전 질문'])(
-  '재마운트 후 실패 원문 %s는 과거 성공 메시지와 분리한다',
-  async (message) => {
-    const previous = [
-      { id: 'old-user', role: 'user', content: '이전 질문', time: '2026-10-25T01:00:00Z' },
-      {
-        id: 'old-assistant',
-        role: 'assistant',
-        content: '이전 답변',
-        time: '2026-10-25T01:00:00Z',
-      },
-    ];
-    const fetch = vi.fn((url: string) => {
-      if (url.endsWith('character=haruka'))
-        return Promise.resolve(Response.json({ messages: previous, pending_job: 'restored' }));
-      if (url.includes('/v1/jobs/'))
-        return Promise.resolve(
-          Response.json({
-            job_id: 'restored',
-            character: 'haruka',
-            status: 'error',
-            messages: previous,
-            request: { id: 'original-request', message, time: '2026-10-25T02:00:00Z' },
-            error: { code: 'generation_failed', message: 'failure' },
-          }),
-        );
-      return readyFetch(url);
-    });
-    const { store } = await readyStore(fetch);
-    await flush();
-    expect(store.getSnapshot().threads.haruka.failedMessage).toEqual({
-      message,
-      time: '2026-10-25T02:00:00Z',
-      historyId: undefined,
-      reason: 'reply',
-    });
-    expect(store.getSnapshot().threads.haruka.messages).toEqual(previous);
-    expect(store.takeFailedMessage('haruka', true)?.message).toBe(message);
-  },
-);
-
-it('서버 입력 한도인 1000자까지만 전송한다', async () => {
-  const fetch = vi.fn((url: string) =>
-    url.endsWith('/v1/chat') ? new Promise<Response>(() => {}) : readyFetch(url),
+it('중단 후 늦은 응답이 도착해도 상태를 변경하지 않는다', async () => {
+  const { fetch } = mockService();
+  const real = fetch.getMockImplementation()!;
+  let resolve!: (response: Response) => void;
+  fetch.mockImplementation((url, options) =>
+    url.endsWith('/v1/chat')
+      ? new Promise((done) => {
+          resolve = done;
+        })
+      : real(url, options),
   );
-  const { store } = await readyStore(fetch);
-  expect(store.send('haruka', '가'.repeat(1001), true, true)).toBe(false);
-  expect(store.send('haruka', '가'.repeat(1000), true, true)).toBe(true);
-  expect(fetch.mock.calls.filter(([url]) => url.endsWith('/v1/chat'))).toHaveLength(1);
-});
-
-it.each([400, 413, 422])(
-  'POST %s 입력 거부는 원문을 보존하고 수정한 새 요청을 허용한다',
-  async (status) => {
-    const bodies: Record<string, string>[] = [];
-    const fetch = vi.fn((url: string, options?: RequestInit) => {
-      if (url.endsWith('/v1/chat')) {
-        bodies.push(JSON.parse(String(options?.body)));
-        return bodies.length === 1
-          ? Promise.resolve(Response.json({ error: { code: 'invalid_input' } }, { status }))
-          : Promise.resolve(Response.json({ job_id: 'new-job', status: 'queued' }));
-      }
-      if (url.includes('/v1/jobs/'))
-        return Promise.resolve(
-          Response.json({ job_id: 'new-job', character: 'haruka', status: 'generating' }),
-        );
-      return readyFetch(url);
-    });
-    const { store } = await readyStore(fetch);
-    store.send('haruka', '원래 메시지', true, true);
-    await flush();
-    expect(store.getSnapshot().threads.haruka.pending).toBeNull();
-    expect(store.getSnapshot().threads.haruka.failedMessage?.message).toBe('원래 메시지');
-    expect(store.takeFailedMessage('haruka', false)).toBeNull();
-    expect(store.takeFailedMessage('haruka', true)?.message).toBe('원래 메시지');
-    expect(store.getSnapshot().threads.haruka.failedMessage).toBeNull();
-    expect(store.send('haruka', '수정한 메시지', true, true)).toBe(true);
-    await flush();
-    expect(bodies[1].request_id).not.toBe(bodies[0].request_id);
-    expect(bodies[1].message).toBe('수정한 메시지');
-  },
-);
-
-it.each([
-  ['context_limit', '대화가 길이 한도에 도달했습니다'],
-  ['output_limit', '답장이 길이 한도 안에서 끝나지 않았습니다'],
-])('%s 생성 오류의 원문과 사용자 안내를 보존한다', async (code, text) => {
-  const fetch = vi.fn((url: string) => {
-    if (url.endsWith('/v1/chat'))
-      return Promise.resolve(Response.json({ job_id: 'failed-job', status: 'queued' }));
-    if (url.includes('/v1/jobs/'))
-      return Promise.resolve(
-        Response.json({
-          job_id: 'failed-job',
-          character: 'haruka',
-          status: 'error',
-          messages: [],
-          error: { code, message: 'private-server-trace' },
-        }),
-      );
-    return readyFetch(url);
-  });
-  const { store } = await readyStore(fetch);
-  store.send('haruka', '원래 질문', true, true);
+  const value = store();
+  await value.activate('haruka');
+  value.send('haruka', '질문', true, true);
+  value.stop();
+  resolve(Response.json({ job_id: 'late' }));
   await flush();
-  const failed = store.getSnapshot().threads.haruka;
-  expect(failed.pending).toBeNull();
-  expect(failed.failedMessage?.message).toBe('원래 질문');
-  expect(failed.error).toContain(text);
-  expect(failed.error).not.toContain('private-server-trace');
-  expect(store.takeFailedMessage('haruka', true)?.message).toBe('원래 질문');
-  expect(store.send('haruka', '짧은 질문', true, true)).toBe(true);
+  expect(fetch.mock.calls.some(([url]) => url.includes('/v1/jobs/'))).toBe(false);
 });

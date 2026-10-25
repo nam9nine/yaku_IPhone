@@ -1,0 +1,139 @@
+{
+  "run": "2026-10-26-v3",
+  "prompt_version": "kiryu-daily-sms-v3",
+  "model_revision": "f6e6747823b2912661935db7e0009287c4838073",
+  "model_sha256": "e19514d9541344001cb7c8eaf88704b8bf2e5d8f4e9aac12402eed360cffdfc4",
+  "template_sha256": "6a1015c47ccfcfa67c3b772385bccee357a4d37c3cda37bd202e9047f391ab82",
+  "training": false,
+  "seed": 42,
+  "synthetic": true,
+  "responses_file_sha256": "deba5f4e19740acfc394d522f705ac013a9b920d2cb4d1a4bfe34c5987df8c46",
+  "generation": {
+    "total": 188,
+    "normal_finish": 188,
+    "declared_warm_no_queue_first60": {
+      "character": "haruka",
+      "n": 60,
+      "p50_seconds": 2.193616167001892,
+      "p95_seconds": 2.8008632080163807
+    },
+    "all_short_conversations_both_characters": {
+      "n": 120,
+      "p95_seconds": 2.9060479170293547,
+      "completion_tokens_min_median_max": [9, 23.5, 66]
+    }
+  },
+  "system_memory": {
+    "initial_swap": "vm.swapusage: total = 8192.00M  used = 6972.75M  free = 1219.25M  (encrypted)",
+    "final_swap": "vm.swapusage: total = 9216.00M  used = 8299.69M  free = 916.31M  (encrypted)",
+    "scope": "System-wide while IDE/browser/tests were running; not model-only memory or a clean 24GB capacity benchmark"
+  },
+  "concurrency": {
+    "transport": "in-process ASGI HTTP; excludes public network/Worker latency",
+    "model_processes_started": 0,
+    "generation_slots": 1,
+    "waves": [
+      {
+        "arrivals": 2,
+        "n": 2,
+        "successful": 2,
+        "fifo_matches": true,
+        "completion_seconds": [2.127287, 3.912283],
+        "queue_seconds": [0.014178037643432617, 2.1201961040496826],
+        "output_tokens": [11, 8]
+      },
+      {
+        "arrivals": 4,
+        "n": 4,
+        "successful": 4,
+        "fifo_matches": true,
+        "completion_seconds": [2.001101, 3.814968, 5.311096, 7.168191],
+        "queue_seconds": [
+          0.020327091217041016, 1.9976701736450195, 3.809177875518799, 5.309148073196411
+        ],
+        "output_tokens": [16, 16, 9, 18]
+      }
+    ]
+  },
+  "public_api_smoke": {
+    "endpoint": "https://yaku-iphone-chat.yaku-iphone.workers.dev",
+    "normal_replies": 2,
+    "contacts": ["haruka", "majima"],
+    "history_messages_each": 2,
+    "transport": "HTTPS Worker/VPC/namedTunnel/Mac; Pages UI pending final deployment"
+  },
+  "quality": {
+    "reviewer": "/root/gemma_db",
+    "fan_review": "pending",
+    "long_corrected_menu": {
+      "passed": 4,
+      "n": 4
+    },
+    "long_phrase_recall": {
+      "passed": 2,
+      "n": 2
+    },
+    "paired_both_conditions": {
+      "passed": 2,
+      "n": 4
+    },
+    "knowledge_axis": {
+      "appropriate": 44,
+      "partial": 5,
+      "problem": 9,
+      "rated": 58
+    },
+    "context_axis": {
+      "appropriate": 160,
+      "partial": 18,
+      "problem": 10,
+      "rated": 188
+    },
+    "remaining": [
+      "Unsupported canon invention",
+      "Missing report treated as confirmed absence",
+      "Cancellation omission",
+      "Unnecessary scolding"
+    ],
+    "scope": "Manually read all188 author-created diagnostic responses, single seed. Same diagnostics were used for refinement, not heldout/general quality accuracy. No aggregate quality pass."
+  },
+  "environment": {
+    "cpu_reported": "Apple M5",
+    "physical_memory_bytes": 25769803776,
+    "macos": "26.5.2",
+    "python": "3.12.13",
+    "node": "24.22.0"
+  },
+  "implementation_file_sha256": {
+    "ai/kiryu_ai/chat_prompt.py": "c573af523416e9cb2197f291c407d38bf4a086a7c4b6e38253163083484b182d",
+    "ai/kiryu_ai/chat_retrieval.py": "8115ea4939ecba3e020a2c19fe4e56dda2581983b4e7de917683601f876ac5a5",
+    "ai/kiryu_ai/gemma_engine.py": "662c700664657af587cfd90ffe0552a82423043c7fe06e3197f0a134560322ee",
+    "ai/kiryu_ai/chat_server.py": "ee0bcb102731dd0a35fdce4d92fcb47c2b6dc2380c2718a6bd2beb0dd71d2e47",
+    "ai/chat/cards.json": "a4396fee857edfe0daf088fda000dc24c5bb5d4059a2f02bf430b0a6c7588a1e",
+    "ai/chat/registry.json": "ba20d54439bab8d1e6d8d66ff65c8a1e94017eace02f6b74ad2c039e40b7fc31",
+    "ai/kiryu_ai/chat_stack.py": "e034caa5c81052844036bcb7e3cd37729406e6cd609b20d135db2ef2a849060e"
+  },
+  "public_route_boundaries": {
+    "/v1/admin/queue": 404,
+    "/props": 404,
+    "/completion": 404
+  },
+  "bundle_check": {
+    "files": 51,
+    "private_directory_included": false,
+    "model_gateway_tunnel_secret_matches": 0
+  },
+  "actual_process_restart": {
+    "endpoint": "https://yaku-iphone-chat.yaku-iphone.workers.dev",
+    "synthetic": true,
+    "scope": "Actual model/API/admin/namedTunnel process restart with same SQLite state",
+    "same_token_valid": true,
+    "exact_completed_jobs": 2,
+    "exact_histories": 2,
+    "uuid_replays_without_generation": 2,
+    "pages_ui": "pending final deployment",
+    "pass": true,
+    "initial_failure": "Immediate restart first rejected TIME_WAIT as a live listener; fixed reuse-address probe and independently verified 10 TCP cycles",
+    "readiness_observation": "Initial public health was503; a60-second readiness observer expired. Subsequent health wasready and exact job/history/UUID recovery passed. Model startup is excluded from warm latency metrics."
+  }
+}

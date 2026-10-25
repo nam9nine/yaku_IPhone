@@ -1,6 +1,11 @@
 import { unlockPhone } from '../helpers/unlock';
 import { expect, test } from '@playwright/test';
 import { launchHomeApp } from '../helpers/home';
+import { mockStoryAi, openStoryAi } from '../helpers/mock-story-ai';
+
+test.beforeEach(async ({ page }) => {
+  await mockStoryAi(page);
+});
 for (const size of [
   { width: 360, height: 800 },
   { width: 390, height: 844 },
@@ -38,7 +43,8 @@ for (const size of [
       await launchHomeApp(page, app);
       if (scene === 'profile')
         await page.getByRole('button', { name: '사와무라 하루카', exact: true }).tap();
-      if (scene === 'thread') await page.locator('[data-conversation=haruka]').tap();
+      if (scene === 'thread')
+        await openStoryAi(page, () => page.locator('[data-conversation=haruka]').tap());
       if (scene === 'note') await page.locator('[data-note-id=curry]').tap();
       if (scene === 'photo')
         await page.getByRole('button', { name: '아이들과 함께', exact: true }).tap();

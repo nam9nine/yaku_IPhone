@@ -6,17 +6,17 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-it('초대 키는 session 본문에, 접속 토큰은 Authorization 헤더에만 둔다', async () => {
+it('익명 세션은 빈 본문으로 시작하고 토큰은 Authorization에만 둔다', async () => {
   const fetch = vi
     .fn()
     .mockResolvedValueOnce(Response.json({ token: 'session-secret' }))
-    .mockResolvedValueOnce(Response.json({ messages: [], pending_job: null }));
+    .mockResolvedValueOnce(Response.json({ messages: [], pending_job: null, next_cursor: null }));
   vi.stubGlobal('fetch', fetch);
-  const connection = await createSession('https://new.example.test', 'invite-secret');
+  const connection = await createSession('https://new.example.test');
   await getHistory(connection, 'haruka');
   expect(fetch.mock.calls[0][0]).toBe('https://new.example.test/v1/sessions');
   expect(fetch.mock.calls[0][1].headers).toEqual({ 'Content-Type': 'application/json' });
-  expect(JSON.parse(fetch.mock.calls[0][1].body)).toEqual({ invite_key: 'invite-secret' });
+  expect(JSON.parse(fetch.mock.calls[0][1].body)).toEqual({});
   expect(fetch.mock.calls[1][0]).toBe('https://new.example.test/v1/history?character=haruka');
   expect(fetch.mock.calls[1][1]).toMatchObject({
     headers: { Authorization: 'Bearer session-secret' },
@@ -55,7 +55,7 @@ it('응답이 없는 네트워크 요청은 제한 시간 후 중단한다', asy
       }),
   );
   const request = aiRequest('https://mac.example.test', '/v1/health');
-  const rejection = expect(request).rejects.toThrow('Mac에 연결할 수 없습니다');
+  const rejection = expect(request).rejects.toThrow('대화에 연결할 수 없습니다');
   await vi.advanceTimersByTimeAsync(12_000);
   await rejection;
   expect(signal?.aborted).toBe(true);
