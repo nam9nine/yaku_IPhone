@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <title>키류의 폰 · 대화 검토</title>
+    <link rel="stylesheet" href="/assets/review.css" />
+    <script src="/assets/review.js" type="module"></script>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">桐</span>
+        <div>
+          <h1>대화 검토</h1>
+          <p>키류의 폰 <span>· Mac 전용</span></p>
+        </div>
+      </div>
+      <div class="top-actions">
+        <span class="local-badge">로컬에서만 열림</span
+        ><button id="logout" class="quiet" hidden>검토 종료</button>
+      </div>
+    </header>
+    <p id="status" class="status" role="status" aria-live="polite">
+      검토 세션을 확인하고 있습니다.
+    </p>
+    <section id="locked" class="locked" hidden>
+      <p class="eyebrow">OWNER REVIEW</p>
+      <h2>Mac의 검토 링크로 열어 주세요.</h2>
+      <p>
+        검토 서버를 실행한 터미널의 일회용 링크를 사용합니다.<br />방문자에게 이 링크나 포트를
+        공유하지 마세요.
+      </p>
+      <p>대화 원문은 수정하지 않으며, 검토와 개선 답안은 별도로 저장합니다.</p>
+    </section>
+    <main id="workspace" class="workspace" hidden>
+      <aside class="panel queue-panel" aria-label="검토할 대화 목록">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">REVIEW QUEUE</p>
+            <h2>검토할 대화</h2>
+          </div>
+          <span id="queue-count" class="count">0</span>
+        </div>
+        <form id="filters" class="filters">
+          <label class="sr-only" for="search">대화 본문 검색</label
+          ><input
+            id="search"
+            name="query"
+            type="search"
+            placeholder="대화 본문 검색"
+            maxlength="512"
+          />
+          <div class="filter-row">
+            <label
+              >인물<select name="character">
+                <option value="">모든 인물</option>
+                <option value="haruka">하루카</option>
+                <option value="majima">마지마</option>
+              </select></label
+            ><label>방문자<input name="visitor" placeholder="익명 ID" maxlength="128" /></label>
+          </div>
+          <details class="more-filters">
+            <summary>날짜 · 버전 필터</summary>
+            <div class="filter-row">
+              <label>시작일<input name="after" type="date" /></label
+              ><label>종료일<input name="before" type="date" /></label>
+            </div>
+            <label>모델<input name="model" placeholder="정확한 모델 이름" maxlength="512" /></label
+            ><label
+              >프롬프트<input name="prompt" placeholder="프롬프트 버전" maxlength="256" /></label
+            ><small>날짜는 한국 시간 기준입니다.</small>
+          </details>
+          <div class="filter-flags">
+            <label><input type="checkbox" name="unreviewed" />미검토만</label
+            ><label><input type="checkbox" name="errors_only" />실패만</label>
+          </div>
+          <div class="filter-actions">
+            <button class="primary" type="submit">적용</button
+            ><button id="sample" type="button" class="quiet">무작위 표본</button>
+          </div>
+        </form>
+        <div class="queue-summary">
+          <span id="queue-order">실패 → 지연 → 미검토</span
+          ><button id="export" class="text-button" disabled>
+            선택 내보내기 <span id="selected-count">0</span>
+          </button>
+        </div>
+        <div id="case-list" class="case-list" role="list"></div>
+        <div class="list-pages">
+          <button id="previous-page" class="quiet" disabled>이전 목록</button
+          ><button id="next-page" class="quiet" disabled>다음 목록</button>
+        </div>
+        <button id="show-stats" class="stats-toggle">기간 · 버전별 검토 현황</button>
+      </aside>
+
+      <section class="panel conversation-panel" aria-label="원문 대화">
+        <div class="conversation-heading">
+          <div>
+            <p class="eyebrow">ORIGINAL CONVERSATION</p>
+            <h2 id="conversation-title">대화를 선택해 주세요</h2>
+            <p id="conversation-meta" class="muted"></p>
+          </div>
+          <span id="case-state"></span>
+        </div>
+        <div class="conversation-tools">
+          <div class="segmented">
+            <button id="previous-case" disabled>← 이전 미검토</button
+            ><button id="next-case" disabled>다음 미검토 →</button>
+          </div>
+          <button id="expand-conversation" class="text-button" disabled>전체 대화 보기</button>
+        </div>
+        <div id="conversation" class="conversation">
+          <div class="empty">
+            <span aria-hidden="true">↖</span>
+            <p>왼쪽에서 답장을 선택하면<br />앞뒤 문맥을 함께 볼 수 있습니다.</p>
+          </div>
+        </div>
+        <div class="conversation-foot">
+          <span>원문 보존</span>
+          <p>검토 내용을 저장해도 실제 대화와 캐릭터의 기억은 바뀌지 않습니다.</p>
+        </div>
+      </section>
+
+      <aside class="panel review-panel" aria-label="품질 평가와 실행 근거">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">QUALITY & EVIDENCE</p>
+            <h2>답장 평가</h2>
+          </div>
+          <span id="review-count" class="count">미선택</span>
+        </div>
+        <div class="review-scroll">
+          <form id="review-form">
+            <fieldset id="review-fields" disabled>
+              <legend class="sr-only">여섯 품질 항목</legend>
+              <p class="review-note">
+                말투와 판단을 따로 평가합니다.<br />확인하지 않은 항목은 미평가로 남겨 주세요.
+              </p>
+              <div id="axes" class="axes"></div>
+              <fieldset class="tags-field">
+                <legend>문제 태그</legend>
+                <div id="tags" class="tags"></div>
+              </fieldset>
+              <label class="stack-label"
+                >추정 원인<select id="cause" name="cause">
+                  <option value="unknown">미확인</option>
+                  <option value="prompt">프롬프트</option>
+                  <option value="data">자료</option>
+                  <option value="retrieval">검색</option>
+                  <option value="memory">기억</option>
+                  <option value="model">모델</option>
+                </select></label
+              >
+              <label class="stack-label"
+                >검토 메모<textarea
+                  id="note"
+                  rows="3"
+                  maxlength="10000"
+                  placeholder="어떤 앞선 사정이나 원작 근거와 어긋났나요?"
+                ></textarea>
+              </label>
+              <label class="stack-label"
+                >개선 답안 <span>선택</span
+                ><textarea
+                  id="improved-answer"
+                  rows="3"
+                  maxlength="10000"
+                  placeholder="원문을 바꾸지 않고 참고 답안을 남깁니다."
+                ></textarea>
+              </label>
+              <p class="training-note">평가·개선 답안은 학습 미승인 상태로 저장됩니다.</p>
+            </fieldset>
+          </form>
+          <section class="evidence-section">
+            <h3>실제 실행 근거</h3>
+            <div id="metrics" class="metrics"></div>
+            <div id="evidence" class="evidence">
+              <p class="muted">
+                대화를 선택하면 사용한 기억·RAG 자료와 실행 버전을 확인할 수 있습니다.
+              </p>
+            </div>
+          </section>
+          <details id="past-reviews" class="past-reviews" hidden>
+            <summary>이전 검토 기록</summary>
+            <div id="review-history"></div>
+          </details>
+        </div>
+        <div class="save-actions review-footer">
+          <button id="save" type="submit" form="review-form" class="quiet" disabled>
+            평가 저장
+          </button>
+          <button id="save-next" type="submit" form="review-form" class="primary" disabled>
+            저장 후 다음
+          </button>
+        </div>
+      </aside>
+    </main>
+    <dialog id="stats-dialog" aria-labelledby="stats-title">
+      <div class="dialog-heading">
+        <div>
+          <p class="eyebrow">REVIEW COVERAGE</p>
+          <h2 id="stats-title">기간 · 버전별 검토 현황</h2>
+        </div>
+        <button id="close-stats" class="quiet" autofocus>닫기</button>
+      </div>
+      <p id="stats-description" class="muted"></p>
+      <div id="stats-content"></div>
+    </dialog>
+  </body>
+</html>
