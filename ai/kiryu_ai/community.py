@@ -215,6 +215,78 @@ def _utterance_kind(label: str, utterance: str, speaker: str | None) -> str:
     return "labelled_speech_candidate"
 
 
+def _reviewed_turn_merges(blocks: list[dict], doc: dict) -> list[dict]:
+    """Join only individually reviewed continuations; retain the exact raw span.
+
+    An image marker is not generally evidence that speech continues. Each
+    exceptional gap must be explicitly named in a source-bound annotation.
+    This restores extraction only; it does not grant training approval.
+    """
+    annotations = doc.get("reviewed_turn_merges", [])
+    if not isinstance(annotations, list):
+        raise TypeError("reviewed_turn_merges must be a list")
+    consumed = set()
+    replacements = {}
+    positions = {b["line_start"]: i for i, b in enumerate(blocks)}
+    for annotation in annotations:
+        if annotation.get("source_sha256") != doc["text_sha256"]:
+            raise ValueError("stale continuation annotation")
+        for field in ("reviewer", "basis", "speaker_id"):
+            _required_text(annotation, field)
+        starts = annotation.get("line_starts")
+        if (
+            not isinstance(starts, list)
+            or len(starts) < 2
+            or any(type(x) is not int or x not in positions for x in starts)
+            or starts != sorted(set(starts))
+        ):
+            raise ValueError("invalid continuation line coordinates")
+        selected = [blocks[positions[x]] for x in starts]
+        if any(
+            b["utterance_kind"] != "labelled_speech_candidate"
+            or b["speaker_id"] != annotation["speaker_id"]
+            or b["scene_id"] != selected[0]["scene_id"]
+            for b in selected
+        ):
+            raise ValueError(
+                "continuation must preserve a single explicit speaker and scene"
+            )
+        first, last = positions[starts[0]], positions[starts[-1]]
+        indices = set(range(first, last + 1))
+        if indices & consumed:
+            raise ValueError("overlapping continuation annotations")
+        gaps = [b for b in blocks[first : last + 1] if b["line_start"] not in starts]
+        allowed = annotation.get("allowed_image_line_starts", [])
+        if allowed != [b["line_start"] for b in gaps] or any(
+            b["utterance_kind"] != "image_pending"
+            or not re.fullmatch(r"\[IMAGE:\d+\]", b["text_raw"].strip())
+            for b in gaps
+        ):
+            raise ValueError(
+                "continuation cannot skip speech, directions or unreviewed gaps"
+            )
+        merged = dict(selected[0])
+        merged.update(
+            block_id=f"{doc['source_id']}:lines-{selected[0]['line_start']}-{selected[-1]['line_end']}",
+            line_end=selected[-1]["line_end"],
+            char_end=selected[-1]["char_end"],
+            text_raw=doc["text"][selected[0]["char_start"] : selected[-1]["char_end"]],
+            text_clean=" ".join(b["text_clean"] for b in selected),
+            turn_merge_provenance={
+                "annotation_sha256": stable_hash(annotation),
+                "component_block_ids": [b["block_id"] for b in selected],
+                "excluded_image_line_starts": allowed,
+            },
+        )
+        consumed.update(indices)
+        replacements[first] = merged
+    return [
+        replacements.get(i, b)
+        for i, b in enumerate(blocks)
+        if i not in consumed or i in replacements
+    ]
+
+
 def parse_document(doc: dict) -> tuple[list[dict], list[dict], list[dict]]:
     lines = doc["text"].splitlines(keepends=True)
     offsets = [0]
@@ -311,6 +383,32 @@ def parse_document(doc: dict) -> tuple[list[dict], list[dict], list[dict]]:
             run += 1
         index = end
     flush_scene()
+    if doc.get("reviewed_turn_merges"):
+        blocks = _reviewed_turn_merges(blocks, doc)
+        turns, run = [], 0
+        for block in blocks:
+            if (
+                block["utterance_kind"] == "labelled_speech_candidate"
+                and source_allowed
+            ):
+                turns.append(
+                    {
+                        **block,
+                        "turn_id": block["block_id"],
+                        "run_id": f"{doc['source_id']}:run-{run}",
+                        "generation_kind": "fan_translation",
+                        "official_korean_quote_verified": False,
+                    }
+                )
+            else:
+                run += 1
+        for scene in scenes:
+            scene["block_ids"] = [
+                b["block_id"] for b in blocks if b["scene_id"] == scene["scene_id"]
+            ]
+            scene["turn_ids"] = [
+                t["turn_id"] for t in turns if t["scene_id"] == scene["scene_id"]
+            ]
     # A labelled first line followed by unlabelled prose may be only the start
     # of a longer utterance. Retain it for review, not as a complete response.
     positions = {block["block_id"]: i for i, block in enumerate(blocks)}
