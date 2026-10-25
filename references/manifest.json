@@ -2127,6 +2127,27 @@
           "bytes": 1400861
         }
       ]
+    },
+    {
+      "id": "issue73-admin-review-spec",
+      "type": "reference-site",
+      "sourceUrl": "https://github.com/nam9nine/yaku_IPhone/issues/73",
+      "retrievedOn": "2026-10-26",
+      "license": {
+        "status": "project-authored-requirements",
+        "notice": "Project Issue requirements; an internal layout and workflow specification, not an Apple visual reference."
+      },
+      "purpose": "Compare Mac-only review UI against approved three-column layout, contextual evidence, separate rating axes, persistent save controls and privacy boundaries.",
+      "keyPaths": ["harness/plans/issue-73-chat-review.md"],
+      "artifacts": [
+        {
+          "role": "html",
+          "url": "https://github.com/nam9nine/yaku_IPhone/issues/73",
+          "localPath": "references/local/admin-review/issue-73.html",
+          "sha256": "4bdd7285f06fa64871b2090ec1ce3b2e4468af0eae3f471b88b704fd6bc56fe1",
+          "bytes": 246106
+        }
+      ]
     }
   ]
 }

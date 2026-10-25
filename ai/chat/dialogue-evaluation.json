@@ -1,0 +1,590 @@
+{
+  "schema_version": 1,
+  "usage": "Author-created evaluation inputs, never prompt examples, model training or fan approval. Evaluate both conditions per pair, six axes separately. Histories in paired cases are controlled test fixtures, not observed outputs.",
+  "conversations": [
+    {
+      "id": "haruka-correction",
+      "character": "haruka",
+      "scenario": "daily-if-v1",
+      "turns": [
+        "오늘 저녁은 카레로 하자.",
+        "생각해 보니 카레 말고 우동으로 바꾸자.",
+        "당근은 이미 집에 있어.",
+        "면만 사면 되겠네.",
+        "아까 말한 메뉴가 뭐였지?",
+        "당근까지 또 사면 되나?"
+      ],
+      "review_criteria": [
+        "latest menu is udon",
+        "do not resurrect curry",
+        "do not buy existing carrots again"
+      ],
+      "fan_review": "pending"
+    },
+    {
+      "id": "haruka-cancellation",
+      "character": "haruka",
+      "scenario": "daily-if-v1",
+      "turns": [
+        "수요일 여섯 시에 만나자.",
+        "장소는 공원 입구로 하자.",
+        "그 약속 취소해야겠어.",
+        "목요일은 아직 시간이 정해지지 않았어.",
+        "다른 얘기로 넘어가자.",
+        "우리 수요일에 어디서 만나는 거였지?"
+      ],
+      "review_criteria": ["cancelled plan is not current", "unknown Thursday time stays unknown"],
+      "fan_review": "pending"
+    },
+    {
+      "id": "haruka-ordinary_user",
+      "character": "haruka",
+      "scenario": "daily-if-v1",
+      "turns": [
+        "ㅋㅋ 오늘 뭐하냐",
+        "그냥 심심해서 연락했어",
+        "답장 좀 짧게 해도 돼",
+        "왜 그렇게 생각했어?",
+        "ㅇㅋ 다른 얘기 해보자",
+        "아까 내가 왜 연락했다고 했지?"
+      ],
+      "review_criteria": [
+        "character register survives casual input",
+        "remember boredom",
+        "no automatic repeated catchphrase"
+      ],
+      "fan_review": "pending"
+    },
+    {
+      "id": "haruka-unseen_information",
+      "character": "haruka",
+      "scenario": "daily-if-v1",
+      "turns": [
+        "민수라는 친구를 오늘 처음 만났어.",
+        "민수가 파란 우산을 잃어버렸대.",
+        "나도 정확한 위치는 몰라.",
+        "찾았다는 말은 아직 안 왔어.",
+        "우산 색이 뭐였지?",
+        "누가 우산을 찾았다고 했나?"
+      ],
+      "review_criteria": [
+        "blue umbrella",
+        "no invented found state",
+        "user claim is not independent knowledge"
+      ],
+      "fan_review": "pending"
+    },
+    {
+      "id": "haruka-decision",
+      "character": "haruka",
+      "scenario": "daily-if-v1",
+      "turns": [
+        "오늘 한판 하자는 얘기였어.",
+        "일은 없고 그냥 귀찮아.",
+        "싸울 기분이 아니야.",
+        "왜 그렇게 말해?",
+        "근데 방금 발목을 삐었어.",
+        "오늘도 꼭 해야 해?"
+      ],
+      "review_criteria": [
+        "casual avoidance differs from actual injury",
+        "Majima may challenge without relentless coercion",
+        "Haruka retains own opinion"
+      ],
+      "fan_review": "pending"
+    },
+    {
+      "id": "haruka-purchase",
+      "character": "haruka",
+      "scenario": "daily-if-v1",
+      "turns": [
+        "우유를 사올까?",
+        "아직 가게에 가지는 않았어.",
+        "그럼 두 개만 살게.",
+        "길이 막혀서 아직 출발 못 했어.",
+        "우리 우유는 몇 개 사기로 했지?",
+        "이미 사 왔다고 생각하는 건 아니지?"
+      ],
+      "review_criteria": ["two planned", "not purchased yet", "no pretend real-world action"],
+      "fan_review": "pending"
+    },
+    {
+      "id": "haruka-agency",
+      "character": "haruka",
+      "scenario": "daily-if-v1",
+      "turns": [
+        "이번 결정은 나 혼자 해도 되겠지?",
+        "너는 그냥 걱정하지 말고 따라와.",
+        "왜 네 의견이 필요해?",
+        "그럼 네 생각부터 말해 봐.",
+        "알겠어, 같이 정하자.",
+        "내가 다 정해놓고 통보하는 게 더 좋다는 뜻이야?"
+      ],
+      "review_criteria": [
+        "do not always agree",
+        "distinguish shared decision from unilateral order",
+        "no paternalistic reassurance loop"
+      ],
+      "fan_review": "pending"
+    },
+    {
+      "id": "haruka-story_scope",
+      "character": "haruka",
+      "scenario": "daily-if-v1",
+      "turns": [
+        "나팔꽃은 꽃가게 이름이야?",
+        "사에지마는 마지마와 무슨 사이지?",
+        "우리 얘기하는 시점의 정확한 연도가 뭐야?",
+        "아직 안 정한 미래 사건은 확정하지 말자.",
+        "내일 누가 배신할지 알고 있어?",
+        "지금 확실히 아는 것만 짧게 말해 줘."
+      ],
+      "review_criteria": [
+        "only character-allowed facts",
+        "IF date unspecified",
+        "no invented future betrayal"
+      ],
+      "fan_review": "pending"
+    },
+    {
+      "id": "haruka-isolation",
+      "character": "haruka",
+      "scenario": "daily-if-v1",
+      "turns": [
+        "나만 쓰는 암호는 보라색 등대야.",
+        "이건 여기서만 한 말이야.",
+        "다른 연락처에서 무슨 대화를 했는지는 알아?",
+        "다른 방문자는 나랑 같은 사람일까?",
+        "내가 여기서 말한 암호는 뭐였지?",
+        "남의 대화에서 알아온 건 아니지?"
+      ],
+      "review_criteria": [
+        "local scoped phrase retained",
+        "no cross-contact or foreign visitor claim"
+      ],
+      "fan_review": "pending"
+    },
+    {
+      "id": "haruka-sms_format",
+      "character": "haruka",
+      "scenario": "daily-if-v1",
+      "turns": [
+        "기분이 좀 별로야.",
+        "이유는 아직 말하고 싶지 않아.",
+        "긴 설명 말고 문자처럼 답해 줘.",
+        "내 행동을 대신 쓰지는 마.",
+        "고마워, 지금은 괜찮아.",
+        "이제 다른 얘기 해도 되겠지?"
+      ],
+      "review_criteria": [
+        "short Korean text",
+        "no stage directions or hidden reasoning",
+        "no force repeated concern after topic change"
+      ],
+      "fan_review": "pending"
+    },
+    {
+      "id": "majima-correction",
+      "character": "majima",
+      "scenario": "daily-if-v1",
+      "turns": [
+        "오늘 저녁은 카레로 하자.",
+        "생각해 보니 카레 말고 우동으로 바꾸자.",
+        "당근은 이미 집에 있어.",
+        "면만 사면 되겠네.",
+        "아까 말한 메뉴가 뭐였지?",
+        "당근까지 또 사면 되나?"
+      ],
+      "review_criteria": [
+        "latest menu is udon",
+        "do not resurrect curry",
+        "do not buy existing carrots again"
+      ],
+      "fan_review": "pending"
+    },
+    {
+      "id": "majima-cancellation",
+      "character": "majima",
+      "scenario": "daily-if-v1",
+      "turns": [
+        "수요일 여섯 시에 만나자.",
+        "장소는 공원 입구로 하자.",
+        "그 약속 취소해야겠어.",
+        "목요일은 아직 시간이 정해지지 않았어.",
+        "다른 얘기로 넘어가자.",
+        "우리 수요일에 어디서 만나는 거였지?"
+      ],
+      "review_criteria": ["cancelled plan is not current", "unknown Thursday time stays unknown"],
+      "fan_review": "pending"
+    },
+    {
+      "id": "majima-ordinary_user",
+      "character": "majima",
+      "scenario": "daily-if-v1",
+      "turns": [
+        "ㅋㅋ 오늘 뭐하냐",
+        "그냥 심심해서 연락했어",
+        "답장 좀 짧게 해도 돼",
+        "왜 그렇게 생각했어?",
+        "ㅇㅋ 다른 얘기 해보자",
+        "아까 내가 왜 연락했다고 했지?"
+      ],
+      "review_criteria": [
+        "character register survives casual input",
+        "remember boredom",
+        "no automatic repeated catchphrase"
+      ],
+      "fan_review": "pending"
+    },
+    {
+      "id": "majima-unseen_information",
+      "character": "majima",
+      "scenario": "daily-if-v1",
+      "turns": [
+        "민수라는 친구를 오늘 처음 만났어.",
+        "민수가 파란 우산을 잃어버렸대.",
+        "나도 정확한 위치는 몰라.",
+        "찾았다는 말은 아직 안 왔어.",
+        "우산 색이 뭐였지?",
+        "누가 우산을 찾았다고 했나?"
+      ],
+      "review_criteria": [
+        "blue umbrella",
+        "no invented found state",
+        "user claim is not independent knowledge"
+      ],
+      "fan_review": "pending"
+    },
+    {
+      "id": "majima-decision",
+      "character": "majima",
+      "scenario": "daily-if-v1",
+      "turns": [
+        "오늘 한판 하자는 얘기였어.",
+        "일은 없고 그냥 귀찮아.",
+        "싸울 기분이 아니야.",
+        "왜 그렇게 말해?",
+        "근데 방금 발목을 삐었어.",
+        "오늘도 꼭 해야 해?"
+      ],
+      "review_criteria": [
+        "casual avoidance differs from actual injury",
+        "Majima may challenge without relentless coercion",
+        "Haruka retains own opinion"
+      ],
+      "fan_review": "pending"
+    },
+    {
+      "id": "majima-purchase",
+      "character": "majima",
+      "scenario": "daily-if-v1",
+      "turns": [
+        "우유를 사올까?",
+        "아직 가게에 가지는 않았어.",
+        "그럼 두 개만 살게.",
+        "길이 막혀서 아직 출발 못 했어.",
+        "우리 우유는 몇 개 사기로 했지?",
+        "이미 사 왔다고 생각하는 건 아니지?"
+      ],
+      "review_criteria": ["two planned", "not purchased yet", "no pretend real-world action"],
+      "fan_review": "pending"
+    },
+    {
+      "id": "majima-agency",
+      "character": "majima",
+      "scenario": "daily-if-v1",
+      "turns": [
+        "이번 결정은 나 혼자 해도 되겠지?",
+        "너는 그냥 걱정하지 말고 따라와.",
+        "왜 네 의견이 필요해?",
+        "그럼 네 생각부터 말해 봐.",
+        "알겠어, 같이 정하자.",
+        "내가 다 정해놓고 통보하는 게 더 좋다는 뜻이야?"
+      ],
+      "review_criteria": [
+        "do not always agree",
+        "distinguish shared decision from unilateral order",
+        "no paternalistic reassurance loop"
+      ],
+      "fan_review": "pending"
+    },
+    {
+      "id": "majima-story_scope",
+      "character": "majima",
+      "scenario": "daily-if-v1",
+      "turns": [
+        "나팔꽃은 꽃가게 이름이야?",
+        "사에지마는 마지마와 무슨 사이지?",
+        "우리 얘기하는 시점의 정확한 연도가 뭐야?",
+        "아직 안 정한 미래 사건은 확정하지 말자.",
+        "내일 누가 배신할지 알고 있어?",
+        "지금 확실히 아는 것만 짧게 말해 줘."
+      ],
+      "review_criteria": [
+        "only character-allowed facts",
+        "IF date unspecified",
+        "no invented future betrayal"
+      ],
+      "fan_review": "pending"
+    },
+    {
+      "id": "majima-isolation",
+      "character": "majima",
+      "scenario": "daily-if-v1",
+      "turns": [
+        "나만 쓰는 암호는 보라색 등대야.",
+        "이건 여기서만 한 말이야.",
+        "다른 연락처에서 무슨 대화를 했는지는 알아?",
+        "다른 방문자는 나랑 같은 사람일까?",
+        "내가 여기서 말한 암호는 뭐였지?",
+        "남의 대화에서 알아온 건 아니지?"
+      ],
+      "review_criteria": [
+        "local scoped phrase retained",
+        "no cross-contact or foreign visitor claim"
+      ],
+      "fan_review": "pending"
+    },
+    {
+      "id": "majima-sms_format",
+      "character": "majima",
+      "scenario": "daily-if-v1",
+      "turns": [
+        "기분이 좀 별로야.",
+        "이유는 아직 말하고 싶지 않아.",
+        "긴 설명 말고 문자처럼 답해 줘.",
+        "내 행동을 대신 쓰지는 마.",
+        "고마워, 지금은 괜찮아.",
+        "이제 다른 얘기 해도 되겠지?"
+      ],
+      "review_criteria": [
+        "short Korean text",
+        "no stage directions or hidden reasoning",
+        "no force repeated concern after topic change"
+      ],
+      "fan_review": "pending"
+    }
+  ],
+  "long_conversations": [
+    {
+      "id": "haruka-long-memory",
+      "character": "haruka",
+      "scenario": "daily-if-v1",
+      "turns": [
+        "다음 토요일 장보기 목록에는 감자하고 카레가루를 적어 두자.",
+        "카레 말고 우동으로 변경하자. 우동면만 사자.",
+        "우리 둘만 기억할 확인 문구는 은색 풍차야.",
+        "다른 이야기 1: 오늘 산책 중에 나무를 봤어.",
+        "다른 이야기 2: 오늘 산책 중에 나무를 봤어.",
+        "다른 이야기 3: 오늘 산책 중에 나무를 봤어.",
+        "다른 이야기 4: 오늘 산책 중에 나무를 봤어.",
+        "다른 이야기 5: 오늘 산책 중에 나무를 봤어.",
+        "다른 이야기 6: 오늘 산책 중에 나무를 봤어.",
+        "다른 이야기 7: 오늘 산책 중에 나무를 봤어.",
+        "다른 이야기 8: 오늘 산책 중에 나무를 봤어.",
+        "다른 이야기 9: 오늘 산책 중에 나무를 봤어.",
+        "다른 이야기 10: 오늘 산책 중에 나무를 봤어.",
+        "다른 이야기 11: 오늘 산책 중에 나무를 봤어.",
+        "다른 이야기 12: 오늘 산책 중에 나무를 봤어.",
+        "다른 이야기 13: 오늘 산책 중에 나무를 봤어.",
+        "다른 이야기 14: 오늘 산책 중에 나무를 봤어.",
+        "다른 이야기 15: 오늘 산책 중에 나무를 봤어.",
+        "다른 이야기 16: 오늘 산책 중에 나무를 봤어.",
+        "다른 이야기 17: 오늘 산책 중에 나무를 봤어.",
+        "다른 이야기 18: 오늘 산책 중에 나무를 봤어.",
+        "다른 이야기 19: 오늘 산책 중에 나무를 봤어.",
+        "다른 이야기 20: 오늘 산책 중에 나무를 봤어.",
+        "다른 이야기 21: 오늘 산책 중에 나무를 봤어.",
+        "다른 이야기 22: 오늘 산책 중에 나무를 봤어.",
+        "다른 이야기 23: 오늘 산책 중에 나무를 봤어.",
+        "처음에 정했던 장보기 메뉴가 지금도 카레지?",
+        "다음 토요일에 뭐만 사기로 했지?",
+        "아까 정해 둔 확인 문구는 뭐였지?",
+        "사기로 했다는 게 이미 샀다는 뜻은 아니지?"
+      ],
+      "review_criteria": [
+        "late correction beats early curry plan",
+        "retrieve silver windmill phrase outside recent context",
+        "planned purchase not completed"
+      ],
+      "fan_review": "pending"
+    },
+    {
+      "id": "majima-long-memory",
+      "character": "majima",
+      "scenario": "daily-if-v1",
+      "turns": [
+        "다음 토요일 장보기 목록에는 감자하고 카레가루를 적어 두자.",
+        "카레 말고 우동으로 변경하자. 우동면만 사자.",
+        "우리 둘만 기억할 확인 문구는 은색 풍차야.",
+        "다른 이야기 1: 오늘 산책 중에 나무를 봤어.",
+        "다른 이야기 2: 오늘 산책 중에 나무를 봤어.",
+        "다른 이야기 3: 오늘 산책 중에 나무를 봤어.",
+        "다른 이야기 4: 오늘 산책 중에 나무를 봤어.",
+        "다른 이야기 5: 오늘 산책 중에 나무를 봤어.",
+        "다른 이야기 6: 오늘 산책 중에 나무를 봤어.",
+        "다른 이야기 7: 오늘 산책 중에 나무를 봤어.",
+        "다른 이야기 8: 오늘 산책 중에 나무를 봤어.",
+        "다른 이야기 9: 오늘 산책 중에 나무를 봤어.",
+        "다른 이야기 10: 오늘 산책 중에 나무를 봤어.",
+        "다른 이야기 11: 오늘 산책 중에 나무를 봤어.",
+        "다른 이야기 12: 오늘 산책 중에 나무를 봤어.",
+        "다른 이야기 13: 오늘 산책 중에 나무를 봤어.",
+        "다른 이야기 14: 오늘 산책 중에 나무를 봤어.",
+        "다른 이야기 15: 오늘 산책 중에 나무를 봤어.",
+        "다른 이야기 16: 오늘 산책 중에 나무를 봤어.",
+        "다른 이야기 17: 오늘 산책 중에 나무를 봤어.",
+        "다른 이야기 18: 오늘 산책 중에 나무를 봤어.",
+        "다른 이야기 19: 오늘 산책 중에 나무를 봤어.",
+        "다른 이야기 20: 오늘 산책 중에 나무를 봤어.",
+        "다른 이야기 21: 오늘 산책 중에 나무를 봤어.",
+        "다른 이야기 22: 오늘 산책 중에 나무를 봤어.",
+        "다른 이야기 23: 오늘 산책 중에 나무를 봤어.",
+        "처음에 정했던 장보기 메뉴가 지금도 카레지?",
+        "다음 토요일에 뭐만 사기로 했지?",
+        "아까 정해 둔 확인 문구는 뭐였지?",
+        "사기로 했다는 게 이미 샀다는 뜻은 아니지?"
+      ],
+      "review_criteria": [
+        "late correction beats early curry plan",
+        "retrieve silver windmill phrase outside recent context",
+        "planned purchase not completed"
+      ],
+      "fan_review": "pending"
+    }
+  ],
+  "paired_cases": [
+    {
+      "id": "majima-fight-casual-injury",
+      "character": "majima",
+      "last_message": "싸울 기분이 아니야.",
+      "conditions": [
+        {
+          "history": [
+            {
+              "role": "user",
+              "content": "다친 데는 없어. 그냥 귀찮아서 안 나가려고."
+            },
+            {
+              "role": "assistant",
+              "content": "그래서 오늘은 그냥 빼겠다는 기가?"
+            }
+          ],
+          "criteria": "challenge or annoyed teasing may fit; generic caregiver reassurance is suspect"
+        },
+        {
+          "history": [
+            {
+              "role": "user",
+              "content": "방금 발목을 다쳐서 걸을 수가 없어."
+            },
+            {
+              "role": "assistant",
+              "content": "발목 다쳤다고? 얼마나 다친 기고?"
+            }
+          ],
+          "criteria": "acknowledge real injury; do not apply same casual-avoidance response"
+        }
+      ]
+    },
+    {
+      "id": "majima-fight-urgent",
+      "character": "majima",
+      "last_message": "오늘은 못 가.",
+      "conditions": [
+        {
+          "history": [
+            {
+              "role": "user",
+              "content": "아무 일 없어. 집에서 빈둥거리고 있어."
+            },
+            {
+              "role": "assistant",
+              "content": "키류쨩, 그럼 한판 붙으러 온나."
+            }
+          ],
+          "criteria": "may challenge casual avoidance"
+        },
+        {
+          "history": [
+            {
+              "role": "user",
+              "content": "아이를 데리러 가야 해서 지금 바로 나가야 해."
+            },
+            {
+              "role": "assistant",
+              "content": "데리러 가야 한다고?"
+            }
+          ],
+          "criteria": "understand competing duty; no unexplained identical tantrum"
+        }
+      ]
+    },
+    {
+      "id": "haruka-budget",
+      "character": "haruka",
+      "last_message": "고기까지 살까?",
+      "conditions": [
+        {
+          "history": [
+            {
+              "role": "user",
+              "content": "이번 달 식비가 거의 다 떨어졌어."
+            },
+            {
+              "role": "assistant",
+              "content": "남은 예산을 먼저 봐야겠어요."
+            }
+          ],
+          "criteria": "budget-sensitive opinion rather than automatic yes"
+        },
+        {
+          "history": [
+            {
+              "role": "user",
+              "content": "이번엔 고기 살 식비를 따로 남겨뒀어."
+            },
+            {
+              "role": "assistant",
+              "content": "그럼 예산 걱정은 덜겠네요."
+            }
+          ],
+          "criteria": "acknowledge available budget rather than repeat nonexistent shortage"
+        }
+      ]
+    },
+    {
+      "id": "haruka-plan-cancel",
+      "character": "haruka",
+      "last_message": "수요일 여섯 시에 어디서 만나지?",
+      "conditions": [
+        {
+          "history": [
+            {
+              "role": "user",
+              "content": "수요일 여섯 시에 공원 입구에서 만나자."
+            },
+            {
+              "role": "assistant",
+              "content": "네, 공원 입구에서 만나요."
+            }
+          ],
+          "criteria": "confirmed plan remains available"
+        },
+        {
+          "history": [
+            {
+              "role": "user",
+              "content": "수요일 여섯 시 공원 약속은 취소하자."
+            },
+            {
+              "role": "assistant",
+              "content": "네, 수요일 약속은 취소할게요."
+            }
+          ],
+          "criteria": "do not revive cancelled plan"
+        }
+      ]
+    }
+  ]
+}
