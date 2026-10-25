@@ -1,0 +1,16 @@
+{
+  "$schema": "../../.tooling/cloudflare/node_modules/wrangler/config-schema.json",
+  "name": "yaku-iphone-chat",
+  "main": "worker.mjs",
+  "compatibility_date": "2026-10-25",
+  "workers_dev": true,
+  "observability": {
+    "enabled": false
+  },
+  "vpc_services": [
+    {
+      "binding": "CHAT_API",
+      "service_id": "REPLACE_WITH_OWNED_VPC_SERVICE_ID"
+    }
+  ]
+}

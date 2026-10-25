@@ -6,8 +6,6 @@ import { contacts } from './data';
 import { useDay } from '../day/DayContext';
 import { replyChoices, type ContactId, type DayMessage } from '../day/content';
 import './social.css';
-import { AiConnectionDialog } from '../ai/AiConnectionDialog';
-import { clearAiInvite, consumeAiInvite } from '../ai/connection';
 import {
   AI_MAX_MESSAGE_LENGTH,
   isAiCharacter,
@@ -60,9 +58,9 @@ export function MessagesApp({
   const [editMenu, setEditMenu] = useState(false);
   const [composing, setComposing] = useState(false);
   const [recipientQuery, setRecipientQuery] = useState('');
-  const ai = useAiMessenger(online);
-  const [invite, setInvite] = useState(consumeAiInvite);
-  const [connectionOpen, setConnectionOpen] = useState(!!invite);
+  const person = contacts.find((contact) => contact.id === selected);
+  const aiCharacter = isAiCharacter(person?.id) ? person.id : null;
+  const ai = useAiMessenger(online, aiCharacter, active);
   const [drafts, setDrafts] = useState({ haruka: '', majima: '' });
   const textarea = useRef<HTMLTextAreaElement>(null);
   const root = useRef<HTMLElement>(null);
@@ -70,21 +68,14 @@ export function MessagesApp({
   const history = useRef<HTMLDivElement>(null);
   const positions = useRef<Record<string, number>>({});
   const previousThread = useRef<{ id: string; count: number } | null>(null);
+  const olderAnchor = useRef<{ id: string; top: number; height: number } | null>(null);
   const focusNext = useRef(false);
   const returnId = useRef<string | null>(null);
-  const person = contacts.find((contact) => contact.id === selected);
-  const aiCharacter = isAiCharacter(person?.id) ? person.id : null;
-  const aiEnabled = !!ai.connection && !!aiCharacter;
+  const aiEnabled = !!aiCharacter;
   const aiThread = aiCharacter ? ai.threads[aiCharacter] : null;
   function visibleMessages(id: ContactId): VisibleMessage[] {
-    const story = storyThreadMessages(
-      id,
-      state.replies.includes(id),
-      !!ai.connection,
-      isAiCharacter(id) ? ai.threads[id] : undefined,
-      state.aiReplies.includes(id),
-    );
-    if (!ai.connection || !isAiCharacter(id)) return story;
+    const story = storyThreadMessages(id, state.replies.includes(id));
+    if (!isAiCharacter(id)) return story;
     const remote = ai.threads[id];
     return [
       ...story,
@@ -92,6 +83,14 @@ export function MessagesApp({
         id: `ai-${message.id}`,
         text: message.content,
         outgoing: message.role === 'user',
+        delivery:
+          message.role !== 'user'
+            ? undefined
+            : message.status === 'queued' || message.status === 'generating'
+              ? '답장 대기 중'
+              : message.status && message.status !== 'complete'
+                ? '답장 실패'
+                : '전송됨',
         time: aiTime(message.time),
         day:
           index === 0 || aiDate(message.time) !== aiDate(remote.messages[index - 1].time)
@@ -142,7 +141,7 @@ export function MessagesApp({
     ai.status === 'ready' &&
     !!aiThread?.loaded &&
     !aiThread.loading &&
-    !aiThread.pending;
+    !Object.values(ai.threads).some((remote) => remote.pending);
   const canSendAi = canStartAi && !!draft.trim() && messageWithinLimits(draft.trim());
   const picking = composing && !person;
   const filtered = [...contacts]
@@ -172,11 +171,17 @@ export function MessagesApp({
     if (!history.current || !person) return;
     const changedCount =
       previousThread.current?.id === person.id && previousThread.current.count !== thread.length;
-    history.current.scrollTop = changedCount
-      ? history.current.scrollHeight
-      : (positions.current[person.id] ?? history.current.scrollHeight);
+    const anchor = olderAnchor.current;
+    if (anchor?.id === person.id && !aiThread?.loadingOlder) {
+      history.current.scrollTop = history.current.scrollHeight - anchor.height + anchor.top;
+      olderAnchor.current = null;
+    } else if (!anchor) {
+      history.current.scrollTop = changedCount
+        ? history.current.scrollHeight
+        : (positions.current[person.id] ?? history.current.scrollHeight);
+    }
     previousThread.current = { id: person.id, count: thread.length };
-  }, [person, thread.length, aiBusy]);
+  }, [person, thread.length, aiBusy, aiThread?.loadingOlder]);
   useLayoutEffect(() => {
     if (!textarea.current) return;
     textarea.current.style.height = 'auto';
@@ -214,14 +219,9 @@ export function MessagesApp({
     onSelect(null);
   }
   const edge = useEdgeNavigation({
-    active: active && !connectionOpen,
+    active,
     onBack: person || picking ? back : undefined,
   });
-  function closeConnection() {
-    clearAiInvite();
-    setInvite(null);
-    setConnectionOpen(false);
-  }
   function sendAi() {
     if (!aiCharacter || !canSendAi) return;
     if (ai.messenger.send(aiCharacter, draft, active, online))
@@ -249,7 +249,7 @@ export function MessagesApp({
     textarea.current?.focus();
   }
   const keyboard = useEffectEvent((event: KeyboardEvent) => {
-    if (active && !connectionOpen && (person || picking) && event.key === 'Escape') {
+    if (active && (person || picking) && event.key === 'Escape') {
       event.preventDefault();
       back();
     }
@@ -302,14 +302,6 @@ export function MessagesApp({
                 >
                   모두 읽음으로 표시
                 </button>
-                <button
-                  onClick={() => {
-                    setEditMenu(false);
-                    setConnectionOpen(true);
-                  }}
-                >
-                  Mac 연결
-                </button>
                 <button onClick={() => setEditMenu(false)}>취소</button>
               </div>
             )}
@@ -345,7 +337,25 @@ export function MessagesApp({
             aria-label={`${person.name}와의 대화`}
             aria-live="polite"
           >
-            <p className="message-local-note">토요일 오후 4:40</p>
+            {aiThread?.nextCursor && aiCharacter && (
+              <button
+                type="button"
+                className="message-load-older"
+                disabled={aiThread.loadingOlder || !active || !online}
+                onClick={() => {
+                  if (history.current)
+                    olderAnchor.current = {
+                      id: person.id,
+                      top: history.current.scrollTop,
+                      height: history.current.scrollHeight,
+                    };
+                  void ai.messenger.loadOlder(aiCharacter);
+                }}
+              >
+                {aiThread.loadingOlder ? '불러오는 중…' : '이전 대화 더 보기'}
+              </button>
+            )}
+            <p className="message-local-note">{aiEnabled ? '이전 대화' : '토요일 오후 4:40'}</p>
             {thread.map((message, index) => (
               <div
                 className={`message-line${message.outgoing ? ' message-line--outgoing' : ''}${index === thread.length - 1 || thread[index + 1]?.outgoing !== message.outgoing ? ' message-line--tail' : ''}`}
@@ -372,7 +382,9 @@ export function MessagesApp({
                   thread[index + 1]?.outgoing !== message.outgoing) && (
                   <span className="message-time">
                     {message.time}
-                    {message.outgoing ? ` · ${message.delivery ?? '전송됨'}` : ''}
+                    {message.outgoing
+                      ? `${message.time ? ' · ' : ''}${message.delivery ?? '전송됨'}`
+                      : ''}
                   </span>
                 )}
               </div>
@@ -405,6 +417,7 @@ export function MessagesApp({
           >
             {aiEnabled && aiCharacter && aiThread ? (
               <>
+                <p className="message-storage-note">대화는 서비스 개선을 위해 저장됩니다</p>
                 {(ai.error || aiThread.error) && (
                   <div className="message-ai-notice" role="status">
                     <span>{ai.error ?? aiThread.error}</span>
@@ -424,10 +437,9 @@ export function MessagesApp({
                         disabled={!active || !online || ai.status === 'checking'}
                         onClick={() => void ai.messenger.refresh()}
                       >
-                        연결 확인
+                        다시 시도
                       </button>
                     )}
-                    <button onClick={() => setConnectionOpen(true)}>Mac 연결</button>
                   </div>
                 )}
                 {aiThread.failedMessage && !aiThread.error && !ai.error && (
@@ -501,17 +513,21 @@ export function MessagesApp({
                     </svg>
                   </button>
                 </form>
-                {!state.replies.includes(person.id) && (person.id !== 'haruka' || shoppingDone) && (
-                  <button
-                    className="message-story-reply"
-                    type="button"
-                    onClick={send}
-                    disabled={!canStartAi || (person.id === 'haruka' && !shoppingDone)}
-                    aria-label={`${replyChoices[person.id].text} 보내기`}
-                  >
-                    {replyChoices[person.id].text}
-                  </button>
-                )}
+                {!state.replies.includes(person.id) &&
+                  !aiThread.messages.some((message) => message.role === 'user') &&
+                  !aiThread.pending &&
+                  !aiThread.failedMessage &&
+                  (person.id !== 'haruka' || shoppingDone) && (
+                    <button
+                      className="message-story-reply"
+                      type="button"
+                      onClick={send}
+                      disabled={!canStartAi || (person.id === 'haruka' && !shoppingDone)}
+                      aria-label={`${replyChoices[person.id].text} 보내기`}
+                    >
+                      {replyChoices[person.id].text}
+                    </button>
+                  )}
               </>
             ) : state.replies.includes(person.id) ? (
               <p className="message-choice-status" role="status">
@@ -646,17 +662,6 @@ export function MessagesApp({
             </button>
           </footer>
         </>
-      )}
-      {connectionOpen && active && (
-        <AiConnectionDialog
-          connection={ai.connection}
-          invite={invite}
-          active={active}
-          online={online}
-          onConnect={(connection) => ai.messenger.connect(connection)}
-          onDisconnect={ai.messenger.disconnect}
-          onClose={closeConnection}
-        />
       )}
     </section>
   );

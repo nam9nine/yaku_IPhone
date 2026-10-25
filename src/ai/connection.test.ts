@@ -1,56 +1,37 @@
 import { afterEach, expect, it, vi } from 'vitest';
+import { AI_ENDPOINT } from './config';
 import {
   AI_CONNECTION_KEY,
-  clearAiInvite,
-  consumeAiInvite,
-  normalizeEndpoint,
+  LEGACY_AI_CONNECTION_KEY,
+  clearLegacyAiFragment,
   readAiConnection,
   saveAiConnection,
 } from './connection';
 
-afterEach(() => {
-  clearAiInvite();
-  vi.unstubAllGlobals();
+afterEach(() => vi.unstubAllGlobals());
+it('새 세션은 토큰만 저장하고 항상 고정 API로 연결한다', () => {
+  const values = new Map<string, string>();
+  vi.stubGlobal('localStorage', {
+    getItem: (key: string) => values.get(key),
+    setItem: (key: string, value: string) => values.set(key, value),
+    removeItem: (key: string) => values.delete(key),
+  });
+  expect(saveAiConnection({ endpoint: 'https://ignored.example', token: 'session-secret' })).toBe(
+    true,
+  );
+  expect(readAiConnection()).toEqual({ endpoint: AI_ENDPOINT, token: 'session-secret' });
+  expect(values.get(AI_CONNECTION_KEY)).not.toContain('endpoint');
 });
-
-it('공개 연결은 HTTPS를 요구하고 계정·쿼리·fragment 주소를 거부한다', () => {
-  expect(normalizeEndpoint(' https://example.test/mac/ ', false)).toBe('https://example.test/mac');
-  for (const url of [
-    'http://example.test',
-    'http://localhost:8765',
-    'https://user:secret@example.test',
-    'https://example.test/?token=secret',
-    'https://example.test/#secret',
-    'https://example.test/?',
-    'https://example.test/#',
-    'javascript:alert(1)',
-    '/relative',
-  ])
-    expect(() => normalizeEndpoint(url, false)).toThrow();
+it('이전 토큰만 재사용하고 이전 임의 endpoint는 절대 사용하지 않는다', () => {
+  vi.stubGlobal('localStorage', {
+    getItem: (key: string) =>
+      key === LEGACY_AI_CONNECTION_KEY
+        ? JSON.stringify({ endpoint: 'https://untrusted.example', token: 'legacy-token' })
+        : null,
+  });
+  expect(readAiConnection()).toEqual({ endpoint: AI_ENDPOINT, token: 'legacy-token' });
 });
-
-it('개발 중에도 HTTP는 루프백 주소만 허용한다', () => {
-  for (const host of ['localhost', '127.0.0.1', '[::1]'])
-    expect(normalizeEndpoint(`http://${host}:8765`, true)).toBe(`http://${host}:8765`);
-  expect(() => normalizeEndpoint('http://192.168.1.2:8765', true)).toThrow();
-  expect(() => normalizeEndpoint('http://localhost.evil.test', true)).toThrow();
-});
-
-it('전용 저장 키와 origin이 일치하는 접속 토큰만 복구한다', () => {
-  const value = {
-    endpoint: 'https://mac.example.test',
-    origin: 'https://mac.example.test',
-    token: 'session-secret',
-  };
-  const getItem = vi.fn(() => JSON.stringify(value));
-  vi.stubGlobal('localStorage', { getItem });
-  expect(readAiConnection()).toEqual({ endpoint: value.endpoint, token: value.token });
-  expect(getItem).toHaveBeenCalledWith(AI_CONNECTION_KEY);
-  value.endpoint = 'https://different.example.test';
-  expect(readAiConnection()).toBeNull();
-});
-
-it('저장소 거부와 손상된 설정은 안전하게 처리한다', () => {
+it('저장 거부와 손상된 설정에도 실행을 중단하지 않는다', () => {
   vi.stubGlobal('localStorage', {
     getItem: () => '{bad-json',
     setItem: () => {
@@ -61,13 +42,12 @@ it('저장소 거부와 손상된 설정은 안전하게 처리한다', () => {
     },
   });
   expect(readAiConnection()).toBeNull();
-  expect(saveAiConnection({ endpoint: 'https://mac.example.test', token: 'secret' })).toBe(false);
+  expect(saveAiConnection({ endpoint: AI_ENDPOINT, token: 'secret' })).toBe(false);
   expect(saveAiConnection(null)).toBe(false);
 });
-
-it('초대 fragment만 즉시 지우고 연결 전에는 네트워크 요청을 하지 않는다', () => {
+it('이전 초대 fragment는 값 보관이나 네트워크 요청 없이 지운다', () => {
   const location = new URL(
-    'https://pages.example.test/yaku_IPhone/?view=phone#keep=yes&aiEndpoint=https%3A%2F%2Fmac.example.test&aiInvite=invite-secret',
+    'https://pages.example/yaku_IPhone/#keep=yes&aiEndpoint=https://evil.example&aiInvite=secret',
   );
   const replaceState = vi.fn((_state: unknown, _title: string, next: string) => {
     location.href = new URL(next, location).href;
@@ -75,14 +55,7 @@ it('초대 fragment만 즉시 지우고 연결 전에는 네트워크 요청을 
   const fetch = vi.fn();
   vi.stubGlobal('window', { location, history: { state: { page: 1 }, replaceState } });
   vi.stubGlobal('fetch', fetch);
-  expect(consumeAiInvite()).toEqual({
-    endpoint: 'https://mac.example.test',
-    inviteKey: 'invite-secret',
-  });
-  expect(location.href).toBe('https://pages.example.test/yaku_IPhone/?view=phone#keep=yes');
-  expect(replaceState).toHaveBeenCalledWith({ page: 1 }, '', '/yaku_IPhone/?view=phone#keep=yes');
-  expect(consumeAiInvite()?.inviteKey).toBe('invite-secret');
+  clearLegacyAiFragment();
+  expect(location.hash).toBe('#keep=yes');
   expect(fetch).not.toHaveBeenCalled();
-  clearAiInvite();
-  expect(consumeAiInvite()).toBeNull();
 });

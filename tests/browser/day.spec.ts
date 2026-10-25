@@ -1,6 +1,11 @@
+import { mockStoryAi } from '../helpers/mock-story-ai';
 import { enterPasscode, unlockPhone } from '../helpers/unlock';
 import { expect, test, type Page } from '@playwright/test';
 import { launchHomeApp } from '../helpers/home';
+
+test.beforeEach(async ({ page }) => {
+  await mockStoryAi(page);
+});
 
 async function boot(page: Page) {
   await page.emulateMedia({ reducedMotion: 'reduce' });
@@ -14,7 +19,10 @@ async function openCurryFromNotification(page: Page) {
   await page.getByRole('button', { name: '하루카의 메시지 알림 열기', exact: true }).tap();
   await enterPasscode(page);
   await expect(page.getByRole('log', { name: '사와무라 하루카와의 대화' })).toBeVisible();
-  await expect(page.getByRole('button', { name: '다 샀다. 보내기', exact: true })).toBeDisabled();
+  await expect(
+    page.getByRole('textbox', { name: '하루카에게 메시지 입력', exact: true }),
+  ).toBeVisible();
+  await expect(page.getByRole('button', { name: '메시지 보내기', exact: true })).toBeDisabled();
   await page
     .getByRole('button', { name: '장보기 목록: 오늘 저녁 카레 메모 열기', exact: true })
     .tap();
@@ -80,7 +88,7 @@ for (const width of [360, 390, 430]) {
     await home(page);
     await launchHomeApp(page, 'messages');
     await page.getByRole('button', { name: '다 샀다. 보내기', exact: true }).tap();
-    await expect(page.getByText('고마워요. 밥은 해둘게요.', { exact: true })).toBeVisible();
+    await expect(page.getByText('검증용 하루카 답장', { exact: true })).toBeVisible();
     await expect(
       page.locator('.message-bubble').getByText('다 샀다.', { exact: true }),
     ).toHaveCount(1);
@@ -108,7 +116,7 @@ for (const width of [360, 390, 430]) {
     await expect(
       page.locator('.message-bubble').getByText('다 샀다.', { exact: true }),
     ).toHaveCount(1);
-    await expect(page.getByText('고마워요. 밥은 해둘게요.', { exact: true })).toHaveCount(1);
+    await expect(page.getByText('검증용 하루카 답장', { exact: true })).toHaveCount(1);
     await home(page);
     await launchHomeApp(page, 'phone');
     await expect(
@@ -118,7 +126,9 @@ for (const width of [360, 390, 430]) {
   });
 }
 
-test('확인 전 초기화는 취소되고 확인 후 대화·체크·배경을 함께 되돌린다', async ({ page }) => {
+test('확인 전 초기화는 취소되고 확인 후 로컬 체크·배경을 되돌리며 서버 대화는 보존한다', async ({
+  page,
+}) => {
   await boot(page);
   await openCurryFromNotification(page);
   await completeCurry(page);
@@ -139,7 +149,7 @@ test('확인 전 초기화는 취소되고 확인 후 대화·체크·배경을 
   await expect(page.locator('.mobile-shell')).toHaveAttribute('data-wallpaper', 'drawing');
   await home(page);
   await launchHomeApp(page, 'messages');
-  await expect(page.getByText('고마워요. 밥은 해둘게요.', { exact: true })).toBeVisible();
+  await expect(page.getByText('검증용 하루카 답장', { exact: true })).toBeVisible();
   await home(page);
   await launchHomeApp(page, 'settings');
   await page.getByRole('button', { name: '처음 상태로 되돌리기', exact: true }).tap();
@@ -174,7 +184,7 @@ test('저장소 읽기와 쓰기가 거부되어도 현재 세션의 카레 흐�
   await home(page);
   await launchHomeApp(page, 'messages');
   await page.getByRole('button', { name: '다 샀다. 보내기' }).tap();
-  await expect(page.getByText('고마워요. 밥은 해둘게요.', { exact: true })).toBeVisible();
+  await expect(page.getByText('검증용 하루카 답장', { exact: true })).toBeVisible();
   await lock(page);
   await expect(page.getByRole('button', { name: '남은 할 일 2개', exact: true })).toBeVisible();
 });

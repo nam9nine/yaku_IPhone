@@ -18,11 +18,15 @@ export interface AiMessage {
   id: string;
   role: 'user' | 'assistant';
   content: string;
-  time: string;
+  time: string | null;
+  status?: 'queued' | 'generating' | 'complete' | 'error' | 'interrupted';
+  request_id?: string | null;
+  job_id?: string | null;
 }
 export interface AiHistory {
   messages: AiMessage[];
   pending_job: string | null;
+  next_cursor: string | null;
 }
 export interface AiJob {
   job_id: string;
@@ -31,7 +35,7 @@ export interface AiJob {
   reply?: string;
   error?: { code: string; message: string };
   messages?: AiMessage[];
-  request?: { id: string; message: string; time: string };
+  request?: { id: string; message: string; time: string | null };
 }
 export type HealthStatus = 'ready' | 'loading' | 'error';
 
@@ -47,7 +51,7 @@ function messages(value: unknown): value is AiMessage[] {
         typeof message.id === 'string' &&
         (message.role === 'user' || message.role === 'assistant') &&
         typeof message.content === 'string' &&
-        typeof message.time === 'string',
+        (message.time === null || typeof message.time === 'string'),
     )
   );
 }
@@ -72,22 +76,23 @@ function serverError(status: number): AiRequestError {
       '메시지가 너무 깁니다. 1000자 이내로 줄여 다시 보내 주세요.',
       'input_limit',
     );
-  if (status === 401 || status === 403)
-    return new AiRequestError('접속 권한이 만료되었습니다. Mac에 다시 연결해 주세요.', 'auth');
+  if (status === 401) return new AiRequestError('대화 연결을 갱신하고 있습니다.', 'auth');
+  if (status === 403)
+    return new AiRequestError('지금은 대화에 연결할 수 없습니다. 잠시 후 다시 시도해 주세요.');
   if (status === 409)
-    return new AiRequestError('Mac에서 이전 답장을 처리하고 있습니다. 잠시 후 다시 시도해 주세요.');
+    return new AiRequestError('이전 답장을 처리하고 있습니다. 잠시 후 다시 시도해 주세요.');
   if (status === 429) return new AiRequestError('요청이 많습니다. 잠시 후 다시 시도해 주세요.');
   if (status === 503)
-    return new AiRequestError('Mac의 모델이 준비되지 않았습니다. 서버 상태를 확인해 주세요.');
-  return new AiRequestError('Mac에서 요청을 처리하지 못했습니다. 다시 시도해 주세요.');
+    return new AiRequestError('지금은 답장을 받을 수 없습니다. 잠시 후 다시 시도해 주세요.');
+  return new AiRequestError('요청을 처리하지 못했습니다. 다시 시도해 주세요.');
 }
 
 export function generationError(code?: string): string {
   if (code === 'context_limit')
-    return '대화가 길이 한도에 도달했습니다. 메시지를 줄이거나 Mac에 다시 연결해 새 대화를 시작해 주세요.';
-  if (code === 'output_limit')
+    return '메시지를 조금 짧게 나누어 보내 주세요. 기존 대화는 보관됩니다.';
+  if (code === 'output_limit' || code === 'response_truncated')
     return '답장이 길이 한도 안에서 끝나지 않았습니다. 질문을 더 짧게 나누어 다시 보내 주세요.';
-  return 'Mac에서 답장을 만들지 못했습니다. 서버 상태를 확인한 뒤 메시지를 다시 보내 주세요.';
+  return '답장을 만들지 못했습니다. 잠시 후 다시 보내 주세요.';
 }
 
 export async function aiRequest(
@@ -118,7 +123,7 @@ export async function aiRequest(
     return await response.json();
   } catch (error) {
     if (error instanceof AiRequestError) throw error;
-    throw new AiRequestError('Mac에 연결할 수 없습니다. 서버와 인터넷 연결을 확인해 주세요.');
+    throw new AiRequestError('지금은 대화에 연결할 수 없습니다. 잠시 후 다시 시도해 주세요.');
   } finally {
     clearTimeout(timer);
     options.signal?.removeEventListener('abort', abort);
@@ -130,20 +135,16 @@ export async function getHealth(endpoint: string, signal?: AbortSignal): Promise
   if (record(value) && ['ready', 'loading', 'error'].includes(String(value.status))) {
     return value.status as HealthStatus;
   }
-  throw new AiRequestError('Mac 서버의 응답 형식을 확인해 주세요.');
+  throw new AiRequestError('대화 서비스의 응답을 읽을 수 없습니다.');
 }
 
-export async function createSession(
-  endpoint: string,
-  inviteKey: string,
-  signal?: AbortSignal,
-): Promise<AiConnection> {
+export async function createSession(endpoint: string, signal?: AbortSignal): Promise<AiConnection> {
   const value = await aiRequest(endpoint, '/v1/sessions', {
-    body: { invite_key: inviteKey },
+    body: {},
     signal,
   });
   if (!record(value) || !validToken(value.token)) {
-    throw new AiRequestError('Mac 서버가 유효한 접속 정보를 보내지 않았습니다.');
+    throw new AiRequestError('대화 연결을 시작하지 못했습니다.');
   }
   return { endpoint, token: value.token };
 }
@@ -152,19 +153,30 @@ export async function getHistory(
   connection: AiConnection,
   character: AiCharacter,
   signal?: AbortSignal,
+  cursor?: string | null,
 ): Promise<AiHistory> {
-  const value = await aiRequest(connection.endpoint, `/v1/history?character=${character}`, {
-    token: connection.token,
-    signal,
-  });
+  const suffix = cursor ? `&cursor=${encodeURIComponent(cursor)}` : '';
+  const value = await aiRequest(
+    connection.endpoint,
+    `/v1/history?character=${character}${suffix}`,
+    {
+      token: connection.token,
+      signal,
+    },
+  );
   if (
     !record(value) ||
     !messages(value.messages) ||
-    !(value.pending_job === null || typeof value.pending_job === 'string')
+    !(value.pending_job === null || typeof value.pending_job === 'string') ||
+    !(value.next_cursor === null || typeof value.next_cursor === 'string')
   ) {
-    throw new AiRequestError('Mac 서버의 대화 기록을 읽을 수 없습니다.');
+    throw new AiRequestError('대화 기록을 읽을 수 없습니다.');
   }
-  return { messages: value.messages, pending_job: value.pending_job };
+  return {
+    messages: value.messages,
+    pending_job: value.pending_job,
+    next_cursor: value.next_cursor,
+  };
 }
 
 export async function postChat(
@@ -180,7 +192,7 @@ export async function postChat(
     signal,
   });
   if (!record(value) || typeof value.job_id !== 'string' || !value.job_id) {
-    throw new AiRequestError('Mac 서버의 전송 상태를 확인할 수 없습니다.');
+    throw new AiRequestError('전송 상태를 확인할 수 없습니다.');
   }
   return value.job_id;
 }
@@ -205,9 +217,9 @@ export async function getJob(
       (!record(value.request) ||
         typeof value.request.id !== 'string' ||
         typeof value.request.message !== 'string' ||
-        typeof value.request.time !== 'string'))
+        (value.request.time !== null && typeof value.request.time !== 'string')))
   ) {
-    throw new AiRequestError('Mac 서버의 답장 상태를 확인할 수 없습니다.');
+    throw new AiRequestError('답장 상태를 확인할 수 없습니다.');
   }
   return value as unknown as AiJob;
 }
