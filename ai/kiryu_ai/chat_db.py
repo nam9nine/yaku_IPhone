@@ -678,11 +678,15 @@ class ChatDB:
         for name, value in (
             ("r.character_id", character),
             ("r.visitor_id", visitor),
-            ("r.accepted_at>=", after),
-            ("r.accepted_at<", before),
         ):
             if value is not None:
-                conditions.append(name + ("?" if name.endswith((">=", "<")) else "=?"))
+                conditions.append(name + "=?")
+                values.append(value)
+        for operator, value in ((">=", after), ("<", before)):
+            if value is not None:
+                conditions.append(
+                    "julianday(r.accepted_at)" + operator + "julianday(?)"
+                )
                 values.append(value)
         if query:
             conditions.append(

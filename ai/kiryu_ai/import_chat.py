@@ -310,7 +310,7 @@ def import_snapshot(db, snapshot, *, quiescent=False):
         try:
             data, error = json.loads(raw), None
             if not isinstance(data, dict):
-                raise ValueError("Snapshot document must be an object")
+                raise TypeError("Snapshot document must be an object")
             if data.get("accepted_at") is not None and not isinstance(
                 data["accepted_at"], str
             ):

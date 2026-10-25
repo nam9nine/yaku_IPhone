@@ -291,6 +291,28 @@ class ChatDBTests(unittest.TestCase):
             1,
         )
 
+    def test_owner_date_filter_compares_instants_across_timezones(self):
+        job = self.exchange()
+        instant = job["accepted_at"]
+        parsed = datetime.fromisoformat(instant)
+        from datetime import timedelta, timezone
+
+        start = (
+            (parsed - timedelta(seconds=1))
+            .astimezone(timezone(timedelta(hours=9)))
+            .isoformat()
+        )
+        end = (
+            (parsed + timedelta(seconds=1))
+            .astimezone(timezone(timedelta(hours=9)))
+            .isoformat()
+        )
+        self.assertEqual(
+            [x["job_id"] for x in self.db.review_queue(after=start, before=end)],
+            [job["job_id"]],
+        )
+        self.assertEqual(self.db.review_queue(after=end), [])
+
     def test_backups_restore_consistent_commits_and_keep_seven_days_four_weeks(self):
         job = self.exchange()
         directory = self.root / "backups"
