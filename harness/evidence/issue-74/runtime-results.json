@@ -110,7 +110,8 @@
     "ai/kiryu_ai/gemma_engine.py": "662c700664657af587cfd90ffe0552a82423043c7fe06e3197f0a134560322ee",
     "ai/kiryu_ai/chat_server.py": "ee0bcb102731dd0a35fdce4d92fcb47c2b6dc2380c2718a6bd2beb0dd71d2e47",
     "ai/chat/cards.json": "a4396fee857edfe0daf088fda000dc24c5bb5d4059a2f02bf430b0a6c7588a1e",
-    "ai/chat/registry.json": "ba20d54439bab8d1e6d8d66ff65c8a1e94017eace02f6b74ad2c039e40b7fc31"
+    "ai/chat/registry.json": "ba20d54439bab8d1e6d8d66ff65c8a1e94017eace02f6b74ad2c039e40b7fc31",
+    "ai/kiryu_ai/chat_stack.py": "e034caa5c81052844036bcb7e3cd37729406e6cd609b20d135db2ef2a849060e"
   },
   "public_route_boundaries": {
     "/v1/admin/queue": 404,
@@ -121,5 +122,18 @@
     "files": 51,
     "private_directory_included": false,
     "model_gateway_tunnel_secret_matches": 0
+  },
+  "actual_process_restart": {
+    "endpoint": "https://yaku-iphone-chat.yaku-iphone.workers.dev",
+    "synthetic": true,
+    "scope": "Actual model/API/admin/namedTunnel process restart with same SQLite state",
+    "same_token_valid": true,
+    "exact_completed_jobs": 2,
+    "exact_histories": 2,
+    "uuid_replays_without_generation": 2,
+    "pages_ui": "pending final deployment",
+    "pass": true,
+    "initial_failure": "Immediate restart first rejected TIME_WAIT as a live listener; fixed reuse-address probe and independently verified 10 TCP cycles",
+    "readiness_observation": "Initial public health was503; a60-second readiness observer expired. Subsequent health wasready and exact job/history/UUID recovery passed. Model startup is excluded from warm latency metrics."
   }
 }

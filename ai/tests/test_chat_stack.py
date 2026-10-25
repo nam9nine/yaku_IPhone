@@ -2,15 +2,30 @@
 
 import argparse
 import json
+import socket
 import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from kiryu_ai.chat_stack import run
+from kiryu_ai.chat_stack import ensure_ports_available, run
 
 
 class StackTests(unittest.TestCase):
+    def test_port_probe_rejects_live_listener_but_allows_closed_connection(self):
+        with socket.socket() as listener:
+            listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            listener.bind(("127.0.0.1", 0))
+            listener.listen(1)
+            address = listener.getsockname()
+            with self.assertRaises(OSError):
+                ensure_ports_available((address[1],))
+            with socket.create_connection(address, timeout=2) as client:
+                connection, _ = listener.accept()
+                connection.close()
+                self.assertEqual(client.recv(1), b"")
+        ensure_ports_available((address[1],))
+
     def test_missing_credentials_do_not_spawn_or_replace_model_key(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

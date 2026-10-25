@@ -40,6 +40,16 @@ def wait_ready(url, child, stopped, timeout=240):
     raise RuntimeError("Service startup interrupted or timed out")
 
 
+def ensure_ports_available(ports):
+    for port in ports:
+        with socket.socket() as probe:
+            # A recently closed connection may remain in TIME_WAIT. Allow that
+            # state while still rejecting a live listener (no SO_REUSEPORT).
+            probe.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            probe.bind(("127.0.0.1", port))
+            probe.listen(1)
+
+
 def run(args):
     os.umask(0o077)
     repository = Path(__file__).resolve().parents[2]
@@ -50,9 +60,7 @@ def run(args):
     logs = state / "logs"
     logs.mkdir(exist_ok=True, mode=0o700)
     # A second stack must fail before replacing the model key or loading weights.
-    for port in (8791, 8766, 8767):
-        with socket.socket() as probe:
-            probe.bind(("127.0.0.1", port))
+    ensure_ports_available((8791, 8766, 8767))
     for path in (cloudflare / "gateway-secret.txt", cloudflare / "tunnel-token.txt"):
         if not path.is_file() or path.stat().st_mode & 0o077:
             raise ValueError(
