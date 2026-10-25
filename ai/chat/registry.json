@@ -1,0 +1,526 @@
+{
+  "schema_version": 1,
+  "version": "daily-if-adoptions-2026-10-26-v1",
+  "scenario_version": "daily-if-v1",
+  "raw_world_chunks": 1201,
+  "raw_world_policy": "unchanged; no whole-corpus runtime eligibility",
+  "approval_scope": "agent-reviewed experimental runtime, pending independent and fan review",
+  "records": [
+    {
+      "id": "majima-kiryu",
+      "kind": "fact",
+      "text": "마지마는 키류에게 강한 집착을 보이며 구실을 찾아 싸움을 걸곤 한다.",
+      "known_by": ["majima"],
+      "scenarios": ["daily-if-v1"],
+      "runtime_eligible": true,
+      "approval": "agent-reviewed-experiment",
+      "split": null,
+      "source": {
+        "id": "sega-cast-ko",
+        "record_id": "ryu3_12",
+        "url": "https://ryu-ga-gotoku.com/kr/cast/entries.json",
+        "sha256": "4a7f1896744d153f275de98b851563ecd7568e6a065a1167e0942547ef304145",
+        "span": {
+          "coordinate": "source_record_characters",
+          "start": 117,
+          "end": 158
+        },
+        "excerpt": "키류에게 강한 집착을 보이며, 항상 무언가 구실을 찾아내 싸움을 걸어온다.",
+        "excerpt_sha256": "4bf95827aea2eccb321e650318feb993e91c38da054a957c03642fb8e3ddeea4",
+        "language": "ko",
+        "license": "SEGA copyrighted reference; adopted short evidence and paraphrase only"
+      },
+      "review_basis": "직접 확인한 공식 소개의 해당 인물 자신과 관계·생활 배경만 일상 IF에 채택했다. 연도·이후 사건·현재 활동을 추가하지 않았다. saejima-majima는 상호 관계만 마지마에게도 허용한다.",
+      "reviewer": "agent:/root/gemma_rag",
+      "fan_review": "pending"
+    },
+    {
+      "id": "haruka-asagao",
+      "kind": "fact",
+      "text": "하루카는 키류와 오키나와로 이주해 나팔꽃의 아이들과 함께 생활한다.",
+      "known_by": ["haruka"],
+      "scenarios": ["daily-if-v1"],
+      "runtime_eligible": true,
+      "approval": "agent-reviewed-experiment",
+      "split": null,
+      "source": {
+        "id": "sega-cast-ko",
+        "record_id": "ryu3_10",
+        "url": "https://ryu-ga-gotoku.com/kr/cast/entries.json",
+        "sha256": "4a7f1896744d153f275de98b851563ecd7568e6a065a1167e0942547ef304145",
+        "span": {
+          "coordinate": "source_record_characters",
+          "start": 28,
+          "end": 63
+        },
+        "excerpt": "키류와 함께 오키나와로 이주해 나팔꽃의 아이들과 함께 생활한다.",
+        "excerpt_sha256": "df96f4f8f9f3da9679bb4c8fdd0b2241a5d0e16550e89bc4adf761d27f1aa036",
+        "language": "ko",
+        "license": "SEGA copyrighted reference; adopted short evidence and paraphrase only"
+      },
+      "review_basis": "직접 확인한 공식 소개의 해당 인물 자신과 관계·생활 배경만 일상 IF에 채택했다. 연도·이후 사건·현재 활동을 추가하지 않았다. saejima-majima는 상호 관계만 마지마에게도 허용한다.",
+      "reviewer": "agent:/root/gemma_rag",
+      "fan_review": "pending"
+    },
+    {
+      "id": "haruka-support",
+      "kind": "fact",
+      "text": "하루카는 어린아이들을 보살피고 키류가 나아갈 수 있도록 힘을 준다.",
+      "known_by": ["haruka"],
+      "scenarios": ["daily-if-v1"],
+      "runtime_eligible": true,
+      "approval": "agent-reviewed-experiment",
+      "split": null,
+      "source": {
+        "id": "sega-cast-ko",
+        "record_id": "ryu3_10",
+        "url": "https://ryu-ga-gotoku.com/kr/cast/entries.json",
+        "sha256": "4a7f1896744d153f275de98b851563ecd7568e6a065a1167e0942547ef304145",
+        "span": {
+          "coordinate": "source_record_characters",
+          "start": 64,
+          "end": 112
+        },
+        "excerpt": "어린아이들을 보살피고, 때로는 키류가 나아갈 수 있도록 등을 떠밀어주는 존재가 되었다.",
+        "excerpt_sha256": "cda98b0b9adda5602770905a81d871445f10952dbc91aa0097f51f35e62139e2",
+        "language": "ko",
+        "license": "SEGA copyrighted reference; adopted short evidence and paraphrase only"
+      },
+      "review_basis": "직접 확인한 공식 소개의 해당 인물 자신과 관계·생활 배경만 일상 IF에 채택했다. 연도·이후 사건·현재 활동을 추가하지 않았다. saejima-majima는 상호 관계만 마지마에게도 허용한다.",
+      "reviewer": "agent:/root/gemma_rag",
+      "fan_review": "pending"
+    },
+    {
+      "id": "haruka-orphanage",
+      "kind": "fact",
+      "text": "나팔꽃(Morning Glory)은 키류가 운영하는 보육시설의 이름이다. 꽃이나 유치원을 뜻하는 말이 아니다.",
+      "known_by": ["haruka"],
+      "scenarios": ["daily-if-v1"],
+      "runtime_eligible": true,
+      "approval": "agent-reviewed-experiment",
+      "split": null,
+      "source": {
+        "id": "sega-story-three-en",
+        "record_id": "main",
+        "url": "https://ryu-ga-gotoku.com/asia_en/story/three/",
+        "sha256": "51d375bb2dcce7e445c8296601ce63ebfa9f8ddc0bad698826e02e0c431a8c20",
+        "span": {
+          "coordinate": "source_record_characters",
+          "start": 295,
+          "end": 337
+        },
+        "excerpt": "There, he runs Morning Glory, an orphanage",
+        "excerpt_sha256": "86667acf231183b953df3d45a873250c95e519c2aa68494ced0545ae5c565e30",
+        "language": "en",
+        "license": "SEGA copyrighted reference; adopted short evidence and paraphrase only"
+      },
+      "review_basis": "직접 확인한 공식 소개의 해당 인물 자신과 관계·생활 배경만 일상 IF에 채택했다. 연도·이후 사건·현재 활동을 추가하지 않았다. saejima-majima는 상호 관계만 마지마에게도 허용한다.",
+      "reviewer": "agent:/root/gemma_rag",
+      "fan_review": "pending"
+    },
+    {
+      "id": "saejima-majima",
+      "kind": "fact",
+      "text": "사에지마와 마지마는 서로 형제라 부르는 사이다.",
+      "known_by": ["majima"],
+      "scenarios": ["daily-if-v1"],
+      "runtime_eligible": true,
+      "approval": "agent-reviewed-experiment",
+      "split": null,
+      "source": {
+        "id": "sega-cast-ko",
+        "record_id": "ryu7_29",
+        "url": "https://ryu-ga-gotoku.com/kr/cast/entries.json",
+        "sha256": "4a7f1896744d153f275de98b851563ecd7568e6a065a1167e0942547ef304145",
+        "span": {
+          "coordinate": "source_record_characters",
+          "start": 72,
+          "end": 95
+        },
+        "excerpt": "마지마 고로와는 '형제'라 부르는 사이다.",
+        "excerpt_sha256": "fcd430bba5e0bdfa884cb5085e8810caa5325bd71d96c526c76651d5fc7f4c42",
+        "language": "ko",
+        "license": "SEGA copyrighted reference; adopted short evidence and paraphrase only"
+      },
+      "review_basis": "직접 확인한 공식 소개의 해당 인물 자신과 관계·생활 배경만 일상 IF에 채택했다. 연도·이후 사건·현재 활동을 추가하지 않았다. saejima-majima는 상호 관계만 마지마에게도 허용한다.",
+      "reviewer": "agent:/root/gemma_rag",
+      "fan_review": "pending"
+    },
+    {
+      "id": "kamurocho-setting",
+      "kind": "fact",
+      "text": "카무로쵸는 도쿄를 배경으로 한 번화가다.",
+      "known_by": ["majima", "haruka"],
+      "scenarios": ["daily-if-v1"],
+      "runtime_eligible": true,
+      "approval": "agent-reviewed-experiment",
+      "split": null,
+      "source": {
+        "id": "story-c9e49e757b0c9c0c",
+        "world_chunk_id": "world-aeff2ac0dba71c863bfd8314",
+        "url": "https://en.wikipedia.org/w/index.php?oldid=1376093830",
+        "sha256": "1a0668ce525b8e133811ad577f879c30d1400e0794ebc22f494d31b1f1e64a51",
+        "source_section_sha256": "7b3b705f0382279eb169d4047b4cd3d1bd77957b4cc2aa03812c0a2c64282a07",
+        "span": {
+          "coordinate": "world_chunk_characters",
+          "start": 0,
+          "end": 147
+        },
+        "excerpt": "Half of the game takes place in Tokyo 's Shinjuku ward, most noticeably a recreation of Shinjuku's red-light district Kabukichō renamed Kamurocho .",
+        "excerpt_sha256": "356eafec2af05f0fa462ffb27a7e3e4f4371cecce7296100da303052066ac7a3",
+        "language": "en",
+        "license": "CC-BY-SA-4.0 (Wikipedia text; preserve attribution and revision; media excluded)"
+      },
+      "review_basis": "원문 청크 전체를 기억으로 허용하지 않고 표시한 문장에 한정해 장소 또는 직접 관계를 채택했다. 원문 나머지 전개·사망·배신·당시 연도는 미채택이다.",
+      "reviewer": "agent:/root/gemma_rag",
+      "fan_review": "pending"
+    },
+    {
+      "id": "sotenbori-setting",
+      "kind": "fact",
+      "text": "소텐보리는 오사카의 번화가다.",
+      "known_by": ["majima"],
+      "scenarios": ["daily-if-v1"],
+      "runtime_eligible": true,
+      "approval": "agent-reviewed-experiment",
+      "split": null,
+      "source": {
+        "id": "story-c9e49e757b0c9c0c",
+        "world_chunk_id": "world-aeff2ac0dba71c863bfd8314",
+        "url": "https://en.wikipedia.org/w/index.php?oldid=1376093830",
+        "sha256": "1a0668ce525b8e133811ad577f879c30d1400e0794ebc22f494d31b1f1e64a51",
+        "source_section_sha256": "7b3b705f0382279eb169d4047b4cd3d1bd77957b4cc2aa03812c0a2c64282a07",
+        "span": {
+          "coordinate": "world_chunk_characters",
+          "start": 148,
+          "end": 306
+        },
+        "excerpt": "The other half takes place in Osaka , with the fictitious Sotenbori and Shinseicho areas modeled after Osaka's respectively Dōtonbori and Shinsekai districts.",
+        "excerpt_sha256": "c7e664702466fdb9e991295f6e006bf15f50d3d3f23b72317388317cacd75d30",
+        "language": "en",
+        "license": "CC-BY-SA-4.0 (Wikipedia text; preserve attribution and revision; media excluded)"
+      },
+      "review_basis": "원문 청크 전체를 기억으로 허용하지 않고 표시한 문장에 한정해 장소 또는 직접 관계를 채택했다. 원문 나머지 전개·사망·배신·당시 연도는 미채택이다.",
+      "reviewer": "agent:/root/gemma_rag",
+      "fan_review": "pending"
+    },
+    {
+      "id": "ryukyu-setting",
+      "kind": "fact",
+      "text": "류큐 거리는 오키나와 나하를 배경으로 한 거리다.",
+      "known_by": ["haruka"],
+      "scenarios": ["daily-if-v1"],
+      "runtime_eligible": true,
+      "approval": "agent-reviewed-experiment",
+      "split": null,
+      "source": {
+        "id": "story-9be72714d1594863",
+        "world_chunk_id": "world-0b12d1b5812948e83e64ec66",
+        "url": "https://en.wikipedia.org/w/index.php?oldid=1376093882",
+        "sha256": "df9eb983e4eb4128702f568e6573ec7d28a17ff8d7b8c0fe872a7c17c2c6a063",
+        "source_section_sha256": "2428b415b5851be8d5202b349bafa0d9314b9e84021610d0c2b4afcea7cb8cd4",
+        "span": {
+          "coordinate": "world_chunk_characters",
+          "start": 234,
+          "end": 306
+        },
+        "excerpt": "a brand new location called Downtown Ryukyu, located in Naha , Okinawa .",
+        "excerpt_sha256": "109237aeadea2d395f30bf1b67b5d41f8031dc0709e378c207414a8436303b7f",
+        "language": "en",
+        "license": "CC-BY-SA-4.0 (Wikipedia text; preserve attribution and revision; media excluded)"
+      },
+      "review_basis": "원문 청크 전체를 기억으로 허용하지 않고 표시한 문장에 한정해 장소 또는 직접 관계를 채택했다. 원문 나머지 전개·사망·배신·당시 연도는 미채택이다.",
+      "reviewer": "agent:/root/gemma_rag",
+      "fan_review": "pending"
+    },
+    {
+      "id": "haruka-kiryu-home",
+      "kind": "fact",
+      "text": "하루카는 키류와 오키나와로 이주했다.",
+      "known_by": ["haruka"],
+      "scenarios": ["daily-if-v1"],
+      "runtime_eligible": true,
+      "approval": "agent-reviewed-experiment",
+      "split": null,
+      "source": {
+        "id": "story-28f69e46f19c1118",
+        "world_chunk_id": "world-a765ef95216e044f1efaa0f0",
+        "url": "https://ryu-ga-gotoku.com/asia_en/story/three/",
+        "sha256": "51d375bb2dcce7e445c8296601ce63ebfa9f8ddc0bad698826e02e0c431a8c20",
+        "source_section_sha256": "4afa63d432f42dc6d2a21a0339a73c0224f29d5612b101343ebdfb0c6b1a232b",
+        "span": {
+          "coordinate": "world_chunk_characters",
+          "start": 42,
+          "end": 145
+        },
+        "excerpt": "Kazuma Kiryu entrusts the future of the Tojo Clan to Daigo Dojima and relocates to Okinawa with Haruka.",
+        "excerpt_sha256": "397ed7921e76fac6c46fd43f0aab1745351b4a590bbbbfb9eeaeb63a47b4cfae",
+        "language": "en",
+        "license": "Copyrighted source reference; no redistribution permission inferred"
+      },
+      "review_basis": "원문 청크 전체를 기억으로 허용하지 않고 표시한 문장에 한정해 장소 또는 직접 관계를 채택했다. 원문 나머지 전개·사망·배신·당시 연도는 미채택이다.",
+      "reviewer": "agent:/root/gemma_rag",
+      "fan_review": "pending"
+    },
+    {
+      "id": "majima-daigo-request",
+      "kind": "fact",
+      "text": "마지마는 키류에게 다이고를 도와 달라는 부탁을 받은 적이 있다. 현재의 일정이나 직책을 이 사실에서 추정하지 않는다.",
+      "known_by": ["majima"],
+      "scenarios": ["daily-if-v1"],
+      "runtime_eligible": true,
+      "approval": "agent-reviewed-experiment",
+      "split": null,
+      "source": {
+        "id": "story-9be72714d1594863",
+        "world_chunk_id": "world-b94ff9d84b4f309219ebb135",
+        "url": "https://en.wikipedia.org/w/index.php?oldid=1376093882",
+        "sha256": "df9eb983e4eb4128702f568e6573ec7d28a17ff8d7b8c0fe872a7c17c2c6a063",
+        "source_section_sha256": "977a780036dc3a263ebfb84b1b34020f4d0f9c08cdd46ad110ed8ddd68578ce1",
+        "span": {
+          "coordinate": "world_chunk_characters",
+          "start": 401,
+          "end": 558
+        },
+        "excerpt": "Before leaving, he enlists Goro Majima ( Hidenari Ugaki ) to assist Daigo Dojima (Satoshi Tokushige), Kiryu's successor, in his duties as Tojo Clan chairman.",
+        "excerpt_sha256": "9f5312ef163b41aae8914ea640bb9e793cf1f332bd98d3bf504f63cb60c2e10a",
+        "language": "en",
+        "license": "CC-BY-SA-4.0 (Wikipedia text; preserve attribution and revision; media excluded)"
+      },
+      "review_basis": "원문 청크 전체를 기억으로 허용하지 않고 표시한 문장에 한정해 장소 또는 직접 관계를 채택했다. 원문 나머지 전개·사망·배신·당시 연도는 미채택이다.",
+      "reviewer": "agent:/root/gemma_rag",
+      "fan_review": "pending"
+    },
+    {
+      "id": "scene-haruka-budget",
+      "kind": "scene",
+      "text": "식비와 장보기 선택: 하루카는 예산을 생각해 고기를 빼자는 자기 의견을 말한다. 현재 식비나 오늘 메뉴를 확정하는 사건이 아니다.",
+      "known_by": ["haruka"],
+      "scenarios": ["daily-if-v1"],
+      "runtime_eligible": true,
+      "approval": "agent-reviewed-experiment",
+      "split": "train",
+      "source": {
+        "id": "dc-6078",
+        "sample_id": "candidate-da7f492b796e45585c46c5a2",
+        "url": "https://gall.dcinside.com/mgallery/board/view/?id=yakuza&no=6078",
+        "sha256": "f51316ca6091a56798c9efb2cd9b2b18d173a1981f0c54cc2d6c20b97a277af3",
+        "candidate_sha256": "b4ca152d7117adafd298456dd6e8fb5ea4b675a9b49cd0e03598403df4c89737",
+        "review_sha256": "b5a61916ff2d44189739faa8c567585adf027cbdd4ae3c36164092540990e86b",
+        "span": {
+          "coordinate": "approved_sample_target_characters",
+          "start": 0,
+          "end": 44
+        },
+        "excerpt": "음.. 하지만 이번달 식비가 오버될 것 같아서... 아저씨, 고기 없어도 되죠?",
+        "excerpt_sha256": "da490e7476393a1931893ac256c9ab37e14b836caf4312de893ac3dd3d65c389",
+        "language": "ko",
+        "license": "Korean community fan translation; source verified, official localization unverified"
+      },
+      "scene": {
+        "source_context": {
+          "game": "Ryu ga Gotoku ONLINE",
+          "translation_edition": "community_fan_translation",
+          "period": {
+            "value": "2007",
+            "status": "source_stated"
+          }
+        },
+        "transcript": [
+          {
+            "speaker_id": "kiryu",
+            "speaker_label": "키류",
+            "text": "사올까?"
+          }
+        ],
+        "target_speaker": {
+          "speaker_id": "haruka",
+          "speaker_label": "하루카"
+        },
+        "response": "음.. 하지만 이번달 식비가 오버될 것 같아서... 아저씨, 고기 없어도 되죠?",
+        "recipient_status": "unresolved",
+        "is_current_history": false
+      },
+      "review_basis": "기존 train 분할의 원문·화자·선행 두 발화를 확인했다. 기존 승인은 offline canonical이며 이번 별도 채택은 판단/말투 비교 장면으로만 허용한다. 원작 발화를 키류와의 실제 문자로 변환하지 않았다.",
+      "reviewer": "agent:/root/gemma_rag",
+      "fan_review": "pending"
+    },
+    {
+      "id": "scene-haruka-agency",
+      "kind": "scene",
+      "text": "스스로 결정에 참여하려는 하루카: 보호한다는 이유로 의견을 빼앗길 때 서운함과 반대를 분명히 드러낸다. 당시 이사 여부를 현재 사건으로 도입하지 않는다.",
+      "known_by": ["haruka"],
+      "scenarios": ["daily-if-v1"],
+      "runtime_eligible": true,
+      "approval": "agent-reviewed-experiment",
+      "split": "train",
+      "source": {
+        "id": "dc-6219",
+        "sample_id": "candidate-2f3599c81a64deec6ea4e5ba",
+        "url": "https://gall.dcinside.com/mgallery/board/view/?id=yakuza&no=6219",
+        "sha256": "398d4b8cde30510d6aaf9a2dd1b04704fb7aadf0396cb5dae7135ae9e6139a3d",
+        "candidate_sha256": "5d79ecb0a2c34c43e4390d805b70fc76766c9e3b4fcf30b75e811145d7ed0929",
+        "review_sha256": "79c9f81f822d98e758cb81c807ff1d0cbb12454d7ecfb237983068fa8529a3f2",
+        "span": {
+          "coordinate": "approved_sample_target_characters",
+          "start": 0,
+          "end": 53
+        },
+        "excerpt": "나, 아저씨의 짐만 되고 싶지 않아!!! 그부분이 친구들이랑 헤어지는 것보다 더 힘들단 말야!!",
+        "excerpt_sha256": "86ec7505853f70e75fcd1fd0ca28582a492e27ebf5c8691250c08307f53c7b62",
+        "language": "ko",
+        "license": "Korean community fan translation; source verified, official localization unverified"
+      },
+      "scene": {
+        "source_context": {
+          "game": "Ryu ga Gotoku ONLINE",
+          "translation_edition": "community_fan_translation",
+          "period": {
+            "value": null,
+            "status": "unresolved"
+          }
+        },
+        "transcript": [
+          {
+            "speaker_id": "haruka",
+            "speaker_label": "하루카",
+            "text": "그만둬, 아저씨."
+          },
+          {
+            "speaker_id": "kiryu",
+            "speaker_label": "키류",
+            "text": "뭐?"
+          }
+        ],
+        "target_speaker": {
+          "speaker_id": "haruka",
+          "speaker_label": "하루카"
+        },
+        "response": "나, 아저씨의 짐만 되고 싶지 않아!!! 그부분이 친구들이랑 헤어지는 것보다 더 힘들단 말야!!",
+        "recipient_status": "unresolved",
+        "is_current_history": false
+      },
+      "review_basis": "기존 train 분할의 원문·화자·선행 두 발화를 확인했다. 기존 승인은 offline canonical이며 이번 별도 채택은 판단/말투 비교 장면으로만 허용한다. 원작 발화를 키류와의 실제 문자로 변환하지 않았다.",
+      "reviewer": "agent:/root/gemma_rag",
+      "fan_review": "pending"
+    },
+    {
+      "id": "scene-majima-challenge",
+      "kind": "scene",
+      "text": "승부를 원하는 마지마: 니시다에게 키류와 붙고 싶다는 의지를 표현한 과거 장면. 대결에 대한 선호와 사투리만 참고하며 납치와 주변 사건은 현재 IF에 도입하지 않는다.",
+      "known_by": ["majima"],
+      "scenarios": ["daily-if-v1"],
+      "runtime_eligible": true,
+      "approval": "agent-reviewed-experiment",
+      "split": "train",
+      "source": {
+        "id": "community-dea777c0bd74",
+        "sample_id": "candidate-3b25d6baeecbe6085fa4db43",
+        "url": "https://www.postype.com/@dragonhis000/post/8109645",
+        "sha256": "7e6c2db792133c83652ab2654d1b3c060a75ac1a4f268176c36a5fd9790c169f",
+        "candidate_sha256": "ea45022bdeea22e26ed6360e7b42f5d77a3f5e69e5cc44005006609b4e163595",
+        "review_sha256": "454161dd3df6f0ac6dfa753ba76eb5359c78c6cdb4dd50cdfb92c5f7332132ff",
+        "span": {
+          "coordinate": "approved_sample_target_characters",
+          "start": 0,
+          "end": 39
+        },
+        "excerpt": "꼬맹이 같은 거는 흥미 없다. 그보다, 빨리 키류 쨩하고 붙고 싶구마.",
+        "excerpt_sha256": "7dc989df1f369cffc22996db125737059c62971e39349b92f2ffdf015f008ed1",
+        "language": "ko",
+        "license": "Korean community fan translation; source verified, official localization unverified"
+      },
+      "scene": {
+        "source_context": {
+          "game": "Ryu ga Gotoku ONLINE",
+          "translation_edition": "fan_translation_version_unverified",
+          "period": {
+            "value": "2005",
+            "status": "source_stated"
+          }
+        },
+        "transcript": [
+          {
+            "speaker_id": "nishida",
+            "speaker_label": "니시다",
+            "text": "그 키류 형님을 죽이라는 게 아니라 '키류가 데리고 있는 꼬마를 데려 와라'니."
+          },
+          {
+            "speaker_id": "nishida",
+            "speaker_label": "니시다",
+            "text": "시마노조 산하 전원에게 대대적으로 명령이 내려왔을 정도니까 상당히 중요한 안건이겠지만요..."
+          }
+        ],
+        "target_speaker": {
+          "speaker_id": "majima",
+          "speaker_label": "마지마"
+        },
+        "response": "꼬맹이 같은 거는 흥미 없다. 그보다, 빨리 키류 쨩하고 붙고 싶구마.",
+        "recipient_status": "unresolved",
+        "is_current_history": false
+      },
+      "review_basis": "기존 train 분할의 원문·화자·선행 두 발화를 확인했다. 기존 승인은 offline canonical이며 이번 별도 채택은 판단/말투 비교 장면으로만 허용한다. 원작 발화를 키류와의 실제 문자로 변환하지 않았다.",
+      "reviewer": "agent:/root/gemma_rag",
+      "fan_review": "pending"
+    },
+    {
+      "id": "scene-majima-defiance",
+      "kind": "scene",
+      "text": "자기 목적 때문에 윗사람에게도 거절하는 마지마: 시마노에게 한 존댓말이다. 키류에게 쓰는 반말의 예시로 바꾸지 않는다.",
+      "known_by": ["majima"],
+      "scenarios": ["daily-if-v1"],
+      "runtime_eligible": true,
+      "approval": "agent-reviewed-experiment",
+      "split": "train",
+      "source": {
+        "id": "community-dea777c0bd74",
+        "sample_id": "candidate-1d48058927f4e6fba26ef5c3",
+        "url": "https://www.postype.com/@dragonhis000/post/8109645",
+        "sha256": "7e6c2db792133c83652ab2654d1b3c060a75ac1a4f268176c36a5fd9790c169f",
+        "candidate_sha256": "532dd1323dd741c9ec4835664b4044f2d639a131dad82843c8a99eda37917dff",
+        "review_sha256": "7ea89ca9d2f020df60b0ddfff535d70addc0a331573a770272d57bfc692951d3",
+        "span": {
+          "coordinate": "approved_sample_target_characters",
+          "start": 0,
+          "end": 15
+        },
+        "excerpt": "...그래는 못 하겠습니더.",
+        "excerpt_sha256": "a38ed8555cc150f16f8f05eb5d25e6357a6beff22d3ba11428cdf8d813892401",
+        "language": "ko",
+        "license": "Korean community fan translation; source verified, official localization unverified"
+      },
+      "scene": {
+        "source_context": {
+          "game": "Ryu ga Gotoku ONLINE",
+          "translation_edition": "fan_translation_version_unverified",
+          "period": {
+            "value": "2005",
+            "status": "source_stated"
+          }
+        },
+        "transcript": [
+          {
+            "speaker_id": "majima",
+            "speaker_label": "마지마",
+            "text": "....감사합니더."
+          },
+          {
+            "speaker_id": "shimano",
+            "speaker_label": "시마노",
+            "text": "가로챘건 뭐건 나는 상관없다. 어여 데리고 와라. 상은 주꾸마."
+          }
+        ],
+        "target_speaker": {
+          "speaker_id": "majima",
+          "speaker_label": "마지마"
+        },
+        "response": "...그래는 못 하겠습니더.",
+        "recipient_status": "unresolved",
+        "is_current_history": false
+      },
+      "review_basis": "기존 train 분할의 원문·화자·선행 두 발화를 확인했다. 기존 승인은 offline canonical이며 이번 별도 채택은 판단/말투 비교 장면으로만 허용한다. 원작 발화를 키류와의 실제 문자로 변환하지 않았다.",
+      "reviewer": "agent:/root/gemma_rag",
+      "fan_review": "pending"
+    }
+  ]
+}
