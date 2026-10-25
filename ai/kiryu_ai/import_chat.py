@@ -309,6 +309,12 @@ def import_snapshot(db, snapshot, *, quiescent=False):
         source_key = "legacy-web/" + path.relative_to(root).as_posix()
         try:
             data, error = json.loads(raw), None
+            if not isinstance(data, dict):
+                raise ValueError("Snapshot document must be an object")
+            if data.get("accepted_at") is not None and not isinstance(
+                data["accepted_at"], str
+            ):
+                raise ValueError("Legacy acceptance timestamp must be text")
             if path.parent.name == "history":
                 conversation, _, messages = normalize_history(data)
                 for user, assistant in zip(messages[::2], messages[1::2], strict=True):
@@ -332,7 +338,7 @@ def import_snapshot(db, snapshot, *, quiescent=False):
             else 1
             if item[0].parent.name == "jobs"
             else 2,
-            (item[4] or {}).get("accepted_at", ""),
+            (item[4] or {}).get("accepted_at") or "",
             item[3],
         )
     )

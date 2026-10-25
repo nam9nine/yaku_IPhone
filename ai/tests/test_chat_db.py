@@ -450,6 +450,16 @@ class LegacyImportTests(unittest.TestCase):
         )
         self.assertEqual(self.db.history(*self.scope), self.messages)
 
+    def test_malformed_job_does_not_abort_other_source_imports(self):
+        self.write("jobs/malformed-list.json", [{}])
+        self.write("jobs/malformed-time.json", {"accepted_at": 123})
+        self.write("jobs/malformed-null.json", {"accepted_at": None})
+        report = import_snapshot(self.db, self.snapshot, quiescent=True)
+        self.assertEqual(len(report["conflicts"]), 3)
+        self.assertEqual(self.db.history(*self.scope), self.messages)
+        repeated = import_snapshot(self.db, self.snapshot, quiescent=True)
+        self.assertEqual(repeated["imported"], 0)
+
     def test_id_collision_rolls_back_the_entire_source(self):
         other_scope = ["other-visitor", "haruka", "daily-if-v1"]
         self.write(
