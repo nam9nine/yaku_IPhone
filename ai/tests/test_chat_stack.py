@@ -8,7 +8,8 @@ import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from kiryu_ai.chat_stack import ensure_ports_available, run
+from kiryu_ai.chat_stack import ensure_ports_available, run, wait_manifest
+from kiryu_ai.gemma_engine import DEPLOYMENT_PROFILE
 
 
 class StackTests(unittest.TestCase):
@@ -60,7 +61,7 @@ class StackTests(unittest.TestCase):
                 path.write_text("PRIVATE_FIXTURE")
                 path.chmod(0o600)
             (root / "runtime-manifest.json").write_text(
-                json.dumps({"template_sha256": "fixture"})
+                json.dumps({"template_sha256": "fixture", **DEPLOYMENT_PROFILE})
             )
             stopped = []
             model, api = MagicMock(), MagicMock()
@@ -87,6 +88,29 @@ class StackTests(unittest.TestCase):
                 "PRIVATE_FIXTURE",
             )
             self.assertNotIn("PRIVATE_FIXTURE", str(spawn.call_args_list[1].args))
+
+    def test_old_manifest_is_not_ready_until_current_profile_is_published(self):
+        path, child, stopped = MagicMock(), MagicMock(), MagicMock()
+        child.poll.return_value = None
+        stopped.is_set.return_value = False
+        path.read_text.side_effect = [
+            json.dumps({"template_sha256": "same-template", "thinking": False}),
+            json.dumps({"template_sha256": "same-template", **DEPLOYMENT_PROFILE}),
+        ]
+        wait_manifest(path, child, stopped)
+        self.assertEqual(path.read_text.call_count, 2)
+        stopped.wait.assert_called_once_with(0.1)
+
+    def test_stale_manifest_timeout_never_starts_api(self):
+        path, child, stopped = MagicMock(), MagicMock(), MagicMock()
+        child.poll.return_value = None
+        stopped.is_set.return_value = False
+        path.read_text.return_value = '{"template_sha256":"old"}'
+        with (
+            patch("kiryu_ai.chat_stack.time.monotonic", side_effect=[0, 0, 2]),
+            self.assertRaisesRegex(RuntimeError, "current runtime profile"),
+        ):
+            wait_manifest(path, child, stopped, timeout=1)
 
 
 if __name__ == "__main__":

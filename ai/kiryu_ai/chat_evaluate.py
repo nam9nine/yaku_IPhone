@@ -13,7 +13,13 @@ from pathlib import Path
 
 from .chat_prompt import ChatPromptBuilder
 from .chat_retrieval import E5Onnx, HybridRetriever
-from .gemma_engine import GemmaEngine, GemmaFailure
+from .gemma_engine import (
+    CONTEXT_TOKENS,
+    OUTPUT_TOKENS,
+    REASONING_TOKENS,
+    GemmaEngine,
+    GemmaFailure,
+)
 
 
 def percentile(values, quantile):
@@ -51,7 +57,13 @@ def evaluate(args):
     output.mkdir(parents=True, exist_ok=True, mode=0o700)
     if (output / "responses.jsonl").exists():
         raise ValueError("Use a fresh output directory; never mix runs")
-    engine = GemmaEngine(api_key_file=args.api_key_file, manifest_path=args.manifest)
+    engine = GemmaEngine(
+        api_key_file=args.api_key_file,
+        manifest_path=args.manifest,
+        thinking=args.thinking == "on",
+        reasoning_tokens=args.reasoning_tokens,
+        context_tokens=args.context_tokens,
+    )
     engine.record_template()
     retriever = HybridRetriever(args.registry, E5Onnx(args.embedding_dir))
     builder = ChatPromptBuilder(args.registry, args.cards, retriever)
@@ -63,18 +75,27 @@ def evaluate(args):
             {"role": "user", "content": "준비됐어?"},
         ],
         seed=42,
-        max_tokens=32,
+        max_tokens=args.max_tokens,
     )
     initial_memory = memory_observation(args.model_pid)
 
     def run_turn(case_id, character, history, message, turn, criteria, phase):
         begin = time.monotonic()
         assembled = builder.build(
-            case_id, character, "daily-if-v1", message, history, engine.count_tokens
+            case_id,
+            character,
+            "daily-if-v1",
+            message,
+            history,
+            engine.count_tokens,
+            context_limit=args.context_tokens,
+            max_tokens=args.max_tokens,
         )
         error = None
         try:
-            result = engine.reply(assembled["messages"], seed=42)
+            result = engine.reply(
+                assembled["messages"], seed=42, max_tokens=args.max_tokens
+            )
         except GemmaFailure as failure:
             result, error = failure.result, failure.code
         total = time.monotonic() - begin
@@ -181,8 +202,9 @@ def evaluate(args):
         "performance_workload": "first60 conversation turns, warm, no queue, includes retrieval+native counting",
         "p50_seconds": percentile(timings, 0.5),
         "p95_seconds": percentile(timings, 0.95),
-        "goal_seconds": 20,
-        "goal_pass": len(measured) == 60 and percentile(timings, 0.95) <= 20,
+        "goal_seconds": None,
+        "goal_pass": None,
+        "latency_policy": "Quality-first bounded inference; UI delivery delay is measured separately",
         "initial_memory": initial_memory,
         "final_memory": memory_observation(args.model_pid),
         "peak_observed_completion_tokens": max(
@@ -224,6 +246,10 @@ def main():
     ]:
         p.add_argument("--" + name, required=True)
     p.add_argument("--model-pid", type=int)
+    p.add_argument("--thinking", choices=["on", "off"], default="on")
+    p.add_argument("--reasoning-tokens", type=int, default=REASONING_TOKENS)
+    p.add_argument("--context-tokens", type=int, default=CONTEXT_TOKENS)
+    p.add_argument("--max-tokens", type=int, default=OUTPUT_TOKENS)
     evaluate(p.parse_args())
 
 

@@ -401,9 +401,12 @@ class ProductionManifestTests(unittest.TestCase):
                 }
             ],
             "template_sha256": hashlib.sha256(self.template.encode()).hexdigest(),
-            "context_tokens": 4096,
+            "context_tokens": 6144,
             "sampling": dict(SAMPLING),
-            "thinking": False,
+            "thinking": True,
+            "reasoning_budget_tokens": -1,
+            "max_output_tokens": 3072,
+            "generation_timeout_seconds": 120,
             "cache_prompt": False,
         }
         self.manifest.write_text(json.dumps(self.data))
@@ -414,7 +417,7 @@ class ProductionManifestTests(unittest.TestCase):
             "build_info": f"{assets.BINARY_TAG}-{assets.LLAMA_COMMIT[:9]}",
             "total_slots": 1,
             "default_generation_settings": {
-                "n_ctx": 4096,
+                "n_ctx": 6144,
                 "params": {"reasoning_format": "none", "lora": []},
             },
             "modalities": {"vision": False, "video": False, "audio": False},

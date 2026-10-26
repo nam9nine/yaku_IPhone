@@ -21,8 +21,18 @@ import time
 from pathlib import Path
 from urllib.parse import urlsplit
 
-CONTEXT_TOKENS = 4096
-OUTPUT_TOKENS = 256
+CONTEXT_TOKENS = 6144
+OUTPUT_TOKENS = 3072
+REASONING_TOKENS = -1
+GENERATION_TIMEOUT = 120
+DEPLOYMENT_PROFILE = {
+    "context_tokens": CONTEXT_TOKENS,
+    "thinking": True,
+    "reasoning_budget_tokens": REASONING_TOKENS,
+    "max_output_tokens": OUTPUT_TOKENS,
+    "generation_timeout_seconds": GENERATION_TIMEOUT,
+    "cache_prompt": False,
+}
 MODEL_ALIAS = "kiryu-gemma4-26b-a4b-q4km"
 SAMPLING = {
     "temperature": 1.0,
@@ -32,10 +42,6 @@ SAMPLING = {
     "repeat_penalty": 1.0,
     "presence_penalty": 0.0,
     "frequency_penalty": 0.0,
-}
-TEMPLATE_OPTIONS = {
-    "chat_template_kwargs": {"enable_thinking": False},
-    "reasoning_effort": "none",
 }
 CONTROL = re.compile(
     r"<\|[^>]*>|<[^<]*\|>|</?think>|</?thought>|<bos>|<eos>|<pad>|</s>",
@@ -99,8 +105,11 @@ class GemmaEngine:
         *,
         api_key=None,
         api_key_file=None,
-        timeout=60,
+        timeout=GENERATION_TIMEOUT,
         manifest_path=None,
+        thinking=True,
+        reasoning_tokens=REASONING_TOKENS,
+        context_tokens=CONTEXT_TOKENS,
     ):
         parsed = urlsplit(base_url)
         if (
@@ -115,8 +124,25 @@ class GemmaEngine:
             raise ValueError("Gemma endpoint must be an explicit loopback HTTP origin")
         self.host = parsed.hostname
         self.port = parsed.port or 8791
-        if not 0 < timeout <= 60:
-            raise ValueError("Generation timeout must be positive and at most 60s")
+        if not 0 < timeout <= GENERATION_TIMEOUT:
+            raise ValueError("Generation timeout must be positive and at most 120s")
+        if type(thinking) is not bool:
+            raise ValueError("Thinking mode must be boolean")
+        if type(reasoning_tokens) is not int or not -1 <= reasoning_tokens <= 1024:
+            raise ValueError(
+                "Reasoning budget must be -1 (natural end) or between 0 and 1024 tokens"
+            )
+        if (
+            type(context_tokens) is not int
+            or not 4096 <= context_tokens <= CONTEXT_TOKENS
+        ):
+            raise ValueError("Context budget must match a supported native allocation")
+        self.thinking = thinking
+        self.reasoning_tokens = reasoning_tokens if thinking else 0
+        self.context_tokens = context_tokens
+        self.template_options = {"chat_template_kwargs": {"enable_thinking": thinking}}
+        if not thinking:
+            self.template_options["reasoning_effort"] = "none"
         self.timeout = timeout
         self.api_key = (
             Path(api_key_file).read_text().strip() if api_key_file else api_key
@@ -173,9 +199,12 @@ class GemmaEngine:
         if not isinstance(template, str) or not template:
             raise GemmaFailure("model_template_missing")
         self.manifest["template_sha256"] = hashlib.sha256(template.encode()).hexdigest()
-        self.manifest["context_tokens"] = CONTEXT_TOKENS
+        self.manifest["context_tokens"] = self.context_tokens
         self.manifest["sampling"] = dict(SAMPLING)
-        self.manifest["thinking"] = False
+        self.manifest["thinking"] = self.thinking
+        self.manifest["reasoning_budget_tokens"] = self.reasoning_tokens
+        self.manifest["max_output_tokens"] = OUTPUT_TOKENS
+        self.manifest["generation_timeout_seconds"] = self.timeout
         self.manifest["cache_prompt"] = False
         if self.manifest_path:
             _private_text(
@@ -187,7 +216,7 @@ class GemmaEngine:
     def count_tokens(self, messages):
         prompt = self._json(
             "/apply-template",
-            {"messages": _messages(messages), **TEMPLATE_OPTIONS},
+            {"messages": _messages(messages), **self.template_options},
         ).get("prompt")
         if not isinstance(prompt, str) or not prompt:
             raise GemmaFailure("model_template_missing")
@@ -203,7 +232,9 @@ class GemmaEngine:
 
     def reply(self, messages, *, seed=None, max_tokens=OUTPUT_TOKENS):
         if not isinstance(max_tokens, int) or not 1 <= max_tokens <= OUTPUT_TOKENS:
-            raise ValueError("Output budget must be 1–256 tokens")
+            raise ValueError(f"Output budget must be 1–{OUTPUT_TOKENS} tokens")
+        if self.thinking and max_tokens <= self.reasoning_tokens:
+            raise ValueError("Output budget must reserve tokens after reasoning")
         if seed is not None and (type(seed) is not int or not 0 <= seed < 2**32):
             raise ValueError("Seed must be a uint32 or None")
         messages = _messages(messages)
@@ -211,7 +242,7 @@ class GemmaEngine:
         # from local callers of the same engine instance.
         with self._lock:
             token_count = self.count_tokens(messages)
-            if token_count + max_tokens > CONTEXT_TOKENS:
+            if token_count + max_tokens > self.context_tokens:
                 raise GemmaFailure("context_limit")
             return self._reply(messages, token_count, seed, max_tokens)
 
@@ -225,7 +256,8 @@ class GemmaEngine:
             "cache_prompt": False,
             "id_slot": 0,
             "reasoning_format": "deepseek",
-            **TEMPLATE_OPTIONS,
+            "reasoning_budget_tokens": self.reasoning_tokens,
+            **self.template_options,
             **SAMPLING,
         }
         if seed is not None:
@@ -239,11 +271,12 @@ class GemmaEngine:
         finish_reason = None
         usage = {}
         protocol_error = None
+        reasoning_seen = False
 
         def result():
             content = "".join(parts)
             return {
-                "reply": content,
+                "reply": "" if CONTROL.search(content) else content,
                 "finish_reason": finish_reason,
                 "total_seconds": time.monotonic() - started,
                 "ttft_seconds": first,
@@ -252,6 +285,14 @@ class GemmaEngine:
                 "usage": dict(usage),
                 "sampling": {**SAMPLING, "seed": seed},
                 "model_manifest": dict(self.manifest),
+                "generation": {
+                    "thinking": self.thinking,
+                    "reasoning_budget_tokens": self.reasoning_tokens,
+                    "max_tokens": max_tokens,
+                    "context_tokens": self.context_tokens,
+                    "timeout_seconds": self.timeout,
+                    "reasoning_observed": reasoning_seen,
+                },
             }
 
         try:
@@ -295,10 +336,19 @@ class GemmaEngine:
                     usage = event["usage"]
                 for choice in event.get("choices", []):
                     delta = choice.get("delta", {})
-                    if delta.get("reasoning_content") or delta.get("tool_calls"):
-                        # Do not collect thought text, let alone return it as SMS.
-                        protocol_error = "unexpected_reasoning"
+                    if delta.get("tool_calls"):
+                        protocol_error = "unexpected_tool_call"
                         break
+                    thought = delta.get("reasoning_content")
+                    if thought is not None and not isinstance(thought, str):
+                        protocol_error = "model_protocol"
+                        break
+                    if thought:
+                        # Consume the separate channel without storing its text.
+                        if not self.thinking:
+                            protocol_error = "unexpected_reasoning"
+                            break
+                        reasoning_seen = True
                     content = delta.get("content")
                     if content:
                         if not isinstance(content, str):
@@ -327,9 +377,10 @@ class GemmaEngine:
             raise GemmaFailure("generation_timeout", output)
         if protocol_error:
             raise GemmaFailure(protocol_error, output)
-        if CONTROL.search(output["reply"]):
-            # Retain malformed content only in the failure result for local review;
-            # callers must not add failed results to the visible or model history.
+        if CONTROL.search("".join(parts)):
+            # A malformed channel may contain hidden reasoning: discard it even
+            # from private failure records, not merely the visible SMS history.
+            output["reply"] = ""
             raise GemmaFailure("invalid_output", output)
         if finish_reason == "length":
             raise GemmaFailure("response_truncated", output)
@@ -375,7 +426,9 @@ class GemmaProcess:
             "off",
             "--jinja",
             "--reasoning",
-            "off",
+            "on",
+            "--reasoning-budget",
+            str(REASONING_TOKENS),
             "--reasoning-format",
             "deepseek",
             "--no-reasoning-preserve",

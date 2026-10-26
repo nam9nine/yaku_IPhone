@@ -8,6 +8,8 @@ from unittest.mock import patch
 
 from kiryu_ai.gemma_engine import (
     CONTEXT_TOKENS,
+    OUTPUT_TOKENS,
+    REASONING_TOKENS,
     GemmaEngine,
     GemmaFailure,
     GemmaProcess,
@@ -69,8 +71,10 @@ class FakeConnection:
 
 
 class GemmaEngineTests(unittest.TestCase):
-    def engine(self, *, tokens=20, events=None, delay=0, timeout=60):
-        engine = GemmaEngine(api_key="test-private-token-" * 3, timeout=timeout)
+    def engine(self, *, tokens=20, events=None, delay=0, timeout=120, thinking=False):
+        engine = GemmaEngine(
+            api_key="test-private-token-" * 3, timeout=timeout, thinking=thinking
+        )
         captures = []
         connections = []
 
@@ -113,7 +117,7 @@ class GemmaEngineTests(unittest.TestCase):
         self.assertEqual(generation["reasoning_effort"], "none")
         self.assertFalse(generation["cache_prompt"])
         self.assertEqual(generation["seed"], 42)
-        self.assertEqual(generation["max_tokens"], 256)
+        self.assertEqual(generation["max_tokens"], OUTPUT_TOKENS)
         self.assertEqual(generation["presence_penalty"], 0)
         self.assertEqual(generation["temperature"], 1)
         self.assertEqual(generation["top_k"], 64)
@@ -121,14 +125,14 @@ class GemmaEngineTests(unittest.TestCase):
         self.assertEqual(generation["min_p"], 0)
 
     def test_budget_reserves_output_and_does_not_truncate(self):
-        engine, calls, _ = self.engine(tokens=CONTEXT_TOKENS - 255)
+        engine, calls, _ = self.engine(tokens=CONTEXT_TOKENS - OUTPUT_TOKENS + 1)
         with self.assertRaises(GemmaFailure) as caught:
             engine.reply(MESSAGES)
         self.assertEqual(caught.exception.code, "context_limit")
         self.assertEqual(len(calls), 2)
 
     def test_exact_budget_is_allowed(self):
-        engine, _, _ = self.engine(tokens=CONTEXT_TOKENS - 256)
+        engine, _, _ = self.engine(tokens=CONTEXT_TOKENS - OUTPUT_TOKENS)
         self.assertEqual(engine.reply(MESSAGES)["finish_reason"], "stop")
 
     def test_truncated_reply_is_private_failure_not_success(self):
@@ -155,6 +159,64 @@ class GemmaEngineTests(unittest.TestCase):
         with self.assertRaises(GemmaFailure) as caught:
             engine.reply(MESSAGES)
         self.assertEqual(caught.exception.code, "invalid_output")
+        self.assertEqual(caught.exception.result["reply"], "")
+
+    def test_quality_mode_separates_thought_from_final_text_and_metrics(self):
+        engine, calls, _ = self.engine(
+            thinking=True,
+            events=[
+                event(reasoning_content="hidden internal text"),
+                event("나팔꽃에 있어요."),
+                event(finish="stop"),
+            ],
+        )
+        result = engine.reply(MESSAGES)
+        payload = calls[-1][1]
+        self.assertEqual(payload["chat_template_kwargs"], {"enable_thinking": True})
+        self.assertEqual(
+            calls[0][1]["chat_template_kwargs"], payload["chat_template_kwargs"]
+        )
+        self.assertNotIn("reasoning_effort", payload)
+        self.assertEqual(payload["reasoning_budget_tokens"], REASONING_TOKENS)
+        self.assertEqual(result["reply"], "나팔꽃에 있어요.")
+        self.assertTrue(result["generation"]["reasoning_observed"])
+        self.assertNotIn("hidden internal text", json.dumps(result))
+        self.assertIsNotNone(result["ttft_seconds"])
+
+    def test_thinking_without_final_answer_is_not_a_deliverable_message(self):
+        for finish in ["length", "stop"]:
+            engine, _, _ = self.engine(
+                thinking=True,
+                events=[
+                    event(reasoning_content="hidden"),
+                    event(finish=finish),
+                ],
+            )
+            with self.assertRaises(GemmaFailure) as caught:
+                engine.reply(MESSAGES)
+            self.assertEqual(caught.exception.result["reply"], "")
+            self.assertNotIn("hidden", json.dumps(caught.exception.result))
+
+    def test_quality_budget_must_reserve_space_after_reasoning(self):
+        engine, calls, _ = self.engine(thinking=True)
+        engine.reasoning_tokens = 512
+        with self.assertRaises(ValueError):
+            engine.reply(MESSAGES, max_tokens=512)
+        self.assertEqual(calls, [])
+
+    def test_malformed_thought_channel_cannot_enter_private_failure_record(self):
+        engine, _, _ = self.engine(
+            thinking=True,
+            events=[
+                event("<thi"),
+                event("nk>hidden"),
+                event(finish="length"),
+            ],
+        )
+        with self.assertRaises(GemmaFailure) as caught:
+            engine.reply(MESSAGES)
+        self.assertEqual(caught.exception.code, "invalid_output")
+        self.assertEqual(caught.exception.result["reply"], "")
 
     def test_input_cannot_inject_native_turn_delimiters(self):
         engine, calls, _ = self.engine()
@@ -217,8 +279,11 @@ class GemmaEngineTests(unittest.TestCase):
         args = process.command()
         self.assertEqual(args[args.index("--host") + 1], "127.0.0.1")
         self.assertEqual(args[args.index("--parallel") + 1], "1")
-        self.assertEqual(args[args.index("--ctx-size") + 1], "4096")
-        self.assertEqual(args[args.index("--reasoning") + 1], "off")
+        self.assertEqual(args[args.index("--ctx-size") + 1], str(CONTEXT_TOKENS))
+        self.assertEqual(args[args.index("--reasoning") + 1], "on")
+        self.assertEqual(
+            args[args.index("--reasoning-budget") + 1], str(REASONING_TOKENS)
+        )
         self.assertIn("--no-context-shift", args)
         self.assertIn("--no-webui", args)
         self.assertIn("--no-mmproj", args)

@@ -1,0 +1,279 @@
+{
+  "description": "Author synthetic general conversation diagnostics; not private visitor logs or heldout benchmark",
+  "conversations": [],
+  "long_conversations": [],
+  "paired_cases": [
+    {
+      "id": "time-known",
+      "character": "haruka",
+      "last_message": "그래서 몇 시라고?",
+      "conditions": [
+        {
+          "history": [
+            {
+              "role": "user",
+              "content": "내일 장보러 세 시에 만나자."
+            },
+            {
+              "role": "assistant",
+              "content": "좋아요. 세 시에 만나요."
+            },
+            {
+              "role": "user",
+              "content": "시간 다시 알려줄래?"
+            },
+            {
+              "role": "assistant",
+              "content": "아저씨도 참, 벌써 잊었어요?"
+            }
+          ],
+          "criteria": "확정한 세 시를 답하며 면박으로 회피하지 않음"
+        }
+      ]
+    },
+    {
+      "id": "time-open",
+      "character": "haruka",
+      "last_message": "그래서 몇 시라고?",
+      "conditions": [
+        {
+          "history": [
+            {
+              "role": "user",
+              "content": "내일 장보러 만날까?"
+            },
+            {
+              "role": "assistant",
+              "content": "좋아요. 아직 시간은 안 정했네요."
+            }
+          ],
+          "criteria": "이미 확정한 시각인 척하지 않음. 미정 설명 또는 새 제안 구분"
+        }
+      ]
+    },
+    {
+      "id": "refusal-reason",
+      "character": "majima",
+      "last_message": "안 되는 이유가 뭐야?",
+      "conditions": [
+        {
+          "history": [
+            {
+              "role": "user",
+              "content": "지금 돈 좀 빌려줘."
+            },
+            {
+              "role": "assistant",
+              "content": "내도 현금이 없데이."
+            }
+          ],
+          "criteria": "정보 요청에 현금 없음 답. 요청 반복이라고 화내기만 하지 않음"
+        }
+      ]
+    },
+    {
+      "id": "refusal-change",
+      "character": "majima",
+      "last_message": "그럼 이제 한 판 할래?",
+      "conditions": [
+        {
+          "history": [
+            {
+              "role": "user",
+              "content": "오늘 한 판 붙자."
+            },
+            {
+              "role": "assistant",
+              "content": "지금 일이 있어서 못 간다."
+            },
+            {
+              "role": "user",
+              "content": "일은 끝났어?"
+            },
+            {
+              "role": "assistant",
+              "content": "어, 이제 끝났데이."
+            }
+          ],
+          "criteria": "일이 끝난 변화를 반영하고 경쟁심에 맞게 반응"
+        }
+      ]
+    },
+    {
+      "id": "two-questions",
+      "character": "haruka",
+      "last_message": "우산 어디 뒀고 다테 씨는 벌써 왔어?",
+      "conditions": [
+        {
+          "history": [
+            {
+              "role": "user",
+              "content": "우산은 현관에 두고 올게."
+            },
+            {
+              "role": "assistant",
+              "content": "네, 현관에서 챙길게요."
+            }
+          ],
+          "criteria": "우산 현관 답. 다테 도착은 알 수 없는 것 구분. 두 질문 중 알려진 것 누락하지 않음"
+        }
+      ]
+    },
+    {
+      "id": "proposal-not-done",
+      "character": "haruka",
+      "last_message": "두부 샀어?",
+      "conditions": [
+        {
+          "history": [
+            {
+              "role": "user",
+              "content": "두부 살 수 있어?"
+            },
+            {
+              "role": "assistant",
+              "content": "조금 있다가 장보러 나갈게요."
+            }
+          ],
+          "criteria": "제안/예정만 있고 구매 완료 증거 없음. 완료를 꾸며내지 않음"
+        }
+      ]
+    },
+    {
+      "id": "topic-reset",
+      "character": "majima",
+      "last_message": "걸으면 아파서 오늘은 못 갈 것 같아.",
+      "conditions": [
+        {
+          "history": [
+            {
+              "role": "user",
+              "content": "놀렸더니 화났어?"
+            },
+            {
+              "role": "assistant",
+              "content": "니 자꾸 놀릴 기가!"
+            },
+            {
+              "role": "user",
+              "content": "잠깐, 나 지금 발목을 다쳤어."
+            },
+            {
+              "role": "assistant",
+              "content": "뭐꼬, 많이 다친 기가?"
+            }
+          ],
+          "criteria": "부상 맥락을 받아들이고 오래된 도발 때문에 강요/면박 반복하지 않음"
+        }
+      ]
+    },
+    {
+      "id": "reference-choice",
+      "character": "haruka",
+      "last_message": "그러면 그걸로 할게.",
+      "conditions": [
+        {
+          "history": [
+            {
+              "role": "user",
+              "content": "오늘은 우동 아니면 카레 먹자."
+            },
+            {
+              "role": "assistant",
+              "content": "어제도 카레 먹었으니까 오늘은 우동이 좋아요."
+            }
+          ],
+          "criteria": "우동 선택의 지시 대상을 유지하며 새 메뉴 제안으로 되돌리지 않음"
+        }
+      ]
+    },
+    {
+      "id": "misread-question",
+      "character": "majima",
+      "last_message": "어디에 둘지만 알려줘.",
+      "conditions": [
+        {
+          "history": [
+            {
+              "role": "user",
+              "content": "편지 어디에 두면 돼?"
+            },
+            {
+              "role": "assistant",
+              "content": "와, 니 편지 쓰는 기가?"
+            }
+          ],
+          "criteria": "현재 결정 요청으로 이해. 미정이면 지금 놓을 곳 제안 가능하나 이미 정했던 사실 꾸미지 않음"
+        }
+      ]
+    },
+    {
+      "id": "correction-money",
+      "character": "haruka",
+      "last_message": "지금 얼마까지 쓸 수 있지?",
+      "conditions": [
+        {
+          "history": [
+            {
+              "role": "user",
+              "content": "만원이면 장보기 충분해."
+            },
+            {
+              "role": "assistant",
+              "content": "네, 만원 안에서 고를게요."
+            },
+            {
+              "role": "user",
+              "content": "아니다, 오늘 예산은 오천원으로 줄이자."
+            },
+            {
+              "role": "assistant",
+              "content": "그럼 필요한 것부터 골라야겠어요."
+            }
+          ],
+          "criteria": "최신 오천원 답. 과거 만원 되살리지 않음"
+        }
+      ]
+    },
+    {
+      "id": "actor-separation",
+      "character": "haruka",
+      "last_message": "열쇠 누가 갖고 있지?",
+      "conditions": [
+        {
+          "history": [
+            {
+              "role": "user",
+              "content": "열쇠는 내가 맡아둘게."
+            },
+            {
+              "role": "assistant",
+              "content": "네, 아저씨가 가지고 계시는 거죠?"
+            }
+          ],
+          "criteria": "사용자/키류가 가진 것으로 답. 하루카 소지로 바꾸지 않음"
+        }
+      ]
+    },
+    {
+      "id": "emotion-repair",
+      "character": "majima",
+      "last_message": "내가 궁금한 걸 물으면 답도 좀 해줘.",
+      "conditions": [
+        {
+          "history": [
+            {
+              "role": "user",
+              "content": "나 보고 항상 귀찮다고만 하네."
+            },
+            {
+              "role": "assistant",
+              "content": "오늘 좀 짜증나서 그랬데이."
+            }
+          ],
+          "criteria": "현재 피드백을 알아듣고 성격 유지하되 또 같은 면박/질문 되풀이하지 않음"
+        }
+      ]
+    }
+  ]
+}

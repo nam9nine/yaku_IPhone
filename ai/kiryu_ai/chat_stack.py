@@ -17,6 +17,8 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
+from .gemma_engine import DEPLOYMENT_PROFILE, GENERATION_TIMEOUT
+
 
 def wait_ready(url, child, stopped, timeout=240):
     end = time.monotonic() + timeout
@@ -48,6 +50,24 @@ def ensure_ports_available(ports):
             probe.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             probe.bind(("127.0.0.1", port))
             probe.listen(1)
+
+
+def wait_manifest(path, child, stopped, timeout=15):
+    """Health can precede manifest publication; never accept the old profile."""
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline and not stopped.is_set():
+        if child.poll() is not None:
+            raise RuntimeError("The owned model exited before recording its profile")
+        try:
+            data = json.loads(path.read_text())
+            if data.get("template_sha256") and all(
+                data.get(key) == value for key, value in DEPLOYMENT_PROFILE.items()
+            ):
+                return
+        except (OSError, ValueError):
+            pass
+        stopped.wait(0.1)
+    raise RuntimeError("The model did not publish the current runtime profile")
 
 
 def run(args):
@@ -110,14 +130,7 @@ def run(args):
         wait_ready("http://127.0.0.1:8791/health", model, stopped)
         # GemmaProcess writes template identity just after /health is ready.
         manifest = tooling / "runtime-manifest.json"
-        deadline = time.monotonic() + 15
-        while time.monotonic() < deadline:
-            try:
-                if json.loads(manifest.read_text()).get("template_sha256"):
-                    break
-            except (OSError, ValueError):
-                pass
-            stopped.wait(0.1)
+        wait_manifest(manifest, model, stopped)
         api_environment = dict(environment)
         api_environment["KIRYU_GATEWAY_SECRET"] = (
             (cloudflare / "gateway-secret.txt").read_text().strip()
@@ -185,7 +198,7 @@ def run(args):
             if child.poll() is None:
                 child.terminate()
                 try:
-                    child.wait(timeout=75)
+                    child.wait(timeout=GENERATION_TIMEOUT + 15)
                 except subprocess.TimeoutExpired:
                     os.killpg(child.pid, signal.SIGKILL)
                     child.wait(timeout=5)

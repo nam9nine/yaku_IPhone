@@ -10,7 +10,12 @@ from kiryu_ai.chat_prompt import (
     InputBudgetError,
     reconstruct_input,
 )
-from kiryu_ai.chat_retrieval import HybridRetriever, load_registry, normalize
+from kiryu_ai.chat_retrieval import (
+    HybridRetriever,
+    load_registry,
+    normalize,
+    stable_hash,
+)
 
 
 def history(pairs):
@@ -353,6 +358,169 @@ class PromptTests(unittest.TestCase):
             all(c["fan_review"] == "pending" for c in cards["characters"].values())
         )
 
+    def test_fixed_relationships_survive_unrelated_query_without_ranking(self):
+        result = self.build("ZXQ9876")
+        card = self.builder.cards["characters"]["haruka"]
+        fixed = [
+            hit
+            for hit in result["retrieval_hits"]
+            if hit["retrieval_mode"] == "character-card"
+        ]
+        self.assertEqual([hit["id"] for hit in fixed], card["relationship_refs"])
+        self.assertTrue(fixed)
+        self.assertEqual(
+            result["metadata"]["relationship_record_ids"], card["relationship_refs"]
+        )
+        for hit in fixed:
+            self.assertIn(hit["text"], result["messages"][0]["content"])
+            self.assertTrue(hit["source"]["url"])
+            self.assertTrue(hit["source"]["excerpt_sha256"])
+            self.assertTrue(hit["review_basis"])
+            self.assertIsNone(hit["score"])
+        self.assertNotIn("saejima-majima", {hit["id"] for hit in fixed})
+        self.assertEqual(reconstruct_input(result["metadata"], []), result["messages"])
+
+    def test_relationship_anchor_is_not_duplicated_by_query_retrieval(self):
+        result = self.build("유미하고 다테 씨는 어떤 분이야?")
+        identifiers = [hit["id"] for hit in result["retrieval_hits"]]
+        self.assertEqual(len(identifiers), len(set(identifiers)))
+        self.assertNotIn('"id":"haruka-yumi-mother"', result["messages"][-1]["content"])
+
+    def test_fixed_relationships_fail_closed_on_every_authorization_boundary(self):
+        for change in (
+            {"runtime_eligible": False},
+            {"runtime_eligible": 1},
+            {"approval": "research-candidate-pending-coordinator-review"},
+            {"known_by": ["majima"]},
+            {"known_by": "haruka"},
+            {"scenarios": ["other"]},
+            {"scenarios": "daily-if-v1"},
+            {"split": "test"},
+            {"split": "holdout"},
+            {"kind": "scene"},
+        ):
+            with self.subTest(change=change):
+                self.builder = ChatPromptBuilder()
+                card = self.builder.cards["characters"]["haruka"]
+                identifier = card["relationship_refs"][0]
+                record = next(
+                    r for r in self.builder.registry["records"] if r["id"] == identifier
+                )
+                record.update(change)
+                with self.assertRaises(ValueError):
+                    self.build(
+                        count_tokens=lambda _: self.fail(
+                            "Unauthorized fact reached tokenizer"
+                        )
+                    )
+
+    def test_fixed_relationship_list_cannot_silently_lose_or_expand_core(self):
+        for refs in (
+            None,
+            [],
+            "haruka-yumi-mother",
+            ["missing"],
+            ["haruka-yumi-mother"] * 2,
+            [str(i) for i in range(11)],
+        ):
+            with self.subTest(refs=refs):
+                self.builder.cards["characters"]["haruka"]["relationship_refs"] = refs
+                with self.assertRaises(ValueError):
+                    self.build()
+
+    def test_native_budget_keeps_fixed_facts_and_auditable_seed_or_rejects(self):
+        past = history([(f"old{i}", f"reply{i}") for i in range(9)])
+        limit = 600
+        calls = []
+
+        def counter(messages):
+            calls.append(copy.deepcopy(messages))
+            return 601 if len(messages) > 2 else limit
+
+        result = self.build(
+            "최근 정한 일은?",
+            past,
+            count_tokens=counter,
+            context_limit=700,
+            max_tokens=100,
+        )
+        self.assertEqual(result["metadata"]["input_tokens"], limit)
+        self.assertEqual(len(result["messages"]), 2)
+        self.assertTrue(all(call[0] == calls[0][0] for call in calls))
+        for identifier in result["metadata"]["relationship_record_ids"]:
+            self.assertNotIn(identifier, result["metadata"]["dropped_ids"])
+            record = next(
+                r for r in self.builder.registry["records"] if r["id"] == identifier
+            )
+            self.assertIn(record["text"], result["messages"][0]["content"])
+        self.assertEqual(
+            reconstruct_input(result["metadata"], past), result["messages"]
+        )
+        with self.assertRaises(InputBudgetError):
+            self.build(
+                count_tokens=lambda _: limit + 1, context_limit=700, max_tokens=100
+            )
+
+    def test_initial_state_is_scoped_authored_data_not_a_canon_claim_or_history_update(
+        self,
+    ):
+        for character, location in (("haruka", "나팔꽃"), ("majima", "카무로쵸")):
+            with self.subTest(character=character):
+                past = history(
+                    [
+                        (
+                            "나는 오키나와야. 다음 주에 만나자.",
+                            "소텐보리에 도착했어. 다음 주 일정은 나중에 정하자.",
+                        ),
+                    ]
+                )
+                original = copy.deepcopy(past)
+                result = self.builder.build(
+                    "visitor-a",
+                    character,
+                    "daily-if-v1",
+                    "지금은?",
+                    past,
+                    count_tokens=lambda _: 100,
+                )
+                seed = result["metadata"]["initial_state_snapshot"]
+                self.assertEqual(seed["subject"], character)
+                self.assertEqual(seed["location"], location)
+                self.assertEqual(seed["approval"], "user-approved-if")
+                self.assertEqual(past, original)
+                self.assertEqual(result["messages"][1]["content"], past[0]["content"])
+                self.assertEqual(result["messages"][2]["content"], past[1]["content"])
+                self.assertEqual(
+                    result["metadata"]["input_sha256"], stable_hash(result["messages"])
+                )
+                self.assertEqual(
+                    reconstruct_input(result["metadata"], past), result["messages"]
+                )
+
+    def test_foreign_or_unapproved_initial_state_never_reaches_input(self):
+        for field, value in (
+            ("subject", "majima"),
+            ("scenario_version", "other"),
+            ("approval", "inferred-from-canon"),
+        ):
+            with self.subTest(field=field):
+                self.builder = ChatPromptBuilder()
+                self.builder.cards["characters"]["haruka"]["initial_state"][field] = (
+                    value
+                )
+                with self.assertRaises(ValueError):
+                    self.build()
+
+    def test_recorded_initial_state_is_an_immutable_snapshot(self):
+        result = self.build()
+        self.builder.cards["characters"]["haruka"]["initial_state"]["location"] = (
+            "changed"
+        )
+        self.assertEqual(
+            result["metadata"]["initial_state_snapshot"]["location"], "나팔꽃"
+        )
+        self.assertEqual(reconstruct_input(result["metadata"], []), result["messages"])
+
 
 class RetrievalTests(unittest.TestCase):
     def test_filter_runs_before_semantic_encoder_or_fts(self):
@@ -375,12 +543,14 @@ class RetrievalTests(unittest.TestCase):
 
     def test_missing_evidence_and_heldout_split_are_rejected(self):
         original = load_registry(DEFAULT_DATA / "registry.json")
-        for change in ("test", "hash"):
+        for change in ("test", "dev", "valid", "holdout", "hash", "scope"):
             value = copy.deepcopy(original)
-            if change == "test":
-                value["records"][0]["split"] = "test"
-            else:
+            if change == "hash":
                 value["records"][0]["source"]["excerpt"] = "tampered"
+            elif change == "scope":
+                value["records"][0]["known_by"] = "majima"
+            else:
+                value["records"][0]["split"] = change
             with tempfile.TemporaryDirectory() as directory:
                 path = Path(directory) / "registry.json"
                 path.write_text(json.dumps(value))
@@ -392,6 +562,19 @@ class RetrievalTests(unittest.TestCase):
         self.assertIn("majima", value)
         self.assertIn("morning glory", value)
         self.assertIn("kiryu", value)
+
+    def test_fixed_facts_are_excluded_before_dynamic_encoder_and_rank(self):
+        encoder = RecordingEncoder()
+        retriever = HybridRetriever(DEFAULT_DATA / "registry.json", encoder)
+        identifier = "haruka-yumi-mother"
+        record = next(r for r in retriever.registry["records"] if r["id"] == identifier)
+        hits = retriever.evidence(
+            "haruka", "daily-if-v1", "유미", exclude_ids=[identifier]
+        )
+        self.assertNotIn(record["text"], encoder.seen)
+        self.assertNotIn(
+            identifier, {hit["id"] for group in hits.values() for hit in group}
+        )
 
     def test_scene_speaker_and_recipient_are_preserved(self):
         registry = load_registry(DEFAULT_DATA / "registry.json")
