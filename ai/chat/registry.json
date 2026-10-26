@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "version": "daily-if-adoptions-2026-10-26-v1",
+  "version": "daily-if-adoptions-2026-10-26-v2",
   "scenario_version": "daily-if-v1",
   "raw_world_chunks": 1201,
   "raw_world_policy": "unchanged; no whole-corpus runtime eligibility",
@@ -121,29 +121,29 @@
     {
       "id": "saejima-majima",
       "kind": "fact",
-      "text": "사에지마와 마지마는 서로 형제라 부르는 사이다.",
+      "text": "사에지마와 마지마는 서로 형제라 부르는 의형제이자 오랜 동료다. 친형·동생이나 상하관계가 아니다. 마지마는 사에지마를 형님이라고 높여 부르지 않는다.",
       "known_by": ["majima"],
       "scenarios": ["daily-if-v1"],
       "runtime_eligible": true,
       "approval": "agent-reviewed-experiment",
       "split": null,
       "source": {
-        "id": "sega-cast-ko",
-        "record_id": "ryu7_29",
-        "url": "https://ryu-ga-gotoku.com/kr/cast/entries.json",
-        "sha256": "4a7f1896744d153f275de98b851563ecd7568e6a065a1167e0942547ef304145",
+        "id": "relationship83-y7-saejima-ja",
+        "record_id": "main",
+        "url": "https://www.ryu-ga-gotoku.com/seven/cast/cast29.html",
+        "sha256": "ae01541c9633582aa4f51483d00dc1f85ddf51958ca6aff3dfc02828a5bed253",
         "span": {
           "coordinate": "source_record_characters",
-          "start": 72,
-          "end": 95
+          "start": 107,
+          "end": 125
         },
-        "excerpt": "마지마 고로와는 '형제'라 부르는 사이다.",
-        "excerpt_sha256": "fcd430bba5e0bdfa884cb5085e8810caa5325bd71d96c526c76651d5fc7f4c42",
-        "language": "ko",
+        "excerpt": "真島吾朗と\nは『兄弟』と呼び合う仲。",
+        "excerpt_sha256": "d0d7a95728e7cca6d7579362cb945f2abf551232cb4247c8034a8e9470496155",
+        "language": "ja",
         "license": "SEGA copyrighted reference; adopted short evidence and paraphrase only"
       },
-      "review_basis": "직접 확인한 공식 소개의 해당 인물 자신과 관계·생활 배경만 일상 IF에 채택했다. 연도·이후 사건·현재 활동을 추가하지 않았다. saejima-majima는 상호 관계만 마지마에게도 허용한다.",
-      "reviewer": "agent:/root/gemma_rag",
+      "review_basis": "공식 Y7 소개의 서로 형제라 부름, Y0 공식 마지마 소개의 의형제 관계로 교차 확인. 한국어 형님 회피는 의형제를 연령·서열 관계로 잘못 번역하지 않기 위한 작성자 말투 규칙. 사에지마의 현재 행방·직책은 미채택.",
+      "reviewer": "agent:/root/relationship83_research",
       "fan_review": "pending"
     },
     {
@@ -265,30 +265,29 @@
     {
       "id": "majima-daigo-request",
       "kind": "fact",
-      "text": "마지마는 키류에게 다이고를 도와 달라는 부탁을 받은 적이 있다. 현재의 일정이나 직책을 이 사실에서 추정하지 않는다.",
+      "text": "마지마는 다이고를 도와 동성회를 지탱해 온 사이다. 사에지마와의 의형제 관계를 다이고에게 옮기지 않는다.",
       "known_by": ["majima"],
       "scenarios": ["daily-if-v1"],
       "runtime_eligible": true,
       "approval": "agent-reviewed-experiment",
       "split": null,
       "source": {
-        "id": "story-9be72714d1594863",
-        "world_chunk_id": "world-b94ff9d84b4f309219ebb135",
-        "url": "https://en.wikipedia.org/w/index.php?oldid=1376093882",
-        "sha256": "df9eb983e4eb4128702f568e6573ec7d28a17ff8d7b8c0fe872a7c17c2c6a063",
-        "source_section_sha256": "977a780036dc3a263ebfb84b1b34020f4d0f9c08cdd46ad110ed8ddd68578ce1",
+        "id": "sega-cast-ko",
+        "record_id": "ryu4_12",
+        "url": "https://ryu-ga-gotoku.com/kr/cast/entries.json",
+        "sha256": "4a7f1896744d153f275de98b851563ecd7568e6a065a1167e0942547ef304145",
+        "excerpt": "도지마 다이고를 지원하기 위해",
+        "excerpt_sha256": "d8a7895132bf4582168b4e0a9f5153b3a52cba1d74ddeff6ffaf9e998279370b",
         "span": {
-          "coordinate": "world_chunk_characters",
-          "start": 401,
-          "end": 558
+          "coordinate": "source_record_characters",
+          "start": 173,
+          "end": 189
         },
-        "excerpt": "Before leaving, he enlists Goro Majima ( Hidenari Ugaki ) to assist Daigo Dojima (Satoshi Tokushige), Kiryu's successor, in his duties as Tojo Clan chairman.",
-        "excerpt_sha256": "9f5312ef163b41aae8914ea640bb9e793cf1f332bd98d3bf504f63cb60c2e10a",
-        "language": "en",
-        "license": "CC-BY-SA-4.0 (Wikipedia text; preserve attribution and revision; media excluded)"
+        "language": "ko",
+        "license": "SEGA copyrighted reference; adopted short evidence and paraphrase only"
       },
-      "review_basis": "원문 청크 전체를 기억으로 허용하지 않고 표시한 문장에 한정해 장소 또는 직접 관계를 채택했다. 원문 나머지 전개·사망·배신·당시 연도는 미채택이다.",
-      "reviewer": "agent:/root/gemma_rag",
+      "review_basis": "Y4 공식 소개에 다이고 지원이 명시. 마지마 직접지식. 현재 건설사업·직책·장소와 특정 부탁 대사는 미채택.",
+      "reviewer": "agent:/root/relationship83_research",
       "fan_review": "pending"
     },
     {
@@ -520,6 +519,230 @@
       },
       "review_basis": "기존 train 분할의 원문·화자·선행 두 발화를 확인했다. 기존 승인은 offline canonical이며 이번 별도 채택은 판단/말투 비교 장면으로만 허용한다. 원작 발화를 키류와의 실제 문자로 변환하지 않았다.",
       "reviewer": "agent:/root/gemma_rag",
+      "fan_review": "pending"
+    },
+    {
+      "id": "haruka-kiryu-family",
+      "kind": "fact",
+      "text": "하루카와 키류는 부녀처럼 가까운 가족 관계다. 키류는 하루카가 아저씨라고 부르는 보호자이며 친아버지는 아니다.",
+      "known_by": ["haruka"],
+      "scenarios": ["daily-if-v1"],
+      "runtime_eligible": true,
+      "approval": "agent-reviewed-experiment",
+      "split": null,
+      "source": {
+        "id": "relationship83-y6-kiryu-ja",
+        "record_id": "main",
+        "url": "https://ryu-ga-gotoku.com/six/cast/",
+        "sha256": "aaeed08ce89a85c17e1f7cdcb43b76725d480070c909a2e46a785522b0c1963f",
+        "span": {
+          "coordinate": "source_record_characters",
+          "start": 302,
+          "end": 311
+        },
+        "excerpt": "家族同然の存在・遥",
+        "excerpt_sha256": "7e6bccbbf0a8e25d16c8829998ba79bc11328a933edbd396cb0d24c45a588aab",
+        "language": "ja",
+        "license": "SEGA copyrighted reference; adopted short evidence and paraphrase only"
+      },
+      "review_basis": "Y6 소개의 가족 같은 관계만 채택. 부녀에 준하는 관계는 Y3 PS4 공식 소개로 교차 확인. 아저씨는 기존 카드/대사 해석. 현재 나이·실종·2016년은 미채택.",
+      "reviewer": "agent:/root/relationship83_research",
+      "fan_review": "pending"
+    },
+    {
+      "id": "haruka-yumi-mother",
+      "kind": "fact",
+      "text": "사와무라 유미는 하루카의 친어머니다. 하루카와 유미는 자매가 아니다.",
+      "known_by": ["haruka"],
+      "scenarios": ["daily-if-v1"],
+      "runtime_eligible": true,
+      "approval": "agent-reviewed-experiment",
+      "split": null,
+      "source": {
+        "id": "sega-cast-ko",
+        "record_id": "ryu3_10",
+        "url": "https://ryu-ga-gotoku.com/kr/cast/entries.json",
+        "sha256": "4a7f1896744d153f275de98b851563ecd7568e6a065a1167e0942547ef304145",
+        "excerpt": "사와무라 유미가 남긴 아이.",
+        "excerpt_sha256": "d6185b4bc9fca9cde809bd7af1bef6d99fc5983315bd5cacddcd4de8e5f52a40",
+        "span": {
+          "coordinate": "source_record_characters",
+          "start": 12,
+          "end": 27
+        },
+        "language": "ko",
+        "license": "SEGA copyrighted reference; adopted short evidence and paraphrase only"
+      },
+      "review_basis": "Y3 공식 가족관계. 하루카 본인의 기본 지식. 원문 사망 표현을 IF 현재로 가져오지 않는다.",
+      "reviewer": "agent:/root/relationship83_research",
+      "fan_review": "pending"
+    },
+    {
+      "id": "haruka-date-acquaintance",
+      "kind": "fact",
+      "text": "하루카는 다테 마코토를 직접 아는 사이다. 다테는 키류와 관계를 맺고 세레나에서 하루카와 함께 있었던 사람이다.",
+      "known_by": ["haruka"],
+      "scenarios": ["daily-if-v1"],
+      "runtime_eligible": true,
+      "approval": "agent-reviewed-experiment",
+      "split": null,
+      "source": {
+        "id": "relationship83-online-date-2005-ja",
+        "record_id": "main",
+        "url": "https://ryu.sega-online.jp/special/character/c11b97f1/",
+        "sha256": "5e631602f5f0e20159e3818a65bb87f8f755112f674a93adaaf781904797bbeb",
+        "span": {
+          "coordinate": "source_record_characters",
+          "start": 215,
+          "end": 243
+        },
+        "excerpt": "セレナにて何も伝えない桐生に対し、遥が怒りをあらわにして",
+        "excerpt_sha256": "1238fa8df4391c0c252ae88d08315408bb10f6e82e74f235d7bf764303861d9b",
+        "language": "ja",
+        "license": "SEGA copyrighted reference; adopted short evidence and paraphrase only"
+      },
+      "review_basis": "SEGA ONLINE 2005 본편 회고가 세레나에서 직접 대면을 뒷받침. 본편 직접 캡처 대신 공식 회고인 출처 층위를 유지. 직접 보호 사건 세부는 이 소개가 입증하지 않아 미채택.",
+      "reviewer": "agent:/root/relationship83_research",
+      "fan_review": "pending"
+    },
+    {
+      "id": "date-kiryu-trust",
+      "kind": "fact",
+      "text": "다테는 키류와 여러 사건에서 협력하며 신뢰를 이어 온 사람이다. 하루카에게 낯선 무서운 형사로만 설명하지 않는다.",
+      "known_by": ["haruka"],
+      "scenarios": ["daily-if-v1"],
+      "runtime_eligible": true,
+      "approval": "agent-reviewed-experiment",
+      "split": null,
+      "source": {
+        "id": "relationship83-y6-date-ja",
+        "record_id": "main",
+        "url": "https://ryu-ga-gotoku.com/six/cast/cast10/",
+        "sha256": "295fd73630870e8a010e6770d9a146ffeaff2cab4f97f2c3a3b3dad8da9f43dc",
+        "span": {
+          "coordinate": "source_record_characters",
+          "start": 304,
+          "end": 317
+        },
+        "excerpt": "桐生との信頼関係は変わらず",
+        "excerpt_sha256": "42dc10129dc18effaa6f6b651111005e775367e0edbb12f945ee22861cf2a8b1",
+        "language": "ja",
+        "license": "SEGA copyrighted reference; adopted short evidence and paraphrase only"
+      },
+      "review_basis": "Y6 공식 소개로 다테-키류 신뢰 확인. 하루카 직접 대면 근거와 결합해 아저씨의 믿는 지인이라는 기본 정보만 IF에 허용하는 작성자 선택. 다테의 사적 수사정보·현 계급은 허용하지 않는다.",
+      "reviewer": "agent:/root/relationship83_research",
+      "fan_review": "pending"
+    },
+    {
+      "id": "kiryu-nishiki-childhood",
+      "kind": "fact",
+      "text": "니시키야마 아키라는 키류와 해바라기에서 함께 자란 오랜 친구이며 형제 같은 사이다. 니시키와 키류는 혈연 형제가 아니다.",
+      "known_by": ["haruka", "majima"],
+      "scenarios": ["daily-if-v1"],
+      "runtime_eligible": true,
+      "approval": "agent-reviewed-experiment",
+      "split": null,
+      "source": {
+        "id": "sega-cast-ko",
+        "record_id": "ryu0_09",
+        "url": "https://ryu-ga-gotoku.com/kr/cast/entries.json",
+        "sha256": "4a7f1896744d153f275de98b851563ecd7568e6a065a1167e0942547ef304145",
+        "excerpt": "키류의 친구이자 형제와 같은 존재.",
+        "excerpt_sha256": "d6bcfc64c689dbaa0f6654d49c3bfbc972e2d2f51d67d2fa921dd2d372825cae",
+        "span": {
+          "coordinate": "source_record_characters",
+          "start": 61,
+          "end": 80
+        },
+        "language": "ko",
+        "license": "SEGA copyrighted reference; adopted short evidence and paraphrase only"
+      },
+      "review_basis": "공식 Y0 인물관계. 두 AI가 키류 주변 인물의 기본 관계를 알고 있다는 IF 작성자 선택이며 직접 어린 시절을 목격했다는 뜻은 아니다. 살인·배신·사망·현재 직책은 미채택.",
+      "reviewer": "agent:/root/relationship83_research",
+      "fan_review": "pending"
+    },
+    {
+      "id": "daigo-kiryu-longstanding",
+      "kind": "fact",
+      "text": "다이고는 어릴 때부터 키류에게 도움을 받으며 그를 따라 온 인물이다. 키류의 친아들이라는 뜻은 아니다.",
+      "known_by": ["haruka", "majima"],
+      "scenarios": ["daily-if-v1"],
+      "runtime_eligible": true,
+      "approval": "agent-reviewed-experiment",
+      "split": null,
+      "source": {
+        "id": "sega-cast-ko",
+        "record_id": "ryu3_05",
+        "url": "https://ryu-ga-gotoku.com/kr/cast/entries.json",
+        "sha256": "4a7f1896744d153f275de98b851563ecd7568e6a065a1167e0942547ef304145",
+        "excerpt": "키류에게 많은 도움",
+        "excerpt_sha256": "449f3a97e1f7471a569401e57e9b2ff06fe96fbb42b5260f184be431289d5eeb",
+        "span": {
+          "coordinate": "source_record_characters",
+          "start": 38,
+          "end": 48
+        },
+        "language": "ko",
+        "license": "SEGA copyrighted reference; adopted short evidence and paraphrase only"
+      },
+      "review_basis": "공식 Y3 인물관계. 두 AI의 공통 기본 배경에 제한해 허용하는 IF 선택. 사적 과거 사건을 목격했다는 기억·현 회장 직책은 미채택.",
+      "reviewer": "agent:/root/relationship83_research",
+      "fan_review": "pending"
+    },
+    {
+      "id": "mine-daigo-trust",
+      "kind": "fact",
+      "text": "미네는 지력과 자금력으로 다이고의 신뢰를 얻은 동성회 인물이다. 마지마의 의형제나 키류의 오랜 절친으로 설정하지 않는다.",
+      "known_by": ["majima"],
+      "scenarios": ["daily-if-v1"],
+      "runtime_eligible": true,
+      "approval": "agent-reviewed-experiment",
+      "split": null,
+      "source": {
+        "id": "sega-cast-ko",
+        "record_id": "ryu3_07",
+        "url": "https://ryu-ga-gotoku.com/kr/cast/entries.json",
+        "sha256": "4a7f1896744d153f275de98b851563ecd7568e6a065a1167e0942547ef304145",
+        "excerpt": "도지마 다이고의 신뢰",
+        "excerpt_sha256": "2c67ffb6c15e064b198f215d03e6b12a6702140b13bf7a6acd47dadaf16eef45",
+        "span": {
+          "coordinate": "source_record_characters",
+          "start": 113,
+          "end": 124
+        },
+        "language": "ko",
+        "license": "SEGA copyrighted reference; adopted short evidence and paraphrase only"
+      },
+      "review_basis": "공식 Y3 인물관계. 같은 시기의 조직 배경에서 마지마가 기본 신원을 안다는 IF 작성자 추론. 미네의 내면·현재 직책·나팔꽃 후원 전력은 미채택.",
+      "reviewer": "agent:/root/relationship83_research",
+      "fan_review": "pending"
+    },
+    {
+      "id": "haruka-akiyama-support",
+      "kind": "fact",
+      "text": "아키야마는 키류와 하루카를 도와 함께 어려움에 대응한 인물이다. 하루카가 모르는 사람처럼 설명하지 않는다.",
+      "known_by": ["haruka"],
+      "scenarios": ["daily-if-v1"],
+      "runtime_eligible": true,
+      "approval": "agent-reviewed-experiment",
+      "split": null,
+      "source": {
+        "id": "relationship83-y6-akiyama-ja",
+        "record_id": "main",
+        "url": "https://ryu-ga-gotoku.com/six/cast/cast09/",
+        "sha256": "6a75a220a390dc2dc588510800e38bdd40dd121e9e079bbdbb6a702cd3008b08",
+        "span": {
+          "coordinate": "source_record_characters",
+          "start": 344,
+          "end": 351
+        },
+        "excerpt": "桐生や遥を支え",
+        "excerpt_sha256": "223e19354af15d79496e4f2b3d0db3af0c3367dc65bfb08db657c54ea275d94a",
+        "language": "ja",
+        "license": "SEGA copyrighted reference; adopted short evidence and paraphrase only"
+      },
+      "review_basis": "Y6 공식 소개의 Y5 과거 지원관계. 지원받은 당사자 지식이지만 일상 IF는 아이돌·2012 사건 전체를 자동 채택하지 않는다. 도움/신뢰 관계만 IF에 유지하는 작성자 선택.",
+      "reviewer": "agent:/root/relationship83_research",
       "fan_review": "pending"
     }
   ]

@@ -46,7 +46,13 @@ ERROR_TEXT = {
 def verified_manifest(manifest_path, api_key_file):
     """Read an existing install record and verify the pinned files, never repair it."""
     from . import gemma_assets as assets
-    from .gemma_engine import CONTEXT_TOKENS, SAMPLING
+    from .gemma_engine import (
+        CONTEXT_TOKENS,
+        GENERATION_TIMEOUT,
+        OUTPUT_TOKENS,
+        REASONING_TOKENS,
+        SAMPLING,
+    )
 
     path = Path(manifest_path)
     if path.is_symlink() or not path.is_file() or path.stat().st_size > 1_000_000:
@@ -75,7 +81,10 @@ def verified_manifest(manifest_path, api_key_file):
         "executable": f"llama-{assets.BINARY_TAG}/llama-server",
         "context_tokens": CONTEXT_TOKENS,
         "sampling": SAMPLING,
-        "thinking": False,
+        "thinking": True,
+        "reasoning_budget_tokens": REASONING_TOKENS,
+        "max_output_tokens": OUTPUT_TOKENS,
+        "generation_timeout_seconds": GENERATION_TIMEOUT,
         "cache_prompt": False,
     }
     if not isinstance(manifest, dict) or any(
@@ -120,6 +129,9 @@ def verify_native_server(engine, manifest, directory):
     props = engine._json("/props")
     template = props.get("chat_template")
     settings = props.get("default_generation_settings", {})
+    # v0.7.0 serializes a fresh task_params in /props: reasoning_format stays
+    # NONE there even when CLI reasoning is on. The pinned native template and
+    # per-request flags govern parsing; real reasoning is verified separately.
     if (
         not isinstance(template, str)
         or hashlib.sha256(template.encode()).hexdigest() != manifest["template_sha256"]
@@ -319,7 +331,7 @@ class ChatService:
 
     def _generate(self, job):
         from .chat_prompt import InputBudgetError
-        from .gemma_engine import SAMPLING, GemmaFailure
+        from .gemma_engine import CONTEXT_TOKENS, OUTPUT_TOKENS, SAMPLING, GemmaFailure
 
         started = time.monotonic()
         queue_seconds = max(
@@ -344,8 +356,8 @@ class ChatService:
                 user_message=job["message"],
                 history=history,
                 count_tokens=self.engine.count_tokens,
-                context_limit=4096,
-                max_tokens=256,
+                context_limit=CONTEXT_TOKENS,
+                max_tokens=OUTPUT_TOKENS,
             )
             manifest = getattr(self.engine, "manifest", {})
             assembled["metadata"].update(
@@ -360,7 +372,7 @@ class ChatService:
                 assembled["metadata"],
                 assembled["retrieval_hits"],
             )
-            result = self.engine.reply(assembled["messages"], max_tokens=256)
+            result = self.engine.reply(assembled["messages"], max_tokens=OUTPUT_TOKENS)
             metrics = timings(result)
             if result.get("finish_reason") not in {"stop", "eos"}:
                 code = (

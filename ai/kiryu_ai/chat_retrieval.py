@@ -18,13 +18,18 @@ from zoneinfo import ZoneInfo
 
 EMBEDDING_REPO = "intfloat/multilingual-e5-small"
 EMBEDDING_REVISION = "614241f622f53c4eeff9890bdc4f31cfecc418b3"
-RETRIEVER_VERSION = "daily-if-hybrid-v1"
+RETRIEVER_VERSION = "daily-if-hybrid-v2"
 ALIASES = {
     "키류": ("kiryu", "桐生"),
     "하루카": ("haruka", "遥"),
     "마지마": ("majima", "真島"),
     "사에지마": ("saejima", "冴島"),
     "다이고": ("daigo", "大吾"),
+    "다테": ("makoto date", "伊達"),
+    "니시키": ("니시키야마", "nishiki", "nishikiyama", "錦山"),
+    "유미": ("yumi", "由美"),
+    "미네": ("yoshitaka mine", "峯"),
+    "아키야마": ("akiyama", "秋山"),
     "나팔꽃": ("아사가오", "asagao", "morning glory", "orphanage", "보육원"),
     "카무로쵸": ("카무로초", "kamurocho", "神室町"),
     "소텐보리": ("sotenbori", "蒼天堀"),
@@ -198,11 +203,30 @@ def load_registry(path):
             != hashlib.sha256(source["excerpt"].encode()).hexdigest()
         ):
             raise ValueError("Runtime evidence hash mismatch")
-        if record.get("split") in {"valid", "dev", "test"}:
+        if record.get("split") not in {None, "train"}:
             raise ValueError("Held-out dialogue may not enter the runtime pool")
+        for field in ("known_by", "scenarios"):
+            scope = record.get(field)
+            if not isinstance(scope, list) or not all(
+                isinstance(item, str) and item for item in scope
+            ):
+                raise ValueError("Runtime evidence requires explicit scope lists")
         if not record.get("review_basis"):
             raise ValueError("Missing explicit adoption basis")
     return value
+
+
+def runtime_eligible(record, character, scenario):
+    """One authorization boundary for ranked evidence and fixed card facts."""
+    return (
+        record.get("runtime_eligible") is True
+        and record.get("approval") == "agent-reviewed-experiment"
+        and isinstance(record.get("known_by"), list)
+        and character in record["known_by"]
+        and isinstance(record.get("scenarios"), list)
+        and scenario in record["scenarios"]
+        and record.get("split") in {None, "train"}
+    )
 
 
 def download_embedding(output):
@@ -373,15 +397,12 @@ class HybridRetriever:
             for key in sorted(scores, key=lambda key: (-scores[key], key))[:limit]
         ]
 
-    def evidence(self, character, scenario, query):
+    def evidence(self, character, scenario, query, *, exclude_ids=()):
         eligible = [
             {**record, "search_text": record["text"]}
             for record in self.registry["records"]
-            if record.get("runtime_eligible") is True
-            and record.get("approval") == "agent-reviewed-experiment"
-            and character in record.get("known_by", [])
-            and scenario in record.get("scenarios", [])
-            and record.get("split") not in {"valid", "dev", "test"}
+            if runtime_eligible(record, character, scenario)
+            and record["id"] not in exclude_ids
         ]
         return {
             "facts": self.rank([r for r in eligible if r["kind"] == "fact"], query, 3),

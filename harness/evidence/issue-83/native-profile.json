@@ -1,0 +1,17 @@
+{
+  "actual_context": 6144,
+  "props_reasoning_format": "none",
+  "configured_profile": {
+    "context_tokens": 6144,
+    "thinking": true,
+    "reasoning_budget_tokens": -1,
+    "max_output_tokens": 3072,
+    "generation_timeout_seconds": 120,
+    "cache_prompt": false
+  },
+  "template_sha256": "6a1015c47ccfcfa67c3b772385bccee357a4d37c3cda37bd202e9047f391ab82",
+  "health": true,
+  "native_verification": "pass",
+  "swap_observation": "vm.swapusage: total = 8192.00M  used = 7387.81M  free = 804.19M  (encrypted)",
+  "scope": "actual same pinned model, one process, existing API/admin untouched; not a zero-swap guarantee"
+}
