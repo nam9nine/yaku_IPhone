@@ -27,3 +27,11 @@ WebKit의 [공식 interruption 회귀 검사](https://github.com/WebKit/WebKit/b
 ## 검증 구분
 
 브라우저 테스트의 권한·푸시 제공자·API는 모의 환경이다. 보이는 사이트의 배너·읽음·소리 생성·중복 방지와 실제 Web Audio 노드 생성은 확인하지만 OS 잠금 화면이나 스피커에서 사용자가 들은 소리까지 검증했다고 기록하지 않는다. Service Worker 검사는 표시 실패를 성공으로 저장하지 않는지, 초기화 뒤 이전 구독 알림을 차단하는지도 별도로 확인한다.
+
+## 대화 안팎의 수신음
+
+현재 보고 있는 상대의 새 답장은 `ReceivedMessage`, 홈·다른 앱·다른 대화에서의 새 답장은 기존 `Note`로 구분한다. 선택은 도착 시점의 읽음 상태로 고정하며 알림을 눌러 들어온 동작이 음원을 바꾸거나 다시 재생하지 않는다. 두 음원은 별도로 준비하고 선택한 음원만 준비되면 재생한다.
+
+`ReceivedMessage.caf`는 Apple ToneLibrary의 실제 시스템 음원으로, 원본 PCM을 WAV에 담았다. 출처·해시는 `references/iphone-conversation-sound-source.json`에 기록했다. 이는 웹 페이지가 소리를 담당할 때의 구분이며, OS Push 경로가 먼저 소리를 맡으면 기기 설정음이 사용될 수 있다. 잠금 화면의 음원을 웹에서 강제하지 않는다.
+
+보내는 말풍선은 [Apple이 설명하는 iMessage의 파란 말풍선](https://support.apple.com/guide/iphone/about-imessage-iph4e9799206/ios)을 참고해 기존 `--app-accent` 토큰을 사용한다. 실제 iMessage 서비스 연결을 의미하지 않는다.

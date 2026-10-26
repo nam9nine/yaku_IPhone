@@ -586,6 +586,7 @@ it('빠른 생성도 즉시 답장/타이핑을 노출하지 않고 10~20초 뒤
   expect(value.getSnapshot().notification).toBeNull();
   expect(value.getSnapshot().arrival?.character).toBe('haruka');
   expect(value.getSnapshot().arrival?.playSound).toBe(true);
+  expect(value.getSnapshot().arrival?.sound).toBe('conversation');
 });
 
 it('중단됐다 돌아와 과거 전달을 복원할 때는 알림만 복원하고 수신음은 예약하지 않는다', async () => {
@@ -617,6 +618,7 @@ it('늦은 생성은 타이핑을 유지하고 다른 앱으로 이동한 뒤 �
   expect(value.getSnapshot().threads.majima.unread).toBe(true);
   expect(value.getSnapshot().unreadReplies).toHaveLength(1);
   expect(value.getSnapshot().notification?.character).toBe('majima');
+  expect(value.getSnapshot().arrival?.sound).toBe('notification');
   value.dismissNotification();
   await vi.advanceTimersByTimeAsync(60_000);
   expect(value.getSnapshot().notification).toBeNull();

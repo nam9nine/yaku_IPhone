@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { AppIcon } from '../home/AppIcon';
 import { contacts } from '../story/data';
-import type { AiReplyNotification } from './messenger';
+import type { AiReplyArrival, AiReplyNotification } from './messenger';
 import { ReplySoundPlayer } from './replySound';
 import { claimReplySound, releaseReplySound } from './pushBinding';
 import './reply-notifications.css';
@@ -60,7 +60,7 @@ export function AiReplySound({
   silent,
   volume,
 }: {
-  arrival: (AiReplyNotification & { jobId?: string; playSound: boolean }) | null;
+  arrival: AiReplyArrival | null;
   silent: boolean;
   volume: number;
 }) {
@@ -104,7 +104,7 @@ export function AiReplySound({
       if (document.hidden) controller.abort();
     };
     document.addEventListener('visibilitychange', onVisibility);
-    void player.ready(controller.signal).then(async (ready) => {
+    void player.ready(controller.signal, arrival.sound).then(async (ready) => {
       if (!ready || !current || document.hidden) {
         player.play(arrival.id, true, volume, false);
         return;
@@ -117,7 +117,7 @@ export function AiReplySound({
       const played =
         current &&
         !controller.signal.aborted &&
-        player.play(arrival.id, silent, volume, !document.hidden);
+        player.play(arrival.id, silent, volume, !document.hidden, arrival.sound);
       if (!played) {
         player.play(arrival.id, true, volume, false);
         void releaseReplySound(soundId, owner);

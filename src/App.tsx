@@ -61,6 +61,7 @@ function PhoneSession() {
     return isAiCharacter(value ?? undefined) ? value : null;
   });
   const [conversation, setConversation] = useState<string | null>(notificationEntry);
+  const [messageEntry, setMessageEntry] = useState(0);
   const [controls, setControls] = useState({ volume: 50, rotation: false, silent: false });
   const [state, dispatch] = useReducer(shellReducer, initialShellState);
   const [unlockRequest, setUnlockRequest] = useState<{
@@ -113,6 +114,7 @@ function PhoneSession() {
     openApp('phone');
   }
   function openConversation(id: string) {
+    setMessageEntry((value) => value + 1);
     setConversation(id);
     openApp('messages');
   }
@@ -283,6 +285,7 @@ function PhoneSession() {
               ai={ai}
               active={!state.locked && state.activeApp === app && !state.panel}
               selected={conversation}
+              requestedLatest={messageEntry}
               onSelect={setConversation}
               online={isOnline(preferences)}
               onOpenNote={openNote}

@@ -189,6 +189,27 @@ it('음원 로드 실패는 다음 동작에서 재시도하지만 실패 동안
   expect(starts).toHaveLength(0);
   expect(player.play('fresh', false, 100, true)).toBe(true);
   expect(starts).toHaveLength(1);
-  expect(load).toHaveBeenCalledTimes(2);
+  expect(load).toHaveBeenCalledTimes(3);
+  player.dispose();
+});
+
+it('현재 대화는 ReceivedMessage, 바깥 도착은 Note 버퍼를 선택하고 같은 도착을 재생하지 않는다', async () => {
+  const { context } = audio();
+  const buffers = {
+    notification: { duration: 4.4 } as AudioBuffer,
+    conversation: { duration: 0.517642 } as AudioBuffer,
+  };
+  const player = new ReplySoundPlayer(
+    () => context as unknown as AudioContext,
+    async (_, kind) => buffers[kind],
+  );
+  player.unlock();
+  expect(await player.ready(new AbortController().signal, 'conversation')).toBe(true);
+  expect(player.play('inside', false, 100, true, 'conversation')).toBe(true);
+  expect(context.createBufferSource.mock.results.at(-1)?.value.buffer).toBe(buffers.conversation);
+  expect(await player.ready(new AbortController().signal, 'notification')).toBe(true);
+  expect(player.play('outside', false, 100, true, 'notification')).toBe(true);
+  expect(context.createBufferSource.mock.results.at(-1)?.value.buffer).toBe(buffers.notification);
+  expect(player.play('inside', false, 100, true, 'notification')).toBe(false);
   player.dispose();
 });

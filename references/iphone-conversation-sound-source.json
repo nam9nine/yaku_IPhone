@@ -1,0 +1,15 @@
+{
+  "source": "/System/Library/PrivateFrameworks/ToneLibrary.framework/Versions/A/Resources/AlertTones/ReceivedMessage.caf",
+  "source_sha256": "169b1d1818f640db411aa349eb218e9f9b7eb902ba2c28d3595e1530022d84ca",
+  "asset": "public/audio/iphone-received-message.wav",
+  "asset_sha256": "78de9b1ab2d8f0af6dfef1aebee8f600a48906d306cb6690a63983f639b9e9a7",
+  "verified_date": "2026-10-27",
+  "owner": "Apple",
+  "license": "Apple system sound; no open-source license asserted",
+  "conversion": "afconvert source.caf output.wav -f WAVE -d LEI16",
+  "sample_rate": 44100,
+  "channels": 2,
+  "duration_seconds": 0.5176417233560091,
+  "purpose": "ReceivedMessage recording for a reply in the currently open conversation; Note retained outside",
+  "visual_reference": "https://support.apple.com/guide/iphone/about-imessage-iph4e9799206/ios"
+}
