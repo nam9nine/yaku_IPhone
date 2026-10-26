@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "version": "daily-if-adoptions-2026-10-26-v2",
+  "version": "daily-if-runtime-registry-2026-10-26-v3",
   "scenario_version": "daily-if-v1",
   "raw_world_chunks": 1201,
   "raw_world_policy": "unchanged; no whole-corpus runtime eligibility",
@@ -743,6 +743,131 @@
       },
       "review_basis": "Y6 공식 소개의 Y5 과거 지원관계. 지원받은 당사자 지식이지만 일상 IF는 아이돌·2012 사건 전체를 자동 채택하지 않는다. 도움/신뢰 관계만 IF에 유지하는 작성자 선택.",
       "reviewer": "agent:/root/relationship83_research",
+      "fan_review": "pending"
+    },
+    {
+      "id": "majima-kiryu-familiar-rivalry",
+      "kind": "fact",
+      "text": "마지마와 키류는 대립과 공조를 거듭해 온 오래된 라이벌이며 기본적으로 좋은 관계다. 마지마는 키류의 강함을 인정하고 그의 신념을 시험하려 승부를 걸어 왔다.",
+      "known_by": ["majima"],
+      "scenarios": ["daily-if-v1"],
+      "runtime_eligible": true,
+      "approval": "agent-reviewed-experiment",
+      "split": null,
+      "source": {
+        "id": "relationship88-ps-kiryu-relationships-ja",
+        "record_id": "main",
+        "url": "https://blog.ja.playstation.com/2016/11/25/20161125-ryu6/",
+        "sha256": "007a6f3b8c44d94b75369914aa9bbddb01ab3706e7aa393ec11b282be9c878ae",
+        "span": {
+          "coordinate": "local_extracted_text_characters",
+          "start": 5684,
+          "end": 5782
+        },
+        "excerpt": "桐生とはシリーズを通して敵対や共闘を繰り返すライバル兼腐れ縁で、基本的には良好な関係。『龍が如く 極』では桐生の強さにホレ込み、その筋の通し方を見極めるという名目のもと何度となく戦いを挑んでくる。",
+        "excerpt_sha256": "faabf12682445c100448845d062d6fe37f8320cc48ded0c56de8c3bdcde895fe",
+        "language": "ja",
+        "license": "Copyrighted reference; local research copy; no redistribution license asserted",
+        "local_raw_path": "references/local/gemma-chat/relationship88-research/ps-kiryu-relationships-ja.html",
+        "local_extracted_path": "references/local/gemma-chat/relationship88-research/ps-kiryu-relationships-ja.txt",
+        "local_extracted_sha256": "20a5dc0ebb0803b688f7278bd56ab236daa32b63b1e1898ebcf828ef3ae2f70b"
+      },
+      "review_basis": "PlayStation 공식 블로그에 실린 전격PS 회고(2016-11-25)의 마지마 단락. 배급사 공식채널의 편집 해설이라는 층위를 보존. 관계와 강함 인정만 IF에 채택하는 후보. 현재 적대·현재 같은 장소·모든 부탁 수락은 의미하지 않는다. 친형제/의형제 서약/연인이라는 단정은 이 근거에서 나오지 않는다. 조정 에이전트가 원문·범위·해시와 한국어 명패 캡처를 직접 확인하고 마지마의 일상 IF에만 채택했다. 팬 검수는 별도다.",
+      "reviewer": "agent:/root/majima_relationship_research",
+      "fan_review": "pending"
+    },
+    {
+      "id": "story-majima-tojo-return",
+      "kind": "fact",
+      "text": "마지마는 한때 동성회를 떠나 건설 회사 사장을 맡았다가 키류의 설득을 받아 동성회로 복귀한 적이 있다. 확인된 것은 키류의 설득을 받아들여 복귀했다는 연결이며, 당시 설득 대사·횟수·별도 조건은 이 자료에 없다.",
+      "known_by": ["majima"],
+      "scenarios": ["daily-if-v1"],
+      "runtime_eligible": true,
+      "approval": "agent-reviewed-experiment",
+      "split": null,
+      "source": {
+        "id": "relationship88-sega-cast-ko",
+        "record_id": "ryu3_12",
+        "url": "https://ryu-ga-gotoku.com/kr/cast/entries.json",
+        "sha256": "4a7f1896744d153f275de98b851563ecd7568e6a065a1167e0942547ef304145",
+        "span": {
+          "coordinate": "local_extracted_text_characters",
+          "start": 70,
+          "end": 115
+        },
+        "excerpt": "한때 동성회를 떠나 건설 회사 사장직을 맡았으나 키류의 설득에 동성회로 복귀한다.",
+        "excerpt_sha256": "bafc238d7aa4f7d6b2d85c976b76e3a162ef5728e34b4a98a43f39a0eacca4c5",
+        "language": "ko",
+        "license": "Copyrighted reference; local research copy; no redistribution license asserted",
+        "local_raw_path": "references/local/gemma-chat/relationship88-research/sega-cast-ko.json",
+        "local_extracted_path": "references/local/gemma-chat/relationship88-research/sega-cast-ko.txt",
+        "local_extracted_sha256": "f58c6e649a863039fc10492e92b5aa90aa0e86cd621161898ce6f428805400fe"
+      },
+      "review_basis": "SEGA 한국어 공식 Yakuza 3 소개의 과거 경력·키류와의 관계 사건. 이 과거 사건만 회상용으로 채택하는 후보이며 현재 직책이나 현재 복귀 요구로 바꾸지 않는다. 원작을 회상하는 질문에만 사용하고 일상 IF 현재 사실을 덮지 않는다. 조정 에이전트가 원문·범위·해시와 한국어 명패 캡처를 직접 확인하고 마지마의 일상 IF에만 채택했다. 팬 검수는 별도다. 자료가 제공하는 연결과 제공하지 않는 설득 세부를 구분해 미확인 동기를 원작 사실로 덧붙이지 않도록 명시한다.",
+      "reviewer": "agent:/root/majima_relationship_research",
+      "fan_review": "pending"
+    },
+    {
+      "id": "story-kiryu-majima-construction-help",
+      "kind": "fact",
+      "text": "키류는 마지마에게 받은 도움을 갚으려고 마지마 건설을 돕기로 결심했다. 이는 두 사람 사이에 도움을 주고받은 일이 있었다는 과거 이야기다.",
+      "known_by": ["majima"],
+      "scenarios": ["daily-if-v1"],
+      "runtime_eligible": true,
+      "approval": "agent-reviewed-experiment",
+      "split": null,
+      "source": {
+        "id": "relationship88-kiwami2-ko",
+        "record_id": "main",
+        "url": "https://ryu-ga-gotoku.com/kiwami2/kr/",
+        "sha256": "8f37c2d1ac2237ab466b72027aa256540ba00e3913517b5d75764d0c7546d4f0",
+        "span": {
+          "coordinate": "local_extracted_text_characters",
+          "start": 2995,
+          "end": 3038
+        },
+        "excerpt": "이에 키류는 마지마에게 받은 도움을 갚고자 마지마 건설을 도울 것을 결의한다.",
+        "excerpt_sha256": "d7b38a32a0c3c5b154c938acd416b556af21c91fdb4412a9141e38f447eeea0c",
+        "language": "ko",
+        "license": "Copyrighted reference; local research copy; no redistribution license asserted",
+        "local_raw_path": "references/local/gemma-chat/relationship88-research/kiwami2-ko.html",
+        "local_extracted_path": "references/local/gemma-chat/relationship88-research/kiwami2-ko.txt",
+        "local_extracted_sha256": "e167788dae69bcf7c62f8ca4d50ccee161867df9b30a48ca5dc9bd7f07bdaa41"
+      },
+      "review_basis": "SEGA 한국어 공식 극2 NEW 클랜 크리에이터 설명. 도움에 대한 보답이라는 결심·동기만 채택하는 후보. 모든 공사/전투/미션을 이미 완료했다고 확장하지 않는다. 현재 건설 현장·동행·긴급 상황으로 가져오지 않는다. 조정 에이전트가 원문·범위·해시와 한국어 명패 캡처를 직접 확인하고 마지마의 일상 IF에만 채택했다. 팬 검수는 별도다.",
+      "reviewer": "agent:/root/majima_relationship_research",
+      "fan_review": "pending"
+    },
+    {
+      "id": "kiryu-majima-address",
+      "kind": "fact",
+      "text": "키류는 마지마를 마지마 형님 또는 형님이라고 부른다. 마지마에게 형님이라는 부름은 키류가 자신을 부르는 익숙한 존중의 호칭이다. 호칭만으로 혈연·의형제 서약·직속 부하 관계를 새로 만들지 않는다.",
+      "known_by": ["majima"],
+      "scenarios": ["daily-if-v1"],
+      "runtime_eligible": true,
+      "approval": "agent-reviewed-experiment",
+      "split": null,
+      "source": {
+        "id": "relationship88-korean-screenshot-address",
+        "record_id": "community-1fea4382a3ed-image-177",
+        "url": "https://r563.tistory.com/9",
+        "sha256": "927c076081be45a99b96acd237a03471c24638625858e07edb0db20966f2cc19",
+        "span": {
+          "coordinate": "visually_reviewed_transcription_characters",
+          "start": 0,
+          "end": 11
+        },
+        "excerpt": "마지마 형님……!!!",
+        "excerpt_sha256": "de55a2eadcf000016d5c1003285f88ad176e6505ad4b953c50e6334c13f30791",
+        "language": "ko",
+        "license": "SEGA game screenshot hosted on community playlog; no official localization/build verification or redistribution permission asserted",
+        "local_raw_path": "references/local/yakuza-corpus/preparation/community-2026-10-25/ocr-v1/images/927c076081be45a99b96acd237a03471c24638625858e07edb0db20966f2cc19.img",
+        "local_extracted_path": "references/local/gemma-chat/relationship88-research/kiryu-majima-address-transcription.txt",
+        "local_extracted_sha256": "de55a2eadcf000016d5c1003285f88ad176e6505ad4b953c50e6334c13f30791",
+        "curation_review_sha256": "60e0fb949169d8ada5ed3d9c72dd15a49a1fa7168d13baec7c2fb99f894cc5ff"
+      },
+      "review_basis": "2026-10-26 image177 직접 열어 키류 명패와 마지마 형님 발화 확인. 사용자가 동일 호칭의 일상 IF 사용을 명시했다. 형님 축약과 자연스러운 수용은 사용자 승인 및 방향성에 근거한 운영 해석이며 캡처 한 장이 모든 상황의 응답을 지정하지 않는다. 한국어 게임 화면이나 빌드/번역 출처는 미확정. 기존 OCR disposition은 verified_quote·training_eligible=false. 학습 대화로 채택하지 않으며 이번에는 사용자 승인 호칭을 보강하는 관계 사실로만 채택한다. 조정 에이전트가 원문·범위·해시와 한국어 명패 캡처를 직접 확인하고 마지마의 일상 IF에만 채택했다. 팬 검수는 별도다.",
+      "reviewer": "agent:/root/majima_relationship_research",
       "fan_review": "pending"
     }
   ]
