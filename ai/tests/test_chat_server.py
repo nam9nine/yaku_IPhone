@@ -126,6 +126,38 @@ class ChatServerTests(unittest.TestCase):
 
         return self.wait(poll)
 
+    def test_fresh_session_archives_old_dialogue_without_reusing_model_history(self):
+        client = self.client()
+        old_auth = self.token(client)
+        old_jobs = []
+        for character in ("haruka", "majima"):
+            job = self.send(
+                client, old_auth, "OLD_PRIVATE_MEMORY_" + character, character
+            )
+            self.finished(client, old_auth, job)
+            old_jobs.append(job)
+        # A phone reset opens a new anonymous scope; the old visitor stays in DB.
+        fresh_auth = self.token(client)
+        for character in ("haruka", "majima"):
+            page = client.get(
+                "/v1/history?character=" + character, headers=fresh_auth
+            ).json()
+            self.assertEqual(page["messages"], [])
+            self.assertIsNone(page["pending_job"])
+            job = self.send(client, fresh_auth, "새 대화", character)
+            self.finished(client, fresh_auth, job)
+            self.assertNotIn("OLD_PRIVATE_MEMORY", json.dumps(self.engine.calls[-1]))
+            detail = client.app.state.service.db.request_detail(job)
+            self.assertEqual(detail["run"]["metadata"]["input_message_ids"], [])
+        for job in old_jobs:
+            self.assertEqual(
+                client.get("/v1/jobs/" + job, headers=fresh_auth).status_code, 404
+            )
+            detail = client.app.state.service.db.request_detail(job)
+            self.assertEqual(detail["status"], "complete")
+            self.assertIn("OLD_PRIVATE_MEMORY", detail["message"])
+            self.assertEqual(len(detail["messages"]), 2)
+
     def test_anonymous_acceptance_is_durable_before_generation_and_idempotent(self):
         client = self.client()
         auth = self.token(client)

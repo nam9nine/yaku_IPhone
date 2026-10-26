@@ -95,10 +95,11 @@ export function SettingsApp({
   onChange: (next: DevicePreferences) => void;
   active: boolean;
   storageUnavailable?: boolean;
-  onReset: () => void;
+  onReset: () => boolean;
 }) {
   const [history, setHistory] = useState<SettingsPage[]>(['main']);
   const resetDialog = useRef<HTMLDialogElement>(null);
+  const [resetError, setResetError] = useState(false);
   useLayoutEffect(() => {
     if (!active) resetDialog.current?.close();
   }, [active]);
@@ -231,7 +232,10 @@ export function SettingsApp({
             <Group>
               <button
                 className="settings-row settings-reset"
-                onClick={() => resetDialog.current?.showModal()}
+                onClick={() => {
+                  setResetError(false);
+                  resetDialog.current?.showModal();
+                }}
               >
                 처음 상태로 되돌리기
               </button>
@@ -537,13 +541,19 @@ export function SettingsApp({
       <dialog ref={resetDialog} className="settings-reset-dialog" aria-labelledby="reset-title">
         <h2 id="reset-title">처음 상태로 되돌릴까요?</h2>
         <p>메모, 체크한 항목, 메시지 읽음, 사진 즐겨찾기와 배경 설정이 처음 상태로 돌아갑니다.</p>
+        <p>AI 대화도 새로 시작합니다. 이전 대화는 기록으로 보관되며 AI가 다시 참고하지 않습니다.</p>
+        {resetError && (
+          <p role="alert">
+            브라우저에 초기화 상태를 저장하지 못했습니다. 저장 공간을 확인하고 다시 시도해 주세요.
+          </p>
+        )}
         <div>
           <button onClick={() => resetDialog.current?.close()}>취소</button>
           <button
             className="settings-reset"
             onClick={() => {
-              resetDialog.current?.close();
-              onReset();
+              if (onReset()) resetDialog.current?.close();
+              else setResetError(true);
             }}
           >
             초기화

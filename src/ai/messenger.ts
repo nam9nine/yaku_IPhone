@@ -14,6 +14,7 @@ import {
 import {
   configuredEndpoint,
   readAiConnection,
+  readAiResetId,
   saveAiConnection,
   type AiConnection,
 } from './connection';
@@ -86,6 +87,7 @@ export class AiMessenger {
   private activeCharacter: AiCharacter | null = null;
   private refreshTask: Promise<void> | null = null;
   private renewed = false;
+  private resetId = readAiResetId();
 
   constructor(connection = readAiConnection()) {
     this.snapshot = {
@@ -128,8 +130,17 @@ export class AiMessenger {
     this.update({ status: 'idle', threads });
   };
   private current(generation: number): boolean {
-    return this.generation === generation && this.online;
+    return this.generation === generation && this.online && this.resetId === readAiResetId();
   }
+
+  syncReset = (resume = true): void => {
+    if (this.resetId === readAiResetId()) return;
+    this.stop();
+    this.resetId = readAiResetId();
+    this.renewed = false;
+    this.update({ connection: readAiConnection(), threads: emptyThreads(), error: null });
+    if (resume && this.activeCharacter) void this.refresh();
+  };
 
   activate = async (character: AiCharacter | null): Promise<void> => {
     this.activeCharacter = character;
@@ -137,10 +148,11 @@ export class AiMessenger {
     if (this.snapshot.status !== 'ready') await this.refresh();
     if (this.activeCharacter !== character || this.snapshot.status !== 'ready') return;
     if (!this.snapshot.threads[character].loaded && !this.snapshot.threads[character].loading) {
+      const generation = this.generation;
       try {
-        await this.loadThread(character, this.generation);
+        await this.loadThread(character, generation);
       } catch (error) {
-        await this.failConnection(error);
+        if (this.current(generation)) await this.failConnection(error);
       }
     }
   };
@@ -183,7 +195,8 @@ export class AiMessenger {
   }
 
   private remember(connection: AiConnection): void {
-    const saved = saveAiConnection(connection);
+    if (this.resetId !== readAiResetId()) return;
+    const saved = saveAiConnection(connection, this.resetId);
     this.update({
       connection,
       storageUnavailable: !saved,
@@ -191,6 +204,24 @@ export class AiMessenger {
         ? null
         : '브라우저에 대화 연결을 저장할 수 없어 이 화면에서만 유지됩니다.',
     });
+  }
+
+  private async connect(endpoint: string, generation: number): Promise<void> {
+    const connect = async () => {
+      if (!this.current(generation)) return;
+      // Other open tabs may already have created the new session while this
+      // tab waited for health or the lock. Reuse that scope after rechecking it.
+      const connection =
+        readAiConnection() ?? (await createSession(endpoint, this.controller.signal));
+      if (this.current(generation)) this.remember(connection);
+    };
+    if (typeof navigator !== 'undefined' && navigator.locks) {
+      await navigator.locks.request(
+        'yaku-iphone-ai-session',
+        { signal: this.controller.signal },
+        connect,
+      );
+    } else await connect();
   }
 
   refresh = (renew = false): Promise<void> => {
@@ -242,12 +273,11 @@ export class AiMessenger {
                 };
             }
             this.update({ connection: null, threads });
-            saveAiConnection(null);
+            saveAiConnection(null, this.resetId);
           }
           if (!this.snapshot.connection) {
-            const connection = await createSession(endpoint, this.controller.signal);
+            await this.connect(endpoint, generation);
             if (!this.current(generation)) return;
-            this.remember(connection);
           }
           this.update({
             status,
@@ -262,7 +292,11 @@ export class AiMessenger {
             (character) =>
               character === this.activeCharacter || this.snapshot.threads[character].pending,
           );
-          for (const character of targets) await this.loadThread(character, generation);
+          for (const character of targets) {
+            if (!this.current(generation)) return;
+            await this.loadThread(character, generation);
+          }
+          if (!this.current(generation)) return;
           if (this.snapshot.connection) this.remember(this.snapshot.connection);
           return;
         } catch (error) {
@@ -375,6 +409,7 @@ export class AiMessenger {
       !active ||
       !online ||
       !this.online ||
+      !this.current(this.generation) ||
       !message ||
       !messageWithinLimits(message) ||
       this.snapshot.status !== 'ready' ||
@@ -408,6 +443,7 @@ export class AiMessenger {
       !active ||
       !online ||
       !this.online ||
+      !this.current(this.generation) ||
       this.snapshot.status !== 'ready' ||
       !pending ||
       pending.phase !== 'failed'

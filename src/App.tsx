@@ -33,6 +33,7 @@ import { MusicApp, TaxiApp, CookingApp } from './lifestyle/LifestyleApps';
 import { DayCall } from './components/DayCall';
 import { DayNotification } from './components/DayNotification';
 import { resetStoryStorage } from './story/useStoredState';
+import { resetAiConnection } from './ai/connection';
 
 const getPreview = (app: RunnableApp) =>
   document.querySelector<HTMLElement>(`[data-app-window="${app}"]`);
@@ -103,6 +104,7 @@ function PhoneSession() {
     openApp('messages');
   }
   function resetPhone() {
+    if (!resetAiConnection()) return false;
     setUnlockRequest(null);
     day.reset();
     resetStoryStorage();
@@ -113,6 +115,7 @@ function PhoneSession() {
     for (const app of state.visited) dispatch({ type: 'close-app', app });
     dispatch({ type: 'lock' });
     setEpoch((value) => value + 1);
+    return true;
   }
   useLayoutEffect(() => {
     if (state.locked || state.activeApp || state.panel) return;

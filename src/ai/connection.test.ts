@@ -59,3 +59,42 @@ it('이전 초대 fragment는 값 보관이나 네트워크 요청 없이 지운
   expect(location.hash).toBe('#keep=yes');
   expect(fetch).not.toHaveBeenCalled();
 });
+
+it('초기화 경계는 이전 토큰과 레거시 토큰을 무효화하고 새 토큰만 복원한다', async () => {
+  const { AI_RESET_KEY, readAiResetId, resetAiConnection } = await import('./connection');
+  const values = new Map<string, string>();
+  vi.stubGlobal('localStorage', {
+    getItem: (key: string) => values.get(key) ?? null,
+    setItem: (key: string, value: string) => values.set(key, value),
+    removeItem: (key: string) => values.delete(key),
+  });
+  vi.stubGlobal('window', new EventTarget());
+  saveAiConnection({ endpoint: AI_ENDPOINT, token: 'old-token' });
+  values.set(LEGACY_AI_CONNECTION_KEY, JSON.stringify({ token: 'legacy-token' }));
+  expect(resetAiConnection()).toBe(true);
+  expect(values.get(AI_RESET_KEY)).toBeTruthy();
+  expect(readAiConnection()).toBeNull();
+  // A response from before the reset cannot overwrite the new scope.
+  expect(saveAiConnection({ endpoint: AI_ENDPOINT, token: 'old-token' }, null)).toBe(false);
+  expect(readAiConnection()).toBeNull();
+  saveAiConnection({ endpoint: AI_ENDPOINT, token: 'fresh-token' }, readAiResetId());
+  expect(readAiConnection()?.token).toBe('fresh-token');
+});
+
+it('초기화 경계를 저장하지 못하면 기존 연결을 유지하고 실패를 알린다', async () => {
+  const { resetAiConnection } = await import('./connection');
+  const dispatchEvent = vi.fn();
+  vi.stubGlobal('window', { dispatchEvent });
+  vi.stubGlobal('localStorage', {
+    getItem: (key: string) =>
+      key === AI_CONNECTION_KEY
+        ? JSON.stringify({ service: 'kiryu-character-chat-v2', token: 'old-token' })
+        : null,
+    setItem: () => {
+      throw new Error('quota');
+    },
+  });
+  expect(resetAiConnection()).toBe(false);
+  expect(dispatchEvent).not.toHaveBeenCalled();
+  expect(readAiConnection()?.token).toBe('old-token');
+});

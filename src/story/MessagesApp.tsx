@@ -355,7 +355,7 @@ export function MessagesApp({
                 {aiThread.loadingOlder ? '불러오는 중…' : '이전 대화 더 보기'}
               </button>
             )}
-            <p className="message-local-note">{aiEnabled ? '이전 대화' : '토요일 오후 4:40'}</p>
+            {!aiEnabled && <p className="message-local-note">토요일 오후 4:40</p>}
             {thread.map((message, index) => (
               <div
                 className={`message-line${message.outgoing ? ' message-line--outgoing' : ''}${index === thread.length - 1 || thread[index + 1]?.outgoing !== message.outgoing ? ' message-line--tail' : ''}`}
@@ -417,7 +417,6 @@ export function MessagesApp({
           >
             {aiEnabled && aiCharacter && aiThread ? (
               <>
-                <p className="message-storage-note">대화는 서비스 개선을 위해 저장됩니다</p>
                 {(ai.error || aiThread.error) && (
                   <div className="message-ai-notice" role="status">
                     <span>{ai.error ?? aiThread.error}</span>

@@ -455,3 +455,107 @@ it('중단 후 늦은 응답이 도착해도 상태를 변경하지 않는다', 
   await flush();
   expect(fetch.mock.calls.some(([url]) => url.includes('/v1/jobs/'))).toBe(false);
 });
+
+it('다른 탭에서 초기화한 직후 옛 요청을 막고 늦은 이력 응답과 토큰 저장을 버린다', async () => {
+  const { AI_RESET_KEY, AI_CONNECTION_KEY } = await import('./connection');
+  const values = new Map<string, string>();
+  vi.stubGlobal('localStorage', {
+    getItem: (key: string) => values.get(key) ?? null,
+    setItem: (key: string, value: string) => values.set(key, value),
+    removeItem: (key: string) => values.delete(key),
+  });
+  let release!: (value: Response) => void;
+  let started = false;
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string) => {
+      if (url.endsWith('/v1/health')) return Response.json({ status: 'ready' });
+      if (url.endsWith('/v1/sessions')) return Response.json({ token: 'fresh-session' });
+      if (url.includes('/v1/history')) {
+        if (!values.has(AI_RESET_KEY)) {
+          started = true;
+          return new Promise<Response>((resolve) => {
+            release = resolve;
+          });
+        }
+        return Response.json({ messages: [], pending_job: null, next_cursor: null });
+      }
+      throw new Error('An old request must not be sent');
+    }),
+  );
+  const value = store();
+  const initial = value.activate('haruka');
+  await flush();
+  expect(started).toBe(true);
+  values.set(AI_RESET_KEY, 'new-scope');
+  expect(value.send('haruka', '옛 세션에 보내지 않음', true, true)).toBe(false);
+  value.syncReset();
+  await flush();
+  release(
+    Response.json({
+      messages: [{ id: 'old-message', role: 'assistant', content: '옛 기억', time: null }],
+      pending_job: null,
+      next_cursor: null,
+    }),
+  );
+  await initial;
+  await flush();
+  expect(value.getSnapshot().threads.haruka.messages).toEqual([]);
+  expect(value.getSnapshot().threads.majima.messages).toEqual([]);
+  expect(value.getSnapshot().connection?.token).toBe('fresh-session');
+  expect(JSON.parse(values.get(AI_CONNECTION_KEY)!)).toMatchObject({
+    token: 'fresh-session',
+    resetId: 'new-scope',
+  });
+});
+
+it('초기화 전에 생성 중이던 답장이 늦게 끝나도 새 이력이나 알림에 들어오지 않는다', async () => {
+  const { AI_RESET_KEY } = await import('./connection');
+  const values = new Map<string, string>();
+  vi.stubGlobal('localStorage', {
+    getItem: (key: string) => values.get(key) ?? null,
+    setItem: (key: string, value: string) => values.set(key, value),
+    removeItem: (key: string) => values.delete(key),
+  });
+  let release!: (value: Response) => void;
+  let oldHistoryCalls = 0;
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string, options?: RequestInit) => {
+      if (url.endsWith('/v1/health')) return Response.json({ status: 'ready' });
+      if (url.endsWith('/v1/sessions')) return Response.json({ token: 'fresh-session' });
+      if (url.includes('/v1/history')) {
+        if (new Headers(options?.headers).get('Authorization') === `Bearer ${connection.token}`)
+          oldHistoryCalls++;
+        return Response.json({ messages: [], pending_job: null, next_cursor: null });
+      }
+      if (url.endsWith('/v1/chat')) return Response.json({ job_id: 'old-job', status: 'queued' });
+      if (url.endsWith('/v1/jobs/old-job'))
+        return new Promise<Response>((resolve) => {
+          release = resolve;
+        });
+      throw new Error('Unexpected request');
+    }),
+  );
+  const value = store();
+  await value.activate('haruka');
+  expect(value.send('haruka', '초기화 전 문자', true, true)).toBe(true);
+  await flush();
+  expect(release).toBeDefined();
+  values.set(AI_RESET_KEY, 'after-reset');
+  value.syncReset();
+  await flush();
+  release(
+    Response.json({
+      job_id: 'old-job',
+      character: 'haruka',
+      status: 'complete',
+      reply: '늦은 옛 답장',
+    }),
+  );
+  await flush();
+  expect(oldHistoryCalls).toBe(1);
+  expect(value.getSnapshot().threads.haruka.messages).toEqual([]);
+  expect(value.getSnapshot().threads.haruka.pending).toBeNull();
+  expect(value.getSnapshot().connection?.token).toBe('fresh-session');
+});

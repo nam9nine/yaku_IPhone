@@ -213,15 +213,16 @@ test('기존 주소와 오래된 초대 주소 모두 설정 없이 열며 AI �
   await expect(page.getByRole('button', { name: 'Mac 연결', exact: true })).toHaveCount(0);
   await expect(page.getByRole('dialog', { name: 'Mac 연결', exact: true })).toHaveCount(0);
   await openThread(page, 'haruka');
-  await expect(
-    page.getByText('대화는 서비스 개선을 위해 저장됩니다', { exact: true }),
-  ).toBeVisible();
+  await expect(page.getByText('대화는 서비스 개선을 위해 저장됩니다', { exact: true })).toHaveCount(
+    0,
+  );
+  await expect(page.getByText('이전 대화', { exact: true })).toHaveCount(0);
   await expect.poll(() => mac.sessions).toBe(1);
   expect(mac.chats).toEqual([]);
   const saved = await page.evaluate(() =>
     JSON.parse(localStorage.getItem('yaku-iphone.ai.session.v2') ?? 'null'),
   );
-  expect(saved).toEqual({ service: 'kiryu-character-chat-v2', token });
+  expect(saved).toEqual({ service: 'kiryu-character-chat-v2', token, resetId: null });
   expect(mac.requests.every(({ url }) => url.startsWith(endpoint) && !url.includes(token))).toBe(
     true,
   );
