@@ -31,3 +31,23 @@
 클래식 iPhone Tri-Tone의 로컬 시스템 파일을 음높이·간격 참고에만 사용했다. 앱에는 자체 Web Audio 합성음을 넣었으며 원본 오디오를 복사하지 않았다. 출처·해시·측정과 표준 근거는 `docs/reply-notifications.md`에 기록했다.
 
 브라우저 검사의 API·알림 권한·푸시 제공자는 모의 환경이다. 실제 Web Audio 생성과 상태는 검사했지만 실제 스피커에서 들은 음질, iPhone Safari/PWA 잠금 화면, APNs 실전달을 검증한 것은 아니다. OS 소리는 기기 설정을 따르며 웹에서 사용자 지정 iPhone 메시지음을 강제할 수 없다. Native 표시 실패와 다른 경로의 소리 포기가 겹치는 순간에는 소리가 누락될 수 있다. 배너·원문 표시와 소리 요청/청취 성공은 구분한다.
+
+## 통합 검사 후 오디오 재개 보완
+
+`7d07c95ead52f935efffed75e517a5a09cf494fa`의 전송·알림 통합 60개 검사에서는 58개가 통과하고 WebKit 2개가 실패했다. 현재 대화의 oscillator 시작 수가 0이었고, 다른 검사는 준비 단계의 `running` 조건이 성립하지 않았다. 이때 실제 AudioContext state 전환은 기록하지 않아 `suspended`·`interrupted`·오디오 장치 상태 중 원인을 확정할 수 없다. 모델 추론 병행이나 가상 시계를 원인으로 단정하지 않는다. 실패 trace는 로컬 `.tooling/notify90/integrated-audio-failures/`에 보존했다.
+
+상태 전환·resume 요청/완료·visibility·소리 소유권 진단만 추가한 같은 60개 검사는 통과했다. 이는 간헐 실패의 해결 증거가 아니다. 별도로 확인한 구현 경계는, 새 답장이 오는 순간 오디오가 잠시 중단돼 있으면 재개를 시도하지 않고 수신음을 소비한다는 점이었다.
+
+이를 보완해 사용자 제스처로 이미 생성한 context만 새 visible 답장에서 최대 1초 재개 대기한다. `touchend`·`click`에서도 활성화를 시도한다. 숨김·초기화·unmount·무음 변경·기한 종료 뒤의 늦은 재개는 지난 답장을 재생하지 않는다. 재개를 기다리는 동안에는 OS 소리 소유권을 선점하지 않으며, 준비된 뒤에도 OS가 먼저 확보했으면 앱 소리는 포기한다.
+
+- 결정적 회귀: 실제 AudioContext와 oscillator를 유지하면서 resume 승인만 지연시켰다. 새 도착 재개와 숨김·초기화·무음·기한 종료 5조건 × 2엔진, 10개 통과(22.3초). 원래 간헐 실패의 물리적 원인을 재현한 실험은 아니다.
+- 위 성공 회귀에서 product 2파일만 `7d07c95` 상태로 잠시 복원하면 두 엔진 모두 재개 요청 없음으로 실패했다. 실험 종료 후 새 소스를 복구했다.
+- 보완 후 `npm run check`: 단위 390개 포함 통과.
+- 보완 후 `npm run test:e2e -- --config .tooling/notify90/playwright.config.mjs live-ai-chat notification-reliability --workers=2`: 70개 통과(52.7초). 실패 재시도 설정은 0이다.
+- 실패 시 실제 state·resume·가시성·소유권 JSON을 첨부하도록 검사를 보완했다. 첫 통합 실패의 정확한 원인은 미확정이며, 장기간의 플랫폼 중단까지 사이트 소리 재생을 보장하지 않는다. 시각 표시·전송 동작은 오디오 재개를 기다리지 않는다.
+
+추가 독립 리뷰는 오디오 준비 후 IndexedDB 소유권 대기 중 숨김으로 취소된 도착을 지적했다. 소유권만 해제하면 복귀 후 음량 변경이 같은 도착의 소리를 다시 낼 수 있었다. 숨김→소유권 해제→복귀→음량 변경을 추가하자 두 엔진 모두 기대 0/실제 9 oscillator로 재현됐다. 취소 시 해당 도착 ID도 소비하도록 보완했다.
+
+- 이 최종 보완 후 `npm run check`: 단위 390개 포함 통과.
+- 이 최종 보완 후 `npm run test:e2e -- --config .tooling/notify90/playwright.config.mjs notification-reliability reply-notifications push-binding push-registration --workers=2`: 42개 통과(57.7초). 위 70개 통합 결과는 이 마지막 취소 보완 직전의 결과다.
+- 이번 추가 수정은 오디오 수신·취소 경계이며 화면 CSS와 기준 이미지는 변경하지 않았다. 최종 커밋의 CI 및 독립 리뷰는 PR에서 별도로 기록한다.

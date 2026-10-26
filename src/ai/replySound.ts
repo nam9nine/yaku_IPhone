@@ -16,8 +16,36 @@ export class ReplySoundPlayer {
     }
   }
 
-  canPlay(): boolean {
-    return this.context?.state === 'running';
+  /** Retry only an already gesture-created context for this fresh arrival.
+   * A browser interruption may resolve asynchronously or never resolve at all.
+   */
+  ready(signal: AbortSignal): Promise<boolean> {
+    const context = this.context;
+    if (signal.aborted || !context || context.state === 'closed') return Promise.resolve(false);
+    if (context.state === 'running') return Promise.resolve(true);
+    return new Promise((resolve) => {
+      let settled = false;
+      const finish = (ready: boolean) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        signal.removeEventListener('abort', cancelled);
+        resolve(
+          ready && !signal.aborted && this.context === context && context.state === 'running',
+        );
+      };
+      const cancelled = () => finish(false);
+      const timer = setTimeout(() => finish(false), 1000);
+      signal.addEventListener('abort', cancelled, { once: true });
+      try {
+        void context.resume().then(
+          () => finish(true),
+          () => finish(false),
+        );
+      } catch {
+        finish(false);
+      }
+    });
   }
 
   play(id: string, silent: boolean, volume: number, visible: boolean): boolean {

@@ -78,3 +78,60 @@ it('중단된 Safari 오디오는 다음 사용자 동작에서 재개하고 종
   player.dispose();
   expect(context.close).toHaveBeenCalledOnce();
 });
+
+it('새 도착은 기존 사용자 활성화 context의 지연 재개만 기다리고 새 context를 자동 생성하지 않는다', async () => {
+  const { player, context, starts } = audio();
+  const signal = new AbortController().signal;
+  expect(await player.ready(signal)).toBe(false);
+  expect(context.resume).not.toHaveBeenCalled();
+  player.unlock();
+  context.state = 'interrupted';
+  let resumed!: () => void;
+  context.resume.mockImplementation(
+    () =>
+      new Promise<void>((resolve) => {
+        resumed = resolve;
+      }),
+  );
+  const ready = player.ready(signal);
+  expect(starts).toHaveLength(0);
+  context.state = 'running';
+  resumed();
+  expect(await ready).toBe(true);
+  expect(player.play('new-arrival', false, 50, true)).toBe(true);
+});
+
+it.each(['abort', 'deadline', 'dispose'])(
+  '재개 %s 뒤 늦은 완료는 과거 수신음을 재생하지 않는다',
+  async (cancel) => {
+    vi.useFakeTimers();
+    try {
+      const { player, context, starts } = audio();
+      player.unlock();
+      context.state = 'suspended';
+      let resumed!: () => void;
+      context.resume.mockImplementation(
+        () =>
+          new Promise<void>((resolve) => {
+            resumed = resolve;
+          }),
+      );
+      const controller = new AbortController();
+      const ready = player.ready(controller.signal);
+      if (cancel === 'abort') controller.abort();
+      else if (cancel === 'dispose') {
+        player.dispose();
+        context.state = 'running';
+        resumed();
+      } else await vi.advanceTimersByTimeAsync(1001);
+      expect(await ready).toBe(false);
+      context.state = 'running';
+      resumed();
+      await Promise.resolve();
+      expect(starts).toHaveLength(0);
+      expect(vi.getTimerCount()).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
+  },
+);

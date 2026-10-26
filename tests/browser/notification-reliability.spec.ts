@@ -9,15 +9,62 @@ import { unlockPhone } from '../helpers/unlock';
 async function setup(page: Page, push = true, hold = false) {
   await page.addInitScript(() => {
     const contexts: AudioContext[] = [];
+    const events: Record<string, unknown>[] = [];
+    const now = Date.now.bind(Date);
+    const record = (event: string, extra: Record<string, unknown> = {}) =>
+      events.push({
+        event,
+        time: now(),
+        states: contexts.map((context) => context.state),
+        hidden: document.hidden,
+        focused: document.hasFocus(),
+        ...extra,
+      });
+    for (const type of ['visibilitychange', 'pointerup', 'keydown'])
+      document.addEventListener(type, (event) => record(type, { trusted: event.isTrusted }), true);
     const NativeAudioContext = window.AudioContext;
+    let interrupted = false;
+    const pendingResumes: (() => void)[] = [];
     window.AudioContext = class extends NativeAudioContext {
       constructor(options?: AudioContextOptions) {
         super(options);
         contexts.push(this);
+        record('created');
+        this.addEventListener('statechange', () => record('statechange'));
+      }
+      override get state() {
+        return interrupted ? 'suspended' : super.state;
+      }
+      override resume() {
+        record('resume-request');
+        if (interrupted)
+          return new Promise<void>((resolve) => {
+            pendingResumes.push(resolve);
+          });
+        return super.resume().then(
+          () => {
+            record('resume-complete');
+          },
+          (error: unknown) => {
+            record('resume-error', { error: String(error) });
+            throw error;
+          },
+        );
       }
     };
     const counts = {
       starts: 0,
+      events,
+      interrupt: () => {
+        interrupted = true;
+      },
+      release: () => {
+        interrupted = false;
+        pendingResumes.splice(0).forEach((resolve) => resolve());
+      },
+      get pendingResumes() {
+        return pendingResumes.length;
+      },
       frequencies: [] as number[],
       get states() {
         return contexts.map((context) => context.state);
@@ -30,6 +77,7 @@ async function setup(page: Page, push = true, hold = false) {
       const start = oscillator.start.bind(oscillator);
       oscillator.start = (when) => {
         counts.starts++;
+        record('oscillator-start');
         counts.frequencies.push(oscillator.frequency.value);
         start(when);
       };
@@ -162,6 +210,44 @@ async function setup(page: Page, push = true, hold = false) {
       .toBe(true);
   return state;
 }
+
+test.afterEach(async ({ page }, info) => {
+  if (info.status === info.expectedStatus) return;
+  const diagnostics = await page
+    .evaluate(async () => {
+      const audio = (window as unknown as { notificationAudio?: unknown }).notificationAudio;
+      const claims = await new Promise<unknown>((resolve) => {
+        const opening = indexedDB.open('yaku-iphone-push-v1', 1);
+        opening.onerror = () => resolve('unavailable');
+        opening.onsuccess = () => {
+          const db = opening.result;
+          if (!db.objectStoreNames.contains('state')) {
+            db.close();
+            resolve(null);
+            return;
+          }
+          const request = db
+            .transaction('state', 'readonly')
+            .objectStore('state')
+            .get('soundClaims');
+          request.onsuccess = () => {
+            resolve(request.result ?? null);
+            db.close();
+          };
+          request.onerror = () => {
+            resolve('unavailable');
+            db.close();
+          };
+        };
+      });
+      return { audio, claims, hidden: document.hidden, focused: document.hasFocus() };
+    })
+    .catch((error: unknown) => ({ unavailable: String(error) }));
+  await info.attach('audio-diagnostics', {
+    body: JSON.stringify(diagnostics, null, 2),
+    contentType: 'application/json',
+  });
+});
 
 async function soundCount(page: Page) {
   return page.evaluate(
@@ -430,6 +516,102 @@ for (const cancel of ['hidden', 'reset'] as const) {
         ),
       )
       .toEqual([]);
+    expect(await soundCount(page)).toBe(0);
+    if (cancel === 'hidden') {
+      await page.evaluate(() => {
+        Object.defineProperty(document, 'hidden', { configurable: true, value: false });
+        document.dispatchEvent(new Event('visibilitychange'));
+      });
+      await page.keyboard.press('Alt+c');
+      await page.getByRole('slider', { name: '음량', exact: true }).fill('91');
+      await page.keyboard.press('Escape');
+      await page.clock.runFor(1500);
+      expect(await soundCount(page)).toBe(0);
+    }
+  });
+}
+
+// Deterministic platform boundary: keep real AudioContext/oscillators, but delay
+// the resume acknowledgement. This is not a claim to reproduce the original
+// intermittent WebKit failure's unknown hardware/browser cause.
+async function pendingAudioArrival(page: Page) {
+  const state = await setup(page);
+  await page.keyboard.press('Alt+Home');
+  await page.clock.runFor(500);
+  await page.evaluate(() =>
+    (
+      window as unknown as { notificationAudio: { interrupt: () => void } }
+    ).notificationAudio.interrupt(),
+  );
+  const untilDelivery = await page.evaluate(() => {
+    const saved = JSON.parse(localStorage.getItem('yaku-iphone.ai.delivery.v1')!);
+    return Math.max(0, saved.receipts[0].deliverAt - Date.now());
+  });
+  await page.clock.runFor(untilDelivery);
+  await expect(page.locator('.ai-reply-banner')).toBeVisible();
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (window as unknown as { notificationAudio: { pendingResumes: number } }).notificationAudio
+            .pendingResumes,
+      ),
+    )
+    .toBeGreaterThan(0);
+  expect(await soundCount(page)).toBe(0);
+  return state;
+}
+async function releaseAudio(page: Page) {
+  await page.evaluate(() =>
+    (
+      window as unknown as { notificationAudio: { release: () => void } }
+    ).notificationAudio.release(),
+  );
+}
+
+test('새 답장 도착 때 잠깐 중단된 오디오는 재개 완료 후 한 번 울린다', async ({ page }) => {
+  await pendingAudioArrival(page);
+  await releaseAudio(page);
+  await expect.poll(() => soundCount(page)).toBe(9);
+  await page.clock.runFor(2000);
+  expect(await soundCount(page)).toBe(9);
+});
+
+for (const cancel of ['hidden', 'reset', 'mute', 'deadline'] as const) {
+  test(`오디오 재개 대기 중 ${cancel}이면 뒤늦은 완료로 지난 소리를 재생하지 않는다`, async ({
+    page,
+  }) => {
+    await pendingAudioArrival(page);
+    if (cancel === 'hidden')
+      await page.evaluate(() => {
+        Object.defineProperty(document, 'hidden', { configurable: true, value: true });
+        document.dispatchEvent(new Event('visibilitychange'));
+      });
+    else if (cancel === 'reset') {
+      await page.evaluate(() => {
+        localStorage.setItem('yaku-iphone.ai.reset.v1', 'audio-resume-reset');
+        window.dispatchEvent(new Event('yaku-iphone-ai-reset'));
+      });
+      await expect(page.locator('.ai-reply-banner')).toHaveCount(0);
+    } else if (cancel === 'mute') {
+      await page.keyboard.press('Alt+c');
+      await page.getByRole('button', { name: '무음 모드', exact: true }).tap();
+      await page.keyboard.press('Escape');
+    } else await page.clock.runFor(1001);
+    await releaseAudio(page);
+    await page.clock.runFor(100);
+    expect(await soundCount(page)).toBe(0);
+    if (cancel === 'hidden')
+      await page.evaluate(() => {
+        Object.defineProperty(document, 'hidden', { configurable: true, value: false });
+        document.dispatchEvent(new Event('visibilitychange'));
+      });
+    if (cancel === 'mute') {
+      await page.keyboard.press('Alt+c');
+      await page.getByRole('button', { name: '무음 모드', exact: true }).tap();
+      await page.keyboard.press('Escape');
+    }
+    await page.clock.runFor(2000);
     expect(await soundCount(page)).toBe(0);
   });
 }

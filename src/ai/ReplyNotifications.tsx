@@ -68,10 +68,16 @@ export function AiReplySound({
   audio.current ??= new ReplySoundPlayer();
   useEffect(() => {
     const unlock = () => audio.current?.unlock();
+    // Safari media activation explicitly includes touchend/click. Pointerup is
+    // kept for pointer-only controls, with duplicate resume calls harmless.
     document.addEventListener('pointerup', unlock, true);
+    document.addEventListener('touchend', unlock, true);
+    document.addEventListener('click', unlock, true);
     document.addEventListener('keydown', unlock, true);
     return () => {
       document.removeEventListener('pointerup', unlock, true);
+      document.removeEventListener('touchend', unlock, true);
+      document.removeEventListener('click', unlock, true);
       document.removeEventListener('keydown', unlock, true);
       audio.current?.dispose();
     };
@@ -82,21 +88,39 @@ export function AiReplySound({
     const player = audio.current!;
     const soundId = arrival.jobId ?? arrival.id;
     const owner = `app:${crypto.randomUUID()}`;
-    if (silent || volume <= 0 || document.hidden || !player.canPlay()) {
+    if (silent || volume <= 0 || document.hidden) {
       // Consume in this page without replaying on return, unmute, or audio unlock.
       player.play(arrival.id, true, volume, false);
       return;
     }
-    void claimReplySound(soundId, owner).then((claimed) => {
+    const controller = new AbortController();
+    const onVisibility = () => {
+      if (document.hidden) controller.abort();
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    void player.ready(controller.signal).then(async (ready) => {
+      if (!ready || !current || document.hidden) {
+        player.play(arrival.id, true, volume, false);
+        return;
+      }
+      const claimed = await claimReplySound(soundId, owner);
       if (!claimed) {
         player.play(arrival.id, true, volume, false);
         return;
       }
-      const played = current && player.play(arrival.id, silent, volume, !document.hidden);
-      if (!played) void releaseReplySound(soundId, owner);
+      const played =
+        current &&
+        !controller.signal.aborted &&
+        player.play(arrival.id, silent, volume, !document.hidden);
+      if (!played) {
+        player.play(arrival.id, true, volume, false);
+        void releaseReplySound(soundId, owner);
+      }
     });
     return () => {
       current = false;
+      controller.abort();
+      document.removeEventListener('visibilitychange', onVisibility);
     };
   }, [arrival, silent, volume]);
   return null;
