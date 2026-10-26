@@ -577,6 +577,22 @@ test('새 답장 도착 때 잠깐 중단된 오디오는 재개 완료 후 한 
   expect(await soundCount(page)).toBe(9);
 });
 
+async function setSilentMode(page: Page, silent: boolean) {
+  const panel = page.getByTestId('system-control');
+  await expect(panel).toHaveCount(0);
+  await page.keyboard.press('Alt+c');
+  await expect(panel).toBeVisible();
+  const toggle = panel.getByRole('button', { name: '무음 모드', exact: true });
+  await expect(toggle).toHaveAttribute('aria-pressed', String(!silent));
+  await toggle.tap();
+  await expect(toggle).toHaveAttribute('aria-pressed', String(silent));
+  await page.keyboard.press('Escape');
+  // The real panel closes with a 200ms animation and 240ms fallback. With the
+  // test clock paused, wait through that boundary before trying to reopen it.
+  await page.clock.runFor(240);
+  await expect(panel).toHaveCount(0);
+}
+
 for (const cancel of ['hidden', 'reset', 'mute', 'deadline'] as const) {
   test(`오디오 재개 대기 중 ${cancel}이면 뒤늦은 완료로 지난 소리를 재생하지 않는다`, async ({
     page,
@@ -594,9 +610,7 @@ for (const cancel of ['hidden', 'reset', 'mute', 'deadline'] as const) {
       });
       await expect(page.locator('.ai-reply-banner')).toHaveCount(0);
     } else if (cancel === 'mute') {
-      await page.keyboard.press('Alt+c');
-      await page.getByRole('button', { name: '무음 모드', exact: true }).tap();
-      await page.keyboard.press('Escape');
+      await setSilentMode(page, true);
     } else await page.clock.runFor(1001);
     await releaseAudio(page);
     await page.clock.runFor(100);
@@ -607,9 +621,7 @@ for (const cancel of ['hidden', 'reset', 'mute', 'deadline'] as const) {
         document.dispatchEvent(new Event('visibilitychange'));
       });
     if (cancel === 'mute') {
-      await page.keyboard.press('Alt+c');
-      await page.getByRole('button', { name: '무음 모드', exact: true }).tap();
-      await page.keyboard.press('Escape');
+      await setSilentMode(page, false);
     }
     await page.clock.runFor(2000);
     expect(await soundCount(page)).toBe(0);

@@ -51,3 +51,11 @@
 - 이 최종 보완 후 `npm run check`: 단위 390개 포함 통과.
 - 이 최종 보완 후 `npm run test:e2e -- --config .tooling/notify90/playwright.config.mjs notification-reliability reply-notifications push-binding push-registration --workers=2`: 42개 통과(57.7초). 위 70개 통합 결과는 이 마지막 취소 보완 직전의 결과다.
 - 이번 추가 수정은 오디오 수신·취소 경계이며 화면 CSS와 기준 이미지는 변경하지 않았다. 최종 커밋의 CI 및 독립 리뷰는 PR에서 별도로 기록한다.
+
+## CI 패널 전환 fixture 보완
+
+CI `40333064993`에서 E2E 553개 통과/1개 실패, 시각 회귀 224개 통과였다. 실패는 WebKit의 무음 취소 검사에서 두 번째 제어센터 열기·무음 해제 단계의 버튼이 detached된 경우다. 제어센터는 Escape 뒤 200ms 애니메이션 또는 240ms 종료 타이머로 해제되는데, 테스트는 가상 시간 100ms만 진행하고 재열기를 시도했다. 이전 패널 상태가 남으면 Alt+C가 무시되고 닫히는 패널의 버튼을 선택할 수 있었다.
+
+제품 코드·오디오 재생 정책은 바꾸지 않았다. 해당 fixture는 패널 없음→열림 확인→무음 상태 전후 확인→Escape→가상 시간 240ms 진행→패널 없음 확인을 순서대로 수행한다. 타임아웃·재시도·시각 허용 오차는 늘리지 않았다.
+
+수정 후 `npm run test:e2e -- --config .tooling/notify90/playwright.config.mjs notification-reliability --grep '오디오|claim 대기' --workers=2`: Chromium/WebKit 14개 통과(16.0초). 전체 CI 재검사 결과는 최종 PR에 기록한다.
