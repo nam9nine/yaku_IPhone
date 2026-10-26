@@ -492,7 +492,81 @@ test('가상 오프라인에서는 전송을 막고 복구해도 초안을 자�
   expect(mac.chats).toHaveLength(1);
 });
 
+test('전송 터치를 취소하면 보내지 않고 터치·키보드 전송은 한 번씩만 처리한다', async ({
+  page,
+}, testInfo) => {
+  const mac = await mockMac(page);
+  await start(page);
+  await openThread(page, 'majima');
+  await input(page).fill('형님, 나중에 연락드리겠습니다.');
+  await input(page).focus();
+  await page.screenshot({ path: testInfo.outputPath('send-focused.png'), animations: 'disabled' });
+  const button = (await send(page).boundingBox())!;
+  await page.mouse.move(button.x + button.width / 2, button.y + button.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(button.x - 70, button.y - 70);
+  await page.mouse.up();
+  expect(mac.chats).toHaveLength(0);
+  await expect(input(page)).toHaveValue('형님, 나중에 연락드리겠습니다.');
+  await send(page).tap();
+  await expect.poll(() => mac.chats.length).toBe(1);
+  await expect(input(page)).toBeFocused();
+  await finishAiReply(page, 'majima');
+  await input(page).fill('키보드로 다음 문자');
+  // Safari's full keyboard navigation preference is outside this fixture.
+  // Focus the native button as assistive navigation does, then activate by Enter.
+  await send(page).focus();
+  await expect(send(page)).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect.poll(() => mac.chats.length).toBe(2);
+  expect(mac.chats.map((chat) => chat.message)).toEqual([
+    '형님, 나중에 연락드리겠습니다.',
+    '키보드로 다음 문자',
+  ]);
+});
+
 for (const width of [360, 390, 430]) {
+  test(`${width}px에서 입력 중 전송 탭이 키보드 높이 변화로 유실되지 않는다`, async ({
+    page,
+  }, testInfo) => {
+    await page.setViewportSize({ width, height: 844 });
+    const mac = await mockMac(page);
+    await start(page);
+    await openThread(page, 'majima');
+    await input(page).fill('형님, 오늘은 잘 지내십니까?');
+    await input(page).focus();
+    // Desktop engines do not display the iOS keyboard. Model only its geometry:
+    // losing text focus restores visualViewport height before pointerup.
+    await input(page).evaluate((field) => {
+      const viewport = window.visualViewport!;
+      let height = 430;
+      Object.defineProperty(viewport, 'height', { configurable: true, get: () => height });
+      field.addEventListener('blur', () => {
+        height = 844;
+        viewport.dispatchEvent(new Event('resize'));
+      });
+      viewport.dispatchEvent(new Event('resize'));
+    });
+    await expect(send(page)).toBeEnabled();
+    await expect(page.getByTestId('messages-app')).toHaveCSS('height', '430px');
+    const button = (await send(page).boundingBox())!;
+    await page.mouse.move(button.x + button.width / 2, button.y + button.height / 2);
+    await page.mouse.down();
+    await page.evaluate(
+      () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve())),
+    );
+    await page.mouse.up();
+    await expect.poll(() => mac.chats.length).toBe(1);
+    expect(mac.chats[0].message).toBe('형님, 오늘은 잘 지내십니까?');
+    await expect(input(page)).toHaveValue('');
+    await expect(input(page)).toBeFocused();
+    if (width === 390)
+      await page.getByTestId('messages-app').screenshot({
+        path: testInfo.outputPath('send-keyboard-geometry.png'),
+        animations: 'disabled',
+      });
+  });
+
   test(`${width}px와 키보드 상당 축소 높이에서 입력·전송 버튼이 잘리지 않는다`, async ({
     page,
   }) => {
