@@ -370,7 +370,14 @@ function PhoneSession() {
           }
         />
       )}
-      <AiReplySound arrival={ai.arrival} silent={controls.silent} volume={controls.volume} />
+      <AiReplySound
+        arrival={ai.arrival}
+        silent={controls.silent}
+        volume={controls.volume}
+        activeCharacter={
+          !state.locked && state.activeApp === 'messages' && !state.panel ? conversation : null
+        }
+      />
       <AiReplyBanner
         notification={ai.notification}
         onOpen={openConversation}

@@ -37,6 +37,7 @@ export function MobileShell({
       }
       aria-label="키류의 iPhone"
       data-framed={viewport.framed}
+      data-keyboard={viewport.keyboard}
       data-locked={foreground}
       data-theme={appearance.theme}
       data-wallpaper={preferences.wallpaper}

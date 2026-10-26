@@ -484,7 +484,7 @@ body {
   z-index: 18;
   color: white;
   pointer-events: none;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 650;
   line-height: 1;
 }
@@ -512,34 +512,39 @@ body {
 }
 .status-battery {
   position: relative;
-  display: block;
-  width: 27px;
+  display: grid;
+  place-items: center;
+  width: 26px;
   height: 14px;
-  padding: 1px;
-  border: 1px solid currentColor;
   border-radius: 4px;
+  background: color-mix(in srgb, currentColor 28%, transparent);
+}
+.status-battery::before {
+  content: '';
+  position: absolute;
+  inset: 0 20% 0 0;
+  border-radius: 4px 0 0 4px;
+  background: currentColor;
 }
 .status-battery::after {
   content: '';
   position: absolute;
-  left: 28px;
-  top: 4px;
-  width: 2px;
+  left: 27px;
+  top: 4.5px;
+  width: 1.5px;
   height: 5px;
   border-radius: 0 2px 2px 0;
   background: currentColor;
-  opacity: 0.5;
+  opacity: 0.4;
 }
 .status-battery span {
   position: relative;
-  display: grid;
-  place-items: center;
-  height: 10px;
-  border-radius: 2px;
-  background: linear-gradient(to right, #30d158 80%, #30d15833 80%);
-  color: #fff;
-  font-size: 9px;
+  color: #222;
+  font-size: 11px;
   font-weight: 750;
+}
+.phone-status-bar[data-app='true'] .status-battery span {
+  color: var(--app-background);
 }
 
 .system-top-edge {

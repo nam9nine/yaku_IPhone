@@ -83,26 +83,84 @@
   background: var(--phone-button, var(--app-background));
 }
 .messages-app .message-thread-header {
-  min-height: 102px;
-  padding: 8px 74px 10px;
-  background: var(--phone-canvas, var(--app-surface));
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 4;
+  min-height: 116px;
+  padding: 8px 84px 12px;
+  border: 0;
+  background: none;
+  pointer-events: none;
 }
-.message-thread-header .social-back {
+.message-thread-header::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 -18px;
+  z-index: 0;
+  background: color-mix(in srgb, var(--phone-canvas, var(--app-surface)) 65%, transparent);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  mask-image: linear-gradient(#000 55%, transparent);
+}
+.message-thread-header > * {
+  z-index: 1;
+  pointer-events: auto;
+}
+.messages-app .message-thread-header .social-back {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
   top: 10px;
+  width: auto;
+  min-width: 46px;
+  height: 46px;
+  padding: 0 10px;
 }
-.message-recipient img {
-  width: 50px;
-  height: 50px;
+.message-thread-header :is(.social-back, .message-push-button),
+.messages-app .message-recipient h1 {
+  background: color-mix(in srgb, var(--phone-button, var(--app-surface)) 86%, transparent);
+  box-shadow:
+    inset 0 1px 1px #ffffff28,
+    0 1px 2px #0002;
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+.message-back-count {
+  min-width: 24px;
+  padding: 2px 6px;
+  border-radius: 20px;
+  background: var(--app-text);
+  color: var(--phone-canvas, var(--app-surface));
+  font-size: 14px;
+  font-weight: 600;
+}
+.messages-app .message-recipient img {
+  width: 60px;
+  height: 60px;
 }
 .messages-app .message-recipient h1 {
-  font-size: 0.8125rem;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 5px 10px 5px 13px;
+  font-size: 0.9375rem;
   line-height: 1.3;
+  white-space: nowrap;
+}
+.message-recipient h1 svg {
+  width: 13px;
+  height: 18px;
+  color: var(--app-secondary);
+  stroke-width: 3;
 }
 .messages-app .message-recipient {
-  gap: 5px;
+  position: relative;
+  flex-direction: column;
+  gap: 0;
 }
 .messages-app .message-history {
-  padding: 14px 19px 12px;
+  padding: 128px 16px 12px;
+  scroll-padding-top: 128px;
 }
 .messages-app .message-bubble {
   --message-fill: #e9e9eb;
@@ -245,4 +303,35 @@
   .message-typing span {
     animation: none;
   }
+}
+
+/* The visual viewport already ends at the keyboard: no home-gesture strip or
+   duplicate hardware safe area should sit between it and the composer. */
+.mobile-shell[data-keyboard='true'] [data-app-window='messages'] .app-home-controls {
+  display: none;
+}
+.mobile-shell[data-keyboard='true'] .messages-app .message-composer {
+  padding-bottom: 4px;
+}
+.mobile-shell[data-keyboard='true'] .messages-app .message-story-reply {
+  display: none;
+}
+@media (max-height: 500px) {
+  .messages-app .message-thread-header {
+    min-height: 94px;
+    padding-top: 4px;
+  }
+  .messages-app .message-recipient img {
+    width: 44px;
+    height: 44px;
+  }
+  .messages-app .message-history {
+    padding-top: 104px;
+    scroll-padding-top: 104px;
+  }
+}
+
+.messages-app .message-ai-input textarea:focus-visible {
+  outline: none;
+  caret-color: var(--app-accent);
 }

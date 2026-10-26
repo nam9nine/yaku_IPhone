@@ -209,6 +209,17 @@ async function setup(page: Page, push = true, hold = false) {
         }),
       )
       .toBe(true);
+  // Every valid local send starts the conversation tone once. Keep the
+  // arrival assertions below independent of the new outgoing sound.
+  await expect.poll(() => soundCount(page)).toBe(1);
+  await page.evaluate(() => {
+    const audio = (
+      window as unknown as { notificationAudio: { starts: number; durations: number[] } }
+    ).notificationAudio;
+    if (Math.abs(audio.durations[0] - 0.517642) > 0.001) throw new Error('Wrong outgoing tone');
+    audio.starts = 0;
+    audio.durations = [];
+  });
   return state;
 }
 
@@ -278,7 +289,7 @@ for (const width of [360, 390, 430]) {
     ).toBeCloseTo(4.4, 2);
     if (width === 390)
       await page.screenshot({
-        path: `harness/evidence/issue-97/subscribed-fallback-${test.info().project.name}.png`,
+        path: `harness/evidence/issue-99/subscribed-fallback-${test.info().project.name}.png`,
         animations: 'disabled',
       });
     await page.clock.runFor(6001);
@@ -651,7 +662,7 @@ test('답장 작성 말풍선이 나타날 때 보낸 문자를 읽음으로 표
   await expect(page.locator('.message-typing')).toBeVisible();
   await expect(page.locator('.message-time').last()).toContainText('읽음');
   expect(await soundCount(page)).toBe(0);
-  await page.screenshot({ path: `harness/evidence/issue-97/read-${test.info().project.name}.png` });
+  await page.screenshot({ path: `harness/evidence/issue-99/read-${test.info().project.name}.png` });
   await page.clock.runFor(1600);
   await expect(page.getByText('우동 재료는 제가 챙길게요.', { exact: true })).toBeVisible();
   await expect.poll(() => soundCount(page)).toBe(1);
@@ -661,3 +672,75 @@ test('답장 작성 말풍선이 나타날 때 보낸 문자를 읽음으로 표
   await launchHomeApp(page, 'messages');
   expect(await soundCount(page)).toBe(1);
 });
+
+test('홈 화면 앱 전경은 Push보다 먼저 준비된 대화음을 재생하고 이후 답장은 중복 재생하지 않는다', async ({
+  page,
+}) => {
+  const state = await setup(page, true);
+  const result = await page.evaluate(async (jobId) => {
+    const channel = new MessageChannel();
+    const done = new Promise<void>((resolve) => {
+      channel.port1.onmessage = () => resolve();
+    });
+    const opening = indexedDB.open('yaku-iphone-push-v1', 1);
+    const binding = await new Promise<{ id: string }>((resolve) => {
+      opening.onsuccess = () => {
+        const db = opening.result;
+        const request = db.transaction('state').objectStore('state').get('binding');
+        request.onsuccess = () => {
+          resolve(request.result);
+          db.close();
+        };
+      };
+    });
+    const event = new Event('message');
+    Object.assign(event, {
+      data: {
+        type: 'chat.sound',
+        character: 'haruka',
+        soundId: jobId,
+        subscription_id: binding.id,
+        deadline: Date.now() + 1100,
+      },
+      ports: [channel.port2],
+      source: { scriptURL: new URL('push-sw.js', location.href).href },
+    });
+    navigator.serviceWorker.dispatchEvent(event);
+    await done;
+    channel.port1.close();
+    return (window as unknown as { notificationAudio: { durations: number[] } }).notificationAudio
+      .durations;
+  }, state.requestId);
+  expect(result).toHaveLength(1);
+  expect(result[0]).toBeCloseTo(0.517642, 3);
+  await page.clock.runFor(typingDelay(state.requestId) + 1600);
+  await expect(page.getByText('우동 재료는 제가 챙길게요.', { exact: true })).toBeVisible();
+  expect(await soundCount(page)).toBe(1);
+});
+
+for (const cancel of ['mute', 'reset', 'other-window-reset'] as const) {
+  test(`대기 중인 전송음은 ${cancel} 이후 재개하지 않는다`, async ({ page }) => {
+    await setup(page, false, true);
+    await page.evaluate(() => {
+      const audio = (window as unknown as { notificationAudio: { interrupt: () => void } })
+        .notificationAudio;
+      audio.interrupt();
+      window.dispatchEvent(new Event('kiryu:message-sent'));
+    });
+    if (cancel === 'mute') {
+      await page.keyboard.press('Alt+c');
+      await page.getByRole('button', { name: '무음 모드', exact: true }).tap();
+      await page.keyboard.press('Escape');
+    } else if (cancel === 'reset')
+      await page.evaluate(() => window.dispatchEvent(new Event('yaku-iphone-ai-reset')));
+    else
+      await page.evaluate(() => window.dispatchEvent(new StorageEvent('storage', { key: null })));
+    await page.evaluate(() =>
+      (
+        window as unknown as { notificationAudio: { release: () => void } }
+      ).notificationAudio.release(),
+    );
+    await page.clock.runFor(1200);
+    expect(await soundCount(page)).toBe(0);
+  });
+}

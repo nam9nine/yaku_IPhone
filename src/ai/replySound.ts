@@ -1,4 +1,9 @@
-type ReplySoundKind = 'notification' | 'conversation';
+export type ReplySoundKind = 'notification' | 'conversation';
+export const MESSAGE_SENT_SOUND = 'kiryu:message-sent';
+/** Dispatch only after a valid, non-duplicate local send is accepted. */
+export function messageSentSound(): void {
+  window.dispatchEvent(new Event(MESSAGE_SENT_SOUND));
+}
 const soundFiles = { notification: 'iphone-note.wav', conversation: 'iphone-received-message.wav' };
 /** Apple system recordings; provenance: docs/reply-notifications.md. */
 const loadTone = async (context: AudioContext, kind: ReplySoundKind): Promise<AudioBuffer> => {
@@ -21,6 +26,15 @@ export class ReplySoundPlayer {
 
   unlock(): void {
     try {
+      // Notification pings may mix with music. Avoid a permanent exclusive
+      // playback session, which can interrupt another app's media.
+      try {
+        const session = (navigator as Navigator & { audioSession?: { type: string } }).audioSession;
+        if (session && (session.type === 'auto' || session.type === 'ambient'))
+          session.type = 'transient';
+      } catch {
+        /* Optional API: unsupported types must not prevent audio unlock. */
+      }
       if (!this.context) {
         const context = this.create();
         this.context = context;
