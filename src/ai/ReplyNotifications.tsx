@@ -246,11 +246,13 @@ export function AiReplyBanner({
   onOpen,
   onDismiss,
   obscured,
+  inConversation,
 }: {
   notification: AiReplyNotification | null;
   onOpen: (id: string) => void;
   onDismiss: () => void;
   obscured: boolean;
+  inConversation: boolean;
 }) {
   const [visible, setVisible] = useState(!document.hidden);
   useEffect(() => {
@@ -259,11 +261,16 @@ export function AiReplyBanner({
     return () => document.removeEventListener('visibilitychange', update);
   }, []);
   useEffect(() => {
+    // Dismiss the transient banner only, keeping other threads unread. Do not
+    // queue an old banner to appear after the user leaves the conversation.
+    if (notification && visible && inConversation) onDismiss();
+  }, [notification, visible, inConversation, onDismiss]);
+  useEffect(() => {
     if (!notification || obscured || !visible) return;
     const timer = setTimeout(onDismiss, 6000);
     return () => clearTimeout(timer);
   }, [notification, onDismiss, obscured, visible]);
-  if (!notification || obscured) return null;
+  if (!notification || obscured || inConversation) return null;
   return (
     <aside className="ai-reply-banner" aria-label="새 메시지 도착" role="status">
       <ReplyCard

@@ -103,6 +103,7 @@ export async function aiRequest(
     body?: unknown;
     signal?: AbortSignal;
     method?: 'GET' | 'POST' | 'DELETE';
+    keepalive?: boolean;
   } = {},
 ): Promise<unknown> {
   const controller = new AbortController();
@@ -119,6 +120,7 @@ export async function aiRequest(
       },
       ...(options.body === undefined ? {} : { body: JSON.stringify(options.body) }),
       signal: controller.signal,
+      keepalive: options.keepalive,
       credentials: 'omit',
       redirect: 'error',
       cache: 'no-store',

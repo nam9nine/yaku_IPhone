@@ -20,7 +20,7 @@ from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
 from urllib.parse import urlsplit
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import ec
@@ -33,6 +33,7 @@ from .chat_db import SESSION_LIFETIME, private_file, timestamp
 PUSH_TTL = 3600
 MAX_ATTEMPTS = 3
 LEASE_SECONDS = 30
+FOREGROUND_SECONDS = 25
 VAPID_SUBJECT = "https://nam9nine.github.io"
 PROVIDER_HOSTS = {"fcm.googleapis.com", "updates.push.services.mozilla.com"}
 TITLES = {"haruka": "하루카", "majima": "마지마"}
@@ -52,6 +53,16 @@ CREATE TABLE IF NOT EXISTS outbox (
     PRIMARY KEY(subscription_id, job_id)
 );
 CREATE INDEX IF NOT EXISTS outbox_due ON outbox(state,next_attempt);
+CREATE TABLE IF NOT EXISTS foreground_clients (
+    subscription_id TEXT NOT NULL REFERENCES subscriptions(id) ON DELETE CASCADE,
+    client_id TEXT NOT NULL, sequence INTEGER NOT NULL, expires_at REAL NOT NULL,
+    PRIMARY KEY(subscription_id, client_id)
+);
+CREATE TABLE IF NOT EXISTS foreground_receipts (
+    subscription_id TEXT NOT NULL REFERENCES subscriptions(id) ON DELETE CASCADE,
+    job_id TEXT NOT NULL, expires_at REAL NOT NULL,
+    PRIMARY KEY(subscription_id, job_id)
+);
 """
 
 
@@ -307,6 +318,47 @@ class ChatPush:
                 (visitor, endpoint),
             )
 
+    def foreground(self, visitor, presence):
+        """A short per-window lease defers push; explicit delivery receipts suppress it.
+
+        Neither presence nor a receipt changes the conversation's read state.
+        Expiry releases unseen jobs after a crashed/offline page.
+        """
+        if not isinstance(presence, dict) or set(presence) != {
+            "subscription_id", "client_id", "sequence", "active", "job_ids"
+        }:
+            raise ValueError("Invalid presence")
+        sid, client = presence["subscription_id"], presence["client_id"]
+        sequence, active, jobs = presence["sequence"], presence["active"], presence["job_ids"]
+        if (not isinstance(sid, str) or not re.fullmatch(r"[a-f0-9]{32}", sid)
+            or not isinstance(client, str) or str(UUID(client)) != client
+            or type(sequence) is not int or not 0 < sequence < 2**53
+            or type(active) is not bool or not isinstance(jobs, list) or len(jobs) > 32
+            or any(not isinstance(job, str) or str(UUID(job)) != job for job in jobs)):
+            raise ValueError("Invalid presence fields")
+        now = self.clock()
+        # Validate against the owning visitor before touching the push store.
+        confirmed = []
+        for identifier in set(jobs):
+            job = self.chat_db.get_request(identifier, visitor=visitor)
+            if job and job["status"] == "complete" and job["scenario_version"] == "daily-if-v1":
+                confirmed.append(identifier)
+        with self.connection() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            if not connection.execute("SELECT 1 FROM subscriptions WHERE id=? AND visitor_id=? AND expires_at>?", (sid, visitor, now)).fetchone():
+                raise ValueError("Unknown subscription")
+            # Delivery acknowledgement is monotonic; a newer presence heartbeat
+            # must not discard an older in-flight receipt for an already seen reply.
+            for identifier in confirmed:
+                connection.execute("INSERT OR REPLACE INTO foreground_receipts VALUES (?,?,?)", (sid, identifier, now + PUSH_TTL))
+            previous = connection.execute("SELECT sequence FROM foreground_clients WHERE subscription_id=? AND client_id=?", (sid, client)).fetchone()
+            if previous and previous["sequence"] >= sequence:
+                return
+            # Bound untrusted window identifiers without dropping existing leases.
+            if not previous and connection.execute("SELECT count(*) FROM foreground_clients WHERE subscription_id=? AND expires_at>?", (sid, now)).fetchone()[0] >= 16:
+                raise ValueError("Too many foreground windows")
+            connection.execute("INSERT INTO foreground_clients VALUES (?,?,?,?) ON CONFLICT(subscription_id,client_id) DO UPDATE SET sequence=excluded.sequence,expires_at=excluded.expires_at", (sid, client, sequence, now + FOREGROUND_SECONDS if active else now))
+
     def _active_visitor(self, visitor, now):
         with self.chat_db.connection() as connection:
             return (
@@ -323,6 +375,8 @@ class ChatPush:
         with self.connection() as connection:
             connection.execute("DELETE FROM subscriptions WHERE expires_at<=?", (now,))
             connection.execute("DELETE FROM outbox WHERE expires_at<=?", (now,))
+            connection.execute("DELETE FROM foreground_clients WHERE expires_at<=?", (now - PUSH_TTL,))
+            connection.execute("DELETE FROM foreground_receipts WHERE expires_at<=?", (now,))
             subscriptions = connection.execute("SELECT * FROM subscriptions").fetchall()
         for sub in subscriptions:
             if not self._active_visitor(sub["visitor_id"], now):
@@ -375,8 +429,10 @@ class ChatPush:
             row = connection.execute(
                 "SELECT o.*,s.visitor_id,s.endpoint,s.p256dh,s.auth FROM outbox o JOIN subscriptions s ON s.id=o.subscription_id "
                 "WHERE o.state IN ('pending','sending') AND o.next_attempt<=? AND o.not_before<=? AND o.expires_at>? AND s.expires_at>? AND o.attempts<? "
+                "AND NOT EXISTS (SELECT 1 FROM foreground_clients f WHERE f.subscription_id=o.subscription_id AND f.expires_at>?) "
+                "AND NOT EXISTS (SELECT 1 FROM foreground_receipts r WHERE r.subscription_id=o.subscription_id AND r.job_id=o.job_id AND r.expires_at>?) "
                 "ORDER BY o.next_attempt,o.job_id LIMIT 1",
-                (now, now, now, now, MAX_ATTEMPTS),
+                (now, now, now, now, MAX_ATTEMPTS, now, now),
             ).fetchone()
             if row:
                 connection.execute(
@@ -411,6 +467,9 @@ class ChatPush:
                 "SELECT 1 FROM subscriptions WHERE id=? AND visitor_id=?",
                 (item["subscription_id"], item["visitor_id"]),
             ).fetchone():
+                return False
+            if connection.execute("SELECT 1 FROM foreground_clients WHERE subscription_id=? AND expires_at>? UNION ALL SELECT 1 FROM foreground_receipts WHERE subscription_id=? AND job_id=? AND expires_at>?", (item["subscription_id"], now, item["subscription_id"], item["job_id"], now)).fetchone():
+                connection.execute("UPDATE outbox SET state='pending',attempts=attempts-1,next_attempt=? WHERE subscription_id=? AND job_id=?", (now, item["subscription_id"], item["job_id"]))
                 return False
         payload = {
             "type": "chat.reply",

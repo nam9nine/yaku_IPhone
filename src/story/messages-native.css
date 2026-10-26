@@ -307,13 +307,16 @@
 
 /* The visual viewport already ends at the keyboard: no home-gesture strip or
    duplicate hardware safe area should sit between it and the composer. */
-.mobile-shell[data-keyboard='true'] [data-app-window='messages'] .app-home-controls {
+.mobile-shell[data-keyboard='true'] [data-app-window='messages'] .app-home-controls,
+[data-app-window='messages']:has(.message-ai-input:focus-within) .app-home-controls {
   display: none;
 }
-.mobile-shell[data-keyboard='true'] .messages-app .message-composer {
+.mobile-shell[data-keyboard='true'] .messages-app .message-composer,
+.messages-app:has(.message-ai-input:focus-within) .message-composer {
   padding-bottom: 4px;
 }
-.mobile-shell[data-keyboard='true'] .messages-app .message-story-reply {
+.mobile-shell[data-keyboard='true'] .messages-app .message-story-reply,
+.messages-app:has(.message-ai-input:focus-within) .message-story-reply {
   display: none;
 }
 @media (max-height: 500px) {

@@ -114,7 +114,13 @@ async function setup(page: Page, push = true, hold = false) {
       }),
     });
   });
-  const state = { requestId: '', message: '', hold, polls: 0 };
+  const state = {
+    requestId: '',
+    message: '',
+    hold,
+    polls: 0,
+    presence: [] as { active: boolean; job_ids: string[]; client_id: string; sequence: number }[],
+  };
   await page.route(`${AI_ENDPOINT}/v1/**`, async (route) => {
     const req = route.request();
     const path = new URL(req.url()).pathname;
@@ -123,8 +129,13 @@ async function setup(page: Page, push = true, hold = false) {
     else if (path === '/v1/health') data = { status: 'ready' };
     else if (path === '/v1/sessions') data = { token: 'notify90-test' };
     else if (path === '/v1/push/key') data = { public_key: 'BAAAAAAA' };
-    else if (path === '/v1/push/subscriptions') data = { id: 'notify90-subscription' };
-    else if (path === '/v1/chat') {
+    else if (path === '/v1/push/subscriptions') {
+      const body = req.postDataJSON();
+      if (body?.presence) {
+        state.presence.push(body.presence);
+        data = { ok: true };
+      } else data = { id: 'notify90-subscription' };
+    } else if (path === '/v1/chat') {
       state.requestId = req.postDataJSON().request_id;
       state.message = req.postDataJSON().message;
       data = { job_id: state.requestId, status: 'queued' };
@@ -744,3 +755,22 @@ for (const cancel of ['mute', 'reset', 'other-window-reset'] as const) {
     expect(await soundCount(page)).toBe(0);
   });
 }
+
+test('채팅방의 OS 알림은 기기별 전경 상태와 실제 도착 확인을 보내고 나가면 복구한다', async ({
+  page,
+}) => {
+  const state = await setup(page, true);
+  await expect.poll(() => state.presence.some((p) => p.active)).toBe(true);
+  await page.clock.runFor(typingDelay(state.requestId) + 1600);
+  await expect(page.getByText('우동 재료는 제가 챙길게요.', { exact: true })).toBeVisible();
+  await expect
+    .poll(() => state.presence.some((p) => p.active && p.job_ids.includes(state.requestId)))
+    .toBe(true);
+  await expect(page.locator('.ai-reply-banner')).toHaveCount(0);
+  expect(await soundCount(page)).toBe(1);
+  await page.keyboard.press('Alt+Home');
+  await expect.poll(() => state.presence.at(-1)?.active).toBe(false);
+  const latest = state.presence.at(-1)!;
+  expect(state.presence.every((p) => p.client_id === latest.client_id)).toBe(true);
+  expect(latest.sequence).toBeGreaterThan(state.presence[0].sequence);
+});

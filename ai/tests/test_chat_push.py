@@ -6,6 +6,7 @@ import json
 import socket
 import tempfile
 import unittest
+import time
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -94,6 +95,77 @@ class PushTests(unittest.TestCase):
     def rows(self, table):
         with self.push.connection() as connection:
             return [dict(row) for row in connection.execute("SELECT * FROM " + table)]
+
+    def presence(self, *, active=True, sequence=1, jobs=None, client=None, visitor=None, sid=None):
+        self.push.foreground(visitor or self.a, {
+            "subscription_id": sid or self.sid,
+            "client_id": client or "00000000-0000-4000-8000-000000000001",
+            "sequence": sequence, "active": active, "job_ids": jobs or [],
+        })
+
+    def test_foreground_defers_native_push_and_delivery_receipt_prevents_old_alert_on_exit(self):
+        job, _, _, _ = self.complete()
+        self.now += 40
+        self.presence()
+        self.assertFalse(self.push.tick())
+        self.assertEqual(self.rows("outbox")[0]["attempts"], 0)
+        self.presence(active=False, sequence=2, jobs=[job])
+        self.assertFalse(self.push.tick())
+        self.assertEqual(self.sent, [])
+        other, _, _, _ = self.complete()
+        self.now += 40
+        self.assertTrue(self.push.tick())
+        self.assertEqual(self.sent[0][1]["job_id"], other)
+
+    def test_one_foreground_device_does_not_suppress_another_subscription(self):
+        second = self.push.subscribe(self.a, subscription("other-device"))
+        job, _, _, _ = self.complete()
+        self.now += 40
+        self.presence()
+        self.assertTrue(self.push.tick())
+        self.assertEqual(self.sent[0][1]["subscription_id"], second)
+        self.assertEqual(self.sent[0][1]["job_id"], job)
+        self.assertFalse(self.push.tick())
+        self.presence(active=False, sequence=2, jobs=[job])
+        self.assertFalse(self.push.tick())
+        self.assertEqual(len(self.sent), 1)
+
+    def test_stale_delivery_receipt_is_kept_after_newer_exit_update(self):
+        job, _, _, _ = self.complete()
+        self.now += 40
+        self.presence(sequence=3, active=False)
+        self.presence(sequence=2, active=True, jobs=[job])
+        self.assertEqual(self.rows("foreground_clients")[0]["sequence"], 3)
+        self.assertEqual(self.rows("foreground_receipts")[0]["job_id"], job)
+        self.assertFalse(self.push.tick())
+        self.assertEqual(self.sent, [])
+
+    def test_crashed_foreground_lease_expires_and_unseen_reply_still_pushes(self):
+        self.complete()
+        self.now += 40
+        self.presence()
+        self.assertFalse(self.push.tick())
+        self.now += 26
+        self.assertTrue(self.push.tick())
+
+    def test_presence_is_subscription_owned_and_stale_exit_cannot_override_new_active(self):
+        job, _, _, _ = self.complete()
+        self.now += 40
+        with self.assertRaises(ValueError): self.presence(visitor=self.b)
+        second = self.push.subscribe(self.a, subscription("second-device"))
+        self.presence(sequence=3)
+        self.presence(sequence=2, active=False)
+        self.assertEqual(len(self.rows("foreground_clients")), 1)
+        self.assertEqual(self.rows("foreground_clients")[0]["sequence"], 3)
+        # One window leaving must not override another live window on the same device.
+        self.presence(client=str(uuid4()))
+        self.presence(sequence=4, active=False)
+        self.assertFalse(self.push.tick())
+        self.assertEqual(self.sent, [])
+        self.assertNotEqual(second, self.sid)
+        foreign, _, _, _ = self.complete(visitor=self.b)
+        self.presence(sequence=5, jobs=[foreign])
+        self.assertEqual(self.rows("foreground_receipts"), [])
 
     def test_delay_is_stable_uuid_fnv_and_in_range(self):
         self.assertEqual(
@@ -447,6 +519,22 @@ class PushApiTests(unittest.TestCase):
             ).status_code,
             200,
         )
+
+    def test_foreground_http_is_owned_authenticated_and_sequence_fenced(self):
+        info = subscription()
+        sid = self.client.post("/v1/push/subscriptions", headers=self.auth,
+            json={"subscription": info, "platform": "web"}).json()["id"]
+        presence = {"subscription_id": sid, "client_id": str(uuid4()),
+                    "sequence": 2, "active": True, "job_ids": []}
+        self.assertEqual(self.client.post("/v1/push/subscriptions", json={"presence": presence}).status_code, 401)
+        self.assertEqual(self.client.post("/v1/push/subscriptions", headers=self.auth, json={"presence": presence}).status_code, 200)
+        other = self.client.post("/v1/sessions", json={}).json()["token"]
+        self.assertEqual(self.client.post("/v1/push/subscriptions", headers={"Authorization": "Bearer " + other}, json={"presence": presence}).status_code, 400)
+        self.assertEqual(self.client.post("/v1/push/subscriptions", headers=self.auth, json={"presence": {**presence, "active": False, "sequence": 1}}).status_code, 200)
+        with self.app.state.service.push.connection() as connection:
+            row = connection.execute("SELECT * FROM foreground_clients WHERE subscription_id=?", (sid,)).fetchone()
+            self.assertEqual(row["sequence"], 2)
+            self.assertGreater(row["expires_at"], time.time())
 
     def test_push_preflight_allows_delete_but_invalid_body_never_registers(self):
         response = self.client.options(

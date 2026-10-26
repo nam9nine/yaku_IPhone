@@ -35,6 +35,7 @@ import { DayNotification } from './components/DayNotification';
 import { resetStoryStorage } from './story/useStoredState';
 import { consumeNotificationLink, disablePush, registerPushWorker } from './ai/push';
 import { resetAiConnection } from './ai/connection';
+import { usePushPresence } from './ai/usePushPresence';
 import { useAiMessenger } from './ai/useAiMessenger';
 import { isAiCharacter } from './ai/client';
 import { AiReplyBanner, AiReplyNotifications, AiReplySound } from './ai/ReplyNotifications';
@@ -74,6 +75,9 @@ function PhoneSession() {
     isAiCharacter(conversation ?? undefined) ? (conversation as 'haruka' | 'majima') : null,
     !state.locked && state.activeApp === 'messages' && !state.panel,
   );
+  const inConversation =
+    !state.locked && state.activeApp === 'messages' && !!conversation && !state.panel;
+  usePushPresence(ai.connection, inConversation, ai.arrival);
   const appearance = useAppearance(preferences);
   const viewport = useViewport();
   const [topPull, setTopPull] = useState<TopPanel | null>(null);
@@ -382,6 +386,7 @@ function PhoneSession() {
         notification={ai.notification}
         onOpen={openConversation}
         onDismiss={ai.messenger.dismissNotification}
+        inConversation={inConversation}
         obscured={!!unlockRequest || state.panel === 'notifications'}
       />
       <DayCall
