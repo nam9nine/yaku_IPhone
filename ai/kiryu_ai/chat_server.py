@@ -603,13 +603,13 @@ def create_app(data_root, *, allow_origins=(), **options):
             raise ApiFailure(404, "job_not_found", "요청을 찾을 수 없습니다.")
         return JSONResponse(public_job(job))
 
-    def push_access(request):
+    def push_access(request, *, foreground=False):
         record = service.authenticate(request)
         if service.push is None:
             raise ApiFailure(
                 503, "push_unavailable", "알림 연결을 준비하지 못했습니다."
             )
-        if not service.limiter.allow("push:" + record["visitor_id"], 20, 60):
+        if not service.limiter.allow(("presence:" if foreground else "push:") + record["visitor_id"], 90 if foreground else 20, 60):
             raise ApiFailure(429, "rate_limited", "잠시 후 다시 시도해 주세요.")
         return record
 
@@ -620,9 +620,13 @@ def create_app(data_root, *, allow_origins=(), **options):
     async def push_subscriptions(request):
         from .chat_push import SubscriptionConflict
 
-        record = push_access(request)
         body = await json_body(request)
+        foreground = request.method == "POST" and set(body) == {"presence"}
+        record = push_access(request, foreground=foreground)
         try:
+            if foreground:
+                service.push.foreground(record["visitor_id"], body["presence"])
+                return JSONResponse({"ok": True})
             if request.method == "DELETE":
                 if set(body) != {"endpoint"}:
                     raise ValueError("Invalid unsubscribe body")

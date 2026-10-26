@@ -727,3 +727,90 @@ for (const theme of ['dark', 'light'] as const) {
     });
   });
 }
+
+for (const mode of ['before-resize', 'resized-layout', 'standalone-offset'] as const) {
+  test(`입력 폼 포커스는 키보드 감지 실패 때도 하단 여백을 제거한다 ${mode}`, async ({ page }) => {
+    await page.emulateMedia({ colorScheme: 'dark' });
+    if (mode === 'standalone-offset')
+      await page.addInitScript(() => {
+        Object.defineProperty(navigator, 'userAgent', { configurable: true, value: 'iPhone' });
+        Object.defineProperty(navigator, 'standalone', { configurable: true, value: true });
+      });
+    await mockMac(page);
+    await start(page);
+    await openThread(page, 'haruka');
+    // Keep a real home-indicator safe area even where keyboard height detection fails.
+    await page
+      .locator('.mobile-shell')
+      .evaluate((el) => (el as HTMLElement).style.setProperty('--safe-area-bottom', '34px'));
+    if (mode !== 'before-resize')
+      await page.evaluate(
+        (offset) => {
+          Object.defineProperty(window, 'innerHeight', { configurable: true, get: () => 480 });
+          Object.defineProperty(window.visualViewport!, 'height', {
+            configurable: true,
+            get: () => 480,
+          });
+          Object.defineProperty(window.visualViewport!, 'offsetTop', {
+            configurable: true,
+            get: () => offset,
+          });
+          window.visualViewport!.dispatchEvent(new Event('resize'));
+        },
+        mode === 'standalone-offset' ? 24 : 0,
+      );
+    await input(page).fill('입력창 아래 빈 공간 없이 보낸다.');
+    await expect(page.locator('.mobile-shell')).toHaveAttribute('data-keyboard', 'false');
+    const bottomGap = () =>
+      page
+        .locator('.message-ai-input')
+        .evaluate(
+          (el) =>
+            window.visualViewport!.height +
+            window.visualViewport!.offsetTop -
+            el.getBoundingClientRect().bottom,
+        );
+    await expect.poll(bottomGap).toBeLessThanOrEqual(4);
+    expect(await bottomGap()).toBeGreaterThanOrEqual(0);
+    // Focus the send button too, without submitting a model request.
+    await send(page).focus();
+    await expect.poll(bottomGap).toBeLessThanOrEqual(4);
+    await input(page).focus();
+    const bounds = await page.locator('[data-app-window=messages]').boundingBox();
+    await page.screenshot({
+      path: `harness/evidence/issue-101/${mode}-${test.info().project.name}.png`,
+      clip: bounds!,
+    });
+    // Closing/leaving the editor restores the existing gesture hit area.
+    await input(page).evaluate((el) => el.blur());
+    await expect(page.getByTestId('messages-home-gesture')).toBeVisible();
+    expect(
+      await page
+        .getByTestId('messages-home-gesture')
+        .evaluate((el) => el.getBoundingClientRect().height),
+    ).toBe(44);
+  });
+}
+
+test('다른 채팅방을 보고 있을 때는 상단 배너를 띄우지 않고 나가도 지난 배너를 되살리지 않는다', async ({
+  page,
+}) => {
+  const mac = await mockMac(page);
+  mac.hold.add('haruka');
+  await start(page);
+  await openThread(page, 'haruka');
+  await input(page).fill('다른 방에서 답장을 기다린다.');
+  await send(page).tap();
+  await openThread(page, 'majima');
+  mac.hold.delete('haruka');
+  await finishAiReply(page, 'haruka');
+  await expect(page.locator('.ai-reply-banner')).toHaveCount(0);
+  await page.getByRole('button', { name: '메시지 목록으로 돌아가기', exact: true }).tap();
+  await expect(page.locator('[data-conversation=haruka] .message-unread')).toHaveAttribute(
+    'data-unread',
+    'true',
+  );
+  await expect(page.locator('.ai-reply-banner')).toHaveCount(0);
+  await home(page);
+  await expect(page.locator('.ai-reply-banner')).toHaveCount(0);
+});

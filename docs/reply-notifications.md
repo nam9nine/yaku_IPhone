@@ -45,3 +45,15 @@ Push는 보이는 페이지에 최대 1.2초간 재생 기회를 준다. 페이�
 [W3C Audio Session 초안](https://www.w3.org/TR/audio-session/#audio-session-types)의 짧은 알림용 `transient`를 지원할 때 사용한다. 미지원이면 기존 AudioContext 경로를 유지한다. 음악용 독점 `playback`으로 고정하지 않는다. 기기 무음·집중 모드·OS 알림 설정은 이 변경으로 강제 해제하지 않는다. [WebKit의 iOS 홈 화면 앱 설명](https://webkit.org/blog/13878/web-push-for-web-apps-on-ios-and-ipados/)처럼 설치 앱의 Push는 OS 알림 설정을 따르는 별도 경로다.
 
 새 비동기 전송·Push 재생도 숨김, 무음/0음량, 같은 창·다른 창 대화 초기화, 컴포넌트 해제 시 취소한다. 모델 요청이나 문자 입력은 이 알림 변경으로 수집·수정하지 않는다. 실제 iPhone의 설치 앱·스피커 음향은 미검증이며 브라우저 테스트는 실제 오디오 버퍼 시작과 중복·취소 흐름을 확인한다.
+
+## Issue 101: 채팅방에서는 사이트 배너와 OS Push 억제
+
+어느 연락처의 채팅방을 보고 있어도 사이트 상단 배너를 즉시 숨기고 폐기한다. 다른 상대의 읽지 않은 상태와 수신음은 유지하며, 방을 나가도 지나간 배너를 되살리지 않는다.
+
+[WebKit의 userVisibleOnly 설명](https://webkit.org/blog/12945/meet-web-push/)에 따라 이미 도착한 Push의 `showNotification`을 생략하지 않는다. 대신 서버가 발송하기 전에 기기별 전경 상태를 사용한다. 기존 인증된 `/v1/push/subscriptions` POST의 `presence` 요청으로 구독·창 ID·순번·활성 상태를 보낸다. 열린 채팅방에서는 10초마다 갱신하며 서버 lease는 25초 뒤 만료된다. 해당 구독의 lease가 살아 있는 동안 아직 보내지 않은 outbox를 유예한다. 다른 기기의 구독에는 영향을 주지 않는다.
+
+UI의 실제 답장 도착 이벤트에서 job ID를 전달 확인으로 보낸다. 서버는 같은 방문자의 완료된 IF 요청만 확인하고 `foreground_receipts`에 남긴다. 이것은 사람의 읽음 기록이나 모델 기억이 아니다. 확인된 답장은 방을 나가도 OS Push로 재발송하지 않는다. 오래된 순번도 유효한 전달 확인은 멱등하게 누적하며, lease 활성 상태만 순번으로 비교한다. frontend 확인 대기열도 같은 connection 내 화면 전환에 걸쳐 유지한다.
+
+숨김·페이지 종료·대화방 나감은 keepalive로 비활성을 보낸다. 종료 요청이 유실되면 lease 만료 후 미확인 답장은 정상 Push로 돌아간다. 브라우저/네트워크가 갱신하지 못하면 열린 화면에서도 25초 후 정상 Push가 가능하다. 진입 직전에 이미 provider로 전송된 알림을 회수하거나 OS 배너를 절대로 차단한다고 보장하지 않는다.
+
+입력창 하단은 높이 차이만 의존하지 않고 입력 폼의 `focus-within`에서도 footer와 중복 safe area를 제거한다. 전송 버튼에 포커스가 이동해도 유지한다. 입력을 떠나면 기존 하단 제스처 영역이 복구된다.
