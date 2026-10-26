@@ -1,3 +1,4 @@
+import { installAiClock, finishAiReply, showAiTyping, settleAiRequests } from '../helpers/ai-clock';
 import { expect, test, type Page, type Route } from '@playwright/test';
 import { AI_ENDPOINT } from '../../src/ai/config';
 import { replyChoices } from '../../src/day/content';
@@ -30,6 +31,7 @@ interface Job {
 }
 
 async function mockMac(page: Page) {
+  await installAiClock(page);
   const state = {
     chats: [] as ChatRequest[],
     sessions: 0,
@@ -153,6 +155,8 @@ async function mockMac(page: Page) {
             role: 'assistant',
             content: replyFor(character, job.request.message),
             time: '2026-10-25T00:00:01Z',
+            status: 'complete',
+            job_id: job.id,
           });
         }
       }
@@ -234,12 +238,14 @@ test('새로고침 후 같은 토큰과 기록을 복원하며 초안은 전송�
   await openThread(page, 'haruka');
   await input(page).fill('남겨둘 대화');
   await send(page).tap();
+  await finishAiReply(page, 'haruka');
   await expect(bubble(page, replyFor('haruka', '남겨둘 대화'))).toBeVisible();
   await input(page).fill('보내지 않은 초안');
   await page.reload();
   await unlockPhone(page);
   await launchHomeApp(page, 'messages');
   await openThread(page, 'haruka');
+  await finishAiReply(page, 'haruka');
   await expect(bubble(page, replyFor('haruka', '남겨둘 대화'))).toBeVisible();
   expect(mac.sessions).toBe(1);
   expect(mac.chats).toHaveLength(1);
@@ -258,6 +264,7 @@ test('구 토큰은 고정 API에서 확인하고 만료됐으면 익명 세션�
   await openThread(page, 'majima');
   await input(page).fill('자동 연결 확인');
   await send(page).tap();
+  await finishAiReply(page, 'majima');
   await expect(bubble(page, replyFor('majima', '자동 연결 확인'))).toBeVisible();
   expect(mac.sessions).toBe(1);
   expect(mac.requests.every(({ url }) => url.startsWith(endpoint))).toBe(true);
@@ -277,6 +284,7 @@ test('서버가 꺼져도 연결 설정을 요구하지 않고 재시도로 복�
   await expect(send(page)).toBeEnabled();
   expect(mac.chats).toEqual([]);
   await send(page).tap();
+  await finishAiReply(page, 'haruka');
   await expect(bubble(page, replyFor('haruka', '복구 후 전송할 초안'))).toBeVisible();
 });
 
@@ -325,6 +333,7 @@ test('두 인물의 자유 입력과 한글 조합·줄바꿈을 처리하고 �
       button.click();
       button.click();
     });
+    await finishAiReply(page, character);
     await expect(bubble(page, replyFor(character, text))).toBeVisible();
     await expect(bubble(page, text)).toHaveCount(1);
     await expect(input(page)).toHaveValue('');
@@ -340,14 +349,19 @@ test('답장 대기 중 홈과 다른 대화로 이동해도 원래 대화에만
   await openThread(page, 'haruka');
   await input(page).fill('집에 돌아가고 있어');
   await send(page).tap();
+  await expect(page.getByRole('status', { name: '하루카 답장 작성 중' })).toHaveCount(0);
+  await showAiTyping(page, 'haruka');
   await expect(page.getByRole('status', { name: '하루카 답장 작성 중' })).toBeVisible();
   await home(page);
   await launchHomeApp(page, 'messages');
   await openThread(page, 'majima');
   mac.hold.delete('haruka');
+  await settleAiRequests(page);
+  await page.clock.fastForward(1000);
   await expect.poll(() => mac.history.haruka.length).toBe(2);
   await expect(bubble(page, replyFor('haruka', '집에 돌아가고 있어'))).toHaveCount(0);
   await openThread(page, 'haruka');
+  await finishAiReply(page, 'haruka');
   await expect(bubble(page, replyFor('haruka', '집에 돌아가고 있어'))).toBeVisible();
   await expect(bubble(page, '집에 돌아가고 있어')).toHaveCount(1);
   expect(mac.chats).toHaveLength(1);
@@ -368,6 +382,7 @@ test('서버가 수락한 POST 응답이 유실되어도 같은 요청으로 재
     }),
   ).toBeVisible();
   await page.getByRole('button', { name: '다시 시도', exact: true }).tap();
+  await finishAiReply(page, 'majima');
   await expect(bubble(page, replyFor('majima', '저녁에 뵙겠습니다'))).toBeVisible();
   expect(mac.chats).toHaveLength(2);
   expect(mac.chats[1]).toEqual(mac.chats[0]);
@@ -397,6 +412,7 @@ test('영구 입력 오류와 답변 길이 오류는 원문을 다시 작성해
   await expect(input(page)).toHaveValue('수정한 질문');
   await input(page).fill('짧은 질문');
   await send(page).tap();
+  await finishAiReply(page, 'haruka');
   await expect(bubble(page, replyFor('haruka', '짧은 질문'))).toBeVisible();
   expect(new Set(mac.chats.map(({ request_id }) => request_id)).size).toBe(3);
 });
@@ -429,6 +445,7 @@ test('장보기와 마지마 스토리 답장도 모델에 전송하고 오류�
     ),
   ).toBe(false);
   await page.getByRole('button', { name: '다시 시도', exact: true }).tap();
+  await finishAiReply(page, 'haruka');
   await expect(bubble(page, replyFor('haruka', replyChoices.haruka.text))).toBeVisible();
   await expect(bubble(page, replyChoices.haruka.text)).toHaveCount(1);
   await expect(bubble(page, replyChoices.haruka.response)).toHaveCount(0);
@@ -443,6 +460,7 @@ test('장보기와 마지마 스토리 답장도 모델에 전송하고 오류�
   await page.getByRole('button', { name: '메시지 목록으로 돌아가기', exact: true }).tap();
   await openThread(page, 'majima');
   await page.locator('.message-story-reply').tap();
+  await finishAiReply(page, 'majima');
   await expect(bubble(page, replyFor('majima', replyChoices.majima.text))).toBeVisible();
   await expect(bubble(page, replyChoices.majima.response)).toHaveCount(0);
   expect(mac.chats.at(-1)?.message).toBe(replyChoices.majima.text);
@@ -469,6 +487,7 @@ test('가상 오프라인에서는 전송을 막고 복구해도 초안을 자�
   await launchHomeApp(page, 'messages');
   await expect(send(page)).toBeEnabled();
   await send(page).tap();
+  await finishAiReply(page, 'majima');
   await expect(bubble(page, replyFor('majima', '연결 후 전송'))).toBeVisible();
   expect(mac.chats).toHaveLength(1);
 });
@@ -496,6 +515,7 @@ for (const width of [360, 390, 430]) {
     await input(page).fill('작은 화면에서 전송');
     await send(page).tap();
     const latest = bubble(page, replyFor('majima', '작은 화면에서 전송'));
+    await finishAiReply(page, 'majima');
     await expect(latest).toBeInViewport();
     await page.setViewportSize({ width, height: 800 });
     await input(page).focus();

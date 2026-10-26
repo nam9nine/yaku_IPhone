@@ -1,3 +1,4 @@
+import { PushControls } from '../ai/PushControls';
 import { PhoneIcon } from './PhoneIcon';
 import './messages-native.css';
 import { useEffect, useEffectEvent, useLayoutEffect, useRef, useState } from 'react';
@@ -12,7 +13,7 @@ import {
   messageWithinLimits,
   shouldSendOnEnter,
 } from '../ai/client';
-import { useAiMessenger } from '../ai/useAiMessenger';
+import type { AiMessengerView } from '../ai/useAiMessenger';
 import { aiDate, aiTime } from '../ai/time';
 import { storyThreadMessages } from '../ai/storyMessages';
 
@@ -45,7 +46,9 @@ export function MessagesApp({
   onSelect,
   online,
   onOpenNote,
+  ai,
 }: {
+  ai: AiMessengerView;
   active: boolean;
   selected: string | null;
   onSelect: (id: string | null) => void;
@@ -60,7 +63,6 @@ export function MessagesApp({
   const [recipientQuery, setRecipientQuery] = useState('');
   const person = contacts.find((contact) => contact.id === selected);
   const aiCharacter = isAiCharacter(person?.id) ? person.id : null;
-  const ai = useAiMessenger(online, aiCharacter, active);
   const [drafts, setDrafts] = useState({ haruka: '', majima: '' });
   const textarea = useRef<HTMLTextAreaElement>(null);
   const root = useRef<HTMLElement>(null);
@@ -79,7 +81,7 @@ export function MessagesApp({
     const remote = ai.threads[id];
     return [
       ...story,
-      ...remote.messages.map((message, index) => ({
+      ...remote.displayedMessages.map((message, index) => ({
         id: `ai-${message.id}`,
         text: message.content,
         outgoing: message.role === 'user',
@@ -93,7 +95,7 @@ export function MessagesApp({
                 : '전송됨',
         time: aiTime(message.time),
         day:
-          index === 0 || aiDate(message.time) !== aiDate(remote.messages[index - 1].time)
+          index === 0 || aiDate(message.time) !== aiDate(remote.displayedMessages[index - 1].time)
             ? aiDate(message.time)
             : undefined,
       })),
@@ -134,27 +136,32 @@ export function MessagesApp({
   }
   const thread = person ? visibleMessages(person.id) : [];
   const draft = aiCharacter ? drafts[aiCharacter] : '';
-  const aiBusy = !!aiThread?.pending && aiThread.pending.phase !== 'failed';
+  const aiBusy = aiThread?.typing ?? false;
   const canStartAi =
     active &&
     online &&
     ai.status === 'ready' &&
     !!aiThread?.loaded &&
     !aiThread.loading &&
-    !Object.values(ai.threads).some((remote) => remote.pending);
+    !Object.values(ai.threads).some((remote) => remote.pending || remote.deliveryPending);
   const canSendAi = canStartAi && !!draft.trim() && messageWithinLimits(draft.trim());
+  const isUnread = (id: ContactId) =>
+    !state.readThreads.includes(id) || (isAiCharacter(id) && ai.threads[id].unread);
   const picking = composing && !person;
   const filtered = [...contacts]
     .sort((left, right) => Number(right.id === 'haruka') - Number(left.id === 'haruka'))
-    .filter((contact) => !unreadOnly || !state.readThreads.includes(contact.id))
+    .filter((contact) => !unreadOnly || isUnread(contact.id))
     .filter((contact) =>
       `${contact.name} ${visibleMessages(contact.id)
         .map((message) => message.text)
         .join(' ')}`.includes(query.trim()),
     );
   useEffect(() => {
-    if (active && person) dispatch({ type: 'read-thread', id: person.id });
-  }, [active, person, dispatch]);
+    if (active && person) {
+      dispatch({ type: 'read-thread', id: person.id });
+      if (isAiCharacter(person.id)) ai.messenger.markRead(person.id);
+    }
+  }, [active, person, dispatch, ai.messenger]);
   useEffect(() => {
     if (!ai.connection) return;
     for (const id of ['haruka', 'majima'] as const) {
@@ -295,8 +302,10 @@ export function MessagesApp({
               <div className="message-edit-menu">
                 <button
                   onClick={() => {
-                    for (const contact of contacts)
+                    for (const contact of contacts) {
                       dispatch({ type: 'read-thread', id: contact.id });
+                      if (isAiCharacter(contact.id)) ai.messenger.markRead(contact.id);
+                    }
                     setEditMenu(false);
                   }}
                 >
@@ -319,6 +328,7 @@ export function MessagesApp({
             {picking ? '새로운 메시지' : '메시지'}
           </h1>
         )}
+        <PushControls connection={ai.connection} active={active} />
       </header>
       {(storageUnavailable || ai.storageUnavailable) && (
         <p className="social-notice" role="status">
@@ -608,8 +618,8 @@ export function MessagesApp({
                 >
                   <span
                     className="message-unread"
-                    aria-label={state.readThreads.includes(contact.id) ? undefined : '읽지 않음'}
-                    data-unread={!state.readThreads.includes(contact.id)}
+                    aria-label={isUnread(contact.id) ? '읽지 않음' : undefined}
+                    data-unread={isUnread(contact.id)}
                   />
                   <img src={contact.portrait} alt="" />
                   <span className="message-list-copy">

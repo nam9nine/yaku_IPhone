@@ -95,11 +95,12 @@ export function SettingsApp({
   onChange: (next: DevicePreferences) => void;
   active: boolean;
   storageUnavailable?: boolean;
-  onReset: () => boolean;
+  onReset: () => boolean | Promise<boolean>;
 }) {
   const [history, setHistory] = useState<SettingsPage[]>(['main']);
   const resetDialog = useRef<HTMLDialogElement>(null);
   const [resetError, setResetError] = useState(false);
+  const [resetting, setResetting] = useState(false);
   useLayoutEffect(() => {
     if (!active) resetDialog.current?.close();
   }, [active]);
@@ -551,9 +552,17 @@ export function SettingsApp({
           <button onClick={() => resetDialog.current?.close()}>취소</button>
           <button
             className="settings-reset"
-            onClick={() => {
-              if (onReset()) resetDialog.current?.close();
-              else setResetError(true);
+            disabled={resetting}
+            onClick={async () => {
+              setResetting(true);
+              try {
+                if (await onReset()) resetDialog.current?.close();
+                else setResetError(true);
+              } catch {
+                setResetError(true);
+              } finally {
+                setResetting(false);
+              }
             }}
           >
             초기화

@@ -559,3 +559,103 @@ it('초기화 전에 생성 중이던 답장이 늦게 끝나도 새 이력이�
   expect(value.getSnapshot().threads.haruka.pending).toBeNull();
   expect(value.getSnapshot().connection?.token).toBe('fresh-session');
 });
+
+it('빠른 생성도 즉시 답장/타이핑을 노출하지 않고 10~20초 뒤 타이핑과 완성 답장을 순서대로 보인다', async () => {
+  const { state } = mockService();
+  const value = store();
+  await value.activate('haruka');
+  expect(value.send('haruka', '잘 지내?', true, true)).toBe(true);
+  await flush();
+  const thread = () => value.getSnapshot().threads.haruka;
+  expect(state.polls).toBe(1);
+  expect(thread().messages.at(-1)?.role).toBe('assistant');
+  expect(thread().displayedMessages.some((m) => m.role === 'assistant')).toBe(false);
+  expect(thread().typing).toBe(false);
+  expect(value.send('haruka', '또 보낸다', true, true)).toBe(false);
+  await vi.advanceTimersByTimeAsync(9_999);
+  expect(thread().typing).toBe(false);
+  await vi.advanceTimersByTimeAsync(10_001);
+  // Its deterministic typing delay can end earlier than 20 seconds.
+  if (thread().deliveryPending) expect(thread().typing).toBe(true);
+  await vi.advanceTimersByTimeAsync(1_500);
+  expect(thread().typing).toBe(false);
+  expect(thread().displayedMessages.at(-1)?.content).toBe('실제 응답 자리');
+  expect(thread().unread).toBe(false);
+  expect(value.getSnapshot().notification).toBeNull();
+});
+
+it('늦은 생성은 타이핑을 유지하고 다른 앱으로 이동한 뒤 도착하면 읽지 않은 알림을 한 번 만든다', async () => {
+  const { state } = mockService();
+  state.hold = true;
+  const value = store();
+  await value.activate('majima');
+  value.send('majima', '어디야?', true, true);
+  await flush();
+  await vi.advanceTimersByTimeAsync(20_000);
+  expect(value.getSnapshot().threads.majima.typing).toBe(true);
+  expect(value.getSnapshot().threads.majima.displayedMessages).toHaveLength(0);
+  await value.activate(null);
+  value.setVisible(false);
+  state.hold = false;
+  await vi.advanceTimersByTimeAsync(16_000);
+  expect(value.getSnapshot().threads.majima.unread).toBe(true);
+  expect(value.getSnapshot().unreadReplies).toHaveLength(1);
+  expect(value.getSnapshot().notification?.character).toBe('majima');
+  value.dismissNotification();
+  await vi.advanceTimersByTimeAsync(60_000);
+  expect(value.getSnapshot().notification).toBeNull();
+  value.setVisible(true);
+  await value.activate('majima');
+  expect(value.getSnapshot().threads.majima.unread).toBe(false);
+  expect(value.getSnapshot().unreadReplies).toHaveLength(0);
+});
+
+it('완성된 답장이 있어도 새로고침은 원래 대기 시간을 우회하지 않으며 이후 새로고침은 재알림하지 않는다', async () => {
+  const values = new Map<string, string>();
+  vi.stubGlobal('localStorage', {
+    getItem: (key: string) => values.get(key) ?? null,
+    setItem: (key: string, text: string) => values.set(key, text),
+    removeItem: (key: string) => values.delete(key),
+  });
+  mockService();
+  const first = store();
+  await first.activate('haruka');
+  first.send('haruka', '오늘은 어때?', true, true);
+  await flush();
+  first.stop();
+  const next = store();
+  await next.activate('haruka');
+  expect(
+    next.getSnapshot().threads.haruka.displayedMessages.some((m) => m.role === 'assistant'),
+  ).toBe(false);
+  await next.activate(null);
+  next.setVisible(false);
+  await vi.advanceTimersByTimeAsync(22_000);
+  expect(next.getSnapshot().notification?.character).toBe('haruka');
+  next.stop();
+  const third = store();
+  third.setVisible(false);
+  third.resume();
+  await flush();
+  expect(third.getSnapshot().threads.haruka.unread).toBe(true);
+  expect(third.getSnapshot().notification).toBeNull();
+  expect(third.getSnapshot().unreadReplies).toHaveLength(1);
+});
+
+it('처음 불러온 과거 답장과 생성 실패에는 새 답장 알림이나 타이핑이 없다', async () => {
+  const { state } = mockService();
+  state.history.haruka = [
+    { id: 'old-answer', role: 'assistant', content: '오래된 답장', time: null },
+  ];
+  const value = store();
+  await value.activate('haruka');
+  expect(value.getSnapshot().threads.haruka.displayedMessages).toHaveLength(1);
+  expect(value.getSnapshot().notification).toBeNull();
+  expect(value.getSnapshot().threads.haruka.unread).toBe(false);
+  state.fail = 'output_limit';
+  value.send('haruka', '실패하는 요청', true, true);
+  await flush();
+  await vi.advanceTimersByTimeAsync(22_000);
+  expect(value.getSnapshot().threads.haruka.typing).toBe(false);
+  expect(value.getSnapshot().notification).toBeNull();
+});

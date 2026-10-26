@@ -1,10 +1,20 @@
+import { installAiClock } from './ai-clock';
 import { expect, type Page } from '@playwright/test';
 import { AI_ENDPOINT } from '../../src/ai/config';
 
 /** Deterministic HTTP fixture for legacy phone/story flows; never calls the local model. */
 export async function mockStoryAi(page: Page) {
+  await installAiClock(page);
   type Character = 'haruka' | 'majima';
-  type Message = { id: string; role: 'user' | 'assistant'; content: string; time: string };
+  type Message = {
+    id: string;
+    role: 'user' | 'assistant';
+    content: string;
+    time: string;
+    status: 'complete';
+    job_id: string;
+    request_id?: string;
+  };
   const histories: Record<Character, Message[]> = { haruka: [], majima: [] };
   const jobs = new Map<string, { character: Character; message: string; id: string }>();
   await page.route(`${AI_ENDPOINT}/v1/**`, async (route) => {
@@ -26,12 +36,22 @@ export async function mockStoryAi(page: Page) {
       if (!jobs.has(id)) {
         jobs.set(id, { character: body.character, message: body.message, id });
         histories[body.character as Character].push(
-          { id: `${id}-user`, role: 'user', content: body.message, time: '2026-10-26T00:00:00Z' },
+          {
+            id: `${id}-user`,
+            role: 'user',
+            content: body.message,
+            time: '2026-10-26T00:00:00Z',
+            request_id: id,
+            job_id: id,
+            status: 'complete',
+          },
           {
             id: `${id}-assistant`,
             role: 'assistant',
             content: `검증용 ${body.character === 'haruka' ? '하루카' : '마지마'} 답장`,
             time: '2026-10-26T00:00:01Z',
+            job_id: id,
+            status: 'complete',
           },
         );
       }

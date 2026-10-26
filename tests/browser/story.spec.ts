@@ -1,3 +1,4 @@
+import { finishAiReply } from '../helpers/ai-clock';
 import { mockStoryAi } from '../helpers/mock-story-ai';
 import { unlockPhone } from '../helpers/unlock';
 import { expect, test, type Page } from '@playwright/test';
@@ -51,12 +52,14 @@ test('다섯 연락처의 프로필에서 선택형 답장을 보내고 새로�
     await choice.tap();
     await expect(page.locator('.message-bubble').getByText(text, { exact: true })).toBeVisible();
     await expect(choice).toHaveCount(0);
-    if (ai)
+    if (ai) {
+      await finishAiReply(page, name === '사와무라 하루카' ? 'haruka' : 'majima');
       await expect(
         page.getByText(`검증용 ${name === '사와무라 하루카' ? '하루카' : '마지마'} 답장`, {
           exact: true,
         }),
       ).toBeVisible();
+    }
     await home(page);
   }
   await start(page);

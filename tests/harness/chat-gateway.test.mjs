@@ -68,3 +68,88 @@ describe('fixed chat gateway', () => {
     );
   });
 });
+
+describe('push gateway', () => {
+  it('forwards authenticated subscription bodies for POST and DELETE only', async () => {
+    const calls = [];
+    const env = {
+      GATEWAY_SECRET: 'proof',
+      CHAT_API: {
+        fetch: async (url, options) => {
+          calls.push({ url, options });
+          return Response.json({ ok: true });
+        },
+      },
+    };
+    for (const method of ['POST', 'DELETE']) {
+      const result = await worker.fetch(
+        request('/v1/push/subscriptions', {
+          method,
+          headers: {
+            Origin: origin,
+            Authorization: 'Bearer synthetic',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ endpoint: 'https://web.push.apple.com/example' }),
+        }),
+        env,
+      );
+      expect(result.status).toBe(200);
+      const call = calls.at(-1);
+      expect(call.url).toBe('http://kiryu-chat.internal/v1/push/subscriptions');
+      expect(call.options.method).toBe(method);
+      expect(call.options.headers.get('Authorization')).toBe('Bearer synthetic');
+      expect(new TextDecoder().decode(call.options.body)).toContain('endpoint');
+    }
+    expect((await worker.fetch(request('/v1/push/subscriptions'), env)).status).toBe(405);
+    expect((await worker.fetch(request('/v1/push/send'), env)).status).toBe(404);
+    expect((await worker.fetch(request('/v1/push/key'), env)).status).toBe(200);
+    expect((await worker.fetch(request('/v1/push/key?url=https://evil.test'), env)).status).toBe(
+      400,
+    );
+  });
+  it('allows DELETE preflight only on the subscription route', async () => {
+    const options = {
+      method: 'OPTIONS',
+      headers: { Origin: origin, 'Access-Control-Request-Method': 'DELETE' },
+    };
+    const response = await worker.fetch(request('/v1/push/subscriptions', options), {});
+    expect(response.status).toBe(204);
+    expect(response.headers.get('Access-Control-Allow-Methods')).toBe('POST, DELETE');
+    expect((await worker.fetch(request('/v1/chat', options), {})).status).toBe(405);
+    expect((await worker.fetch(request('/v1/push/key', options), {})).status).toBe(405);
+  });
+  it('bounds and validates DELETE bodies before forwarding', async () => {
+    let calls = 0;
+    const env = {
+      GATEWAY_SECRET: 'proof',
+      CHAT_API: {
+        fetch: async () => {
+          calls++;
+          return Response.json({});
+        },
+      },
+    };
+    expect(
+      (
+        await worker.fetch(
+          request('/v1/push/subscriptions', { method: 'DELETE', body: 'bad' }),
+          env,
+        )
+      ).status,
+    ).toBe(415);
+    expect(
+      (
+        await worker.fetch(
+          request('/v1/push/subscriptions', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: 'x'.repeat(17000),
+          }),
+          env,
+        )
+      ).status,
+    ).toBe(413);
+    expect(calls).toBe(0);
+  });
+});

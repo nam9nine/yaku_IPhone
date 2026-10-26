@@ -18,7 +18,9 @@ export function HomeScreen({
   onControl,
   onSwitcher,
   onPhoto,
+  aiUnread = [],
 }: {
+  aiUnread?: string[];
   onLock: () => void;
   active?: boolean;
   onSearch: () => void;
@@ -29,7 +31,9 @@ export function HomeScreen({
 }) {
   const date = useDisplayDate();
   const { shoppingDone, state: dayState } = useDay();
-  const unreadCount = contactIds.filter((id) => !dayState.readThreads.includes(id)).length;
+  const unreadCount = contactIds.filter(
+    (id) => !dayState.readThreads.includes(id) || aiUnread.includes(id),
+  ).length;
   const widgetPhoto = shoppingDone
     ? (dayPhotos.find((photo) => photo.id === 'mame') ?? dayPhotos[0])
     : dayPhotos[0];

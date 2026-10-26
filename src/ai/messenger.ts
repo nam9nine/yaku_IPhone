@@ -1,3 +1,4 @@
+import { ReplyPresentation } from './presentation';
 import {
   aiCharacters,
   AiRequestError,
@@ -29,6 +30,10 @@ export interface PendingMessage {
 }
 export interface AiThread {
   messages: AiMessage[];
+  displayedMessages: AiMessage[];
+  typing: boolean;
+  deliveryPending: boolean;
+  unread: boolean;
   pending: PendingMessage | null;
   failedMessage: {
     message: string;
@@ -43,7 +48,14 @@ export interface AiThread {
   olderLoaded: boolean;
   error: string | null;
 }
+export interface AiReplyNotification {
+  id: string;
+  character: AiCharacter;
+  text: string;
+}
 interface AiSnapshot {
+  notification: AiReplyNotification | null;
+  unreadReplies: AiReplyNotification[];
   connection: AiConnection | null;
   status: 'idle' | 'checking' | 'ready' | 'loading' | 'error';
   error: string | null;
@@ -53,6 +65,10 @@ interface AiSnapshot {
 }
 const emptyThread = (): AiThread => ({
   messages: [],
+  displayedMessages: [],
+  typing: false,
+  deliveryPending: false,
+  unread: false,
   pending: null,
   failedMessage: null,
   loaded: false,
@@ -77,6 +93,8 @@ function mergeMessages(previous: AiMessage[], incoming: AiMessage[]): AiMessage[
 /** A single Messages instance owns requests. Switching contacts never changes their owner. */
 export class AiMessenger {
   private snapshot: AiSnapshot;
+  private presentation = new ReplyPresentation();
+  private presentationTimer: ReturnType<typeof setTimeout> | null = null;
   private listeners = new Set<() => void>();
   private controller = new AbortController();
   private generation = 0;
@@ -90,7 +108,10 @@ export class AiMessenger {
   private resetId = readAiResetId();
 
   constructor(connection = readAiConnection()) {
+    this.presentation.use(connection);
     this.snapshot = {
+      notification: null,
+      unreadReplies: [],
       connection,
       status: 'idle',
       error: null,
@@ -109,18 +130,99 @@ export class AiMessenger {
     this.listeners.forEach((listener) => listener());
   }
   private thread(character: AiCharacter, update: Partial<AiThread>): void {
-    this.update({
-      threads: {
-        ...this.snapshot.threads,
-        [character]: { ...this.snapshot.threads[character], ...update },
-      },
-    });
+    const thread = { ...this.snapshot.threads[character], ...update };
+    this.snapshot = {
+      ...this.snapshot,
+      threads: { ...this.snapshot.threads, [character]: thread },
+    };
+    this.presentation.observe(character, thread.messages);
+    this.present();
   }
+  private present(): void {
+    if (this.resetId !== readAiResetId()) return;
+    if (this.presentationTimer) clearTimeout(this.presentationTimer);
+    this.presentationTimer = null;
+    const now = Date.now();
+    let next = Infinity;
+    let notification = this.snapshot.notification;
+    for (const receipt of this.presentation.receipts) {
+      if (receipt.delivered || !receipt.replyId || now < receipt.deliverAt) continue;
+      receipt.delivered = true;
+      receipt.read = this.visible && this.activeCharacter === receipt.character;
+      const reply = this.snapshot.threads[receipt.character].messages.find(
+        (m) => m.id === receipt.replyId,
+      );
+      if (!receipt.read && reply)
+        notification = { id: reply.id, character: receipt.character, text: reply.content };
+    }
+    const threads = { ...this.snapshot.threads };
+    const unreadReplies: AiReplyNotification[] = [];
+    for (const character of aiCharacters) {
+      const receipts = this.presentation.receipts.filter((r) => r.character === character);
+      const waiting = receipts.filter((r) => !r.delivered);
+      const thread = threads[character];
+      for (const receipt of waiting) {
+        if (now < receipt.typingAt) next = Math.min(next, receipt.typingAt);
+        if (receipt.replyId && now < receipt.deliverAt) next = Math.min(next, receipt.deliverAt);
+      }
+      for (const receipt of receipts.filter((r) => r.delivered && !r.read)) {
+        const reply = thread.messages.find((m) => m.id === receipt.replyId);
+        if (reply) unreadReplies.push({ id: reply.id, character, text: reply.content });
+      }
+      threads[character] = {
+        ...thread,
+        displayedMessages: thread.messages.filter((m) => !waiting.some((r) => r.replyId === m.id)),
+        typing:
+          waiting.some(
+            (r) => now >= r.typingAt && (r.replyId || thread.pending?.requestId === r.requestId),
+          ) && thread.pending?.phase !== 'failed',
+        deliveryPending: waiting.some((r) => !!r.replyId),
+        unread: receipts.some((r) => r.delivered && !r.read),
+      };
+    }
+    this.presentation.save();
+    this.update({ threads, unreadReplies, notification });
+    if (next !== Infinity)
+      this.presentationTimer = setTimeout(() => this.present(), Math.max(0, next - now));
+  }
+
+  markRead = (character: AiCharacter): void => {
+    for (const receipt of this.presentation.receipts)
+      if (receipt.character === character && receipt.delivered) receipt.read = true;
+    if (this.snapshot.notification?.character === character)
+      this.snapshot = { ...this.snapshot, notification: null };
+    this.present();
+  };
+  dismissNotification = (): void => {
+    this.update({ notification: null });
+  };
+  receivePush = async (character: AiCharacter): Promise<boolean> => {
+    if (
+      !this.snapshot.connection ||
+      !this.online ||
+      !this.presentation.receipts.some((r) => r.character === character && !r.delivered)
+    )
+      return false;
+    const generation = this.generation;
+    try {
+      await this.loadThread(character, generation);
+      return this.current(generation);
+    } catch {
+      return false;
+    }
+  };
+  resume = (): void => {
+    if (this.snapshot.connection && this.presentation.receipts.some((r) => !r.read))
+      void this.refresh();
+  };
+
   stop = (): void => {
     this.generation += 1;
     this.refreshTask = null;
     this.controller.abort();
     this.controller = new AbortController();
+    if (this.presentationTimer) clearTimeout(this.presentationTimer);
+    this.presentationTimer = null;
     this.timers.forEach(clearTimeout);
     this.timers.clear();
     this.polling.clear();
@@ -138,12 +240,21 @@ export class AiMessenger {
     this.stop();
     this.resetId = readAiResetId();
     this.renewed = false;
-    this.update({ connection: readAiConnection(), threads: emptyThreads(), error: null });
+    const connection = readAiConnection();
+    this.presentation.use(connection);
+    this.update({
+      connection,
+      threads: emptyThreads(),
+      notification: null,
+      unreadReplies: [],
+      error: null,
+    });
     if (resume && this.activeCharacter) void this.refresh();
   };
 
   activate = async (character: AiCharacter | null): Promise<void> => {
     this.activeCharacter = character;
+    if (character && this.visible) this.markRead(character);
     if (!character || !this.online) return;
     if (this.snapshot.status !== 'ready') await this.refresh();
     if (this.activeCharacter !== character || this.snapshot.status !== 'ready') return;
@@ -176,6 +287,7 @@ export class AiMessenger {
   setVisible(visible: boolean): void {
     if (this.visible === visible) return;
     this.visible = visible;
+    if (visible && this.activeCharacter) this.markRead(this.activeCharacter);
     if (
       visible &&
       this.activeCharacter &&
@@ -197,6 +309,7 @@ export class AiMessenger {
   private remember(connection: AiConnection): void {
     if (this.resetId !== readAiResetId()) return;
     const saved = saveAiConnection(connection, this.resetId);
+    this.presentation.use(connection);
     this.update({
       connection,
       storageUnavailable: !saved,
@@ -225,7 +338,8 @@ export class AiMessenger {
   }
 
   refresh = (renew = false): Promise<void> => {
-    if (!this.online || !this.activeCharacter) return Promise.resolve();
+    if (!this.online || (!this.activeCharacter && !this.presentation.receipts.some((r) => !r.read)))
+      return Promise.resolve();
     if (this.refreshTask) return this.refreshTask;
     const task = this.runRefresh(renew).finally(() => {
       if (this.refreshTask === task) this.refreshTask = null;
@@ -290,7 +404,9 @@ export class AiMessenger {
           });
           const targets = aiCharacters.filter(
             (character) =>
-              character === this.activeCharacter || this.snapshot.threads[character].pending,
+              character === this.activeCharacter ||
+              this.snapshot.threads[character].pending ||
+              this.presentation.receipts.some((r) => r.character === character && !r.read),
           );
           for (const character of targets) {
             if (!this.current(generation)) return;
@@ -349,6 +465,14 @@ export class AiMessenger {
         : resolved
           ? null
           : existing;
+      if (pending?.requestId) {
+        const started = pending.time ? Date.parse(pending.time) : Date.now();
+        this.presentation.begin(
+          character,
+          pending.requestId,
+          Number.isFinite(started) ? started : Date.now(),
+        );
+      }
       this.thread(character, {
         messages: mergeMessages(thread.messages, result.messages),
         loaded: true,
@@ -415,7 +539,9 @@ export class AiMessenger {
       this.snapshot.status !== 'ready' ||
       !thread.loaded ||
       thread.loading ||
-      aiCharacters.some((id) => this.snapshot.threads[id].pending)
+      aiCharacters.some(
+        (id) => this.snapshot.threads[id].pending || this.snapshot.threads[id].deliveryPending,
+      )
     )
       return false;
     const pending: PendingMessage = {
@@ -425,6 +551,7 @@ export class AiMessenger {
       jobId: null,
       phase: 'submitting',
     };
+    this.presentation.begin(character, pending.requestId);
     this.thread(character, { pending, error: null });
     void this.submit(character, pending, this.generation);
     return true;
@@ -481,6 +608,7 @@ export class AiMessenger {
         error instanceof AiRequestError &&
         ['invalid_input', 'input_limit'].includes(error.code)
       ) {
+        this.presentation.cancel(pending.requestId);
         this.thread(character, {
           pending: null,
           failedMessage: { message: pending.message, time: pending.time, reason: 'input' },
@@ -542,6 +670,7 @@ export class AiMessenger {
           (message) =>
             message.id === `${jobId}-user` || (message.role === 'user' && message.job_id === jobId),
         );
+        if (job.status === 'error' && pending) this.presentation.cancel(pending.requestId);
         this.thread(character, {
           messages: mergeMessages(thread.messages, result.messages),
           pending: null,

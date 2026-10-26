@@ -3,3 +3,6 @@ ruff==0.17.2
 starlette==1.10.0
 uvicorn==0.54.0
 httpx2==2.16.0
+pywebpush==2.5.0
+cryptography==50.0.2
+requests==2.34.2
