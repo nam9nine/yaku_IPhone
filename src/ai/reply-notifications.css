@@ -2,7 +2,7 @@
   position: fixed;
   z-index: 24;
   color: var(--app-text);
-  top: calc(var(--phone-top) + var(--safe-area-top) + 38px);
+  top: calc(var(--phone-top) + var(--safe-area-top) + var(--status-row-height) + 4px);
   left: calc(var(--phone-left) + 12px);
   width: calc(var(--phone-width) - 24px);
   animation: ai-reply-arrival 320ms cubic-bezier(0.2, 0.75, 0.25, 1);
