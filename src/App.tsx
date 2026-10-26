@@ -37,7 +37,7 @@ import { consumeNotificationLink, disablePush, registerPushWorker } from './ai/p
 import { resetAiConnection } from './ai/connection';
 import { useAiMessenger } from './ai/useAiMessenger';
 import { isAiCharacter } from './ai/client';
-import { AiReplyBanner, AiReplyNotifications } from './ai/ReplyNotifications';
+import { AiReplyBanner, AiReplyNotifications, AiReplySound } from './ai/ReplyNotifications';
 
 const getPreview = (app: RunnableApp) =>
   document.querySelector<HTMLElement>(`[data-app-window="${app}"]`);
@@ -73,9 +73,6 @@ function PhoneSession() {
     isAiCharacter(conversation ?? undefined) ? (conversation as 'haruka' | 'majima') : null,
     !state.locked && state.activeApp === 'messages' && !state.panel,
   );
-  useEffect(() => {
-    if (ai.pushEnabled && ai.notification) ai.messenger.dismissNotification();
-  }, [ai.pushEnabled, ai.notification, ai.messenger]);
   const appearance = useAppearance(preferences);
   const viewport = useViewport();
   const [topPull, setTopPull] = useState<TopPanel | null>(null);
@@ -370,12 +367,11 @@ function PhoneSession() {
           }
         />
       )}
+      <AiReplySound arrival={ai.arrival} silent={controls.silent} volume={controls.volume} />
       <AiReplyBanner
-        notification={ai.pushEnabled ? null : ai.notification}
+        notification={ai.notification}
         onOpen={openConversation}
         onDismiss={ai.messenger.dismissNotification}
-        silent={controls.silent}
-        volume={controls.volume}
         obscured={!!unlockRequest || state.panel === 'notifications'}
       />
       <DayCall

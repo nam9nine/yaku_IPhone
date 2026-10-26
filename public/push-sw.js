@@ -20,6 +20,27 @@ function state(write, action) {
     };
   });
 }
+// Same readwrite claim protocol as the page. Never infer sound delivery from
+// client visibility: a visible page may have locked or interrupted Web Audio.
+function claimSound(id, owner, release = false) {
+  return state(true, (store) => {
+    const output = { result: false };
+    const request = store.get('soundClaims');
+    request.onsuccess = () => {
+      const claims = request.result || [];
+      if (release) {
+        store.put(
+          claims.filter((claim) => claim.id !== id || claim.owner !== owner),
+          'soundClaims',
+        );
+      } else if (!claims.some((claim) => claim.id === id)) {
+        store.put([...claims.slice(-199), { id, owner }], 'soundClaims');
+        output.result = true;
+      }
+    };
+    return output;
+  });
+}
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', (event) => event.waitUntil(self.clients.claim()));
 let pushQueue = Promise.resolve();
@@ -48,24 +69,35 @@ self.addEventListener('push', (event) => {
       const seen = (await state(false, (store) => store.get('seen'))) || [];
       if (seen.includes(payload.notification_id)) return;
       const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
-      for (const client of clients) {
-        if (new URL(client.url).pathname.startsWith(new URL(self.registration.scope).pathname))
-          client.postMessage({
-            type: 'chat.reply',
-            character: payload.character,
-            job_id: payload.job_id,
-          });
-      }
+      const scopedClients = clients.filter((client) =>
+        client.url.startsWith(self.registration.scope),
+      );
       // Recheck after asynchronous work: a reset may have invalidated the binding.
       const current = await state(false, (store) => store.get('binding'));
       if (current?.id !== payload.subscription_id) return;
-      await self.registration.showNotification(payload.title.slice(0, 80), {
-        body: payload.body.slice(0, 500),
-        tag: `kiryu-${payload.notification_id}`,
-        icon: new URL('app-icon.png', self.registration.scope).href,
-        badge: new URL('app-icon.png', self.registration.scope).href,
-        data: { character: payload.character, subscription_id: payload.subscription_id },
-      });
+      const soundId = payload.job_id || payload.notification_id;
+      const soundOwner = `native:${payload.notification_id}`;
+      const soundClaimed = await claimSound(soundId, soundOwner);
+      // A reset while waiting for the sound transaction must not revive a push.
+      const beforeShow = await state(false, (store) => store.get('binding'));
+      if (beforeShow?.id !== payload.subscription_id) {
+        if (soundClaimed) await claimSound(soundId, soundOwner, true);
+        return;
+      }
+      try {
+        await self.registration.showNotification(payload.title.slice(0, 80), {
+          body: payload.body.slice(0, 500),
+          tag: `kiryu-${payload.notification_id}`,
+          // Required visible display remains even when another path owns sound.
+          ...(!soundClaimed ? { silent: true } : {}),
+          icon: new URL('app-icon.png', self.registration.scope).href,
+          badge: new URL('app-icon.png', self.registration.scope).href,
+          data: { character: payload.character, subscription_id: payload.subscription_id },
+        });
+      } catch (error) {
+        if (soundClaimed) await claimSound(soundId, soundOwner, true);
+        throw error;
+      }
       const afterShow = await state(false, (store) => store.get('binding'));
       if (afterShow?.id !== payload.subscription_id) {
         const stale = await self.registration.getNotifications({
@@ -77,6 +109,12 @@ self.addEventListener('push', (event) => {
       await state(true, (store) =>
         store.put([...seen.slice(-199), payload.notification_id], 'seen'),
       );
+      for (const client of scopedClients)
+        client.postMessage({
+          type: 'chat.reply',
+          character: payload.character,
+          job_id: payload.job_id,
+        });
     });
   event.waitUntil(pushQueue);
 });

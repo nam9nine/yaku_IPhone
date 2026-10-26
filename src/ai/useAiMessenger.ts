@@ -46,11 +46,13 @@ export function useAiMessenger(online: boolean, character: AiCharacter | null, a
     void messenger.activate(active ? character : null);
   }, [messenger, character, active]);
   useEffect(() => {
-    const visibility = () => messenger.setVisible(active && !document.hidden);
+    // Home/Settings are still foreground pages. The active character already
+    // decides read status; only a genuinely hidden page should slow polling.
+    const visibility = () => messenger.setVisible(!document.hidden);
     visibility();
     document.addEventListener('visibilitychange', visibility);
     return () => document.removeEventListener('visibilitychange', visibility);
-  }, [messenger, active]);
+  }, [messenger]);
   useEffect(() => {
     messenger.resume();
     return messenger.stop;

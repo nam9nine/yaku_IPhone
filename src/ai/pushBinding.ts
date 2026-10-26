@@ -43,6 +43,33 @@ export function storedPushBinding(): Promise<PushBinding | null> {
     request.onsuccess = () => result(request.result ?? null);
   });
 }
+
+/** A readwrite transaction serializes claims across windows and the push worker. */
+export function claimReplySound(id: string, owner: string): Promise<boolean> {
+  if (!('indexedDB' in globalThis)) return Promise.resolve(false);
+  return transaction<boolean>(true, (store, result) => {
+    const request = store.get('soundClaims');
+    request.onsuccess = () => {
+      const claims: { id: string; owner: string }[] = request.result ?? [];
+      if (claims.some((claim) => claim.id === id)) return result(false);
+      store.put([...claims.slice(-199), { id, owner }], 'soundClaims');
+      result(true);
+    };
+  }).catch(() => false);
+}
+export function releaseReplySound(id: string, owner: string): Promise<void> {
+  return transaction<void>(true, (store, result) => {
+    const request = store.get('soundClaims');
+    request.onsuccess = () => {
+      const claims: { id: string; owner: string }[] = request.result ?? [];
+      store.put(
+        claims.filter((claim) => claim.id !== id || claim.owner !== owner),
+        'soundClaims',
+      );
+      result(undefined);
+    };
+  }).catch(() => {});
+}
 export function pushGeneration(): Promise<PushGeneration> {
   return transaction(false, (store, result) => {
     const request = store.get('generation');

@@ -54,6 +54,7 @@ export interface AiReplyNotification {
   text: string;
 }
 interface AiSnapshot {
+  arrival: (AiReplyNotification & { jobId?: string }) | null;
   notification: AiReplyNotification | null;
   unreadReplies: AiReplyNotification[];
   connection: AiConnection | null;
@@ -110,6 +111,7 @@ export class AiMessenger {
   constructor(connection = readAiConnection()) {
     this.presentation.use(connection);
     this.snapshot = {
+      arrival: null,
       notification: null,
       unreadReplies: [],
       connection,
@@ -145,6 +147,7 @@ export class AiMessenger {
     const now = Date.now();
     let next = Infinity;
     let notification = this.snapshot.notification;
+    let arrival = this.snapshot.arrival;
     for (const receipt of this.presentation.receipts) {
       if (receipt.delivered || !receipt.replyId || now < receipt.deliverAt) continue;
       receipt.delivered = true;
@@ -152,8 +155,15 @@ export class AiMessenger {
       const reply = this.snapshot.threads[receipt.character].messages.find(
         (m) => m.id === receipt.replyId,
       );
-      if (!receipt.read && reply)
-        notification = { id: reply.id, character: receipt.character, text: reply.content };
+      if (reply) {
+        arrival = {
+          id: reply.id,
+          character: receipt.character,
+          text: reply.content,
+          jobId: receipt.jobId,
+        };
+        if (!receipt.read) notification = arrival;
+      }
     }
     const threads = { ...this.snapshot.threads };
     const unreadReplies: AiReplyNotification[] = [];
@@ -181,7 +191,7 @@ export class AiMessenger {
       };
     }
     this.presentation.save();
-    this.update({ threads, unreadReplies, notification });
+    this.update({ threads, unreadReplies, notification, arrival });
     if (next !== Infinity)
       this.presentationTimer = setTimeout(() => this.present(), Math.max(0, next - now));
   }
@@ -245,6 +255,7 @@ export class AiMessenger {
     this.update({
       connection,
       threads: emptyThreads(),
+      arrival: null,
       notification: null,
       unreadReplies: [],
       error: null,
@@ -281,7 +292,8 @@ export class AiMessenger {
           ...(pending ? { pending: { ...pending, phase: 'failed' } } : {}),
         });
       }
-    } else if (this.activeCharacter) void this.refresh();
+    } else if (this.activeCharacter || this.presentation.receipts.some((r) => !r.read))
+      void this.refresh();
   }
 
   setVisible(visible: boolean): void {
@@ -290,7 +302,7 @@ export class AiMessenger {
     if (visible && this.activeCharacter) this.markRead(this.activeCharacter);
     if (
       visible &&
-      this.activeCharacter &&
+      this.online &&
       aiCharacters.some((id) => this.snapshot.threads[id].pending?.phase === 'failed')
     ) {
       void this.refresh();

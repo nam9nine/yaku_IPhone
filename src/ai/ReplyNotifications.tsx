@@ -1,7 +1,9 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AppIcon } from '../home/AppIcon';
 import { contacts } from '../story/data';
 import type { AiReplyNotification } from './messenger';
+import { ReplySoundPlayer } from './replySound';
+import { claimReplySound, releaseReplySound } from './pushBinding';
 import './reply-notifications.css';
 
 function ReplyCard({
@@ -53,77 +55,75 @@ export function AiReplyNotifications({
 }
 
 /** User gesture unlock only. No OS permission prompt or queued sound on return. */
-function useReplySound(id: string | undefined, silent: boolean, volume: number) {
-  const audio = useRef<AudioContext | null>(null);
-  const played = useRef<string | undefined>(undefined);
+export function AiReplySound({
+  arrival,
+  silent,
+  volume,
+}: {
+  arrival: (AiReplyNotification & { jobId?: string }) | null;
+  silent: boolean;
+  volume: number;
+}) {
+  const audio = useRef<ReplySoundPlayer | null>(null);
+  audio.current ??= new ReplySoundPlayer();
   useEffect(() => {
-    const unlock = () => {
-      if (!window.AudioContext) return;
-      try {
-        audio.current ??= new AudioContext();
-        if (audio.current.state === 'suspended') void audio.current.resume().catch(() => {});
-      } catch {
-        /* Muted/unsupported browser still receives the visual notification. */
-      }
-    };
+    const unlock = () => audio.current?.unlock();
     document.addEventListener('pointerup', unlock, true);
     document.addEventListener('keydown', unlock, true);
     return () => {
       document.removeEventListener('pointerup', unlock, true);
       document.removeEventListener('keydown', unlock, true);
-      void audio.current?.close().catch(() => {});
-      audio.current = null;
+      audio.current?.dispose();
     };
   }, []);
   useEffect(() => {
-    if (!id || played.current === id) return;
-    played.current = id;
-    const context = audio.current;
-    if (silent || volume <= 0 || document.hidden || !context || context.state !== 'running') return;
-    for (const [offset, frequency] of [
-      [0, 880],
-      [0.12, 1174],
-    ] as const) {
-      const oscillator = context.createOscillator();
-      const gain = context.createGain();
-      const start = context.currentTime + offset;
-      oscillator.type = 'sine';
-      oscillator.frequency.value = frequency;
-      gain.gain.setValueAtTime(0, start);
-      gain.gain.linearRampToValueAtTime(Math.min(1, volume / 100) * 0.12, start + 0.012);
-      gain.gain.exponentialRampToValueAtTime(0.001, start + 0.25);
-      oscillator.connect(gain).connect(context.destination);
-      oscillator.start(start);
-      oscillator.stop(start + 0.27);
-      oscillator.onended = () => {
-        oscillator.disconnect();
-        gain.disconnect();
-      };
+    if (!arrival) return;
+    let current = true;
+    const player = audio.current!;
+    const soundId = arrival.jobId ?? arrival.id;
+    const owner = `app:${crypto.randomUUID()}`;
+    if (silent || volume <= 0 || document.hidden || !player.canPlay()) {
+      // Consume in this page without replaying on return, unmute, or audio unlock.
+      player.play(arrival.id, true, volume, false);
+      return;
     }
-  }, [id, silent, volume]);
+    void claimReplySound(soundId, owner).then((claimed) => {
+      if (!claimed) {
+        player.play(arrival.id, true, volume, false);
+        return;
+      }
+      const played = current && player.play(arrival.id, silent, volume, !document.hidden);
+      if (!played) void releaseReplySound(soundId, owner);
+    });
+    return () => {
+      current = false;
+    };
+  }, [arrival, silent, volume]);
+  return null;
 }
 
 export function AiReplyBanner({
   notification,
   onOpen,
   onDismiss,
-  silent,
-  volume,
   obscured,
 }: {
   notification: AiReplyNotification | null;
   onOpen: (id: string) => void;
   onDismiss: () => void;
-  silent: boolean;
-  volume: number;
   obscured: boolean;
 }) {
-  useReplySound(notification?.id, silent, volume);
+  const [visible, setVisible] = useState(!document.hidden);
   useEffect(() => {
-    if (!notification) return;
+    const update = () => setVisible(!document.hidden);
+    document.addEventListener('visibilitychange', update);
+    return () => document.removeEventListener('visibilitychange', update);
+  }, []);
+  useEffect(() => {
+    if (!notification || obscured || !visible) return;
     const timer = setTimeout(onDismiss, 6000);
     return () => clearTimeout(timer);
-  }, [notification, onDismiss]);
+  }, [notification, onDismiss, obscured, visible]);
   if (!notification || obscured) return null;
   return (
     <aside className="ai-reply-banner" aria-label="새 메시지 도착" role="status">

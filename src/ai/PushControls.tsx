@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { AiConnection } from './connection';
-import { disablePush, enablePush, pushSupport, readPushBinding } from './push';
+import { disablePush, enablePush, pushSupport, readPushBinding, PUSH_SETTINGS_EVENT } from './push';
 
 export function PushControls({
   connection,
@@ -16,13 +16,24 @@ export function PushControls({
   const support = pushSupport();
   useEffect(() => {
     let mounted = true;
-    void readPushBinding(connection)
-      .then((value) => {
-        if (mounted) setEnabled(!!value);
-      })
-      .catch(() => {});
+    let revision = 0;
+    const check = () => {
+      const request = ++revision;
+      void readPushBinding(connection)
+        .then((value) => {
+          if (mounted && request === revision) setEnabled(!!value);
+        })
+        .catch(() => {
+          if (mounted && request === revision) setEnabled(false);
+        });
+    };
+    check();
+    window.addEventListener(PUSH_SETTINGS_EVENT, check);
+    document.addEventListener('visibilitychange', check);
     return () => {
       mounted = false;
+      window.removeEventListener(PUSH_SETTINGS_EVENT, check);
+      document.removeEventListener('visibilitychange', check);
     };
   }, [connection]);
   async function toggle() {

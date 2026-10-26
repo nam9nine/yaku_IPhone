@@ -582,6 +582,7 @@ it('빠른 생성도 즉시 답장/타이핑을 노출하지 않고 10~20초 뒤
   expect(thread().displayedMessages.at(-1)?.content).toBe('실제 응답 자리');
   expect(thread().unread).toBe(false);
   expect(value.getSnapshot().notification).toBeNull();
+  expect(value.getSnapshot().arrival?.character).toBe('haruka');
 });
 
 it('늦은 생성은 타이핑을 유지하고 다른 앱으로 이동한 뒤 도착하면 읽지 않은 알림을 한 번 만든다', async () => {
@@ -639,6 +640,7 @@ it('완성된 답장이 있어도 새로고침은 원래 대기 시간을 우회
   await flush();
   expect(third.getSnapshot().threads.haruka.unread).toBe(true);
   expect(third.getSnapshot().notification).toBeNull();
+  expect(third.getSnapshot().arrival).toBeNull();
   expect(third.getSnapshot().unreadReplies).toHaveLength(1);
 });
 
@@ -651,6 +653,7 @@ it('처음 불러온 과거 답장과 생성 실패에는 새 답장 알림이�
   await value.activate('haruka');
   expect(value.getSnapshot().threads.haruka.displayedMessages).toHaveLength(1);
   expect(value.getSnapshot().notification).toBeNull();
+  expect(value.getSnapshot().arrival).toBeNull();
   expect(value.getSnapshot().threads.haruka.unread).toBe(false);
   state.fail = 'output_limit';
   value.send('haruka', '실패하는 요청', true, true);
@@ -658,4 +661,40 @@ it('처음 불러온 과거 답장과 생성 실패에는 새 답장 알림이�
   await vi.advanceTimersByTimeAsync(22_000);
   expect(value.getSnapshot().threads.haruka.typing).toBe(false);
   expect(value.getSnapshot().notification).toBeNull();
+  expect(value.getSnapshot().arrival).toBeNull();
 });
+
+it.each([false, true])(
+  '백그라운드 조회 실패 뒤 홈 복귀는 같은 작업을 복구하고 가상 오프라인(%s)을 존중한다',
+  async (offline) => {
+    const { state, fetch } = mockService();
+    state.hold = true;
+    const value = store();
+    await value.activate('haruka');
+    value.send('haruka', '답장을 기다릴게', true, true);
+    await flush();
+    await value.activate(null);
+    value.setVisible(false);
+    const original = fetch.getMockImplementation()!;
+    fetch.mockImplementationOnce(async () => {
+      throw new Error('background network loss');
+    });
+    await vi.advanceTimersByTimeAsync(16_000);
+    expect(value.getSnapshot().threads.haruka.pending?.phase).toBe('failed');
+    fetch.mockImplementation(original);
+    state.hold = false;
+    if (offline) value.setOnline(false);
+    const before = fetch.mock.calls.length;
+    value.setVisible(true);
+    await flush();
+    if (offline) {
+      expect(fetch.mock.calls.length).toBe(before);
+      value.setOnline(true);
+    }
+    await flush();
+    await vi.advanceTimersByTimeAsync(22_000);
+    expect(value.getSnapshot().notification?.character).toBe('haruka');
+    expect(value.getSnapshot().threads.haruka.pending).toBeNull();
+    expect(state.chats).toHaveLength(1);
+  },
+);
