@@ -18,7 +18,7 @@ from zoneinfo import ZoneInfo
 
 EMBEDDING_REPO = "intfloat/multilingual-e5-small"
 EMBEDDING_REVISION = "614241f622f53c4eeff9890bdc4f31cfecc418b3"
-RETRIEVER_VERSION = "daily-if-hybrid-v2"
+RETRIEVER_VERSION = "daily-if-hybrid-v3"
 ALIASES = {
     "키류": ("kiryu", "桐生"),
     "하루카": ("haruka", "遥"),
@@ -357,6 +357,32 @@ def _lexical_rank(records, query):
         ]
 
 
+def evidence_search_text(record):
+    """Index original dialogue without turning its speakers into current roles."""
+    if record["kind"] != "scene":
+        return record["text"]
+    scene = record.get("scene", {})
+    # The full scene is still supplied as reference data, never user/assistant
+    # history. Indexing only its summary used to miss quoted original lines.
+    return record["text"] + "\n" + json.dumps(scene, ensure_ascii=False)
+
+
+def evidence_query(text):
+    """Do not turn ordinary address or polite endings into story topics.
+
+    This affects evidence retrieval only, not the user's message or memory.
+    Character identity is already a mandatory filter/fixed relationship input.
+    """
+    text = re.sub(r"(?:마지마|키류|하루카)(?:\s*쨩|\s*씨)?", " ", text)
+    text = re.sub(r"형님|아저씨", " ", text)
+    text = re.sub(
+        r"(?:하십니까|계십니까|습니까|십니까|습니다|입니까|입니다|입니더|습니더|주세요|하세요)(?=\W|$)",
+        " ",
+        text,
+    )
+    return text.strip()
+
+
 class HybridRetriever:
     def __init__(self, registry, encoder=None, semantic_threshold=0.84):
         self.registry = (
@@ -398,8 +424,11 @@ class HybridRetriever:
         ]
 
     def evidence(self, character, scenario, query, *, exclude_ids=()):
+        query = evidence_query(query)
+        if not _tokens(query):
+            return {"facts": [], "scenes": []}
         eligible = [
-            {**record, "search_text": record["text"]}
+            {**record, "search_text": evidence_search_text(record)}
             for record in self.registry["records"]
             if runtime_eligible(record, character, scenario)
             and record["id"] not in exclude_ids
