@@ -1,0 +1,14 @@
+{
+  "source": "/System/Library/PrivateFrameworks/ToneLibrary.framework/Versions/A/Resources/AlertTones/Modern/Note.m4r",
+  "source_sha256": "0befc40e99e104b6f1d8f8dd83beaf06d6fd8265a8fa3f6289474ed48fcf13dc",
+  "asset": "public/audio/iphone-note.wav",
+  "asset_sha256": "313b1862b08b394330fd97741bd5db2967f65f6a00e4b77d2210c2717d9a1acf",
+  "verified_date": "2026-10-27",
+  "owner": "Apple",
+  "license": "Apple system sound; no open-source license asserted",
+  "conversion": "afconvert source.m4r output.wav -f WAVE -d LEI16",
+  "sample_rate": 44100,
+  "channels": 1,
+  "duration_seconds": 4.4,
+  "purpose": "User explicitly requested actual iPhone message tone; Note system recording, no synthesis"
+}

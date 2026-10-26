@@ -32,6 +32,7 @@ export interface AiThread {
   messages: AiMessage[];
   displayedMessages: AiMessage[];
   typing: boolean;
+  readRequestIds: string[];
   deliveryPending: boolean;
   unread: boolean;
   pending: PendingMessage | null;
@@ -54,7 +55,7 @@ export interface AiReplyNotification {
   text: string;
 }
 interface AiSnapshot {
-  arrival: (AiReplyNotification & { jobId?: string }) | null;
+  arrival: (AiReplyNotification & { jobId?: string; playSound: boolean }) | null;
   notification: AiReplyNotification | null;
   unreadReplies: AiReplyNotification[];
   connection: AiConnection | null;
@@ -68,6 +69,7 @@ const emptyThread = (): AiThread => ({
   messages: [],
   displayedMessages: [],
   typing: false,
+  readRequestIds: [],
   deliveryPending: false,
   unread: false,
   pending: null,
@@ -161,6 +163,8 @@ export class AiMessenger {
           character: receipt.character,
           text: reply.content,
           jobId: receipt.jobId,
+          // A suspended page/history catch-up is visual recovery, not a new tone.
+          playSound: this.visible && now - receipt.deliverAt < 2000,
         };
         if (!receipt.read) notification = arrival;
       }
@@ -182,6 +186,11 @@ export class AiMessenger {
       threads[character] = {
         ...thread,
         displayedMessages: thread.messages.filter((m) => !waiting.some((r) => r.replyId === m.id)),
+        readRequestIds: receipts
+          .filter(
+            (r) => now >= r.typingAt && (r.replyId || thread.pending?.requestId === r.requestId),
+          )
+          .map((r) => r.requestId),
         typing:
           waiting.some(
             (r) => now >= r.typingAt && (r.replyId || thread.pending?.requestId === r.requestId),

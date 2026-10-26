@@ -71,14 +71,14 @@ async function setup(page: Page, push = true, hold = false) {
       },
     };
     Object.assign(window, { notificationAudio: counts });
-    const original = AudioContext.prototype.createOscillator;
-    AudioContext.prototype.createOscillator = function () {
+    const original = AudioContext.prototype.createBufferSource;
+    AudioContext.prototype.createBufferSource = function () {
       const oscillator = original.call(this);
       const start = oscillator.start.bind(oscillator);
       oscillator.start = (when) => {
         counts.starts++;
-        record('oscillator-start');
-        counts.frequencies.push(oscillator.frequency.value);
+        record('buffer-start');
+
         start(when);
       };
       return oscillator;
@@ -267,15 +267,15 @@ for (const width of [360, 390, 430]) {
     await page.clock.runFor(typingDelay(state.requestId) + 1600);
     await expect(page.locator('.ai-reply-banner')).toBeVisible();
     await expect(page.locator('.ai-reply-banner')).toContainText('우동 재료는 제가 챙길게요.');
-    await expect.poll(() => soundCount(page)).toBe(9);
+    await expect.poll(() => soundCount(page)).toBe(1);
     if (width === 390)
       await page.screenshot({
-        path: `harness/evidence/issue-90/subscribed-fallback-${test.info().project.name}.png`,
+        path: `harness/evidence/issue-95/subscribed-fallback-${test.info().project.name}.png`,
         animations: 'disabled',
       });
     await page.clock.runFor(6001);
     await expect(page.locator('.ai-reply-banner')).toHaveCount(0);
-    expect(await soundCount(page)).toBe(9);
+    expect(await soundCount(page)).toBe(1);
   });
 }
 
@@ -286,7 +286,7 @@ test('현재 대화의 답장은 배너 없이 수신음으로 알리고 새로�
   await page.clock.runFor(typingDelay(state.requestId) + 1600);
   await expect(page.getByText('우동 재료는 제가 챙길게요.', { exact: true })).toBeVisible();
   await expect(page.locator('.ai-reply-banner')).toHaveCount(0);
-  await expect.poll(() => soundCount(page)).toBe(9);
+  await expect.poll(() => soundCount(page)).toBe(1);
   await page.clock.resume();
   await page.reload();
   await unlockPhone(page);
@@ -572,9 +572,9 @@ async function releaseAudio(page: Page) {
 test('새 답장 도착 때 잠깐 중단된 오디오는 재개 완료 후 한 번 울린다', async ({ page }) => {
   await pendingAudioArrival(page);
   await releaseAudio(page);
-  await expect.poll(() => soundCount(page)).toBe(9);
+  await expect.poll(() => soundCount(page)).toBe(1);
   await page.clock.runFor(2000);
-  expect(await soundCount(page)).toBe(9);
+  expect(await soundCount(page)).toBe(1);
 });
 
 async function setSilentMode(page: Page, silent: boolean) {
@@ -627,3 +627,22 @@ for (const cancel of ['hidden', 'reset', 'mute', 'deadline'] as const) {
     expect(await soundCount(page)).toBe(0);
   });
 }
+
+test('답장 작성 말풍선이 나타날 때 보낸 문자를 읽음으로 표시한다', async ({ page }) => {
+  const state = await setup(page, false);
+  await expect(page.locator('.message-time').last()).toContainText('전송됨');
+  await expect(page.locator('.message-typing')).toHaveCount(0);
+  await page.clock.runFor(typingDelay(state.requestId) + 1);
+  await expect(page.locator('.message-typing')).toBeVisible();
+  await expect(page.locator('.message-time').last()).toContainText('읽음');
+  expect(await soundCount(page)).toBe(0);
+  await page.screenshot({ path: `harness/evidence/issue-95/read-${test.info().project.name}.png` });
+  await page.clock.runFor(1600);
+  await expect(page.getByText('우동 재료는 제가 챙길게요.', { exact: true })).toBeVisible();
+  await expect.poll(() => soundCount(page)).toBe(1);
+  await page.keyboard.press('Alt+Home');
+  await page.clock.runFor(500);
+  await page.clock.resume();
+  await launchHomeApp(page, 'messages');
+  expect(await soundCount(page)).toBe(1);
+});

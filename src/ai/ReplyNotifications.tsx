@@ -60,7 +60,7 @@ export function AiReplySound({
   silent,
   volume,
 }: {
-  arrival: (AiReplyNotification & { jobId?: string }) | null;
+  arrival: (AiReplyNotification & { jobId?: string; playSound: boolean }) | null;
   silent: boolean;
   volume: number;
 }) {
@@ -68,6 +68,10 @@ export function AiReplySound({
   audio.current ??= new ReplySoundPlayer();
   useEffect(() => {
     const unlock = () => audio.current?.unlock();
+    const visibility = () => {
+      if (document.hidden) audio.current?.interrupt();
+    };
+    document.addEventListener('visibilitychange', visibility);
     // Safari media activation explicitly includes touchend/click. Pointerup is
     // kept for pointer-only controls, with duplicate resume calls harmless.
     document.addEventListener('pointerup', unlock, true);
@@ -75,6 +79,7 @@ export function AiReplySound({
     document.addEventListener('click', unlock, true);
     document.addEventListener('keydown', unlock, true);
     return () => {
+      document.removeEventListener('visibilitychange', visibility);
       document.removeEventListener('pointerup', unlock, true);
       document.removeEventListener('touchend', unlock, true);
       document.removeEventListener('click', unlock, true);
@@ -88,7 +93,8 @@ export function AiReplySound({
     const player = audio.current!;
     const soundId = arrival.jobId ?? arrival.id;
     const owner = `app:${crypto.randomUUID()}`;
-    if (silent || volume <= 0 || document.hidden) {
+    if (!arrival.playSound || silent || volume <= 0 || document.hidden) {
+      player.interrupt();
       // Consume in this page without replaying on return, unmute, or audio unlock.
       player.play(arrival.id, true, volume, false);
       return;
@@ -120,6 +126,7 @@ export function AiReplySound({
     return () => {
       current = false;
       controller.abort();
+      player.interrupt();
       document.removeEventListener('visibilitychange', onVisibility);
     };
   }, [arrival, silent, volume]);
