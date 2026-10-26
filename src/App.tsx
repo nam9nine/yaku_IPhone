@@ -33,7 +33,11 @@ import { MusicApp, TaxiApp, CookingApp } from './lifestyle/LifestyleApps';
 import { DayCall } from './components/DayCall';
 import { DayNotification } from './components/DayNotification';
 import { resetStoryStorage } from './story/useStoredState';
+import { consumeNotificationLink, disablePush, registerPushWorker } from './ai/push';
 import { resetAiConnection } from './ai/connection';
+import { useAiMessenger } from './ai/useAiMessenger';
+import { isAiCharacter } from './ai/client';
+import { AiReplyBanner, AiReplyNotifications } from './ai/ReplyNotifications';
 
 const getPreview = (app: RunnableApp) =>
   document.querySelector<HTMLElement>(`[data-app-window="${app}"]`);
@@ -52,14 +56,26 @@ function PhoneSession() {
   const [note, setNote] = useState<string | null>(null);
   const [photo, setPhoto] = useState<string | null>(null);
   const [phoneEntry, setPhoneEntry] = useState(0);
-  const [conversation, setConversation] = useState<string | null>(null);
+  const [notificationEntry] = useState(() => {
+    const value = new URLSearchParams(location.search).get('conversation');
+    return isAiCharacter(value ?? undefined) ? value : null;
+  });
+  const [conversation, setConversation] = useState<string | null>(notificationEntry);
   const [controls, setControls] = useState({ volume: 50, rotation: false, silent: false });
   const [state, dispatch] = useReducer(shellReducer, initialShellState);
   const [unlockRequest, setUnlockRequest] = useState<{
     app: RunnableApp | null;
     origin: LaunchRect | null;
-  } | null>(null);
+  } | null>(notificationEntry ? { app: 'messages', origin: null } : null);
   const { preferences, setPreferences, storageUnavailable } = useDevicePreferences();
+  const ai = useAiMessenger(
+    isOnline(preferences),
+    isAiCharacter(conversation ?? undefined) ? (conversation as 'haruka' | 'majima') : null,
+    !state.locked && state.activeApp === 'messages' && !state.panel,
+  );
+  useEffect(() => {
+    if (ai.pushEnabled && ai.notification) ai.messenger.dismissNotification();
+  }, [ai.pushEnabled, ai.notification, ai.messenger]);
   const appearance = useAppearance(preferences);
   const viewport = useViewport();
   const [topPull, setTopPull] = useState<TopPanel | null>(null);
@@ -99,11 +115,15 @@ function PhoneSession() {
     setPhoneEntry((value) => value + 1);
     openApp('phone');
   }
-  function openHaruka() {
-    setConversation('haruka');
+  function openConversation(id: string) {
+    setConversation(id);
     openApp('messages');
   }
-  function resetPhone() {
+  function openHaruka() {
+    openConversation('haruka');
+  }
+  async function resetPhone() {
+    if (!(await disablePush(ai.connection, true))) return false;
     if (!resetAiConnection()) return false;
     setUnlockRequest(null);
     day.reset();
@@ -117,6 +137,24 @@ function PhoneSession() {
     setEpoch((value) => value + 1);
     return true;
   }
+  useEffect(() => {
+    void registerPushWorker().catch(() => {});
+    consumeNotificationLink();
+  }, []);
+  useEffect(() => {
+    if (!('serviceWorker' in navigator)) return;
+    const onPush = (event: MessageEvent) => {
+      if (
+        event.data?.type === 'chat.reply' &&
+        isAiCharacter(event.data.character) &&
+        !document.hidden &&
+        ai.connection
+      )
+        void ai.messenger.receivePush(event.data.character);
+    };
+    navigator.serviceWorker.addEventListener('message', onPush);
+    return () => navigator.serviceWorker.removeEventListener('message', onPush);
+  }, [ai.connection, ai.messenger, state.locked, state.activeApp, conversation]);
   useLayoutEffect(() => {
     if (state.locked || state.activeApp || state.panel) return;
     // Restore within the visibility commit so a later user focus is never
@@ -186,6 +224,9 @@ function PhoneSession() {
           >
             <HomeScreen
               key={epoch}
+              aiUnread={Object.keys(ai.threads).filter(
+                (id) => ai.threads[id as 'haruka' | 'majima'].unread,
+              )}
               active={!state.locked && !state.activeApp && !state.panel}
               onLock={() => dispatch({ type: 'lock' })}
               onOpenApp={(app, origin) => dispatch({ type: 'open', app, origin })}
@@ -242,6 +283,7 @@ function PhoneSession() {
             />
           ) : app === 'messages' ? (
             <MessagesApp
+              ai={ai}
               active={!state.locked && state.activeApp === app && !state.panel}
               selected={conversation}
               onSelect={setConversation}
@@ -320,9 +362,22 @@ function PhoneSession() {
           }
           getPreview={getPreview}
           viewport={viewport}
-          notifications={<DayNotification onOpen={openHaruka} onCall={openPhone} />}
+          notifications={
+            <>
+              <AiReplyNotifications replies={ai.unreadReplies} onOpen={openConversation} />
+              <DayNotification onOpen={openHaruka} onCall={openPhone} />
+            </>
+          }
         />
       )}
+      <AiReplyBanner
+        notification={ai.pushEnabled ? null : ai.notification}
+        onOpen={openConversation}
+        onDismiss={ai.messenger.dismissNotification}
+        silent={controls.silent}
+        volume={controls.volume}
+        obscured={!!unlockRequest || state.panel === 'notifications'}
+      />
       <DayCall
         silent={controls.silent}
         volume={controls.volume}

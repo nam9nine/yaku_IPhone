@@ -14,6 +14,7 @@ import hmac
 import json
 import os
 import re
+import sqlite3
 import time
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager
@@ -188,6 +189,7 @@ class ChatService:
         api_key_file=None,
         embedding_dir=None,
         gateway_secret=None,
+        push_sender=None,
     ):
         if not 1 <= queue_size <= 8:
             raise ValueError("queue_size must be 1–8")
@@ -213,6 +215,17 @@ class ChatService:
         self.executor = None
         self.worker = None
         self.backup_task = None
+        self.push_worker = None
+        self.push_executor = None
+        self.push = None
+        self.push_error = None
+        try:
+            from .chat_push import ChatPush
+
+            self.push = ChatPush(self.root / "push", self.db, sender=push_sender)
+        except (ImportError, OSError, ValueError, TypeError, sqlite3.Error):
+            # Optional notifications cannot disable durable chat or expose keys.
+            self.push_error = "initialization_failed"
         self.lock = None
 
     def address(self, request):
@@ -431,6 +444,17 @@ class ChatService:
                 self.backup_failed = True
             await asyncio.sleep(3600)
 
+    async def pushes(self):
+        loop = asyncio.get_running_loop()
+        while True:
+            try:
+                await loop.run_in_executor(self.push_executor, self.push.tick)
+                self.push_error = None
+            except (OSError, sqlite3.Error, ValueError, TypeError, RuntimeError):
+                # Retain only a fixed diagnostic code, never provider bodies.
+                self.push_error = "delivery_failed"
+            await asyncio.sleep(1)
+
     async def start(self):
         self.lock = await asyncio.to_thread(open, self.root / "chat.lock", "a")
         try:
@@ -444,10 +468,15 @@ class ChatService:
         )
         self.worker = asyncio.create_task(self.run())
         self.backup_task = asyncio.create_task(self.backups())
+        if self.push:
+            self.push_executor = ThreadPoolExecutor(
+                max_workers=1, thread_name_prefix="chat-push"
+            )
+            self.push_worker = asyncio.create_task(self.pushes())
 
     async def close(self):
         self.status = "error"
-        for task in (self.worker, self.backup_task):
+        for task in (self.worker, self.backup_task, self.push_worker):
             if task:
                 task.cancel()
                 try:
@@ -457,6 +486,10 @@ class ChatService:
         if self.executor:
             await asyncio.to_thread(
                 self.executor.shutdown, wait=True, cancel_futures=True
+            )
+        if self.push_executor:
+            await asyncio.to_thread(
+                self.push_executor.shutdown, wait=True, cancel_futures=True
             )
         self.db.recover_interrupted()
         if self.lock:
@@ -570,6 +603,48 @@ def create_app(data_root, *, allow_origins=(), **options):
             raise ApiFailure(404, "job_not_found", "요청을 찾을 수 없습니다.")
         return JSONResponse(public_job(job))
 
+    def push_access(request):
+        record = service.authenticate(request)
+        if service.push is None:
+            raise ApiFailure(
+                503, "push_unavailable", "알림 연결을 준비하지 못했습니다."
+            )
+        if not service.limiter.allow("push:" + record["visitor_id"], 20, 60):
+            raise ApiFailure(429, "rate_limited", "잠시 후 다시 시도해 주세요.")
+        return record
+
+    async def push_key(request):
+        push_access(request)
+        return JSONResponse({"public_key": service.push.public_key})
+
+    async def push_subscriptions(request):
+        from .chat_push import SubscriptionConflict
+
+        record = push_access(request)
+        body = await json_body(request)
+        try:
+            if request.method == "DELETE":
+                if set(body) != {"endpoint"}:
+                    raise ValueError("Invalid unsubscribe body")
+                service.push.unsubscribe(record["visitor_id"], body["endpoint"])
+                return JSONResponse({"ok": True})
+            if set(body) != {"subscription", "platform"} or body["platform"] != "web":
+                raise ValueError("Invalid subscription body")
+            identifier = service.push.subscribe(
+                record["visitor_id"], body["subscription"]
+            )
+            return JSONResponse({"id": identifier})
+        except SubscriptionConflict:
+            raise ApiFailure(
+                409,
+                "push_subscription_conflict",
+                "기존 알림 연결을 끈 뒤 다시 연결해 주세요.",
+            ) from None
+        except (ValueError, TypeError):
+            raise ApiFailure(
+                400, "invalid_push_subscription", "알림 연결 정보를 확인해 주세요."
+            ) from None
+
     app = Starlette(
         routes=[
             Route("/v1/health", health),
@@ -577,6 +652,10 @@ def create_app(data_root, *, allow_origins=(), **options):
             Route("/v1/history", history),
             Route("/v1/chat", chat, methods=["POST"]),
             Route("/v1/jobs/{job_id}", job_status),
+            Route("/v1/push/key", push_key),
+            Route(
+                "/v1/push/subscriptions", push_subscriptions, methods=["POST", "DELETE"]
+            ),
         ],
         lifespan=lifespan,
     )
@@ -584,7 +663,7 @@ def create_app(data_root, *, allow_origins=(), **options):
     app.add_middleware(
         CORSMiddleware,
         allow_origins=origins,
-        allow_methods=["GET", "POST"],
+        allow_methods=["GET", "POST", "DELETE"],
         allow_headers=["Authorization", "Content-Type"],
         max_age=0,
     )

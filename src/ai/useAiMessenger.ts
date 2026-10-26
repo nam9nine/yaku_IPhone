@@ -2,10 +2,31 @@ import { useEffect, useState, useSyncExternalStore } from 'react';
 import { AiMessenger } from './messenger';
 import type { AiCharacter } from './client';
 import { AI_RESET_EVENT, AI_RESET_KEY } from './connection';
+import { PUSH_SETTINGS_EVENT, readPushBinding, renewPush } from './push';
 
 export function useAiMessenger(online: boolean, character: AiCharacter | null, active: boolean) {
   const [messenger] = useState(() => new AiMessenger());
+  const [pushEnabled, setPushEnabled] = useState(false);
   const snapshot = useSyncExternalStore(messenger.subscribe, messenger.getSnapshot);
+  useEffect(() => {
+    let current = true;
+    const check = () => {
+      void readPushBinding(snapshot.connection)
+        .then((value) => {
+          if (current) setPushEnabled(!!value);
+        })
+        .catch(() => {
+          if (current) setPushEnabled(false);
+        });
+    };
+    check();
+    if (snapshot.connection) void renewPush(snapshot.connection).catch(() => {});
+    window.addEventListener(PUSH_SETTINGS_EVENT, check);
+    return () => {
+      current = false;
+      window.removeEventListener(PUSH_SETTINGS_EVENT, check);
+    };
+  }, [snapshot.connection]);
   useEffect(() => {
     const localReset = () => messenger.syncReset(false);
     const externalReset = (event: StorageEvent) => {
@@ -30,6 +51,11 @@ export function useAiMessenger(online: boolean, character: AiCharacter | null, a
     document.addEventListener('visibilitychange', visibility);
     return () => document.removeEventListener('visibilitychange', visibility);
   }, [messenger, active]);
-  useEffect(() => messenger.stop, [messenger]);
-  return { ...snapshot, messenger };
+  useEffect(() => {
+    messenger.resume();
+    return messenger.stop;
+  }, [messenger]);
+  return { ...snapshot, messenger, pushEnabled };
 }
+
+export type AiMessengerView = ReturnType<typeof useAiMessenger>;

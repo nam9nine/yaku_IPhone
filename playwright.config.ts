@@ -7,6 +7,7 @@ export default defineConfig({
   retries: 0,
   reporter: [['list'], ['html', { open: 'never' }]],
   use: {
+    serviceWorkers: 'block',
     baseURL: 'http://127.0.0.1:4173/yaku_IPhone/',
     locale: 'ko-KR',
     timezoneId: 'Asia/Seoul',

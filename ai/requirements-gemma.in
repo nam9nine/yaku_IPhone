@@ -4,3 +4,6 @@ numpy==2.5.4
 onnxruntime==1.31.0
 tokenizers==0.23.3
 huggingface-hub==2.3.0
+pywebpush==2.5.0
+cryptography==50.0.2
+requests==2.34.2

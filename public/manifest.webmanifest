@@ -1,0 +1,14 @@
+{
+  "id": "/yaku_IPhone/",
+  "name": "키류의 iPhone",
+  "short_name": "키류의 폰",
+  "lang": "ko",
+  "start_url": "/yaku_IPhone/",
+  "scope": "/yaku_IPhone/",
+  "display": "standalone",
+  "background_color": "#202020",
+  "theme_color": "#595254",
+  "icons": [
+    { "src": "app-icon.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

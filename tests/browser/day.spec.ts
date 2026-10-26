@@ -1,3 +1,4 @@
+import { finishAiReply } from '../helpers/ai-clock';
 import { mockStoryAi } from '../helpers/mock-story-ai';
 import { enterPasscode, unlockPhone } from '../helpers/unlock';
 import { expect, test, type Page } from '@playwright/test';
@@ -88,6 +89,7 @@ for (const width of [360, 390, 430]) {
     await home(page);
     await launchHomeApp(page, 'messages');
     await page.getByRole('button', { name: '다 샀다. 보내기', exact: true }).tap();
+    await finishAiReply(page, 'haruka');
     await expect(page.getByText('검증용 하루카 답장', { exact: true })).toBeVisible();
     await expect(
       page.locator('.message-bubble').getByText('다 샀다.', { exact: true }),
@@ -149,6 +151,7 @@ test('확인 전 초기화는 취소되고 확인 후 로컬 체크·배경을 �
   await expect(page.locator('.mobile-shell')).toHaveAttribute('data-wallpaper', 'drawing');
   await home(page);
   await launchHomeApp(page, 'messages');
+  await finishAiReply(page, 'haruka');
   await expect(page.getByText('검증용 하루카 답장', { exact: true })).toBeVisible();
   await home(page);
   await launchHomeApp(page, 'settings');
@@ -184,6 +187,7 @@ test('저장소 읽기와 쓰기가 거부되어도 현재 세션의 카레 흐�
   await home(page);
   await launchHomeApp(page, 'messages');
   await page.getByRole('button', { name: '다 샀다. 보내기' }).tap();
+  await finishAiReply(page, 'haruka');
   await expect(page.getByText('검증용 하루카 답장', { exact: true })).toBeVisible();
   await lock(page);
   await expect(page.getByRole('button', { name: '남은 할 일 2개', exact: true })).toBeVisible();

@@ -98,7 +98,12 @@ export function generationError(code?: string): string {
 export async function aiRequest(
   endpoint: string,
   path: string,
-  options: { token?: string; body?: unknown; signal?: AbortSignal } = {},
+  options: {
+    token?: string;
+    body?: unknown;
+    signal?: AbortSignal;
+    method?: 'GET' | 'POST' | 'DELETE';
+  } = {},
 ): Promise<unknown> {
   const controller = new AbortController();
   const abort = () => controller.abort();
@@ -107,7 +112,7 @@ export async function aiRequest(
   const timer = setTimeout(abort, 12_000);
   try {
     const response = await fetch(`${endpoint}${path}`, {
-      method: options.body === undefined ? 'GET' : 'POST',
+      method: options.method ?? (options.body === undefined ? 'GET' : 'POST'),
       headers: {
         ...(options.token ? { Authorization: `Bearer ${options.token}` } : {}),
         ...(options.body === undefined ? {} : { 'Content-Type': 'application/json' }),
