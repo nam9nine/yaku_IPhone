@@ -230,13 +230,6 @@
 .mobile-shell[data-reduced-motion='true'] .message-typing span {
   animation: none;
 }
-.message-storage-note {
-  margin: 2px 0 6px;
-  color: var(--app-secondary);
-  text-align: center;
-  font-size: 0.6875rem;
-  line-height: 1.35;
-}
 .message-load-older {
   align-self: center;
   min-height: 44px;
