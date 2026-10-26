@@ -1,0 +1,282 @@
+{
+  "reason": "사용자 요청으로 AI 메시지의 이전 대화 표제 및 저장 안내 제거. 허용 오차·마스킹 변경 없음.",
+  "reviews": [
+    {
+      "reviewer": "/root/reset81_review",
+      "verdict": "pass",
+      "implementationSha": "87bbb188f64fa596cdc7dd4b7a4427fee71adad9",
+      "platform": "macOS darwin; Chromium and WebKit",
+      "scope": "10 baseline sets: expected, actual, diff all opened directly; fresh/reset/error captures 6 also reopened after wording removal",
+      "summary": "10개 모두 상단 이전 대화 표제와 하단 저장 안내 제거 및 표제 제거에 따른 대화 본문 위쪽 재배치만 관찰. 헤더/아바타/뒤로가기/입력창/전송버튼/기본 대화 내용과 색상 유지. 360/390/430, 390 dark, desktop 화면에서 잘림/겹침 미발견. 허용 오차/마스킹 변경 없음. 새 초기화·오류 확인창 가독성과 버튼 유지. 실제 iPhone Safari 검증 아님.",
+      "references": ["apple-settings-search-image", "idb-messages-ios27"],
+      "baselineChanges": [
+        {
+          "baseline": "tests/visual/baselines/darwin/chromium/day-desktop-haruka.png",
+          "actualSha256": "ad6f028805fbd202b13852676d8f33f31dd38154be6daf886e37b472e7b77bd6",
+          "expectedSha256": "f929256fd1c763ae77215e87eb084d3302daeb41e17c5feaeffe460c813a01bf",
+          "files": {
+            "expected": ".tooling/reset-chat/mac-visual/chromium/day-desktop-haruka-expected.png",
+            "actual": ".tooling/reset-chat/mac-visual/chromium/day-desktop-haruka-actual.png",
+            "diff": ".tooling/reset-chat/mac-visual/chromium/day-desktop-haruka-diff.png"
+          },
+          "verdict": "pass"
+        },
+        {
+          "baseline": "tests/visual/baselines/darwin/webkit/day-desktop-haruka.png",
+          "actualSha256": "c9a1d82492f2e9814875384464c242fbf10356d8d2d57e62cfd348488a486a11",
+          "expectedSha256": "6fd185bb467697082870d7075f773c35737ef69201d01c6a0e28e499f69bfd32",
+          "files": {
+            "expected": ".tooling/reset-chat/mac-visual/webkit/day-desktop-haruka-expected.png",
+            "actual": ".tooling/reset-chat/mac-visual/webkit/day-desktop-haruka-actual.png",
+            "diff": ".tooling/reset-chat/mac-visual/webkit/day-desktop-haruka-diff.png"
+          },
+          "verdict": "pass"
+        },
+        {
+          "baseline": "tests/visual/baselines/darwin/chromium/native-thread-390.png",
+          "actualSha256": "9b08f89e69962ceb0cc81f3532535d47500d040a76dde456cafecc65a030350f",
+          "expectedSha256": "7b1e59c0bf8234804b83547afa9ae6b8a455923cd128ff96fb9689ec623aa192",
+          "files": {
+            "expected": ".tooling/reset-chat/mac-visual/chromium/native-thread-390-expected.png",
+            "actual": ".tooling/reset-chat/mac-visual/chromium/native-thread-390-actual.png",
+            "diff": ".tooling/reset-chat/mac-visual/chromium/native-thread-390-diff.png"
+          },
+          "verdict": "pass"
+        },
+        {
+          "baseline": "tests/visual/baselines/darwin/webkit/native-thread-390.png",
+          "actualSha256": "988f79c850e1f6b27d0b2255e15e9dcbd9bc4c58b6cfed3626753490c8896cda",
+          "expectedSha256": "d7e715544ec5fc0dbdf1e21314b1ec6316ab43563f88bc110a28ee58b1418485",
+          "files": {
+            "expected": ".tooling/reset-chat/mac-visual/webkit/native-thread-390-expected.png",
+            "actual": ".tooling/reset-chat/mac-visual/webkit/native-thread-390-actual.png",
+            "diff": ".tooling/reset-chat/mac-visual/webkit/native-thread-390-diff.png"
+          },
+          "verdict": "pass"
+        },
+        {
+          "baseline": "tests/visual/baselines/darwin/chromium/story-thread-360.png",
+          "actualSha256": "c882fa09f6c303a0e0866dee71bfcc6aef109a4d5c4906ce7124f7051768163c",
+          "expectedSha256": "22cf1d4ae4875769d82b724a1032f8a1a17b44d9ead62ebbc96b47f38ff66bbc",
+          "files": {
+            "expected": ".tooling/reset-chat/mac-visual/chromium/story-thread-360-expected.png",
+            "actual": ".tooling/reset-chat/mac-visual/chromium/story-thread-360-actual.png",
+            "diff": ".tooling/reset-chat/mac-visual/chromium/story-thread-360-diff.png"
+          },
+          "verdict": "pass"
+        },
+        {
+          "baseline": "tests/visual/baselines/darwin/webkit/story-thread-360.png",
+          "actualSha256": "e30de6b18f446885b4b9b840fb639d9ab4c571ac7aa40a1f6fa527be715268a7",
+          "expectedSha256": "0d25a79c90037106a3331da1ba23116a54711842a91e029733ce71abfee5eb2b",
+          "files": {
+            "expected": ".tooling/reset-chat/mac-visual/webkit/story-thread-360-expected.png",
+            "actual": ".tooling/reset-chat/mac-visual/webkit/story-thread-360-actual.png",
+            "diff": ".tooling/reset-chat/mac-visual/webkit/story-thread-360-diff.png"
+          },
+          "verdict": "pass"
+        },
+        {
+          "baseline": "tests/visual/baselines/darwin/chromium/story-thread-390.png",
+          "actualSha256": "fea122662f7271dcc2220dd02169ceecd2937fc0f083a924c9bb7eccaa2dacab",
+          "expectedSha256": "bf0780872621213b9d306b5a817d5ae7a144ddbd51b6cfb1a9b72fee67459721",
+          "files": {
+            "expected": ".tooling/reset-chat/mac-visual/chromium/story-thread-390-expected.png",
+            "actual": ".tooling/reset-chat/mac-visual/chromium/story-thread-390-actual.png",
+            "diff": ".tooling/reset-chat/mac-visual/chromium/story-thread-390-diff.png"
+          },
+          "verdict": "pass"
+        },
+        {
+          "baseline": "tests/visual/baselines/darwin/webkit/story-thread-390.png",
+          "actualSha256": "c6be8e798a09e253ebcfa2f5ffbb366f7fd88e246d04e66f0313a89d06488877",
+          "expectedSha256": "bb2030042f5e388dd1e054c6e02087aa862da15e00e80dd6b955b692bda1584a",
+          "files": {
+            "expected": ".tooling/reset-chat/mac-visual/webkit/story-thread-390-expected.png",
+            "actual": ".tooling/reset-chat/mac-visual/webkit/story-thread-390-actual.png",
+            "diff": ".tooling/reset-chat/mac-visual/webkit/story-thread-390-diff.png"
+          },
+          "verdict": "pass"
+        },
+        {
+          "baseline": "tests/visual/baselines/darwin/chromium/story-thread-430.png",
+          "actualSha256": "8ce8f883865469e776ee727340a3dd435f0fd7c9cb10d0ca4c37da1e47c4fb1c",
+          "expectedSha256": "3929cf8168ccbb47aa80ffe49228717d51a200d11440a655500de8fd62c4b3da",
+          "files": {
+            "expected": ".tooling/reset-chat/mac-visual/chromium/story-thread-430-expected.png",
+            "actual": ".tooling/reset-chat/mac-visual/chromium/story-thread-430-actual.png",
+            "diff": ".tooling/reset-chat/mac-visual/chromium/story-thread-430-diff.png"
+          },
+          "verdict": "pass"
+        },
+        {
+          "baseline": "tests/visual/baselines/darwin/webkit/story-thread-430.png",
+          "actualSha256": "950bda2aeca46c6617da6d9909f48efb13c48642fb0483d9ad7915dbfe46ae2a",
+          "expectedSha256": "4ca46101cc605dbe0963fed9d1748ce02bba6a8c171aaf36eabddb439d23fa5d",
+          "files": {
+            "expected": ".tooling/reset-chat/mac-visual/webkit/story-thread-430-expected.png",
+            "actual": ".tooling/reset-chat/mac-visual/webkit/story-thread-430-actual.png",
+            "diff": ".tooling/reset-chat/mac-visual/webkit/story-thread-430-diff.png"
+          },
+          "verdict": "pass"
+        }
+      ],
+      "captures": [
+        {
+          "path": "harness/evidence/issue-81/fresh-chromium.png",
+          "sha256": "82d9db76ffe21dfbc378b56015f6fb7cd73ac9cbe775b973589393a2eb735937",
+          "verdict": "pass"
+        },
+        {
+          "path": "harness/evidence/issue-81/fresh-webkit.png",
+          "sha256": "0a06c8ebba5d02a32d14d3d9d30604d5e8f3ccedc5809d344e463bffe32f6e32",
+          "verdict": "pass"
+        },
+        {
+          "path": "harness/evidence/issue-81/reset-chromium.png",
+          "sha256": "97208a9191a72b06e48771ac46d86be8491ea47f2e3022edcd0df76db39c51dc",
+          "verdict": "pass"
+        },
+        {
+          "path": "harness/evidence/issue-81/reset-error-chromium.png",
+          "sha256": "b48f866a137b233295bb5fa1356db4e47f50cbec70fddb4f696f7355cea0f030",
+          "verdict": "pass"
+        },
+        {
+          "path": "harness/evidence/issue-81/reset-error-webkit.png",
+          "sha256": "5dce7b614af6ddab2e69e008ec0b402c0cee9fe3a8dc95a48d036614d3e85ba6",
+          "verdict": "pass"
+        },
+        {
+          "path": "harness/evidence/issue-81/reset-webkit.png",
+          "sha256": "1424dd9b9f8eef4654293a87c5228eb7b544d388aad26b1f455ebb8b04f54116",
+          "verdict": "pass"
+        }
+      ]
+    },
+    {
+      "reviewer": "/root/reset81_review",
+      "verdict": "pass",
+      "implementationSha": "87bbb188f64fa596cdc7dd4b7a4427fee71adad9",
+      "platform": "Linux CI; Chromium and WebKit",
+      "sourceRun": 40283006449,
+      "sourceArtifact": 12633805477,
+      "scope": "10 baseline sets: expected, actual, diff all opened directly; Linux only compared with Linux",
+      "summary": "10개 모두 상단 이전 대화 표제와 하단 저장 안내 제거 및 표제 제거에 따른 대화 본문 위쪽 재배치만 관찰. 헤더/아바타/뒤로가기/입력창/전송버튼/기본 대화 내용과 색상 유지. 360/390/430, 390 dark, desktop 화면에서 잘림/겹침 미발견. Linux 글꼴/줄바꿈과 브라우저별 아이콘 표현 차이는 기존 expected에도 동일하며 macOS 기준과 혼합하지 않음. 허용 오차/마스킹 변경 없음. 실제 iPhone Safari 검증 아님.",
+      "references": ["apple-settings-search-image", "idb-messages-ios27"],
+      "baselineChanges": [
+        {
+          "baseline": "tests/visual/baselines/linux/chromium/day-desktop-haruka.png",
+          "actualSha256": "c1982b52f30d5730ff51f387c7aadec0744fe7ff8b568242a80b4633971120da",
+          "expectedSha256": "e6aca8254be2c04919797457461081c9e394e0c3efc03df50206be6ad92dcefb",
+          "files": {
+            "expected": ".tooling/reset-chat/linux-visual/chromium/day-desktop-haruka-expected.png",
+            "actual": ".tooling/reset-chat/linux-visual/chromium/day-desktop-haruka-actual.png",
+            "diff": ".tooling/reset-chat/linux-visual/chromium/day-desktop-haruka-diff.png"
+          },
+          "verdict": "pass"
+        },
+        {
+          "baseline": "tests/visual/baselines/linux/webkit/day-desktop-haruka.png",
+          "actualSha256": "44504204b28c7f6a189330240e5e566b3ce308bd4a3fbda59d9480654eca0d77",
+          "expectedSha256": "ee33c2a3273bce4a8ca5a82ab94c73e7580c4367cc1d20db115dd794563d150b",
+          "files": {
+            "expected": ".tooling/reset-chat/linux-visual/webkit/day-desktop-haruka-expected.png",
+            "actual": ".tooling/reset-chat/linux-visual/webkit/day-desktop-haruka-actual.png",
+            "diff": ".tooling/reset-chat/linux-visual/webkit/day-desktop-haruka-diff.png"
+          },
+          "verdict": "pass"
+        },
+        {
+          "baseline": "tests/visual/baselines/linux/chromium/native-thread-390.png",
+          "actualSha256": "1c25b7f278a3a7097ff56d856f4ef69cf1a363da2bd751b806c29d40132f4ee9",
+          "expectedSha256": "cb60b2d69bd23e8f31e678cf0a5675b7b253793f22db32b0d809a12a101abcf7",
+          "files": {
+            "expected": ".tooling/reset-chat/linux-visual/chromium/native-thread-390-expected.png",
+            "actual": ".tooling/reset-chat/linux-visual/chromium/native-thread-390-actual.png",
+            "diff": ".tooling/reset-chat/linux-visual/chromium/native-thread-390-diff.png"
+          },
+          "verdict": "pass"
+        },
+        {
+          "baseline": "tests/visual/baselines/linux/webkit/native-thread-390.png",
+          "actualSha256": "390e01843c5cfce2c169d1a39361578e04f34cf076f40eed075c04d15d0c9e8b",
+          "expectedSha256": "36635e96b9d754ff4fcd1b06ff3200aae89bf8559a35f4eeb6b7bd79d676ad2c",
+          "files": {
+            "expected": ".tooling/reset-chat/linux-visual/webkit/native-thread-390-expected.png",
+            "actual": ".tooling/reset-chat/linux-visual/webkit/native-thread-390-actual.png",
+            "diff": ".tooling/reset-chat/linux-visual/webkit/native-thread-390-diff.png"
+          },
+          "verdict": "pass"
+        },
+        {
+          "baseline": "tests/visual/baselines/linux/chromium/story-thread-360.png",
+          "actualSha256": "7169a45082ba54c91718d60cb5cc4379b7a71b0f95d27689088dc71a2d96c485",
+          "expectedSha256": "3adfe56b26927dfc494bc015b57673ad58341183b557d03db68381c722d05d27",
+          "files": {
+            "expected": ".tooling/reset-chat/linux-visual/chromium/story-thread-360-expected.png",
+            "actual": ".tooling/reset-chat/linux-visual/chromium/story-thread-360-actual.png",
+            "diff": ".tooling/reset-chat/linux-visual/chromium/story-thread-360-diff.png"
+          },
+          "verdict": "pass"
+        },
+        {
+          "baseline": "tests/visual/baselines/linux/webkit/story-thread-360.png",
+          "actualSha256": "cd9cb786cdfd3ec1f4f2aeeaef0ddd5b79010fce6fa3cdf558fa7c5596e57905",
+          "expectedSha256": "b37a077cb86d3f61650140d23e4c84ba48ab1da88e41a959414b126d0ad05dec",
+          "files": {
+            "expected": ".tooling/reset-chat/linux-visual/webkit/story-thread-360-expected.png",
+            "actual": ".tooling/reset-chat/linux-visual/webkit/story-thread-360-actual.png",
+            "diff": ".tooling/reset-chat/linux-visual/webkit/story-thread-360-diff.png"
+          },
+          "verdict": "pass"
+        },
+        {
+          "baseline": "tests/visual/baselines/linux/chromium/story-thread-390.png",
+          "actualSha256": "3b840080e0b8e1a3c9e8f1e35abf75a781ec48a1480a3998495f7fb2ba20828e",
+          "expectedSha256": "739ff0294b35804646a6042cbc195d8a57ea3bd7fc5a68caea8cd6239baa8f2e",
+          "files": {
+            "expected": ".tooling/reset-chat/linux-visual/chromium/story-thread-390-expected.png",
+            "actual": ".tooling/reset-chat/linux-visual/chromium/story-thread-390-actual.png",
+            "diff": ".tooling/reset-chat/linux-visual/chromium/story-thread-390-diff.png"
+          },
+          "verdict": "pass"
+        },
+        {
+          "baseline": "tests/visual/baselines/linux/webkit/story-thread-390.png",
+          "actualSha256": "816e2ae7e2481da2d85150f693ae9966f8320f66f5e9c86b90a490f1bc3ca0ba",
+          "expectedSha256": "63174bc38cbab27b3f6f940bd95b8eda54864726c3284cea79d3ac78163b9847",
+          "files": {
+            "expected": ".tooling/reset-chat/linux-visual/webkit/story-thread-390-expected.png",
+            "actual": ".tooling/reset-chat/linux-visual/webkit/story-thread-390-actual.png",
+            "diff": ".tooling/reset-chat/linux-visual/webkit/story-thread-390-diff.png"
+          },
+          "verdict": "pass"
+        },
+        {
+          "baseline": "tests/visual/baselines/linux/chromium/story-thread-430.png",
+          "actualSha256": "8e6cc7ef8a0a7c730e6345f8ea59b67f510fdb1b901dea4338eff12dd4e4f702",
+          "expectedSha256": "765944f10f96eb81d3ea1ad9bee3194bde3039b7aa25b6f67ce7a0c39a690eb6",
+          "files": {
+            "expected": ".tooling/reset-chat/linux-visual/chromium/story-thread-430-expected.png",
+            "actual": ".tooling/reset-chat/linux-visual/chromium/story-thread-430-actual.png",
+            "diff": ".tooling/reset-chat/linux-visual/chromium/story-thread-430-diff.png"
+          },
+          "verdict": "pass"
+        },
+        {
+          "baseline": "tests/visual/baselines/linux/webkit/story-thread-430.png",
+          "actualSha256": "da61dc935c86a34094d362991c41bcd8a62cd6d41f2fb5ea0746b13ef6797e4a",
+          "expectedSha256": "1f13e1c96c8e0e2e134670fa2993074aaae5bdb266378934d2f155c29a238d68",
+          "files": {
+            "expected": ".tooling/reset-chat/linux-visual/webkit/story-thread-430-expected.png",
+            "actual": ".tooling/reset-chat/linux-visual/webkit/story-thread-430-actual.png",
+            "diff": ".tooling/reset-chat/linux-visual/webkit/story-thread-430-diff.png"
+          },
+          "verdict": "pass"
+        }
+      ],
+      "captures": []
+    }
+  ]
+}
