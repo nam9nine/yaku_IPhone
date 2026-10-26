@@ -571,6 +571,7 @@ it('빠른 생성도 즉시 답장/타이핑을 노출하지 않고 10~20초 뒤
   expect(thread().messages.at(-1)?.role).toBe('assistant');
   expect(thread().displayedMessages.some((m) => m.role === 'assistant')).toBe(false);
   expect(thread().typing).toBe(false);
+  expect(thread().readRequestIds).toEqual([]);
   expect(value.send('haruka', '또 보낸다', true, true)).toBe(false);
   await vi.advanceTimersByTimeAsync(9_999);
   expect(thread().typing).toBe(false);
@@ -580,9 +581,23 @@ it('빠른 생성도 즉시 답장/타이핑을 노출하지 않고 10~20초 뒤
   await vi.advanceTimersByTimeAsync(1_500);
   expect(thread().typing).toBe(false);
   expect(thread().displayedMessages.at(-1)?.content).toBe('실제 응답 자리');
+  expect(thread().readRequestIds).toHaveLength(1);
   expect(thread().unread).toBe(false);
   expect(value.getSnapshot().notification).toBeNull();
   expect(value.getSnapshot().arrival?.character).toBe('haruka');
+  expect(value.getSnapshot().arrival?.playSound).toBe(true);
+});
+
+it('중단됐다 돌아와 과거 전달을 복원할 때는 알림만 복원하고 수신음은 예약하지 않는다', async () => {
+  mockService();
+  const value = store();
+  await value.activate('haruka');
+  value.send('haruka', '잘 지내?', true, true);
+  await flush();
+  vi.setSystemTime(Date.now() + 60_000);
+  await value.activate('haruka');
+  expect(value.getSnapshot().arrival?.character).toBe('haruka');
+  expect(value.getSnapshot().arrival?.playSound).toBe(false);
 });
 
 it('늦은 생성은 타이핑을 유지하고 다른 앱으로 이동한 뒤 도착하면 읽지 않은 알림을 한 번 만든다', async () => {

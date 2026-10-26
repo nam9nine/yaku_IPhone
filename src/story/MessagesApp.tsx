@@ -88,10 +88,11 @@ export function MessagesApp({
         delivery:
           message.role !== 'user'
             ? undefined
-            : message.status === 'queued' || message.status === 'generating'
-              ? '답장 대기 중'
-              : message.status && message.status !== 'complete'
-                ? '답장 실패'
+            : message.status === 'error' || message.status === 'interrupted'
+              ? '답장 실패'
+              : (message.request_id && remote.readRequestIds.includes(message.request_id)) ||
+                  remote.displayedMessages[index + 1]?.role === 'assistant'
+                ? '읽음'
                 : '전송됨',
         time: aiTime(message.time),
         day:
@@ -126,9 +127,11 @@ export function MessagesApp({
               delivery:
                 remote.pending.phase === 'failed'
                   ? '전송 상태 확인 필요'
-                  : remote.pending.jobId
-                    ? '전송됨'
-                    : '보내는 중…',
+                  : remote.readRequestIds.includes(remote.pending.requestId)
+                    ? '읽음'
+                    : remote.pending.jobId
+                      ? '전송됨'
+                      : '보내는 중…',
             },
           ]
         : []),
