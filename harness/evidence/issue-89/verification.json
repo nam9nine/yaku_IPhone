@@ -1,0 +1,33 @@
+{
+  "issue": 89,
+  "baseCommit": "275dc477e1e73167f1e847cd3213b09488598a5d",
+  "scope": "전송 버튼 입력 포커스 유지와 클릭/submit 전달",
+  "reproduction": {
+    "environment": "macOS Chromium and WebKit; 390x844 with synthetic visualViewport 430 -> 844 on textarea blur",
+    "before": "수정 전 두 엔진 모두 버튼 mousedown 뒤 입력 포커스가 풀리고 composer가 이동하여 mouseup 뒤 chat POST 0건으로 실패했다.",
+    "logs": ".tooling/send89/before-delivery.log",
+    "limitation": "실제 iPhone 소프트 키보드 녹화나 실기기 재현이 아니다. 키보드에 따른 viewport 경합 조건을 통제한 브라우저 재현이다."
+  },
+  "change": "textarea 입력 중 전송 버튼의 mousedown 기본 포커스 이동만 막는다. 전송은 기존 native click/form submit에서 수행한다. pointerdown에서 전송하지 않으므로 취소·드래그·중복 전송 방지를 유지한다.",
+  "visual": {
+    "reference": "idb-messages-ios27",
+    "artifacts": [
+      "send-focused-chromium.png",
+      "send-focused-webkit.png",
+      "send-keyboard-geometry-chromium.png",
+      "send-keyboard-geometry-webkit.png"
+    ],
+    "comparison": "원형 전송 화살표·입력창·본문·헤더 배치는 변경하지 않았다. 두 엔진의 전송 전 입력 상태와 390x430 합성 키보드 높이의 전송 후 상태를 직접 열어 입력창/버튼 잘림이 없음을 확인했다. 파란 입력 포커스 링은 기존 접근성 스타일이며 새 디자인이 아니다.",
+    "baselineChanged": false,
+    "actualIphoneSafari": false
+  },
+  "unchangedConstraints": [
+    "방문자당 pending 또는 deliveryPending 동안 새 전송을 막는 기존 계약은 유지한다.",
+    "랜덤 답장 지연, 서버 추론, 기존 대화 데이터는 변경하지 않는다.",
+    "Safari의 시스템 전체 키보드 탐색 설정은 이 테스트에서 변경하지 않는다. 키보드 검사는 포커스된 native 버튼의 Enter 활성화를 확인한다."
+  ],
+  "technicalReferences": [
+    "https://developer.mozilla.org/en-US/docs/Web/API/VisualViewport",
+    "https://w3c.github.io/pointerevents/index.html"
+  ]
+}
