@@ -195,3 +195,24 @@ it('오디오가 준비되지 않은 보이는 앱만 있어도 OS 기본 소리
   await w.push();
   expect(w.showNotification.mock.calls[0][1]).not.toHaveProperty('silent');
 });
+
+it('전경 페이지가 실제 소리를 시작해 claim하면 OS 알림은 무음으로 표시한다', async () => {
+  const client = {
+    url: 'https://example.test/yaku_IPhone/',
+    visibilityState: 'visible',
+    postMessage: vi.fn(),
+  };
+  const w = worker([client]);
+  client.postMessage.mockImplementation((data, ports) => {
+    if (data.type !== 'chat.sound') return;
+    w.values.set('soundClaims', [{ id: data.soundId, owner: 'app:ready-player' }]);
+    ports[0].postMessage({ done: true });
+    ports[0].close();
+  });
+  await w.push();
+  expect(w.showNotification).toHaveBeenCalledWith(
+    '하루카',
+    expect.objectContaining({ silent: true }),
+  );
+  expect(client.postMessage).toHaveBeenCalledTimes(2);
+});

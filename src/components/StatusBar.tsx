@@ -29,10 +29,10 @@ export function StatusBar({
               <rect
                 key={n}
                 x={n * 5}
-                y={10 - n * 3}
+                y={11 - n * 3}
                 width="3.5"
-                height={5 + n * 3}
-                rx=".6"
+                height={4 + n * 3}
+                rx="1.4"
                 fill="currentColor"
                 opacity={preferences.cellular ? 1 : 0.3}
               />
@@ -45,11 +45,11 @@ export function StatusBar({
             aria-hidden="true"
             fill="none"
             stroke="currentColor"
-            strokeWidth="2.5"
+            strokeWidth="2.7"
             strokeLinecap="round"
           >
-            <path d="M2 5a15 15 0 0 1 18 0M5.5 9a9 9 0 0 1 11 0M9 12.5a3 3 0 0 1 4 0" />
-            <circle cx="11" cy="15" r=".6" fill="currentColor" stroke="none" />
+            <path d="M2 5.5a14 14 0 0 1 18 0M5.7 9.3a8.4 8.4 0 0 1 10.6 0" />
+            <path d="M8.6 12.8a3.6 3.6 0 0 1 4.8 0L11 15.3Z" fill="currentColor" stroke="none" />
           </svg>
         )}
         <span className="status-battery">

@@ -646,7 +646,7 @@ for (const [width, height] of [
     expect(visible).toBe(true);
     if (width === 390 && height === 420)
       await page.screenshot({
-        path: `harness/evidence/issue-97/typing-scroll-${test.info().project.name}.png`,
+        path: `harness/evidence/issue-99/typing-scroll-${test.info().project.name}.png`,
       });
     mac.hold.delete('haruka');
     await finishAiReply(page, 'haruka');
@@ -687,6 +687,43 @@ test('밖에서 받은 상단 알림은 저장된 과거 위치보다 최신 답
     .toBeLessThanOrEqual(1);
   await expect(bubble(page, replyFor('haruka', '알림에서 이 답장으로 돌아온다.'))).toBeInViewport();
   await page.screenshot({
-    path: `harness/evidence/issue-97/notification-open-${test.info().project.name}.png`,
+    path: `harness/evidence/issue-99/notification-open-${test.info().project.name}.png`,
   });
 });
+
+for (const theme of ['dark', 'light'] as const) {
+  test(`키보드 뷰포트에서는 입력창을 바로 붙이고 헤더는 흐린 플로팅 제어를 유지한다 ${theme}`, async ({
+    page,
+  }) => {
+    await page.emulateMedia({ colorScheme: theme });
+    await mockMac(page);
+    await start(page);
+    await openThread(page, 'haruka');
+    await input(page).fill('오늘 저녁에는 뭘 먹을까?');
+    // Model a keyboard's visual viewport shrink; this is not a physical iOS keyboard.
+    await page.evaluate(() => {
+      Object.defineProperty(window.visualViewport!, 'height', {
+        configurable: true,
+        get: () => 480,
+      });
+      window.visualViewport!.dispatchEvent(new Event('resize'));
+    });
+    await expect(page.locator('.mobile-shell')).toHaveAttribute('data-keyboard', 'true');
+    const gap = await page
+      .locator('.message-composer')
+      .evaluate((el) => window.visualViewport!.height - el.getBoundingClientRect().bottom);
+    expect(Math.abs(gap)).toBeLessThanOrEqual(1);
+    await expect(page.getByRole('button', { name: '답장 알림 설정' })).toBeVisible();
+    await page.screenshot({
+      path: `harness/evidence/issue-99/keyboard-${theme}-${test.info().project.name}.png`,
+    });
+    await page.evaluate(() => {
+      delete (window.visualViewport as unknown as { height?: number }).height;
+      window.visualViewport!.dispatchEvent(new Event('resize'));
+    });
+    await expect(page.locator('.mobile-shell')).toHaveAttribute('data-keyboard', 'false');
+    await page.screenshot({
+      path: `harness/evidence/issue-99/thread-${theme}-${test.info().project.name}.png`,
+    });
+  });
+}

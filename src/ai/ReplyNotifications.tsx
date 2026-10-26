@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useEffectEvent, useRef, useState } from 'react';
 import { AppIcon } from '../home/AppIcon';
 import { contacts } from '../story/data';
 import type { AiReplyArrival, AiReplyNotification } from './messenger';
-import { ReplySoundPlayer } from './replySound';
-import { claimReplySound, releaseReplySound } from './pushBinding';
+import { AI_RESET_EVENT, AI_RESET_KEY } from './connection';
+import { MESSAGE_SENT_SOUND, ReplySoundPlayer } from './replySound';
+import { claimReplySound, releaseReplySound, storedPushBinding } from './pushBinding';
 import './reply-notifications.css';
 
 function ReplyCard({
@@ -59,14 +60,114 @@ export function AiReplySound({
   arrival,
   silent,
   volume,
+  activeCharacter,
 }: {
   arrival: AiReplyArrival | null;
   silent: boolean;
   volume: number;
+  activeCharacter: string | null;
 }) {
   const audio = useRef<ReplySoundPlayer | null>(null);
   audio.current ??= new ReplySoundPlayer();
+  const pendingSounds = useRef(new Set<AbortController>());
+  const soundSettings = useEffectEvent(() => ({ silent, volume }));
+  const cancelSounds = useEffectEvent(() => {
+    for (const controller of pendingSounds.current) controller.abort();
+    pendingSounds.current.clear();
+    audio.current?.interrupt();
+  });
   useEffect(() => {
+    if (silent || volume <= 0) cancelSounds();
+  }, [silent, volume]);
+  const onSend = useEffectEvent(() => {
+    const player = audio.current!;
+    player.unlock();
+    const controller = new AbortController();
+    pendingSounds.current.add(controller);
+    const hide = () => {
+      if (document.hidden) controller.abort();
+    };
+    document.addEventListener('visibilitychange', hide);
+    const id = `sent:${crypto.randomUUID()}`;
+    void player.ready(controller.signal, 'conversation').then((ready) => {
+      const settings = soundSettings();
+      player.play(
+        id,
+        settings.silent || !ready,
+        settings.volume,
+        !document.hidden && !controller.signal.aborted,
+        'conversation',
+      );
+      pendingSounds.current.delete(controller);
+      document.removeEventListener('visibilitychange', hide);
+    });
+  });
+  const onPushSound = useEffectEvent(async (event: MessageEvent) => {
+    const data = event.data;
+    const port = event.ports[0];
+    if (data?.type !== 'chat.sound' || !port || !event.source || !('scriptURL' in event.source))
+      return;
+    const expected = new URL(`${import.meta.env.BASE_URL}push-sw.js`, location.href);
+    if (
+      new URL(event.source.scriptURL).pathname !== expected.pathname ||
+      new URL(event.source.scriptURL).origin !== expected.origin
+    )
+      return;
+    const player = audio.current!;
+    const owner = `app:${crypto.randomUUID()}`;
+    const kind = data.character === activeCharacter ? 'conversation' : 'notification';
+    const controller = new AbortController();
+    pendingSounds.current.add(controller);
+    const hide = () => {
+      if (document.hidden) controller.abort();
+    };
+    document.addEventListener('visibilitychange', hide);
+    const valid = () =>
+      !document.hidden &&
+      !controller.signal.aborted &&
+      !soundSettings().silent &&
+      soundSettings().volume > 0 &&
+      Date.now() < data.deadline;
+    try {
+      if (
+        !['haruka', 'majima'].includes(data.character) ||
+        typeof data.soundId !== 'string' ||
+        !valid()
+      )
+        return;
+      if ((await storedPushBinding())?.id !== data.subscription_id) return;
+      if (!(await player.ready(controller.signal, kind)) || !valid()) return;
+      if (!(await claimReplySound(data.soundId, owner))) return;
+      if (
+        (await storedPushBinding())?.id !== data.subscription_id ||
+        !valid() ||
+        !player.play(data.soundId, false, soundSettings().volume, true, kind)
+      ) {
+        await releaseReplySound(data.soundId, owner);
+        return;
+      }
+    } catch {
+      await releaseReplySound(data.soundId, owner);
+    } finally {
+      pendingSounds.current.delete(controller);
+      document.removeEventListener('visibilitychange', hide);
+      port.postMessage({ done: true });
+      port.close();
+    }
+  });
+  useEffect(() => {
+    const reset = () => cancelSounds();
+    const storageReset = (event: StorageEvent) => {
+      if (event.key === AI_RESET_KEY || event.key === null) cancelSounds();
+    };
+    window.addEventListener('storage', storageReset);
+    window.addEventListener(AI_RESET_EVENT, reset);
+    const sent = () => onSend();
+    const pushSound = (event: MessageEvent) => {
+      void onPushSound(event);
+    };
+    window.addEventListener(MESSAGE_SENT_SOUND, sent);
+    navigator.serviceWorker?.addEventListener('message', pushSound);
     const unlock = () => audio.current?.unlock();
     const visibility = () => {
       if (document.hidden) audio.current?.interrupt();
@@ -79,6 +180,11 @@ export function AiReplySound({
     document.addEventListener('click', unlock, true);
     document.addEventListener('keydown', unlock, true);
     return () => {
+      cancelSounds();
+      window.removeEventListener('storage', storageReset);
+      window.removeEventListener(AI_RESET_EVENT, reset);
+      window.removeEventListener(MESSAGE_SENT_SOUND, sent);
+      navigator.serviceWorker?.removeEventListener('message', pushSound);
       document.removeEventListener('visibilitychange', visibility);
       document.removeEventListener('pointerup', unlock, true);
       document.removeEventListener('touchend', unlock, true);
@@ -88,7 +194,10 @@ export function AiReplySound({
     };
   }, []);
   useEffect(() => {
-    if (!arrival) return;
+    if (!arrival) {
+      audio.current?.interrupt();
+      return;
+    }
     let current = true;
     const player = audio.current!;
     const soundId = arrival.jobId ?? arrival.id;
@@ -126,7 +235,6 @@ export function AiReplySound({
     return () => {
       current = false;
       controller.abort();
-      player.interrupt();
       document.removeEventListener('visibilitychange', onVisibility);
     };
   }, [arrival, silent, volume]);

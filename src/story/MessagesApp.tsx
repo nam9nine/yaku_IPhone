@@ -1,4 +1,5 @@
 import { PushControls } from '../ai/PushControls';
+import { messageSentSound } from '../ai/replySound';
 import { PhoneIcon } from './PhoneIcon';
 import './messages-native.css';
 import { useEffect, useEffectEvent, useLayoutEffect, useRef, useState } from 'react';
@@ -243,17 +244,21 @@ export function MessagesApp({
   });
   function sendAi() {
     if (!aiCharacter || !canSendAi) return;
-    if (ai.messenger.send(aiCharacter, draft, active, online))
+    if (ai.messenger.send(aiCharacter, draft, active, online)) {
+      messageSentSound();
       setDrafts((current) => ({ ...current, [aiCharacter]: '' }));
+    }
   }
   function send() {
     if (!active || !person || !online) return;
     if (person.id === 'haruka' && !shoppingDone) return;
     if (aiEnabled && aiCharacter) {
-      ai.messenger.send(aiCharacter, replyChoices[person.id].text, active, online);
+      if (ai.messenger.send(aiCharacter, replyChoices[person.id].text, active, online))
+        messageSentSound();
       return;
     }
     dispatch({ type: 'reply', id: person.id });
+    messageSentSound();
   }
   function rewriteFailed() {
     if (!aiCharacter || !active) return;
@@ -280,7 +285,13 @@ export function MessagesApp({
     return () => window.removeEventListener('keydown', handle);
   }, [active]);
   return (
-    <section ref={root} className="social-app messages-app" aria-label="메시지 내용" {...edge}>
+    <section
+      ref={root}
+      className="social-app messages-app"
+      data-thread={!!person}
+      aria-label="메시지 내용"
+      {...edge}
+    >
       <header
         className={`social-header social-header--compact${person ? ' message-thread-header' : ''}`}
       >
@@ -292,6 +303,15 @@ export function MessagesApp({
             aria-label="메시지 목록으로 돌아가기"
           >
             <Chevron />
+            {person &&
+              contacts.some((contact) => contact.id !== person.id && isUnread(contact.id)) && (
+                <span className="message-back-count" aria-hidden="true">
+                  {
+                    contacts.filter((contact) => contact.id !== person.id && isUnread(contact.id))
+                      .length
+                  }
+                </span>
+              )}
           </button>
         ) : (
           <>
@@ -333,6 +353,7 @@ export function MessagesApp({
             <img src={person.portrait} alt="" />
             <h1 ref={title} tabIndex={-1} data-app-title>
               {person.shortName}
+              <Chevron />
             </h1>
           </div>
         ) : (

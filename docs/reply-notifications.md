@@ -35,3 +35,13 @@ WebKit의 [공식 interruption 회귀 검사](https://github.com/WebKit/WebKit/b
 `ReceivedMessage.caf`는 Apple ToneLibrary의 실제 시스템 음원으로, 원본 PCM을 WAV에 담았다. 출처·해시는 `references/iphone-conversation-sound-source.json`에 기록했다. 이는 웹 페이지가 소리를 담당할 때의 구분이며, OS Push 경로가 먼저 소리를 맡으면 기기 설정음이 사용될 수 있다. 잠금 화면의 음원을 웹에서 강제하지 않는다.
 
 보내는 말풍선은 [Apple이 설명하는 iMessage의 파란 말풍선](https://support.apple.com/guide/iphone/about-imessage-iph4e9799206/ios)을 참고해 기존 `--app-accent` 토큰을 사용한다. 실제 iMessage 서비스 연결을 의미하지 않는다.
+
+## Issue 99: 전송음과 설치 앱 전경 전달
+
+사용자가 유효한 새 문자를 보내면 같은 `ReceivedMessage` 음원을 한 번 재생한다. 사용자 요청의 ‘그 소리’를 재사용한 것이며 iPhone 고유 전송용 음원으로 새로 추출했다고 표시하지 않는다. 빈 입력·중복 제출·실패 재조회는 새 전송음을 만들지 않는다.
+
+Push는 보이는 페이지에 최대 1.2초간 재생 기회를 준다. 페이지가 사용자 활성화된 AudioContext, 음원 준비, 현재 구독과 가시성을 확인하고 원자적인 claim을 확보한 뒤 시작한다. 실패·시간 초과·무응답이면 Worker가 기존 OS 소리 경로를 시도한다. 실제 claim 없이 화면이 보인다는 이유만으로 OS 알림을 무음 처리하지 않는다. 같은 작업의 후속 polling과 여러 창은 claim으로 중복음을 막는다. `showNotification`은 계속 실행한다.
+
+[W3C Audio Session 초안](https://www.w3.org/TR/audio-session/#audio-session-types)의 짧은 알림용 `transient`를 지원할 때 사용한다. 미지원이면 기존 AudioContext 경로를 유지한다. 음악용 독점 `playback`으로 고정하지 않는다. 기기 무음·집중 모드·OS 알림 설정은 이 변경으로 강제 해제하지 않는다. [WebKit의 iOS 홈 화면 앱 설명](https://webkit.org/blog/13878/web-push-for-web-apps-on-ios-and-ipados/)처럼 설치 앱의 Push는 OS 알림 설정을 따르는 별도 경로다.
+
+새 비동기 전송·Push 재생도 숨김, 무음/0음량, 같은 창·다른 창 대화 초기화, 컴포넌트 해제 시 취소한다. 모델 요청이나 문자 입력은 이 알림 변경으로 수집·수정하지 않는다. 실제 iPhone의 설치 앱·스피커 음향은 미검증이며 브라우저 테스트는 실제 오디오 버퍼 시작과 중복·취소 흐름을 확인한다.

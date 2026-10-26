@@ -43,6 +43,34 @@ function claimSound(id, owner, release = false) {
 }
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', (event) => event.waitUntil(self.clients.claim()));
+// Give an unlocked foreground player the first chance. Visibility alone never
+// mutes OS sound: the page must acquire the shared claim and start its buffer.
+function foregroundSound(client, payload) {
+  return new Promise((resolve) => {
+    const channel = new MessageChannel();
+    const finish = () => {
+      clearTimeout(timer);
+      channel.port1.close();
+      resolve();
+    };
+    const timer = setTimeout(finish, 1200);
+    channel.port1.onmessage = finish;
+    try {
+      client.postMessage(
+        {
+          type: 'chat.sound',
+          soundId: payload.job_id || payload.notification_id,
+          character: payload.character,
+          subscription_id: payload.subscription_id,
+          deadline: Date.now() + 1100,
+        },
+        [channel.port2],
+      );
+    } catch {
+      finish();
+    }
+  });
+}
 let pushQueue = Promise.resolve();
 self.addEventListener('push', (event) => {
   pushQueue = pushQueue
@@ -77,6 +105,11 @@ self.addEventListener('push', (event) => {
       if (current?.id !== payload.subscription_id) return;
       const soundId = payload.job_id || payload.notification_id;
       const soundOwner = `native:${payload.notification_id}`;
+      await Promise.all(
+        scopedClients
+          .filter((client) => client.visibilityState === 'visible')
+          .map((client) => foregroundSound(client, payload)),
+      );
       const soundClaimed = await claimSound(soundId, soundOwner);
       // A reset while waiting for the sound transaction must not revive a push.
       const beforeShow = await state(false, (store) => store.get('binding'));

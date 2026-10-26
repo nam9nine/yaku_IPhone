@@ -213,3 +213,42 @@ it('현재 대화는 ReceivedMessage, 바깥 도착은 Note 버퍼를 선택하�
   expect(player.play('inside', false, 100, true, 'notification')).toBe(false);
   player.dispose();
 });
+
+it('지원하는 오디오 세션은 짧은 알림으로 설정하고 다른 playback 세션은 바꾸지 않는다', async () => {
+  const session = { type: 'auto' };
+  vi.stubGlobal('navigator', { audioSession: session });
+  try {
+    const { player } = audio();
+    player.unlock();
+    expect(session.type).toBe('transient');
+    session.type = 'playback';
+    player.unlock();
+    expect(session.type).toBe('playback');
+    await player.ready(new AbortController().signal);
+    expect(player.play('ping', false, 50, true)).toBe(true);
+    player.dispose();
+  } finally {
+    vi.unstubAllGlobals();
+  }
+});
+it('선택적 세션 유형이 거부돼도 기본 오디오 활성화와 재생은 계속된다', async () => {
+  vi.stubGlobal('navigator', {
+    audioSession: {
+      get type() {
+        return 'auto';
+      },
+      set type(value: string) {
+        throw new Error(`unsupported ${value}`);
+      },
+    },
+  });
+  try {
+    const { player } = audio();
+    player.unlock();
+    expect(await player.ready(new AbortController().signal)).toBe(true);
+    expect(player.play('ping', false, 50, true)).toBe(true);
+    player.dispose();
+  } finally {
+    vi.unstubAllGlobals();
+  }
+});
