@@ -598,3 +598,95 @@ for (const width of [360, 390, 430]) {
     expect(await page.evaluate(() => ({ x: scrollX, y: scrollY }))).toEqual({ x: 0, y: 0 });
   });
 }
+
+for (const [width, height] of [
+  [360, 800],
+  [390, 844],
+  [390, 420],
+  [430, 932],
+]) {
+  test(`긴 대화에서 전송과 작성 말풍선 시작은 하단 전체를 노출한다 ${width}x${height}`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height });
+    const mac = await mockMac(page);
+    mac.history.haruka = Array.from({ length: 30 }, (_, index) => ({
+      id: `scroll-history-${index}`,
+      role: index % 2 ? 'assistant' : 'user',
+      content: `지난 대화 ${index + 1}. 저녁 준비 이야기를 이어갑니다.`,
+      time: '2026-10-25T00:00:00Z',
+      status: 'complete',
+    }));
+    mac.hold.add('haruka');
+    await start(page);
+    await openThread(page, 'haruka');
+    const log = page.locator('.message-history');
+    const bottomGap = () => log.evaluate((el) => el.scrollHeight - el.clientHeight - el.scrollTop);
+    expect(await log.evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(true);
+    await input(page).fill('저녁 준비를 마쳤다.');
+    await log.evaluate((el) => {
+      el.scrollTop = 0;
+      el.dispatchEvent(new Event('scroll'));
+    });
+    await send(page).tap();
+    await expect.poll(bottomGap).toBeLessThanOrEqual(1);
+    await input(page).evaluate((el) => el.blur());
+    await log.evaluate((el) => {
+      el.scrollTop = Math.max(0, el.scrollHeight - el.clientHeight - 80);
+      el.dispatchEvent(new Event('scroll'));
+    });
+    await showAiTyping(page, 'haruka');
+    await expect(page.locator('.message-typing')).toBeVisible();
+    await expect.poll(bottomGap).toBeLessThanOrEqual(1);
+    const visible = await page.locator('.message-typing').evaluate((el) => {
+      const bubble = el.getBoundingClientRect();
+      const viewport = el.closest('.message-history')!.getBoundingClientRect();
+      return bubble.top >= viewport.top && bubble.bottom <= viewport.bottom;
+    });
+    expect(visible).toBe(true);
+    if (width === 390 && height === 420)
+      await page.screenshot({
+        path: `harness/evidence/issue-97/typing-scroll-${test.info().project.name}.png`,
+      });
+    mac.hold.delete('haruka');
+    await finishAiReply(page, 'haruka');
+    await expect.poll(bottomGap).toBeLessThanOrEqual(1);
+  });
+}
+
+test('밖에서 받은 상단 알림은 저장된 과거 위치보다 최신 답장 하단으로 연다', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 620 });
+  const mac = await mockMac(page);
+  mac.history.haruka = Array.from({ length: 30 }, (_, index) => ({
+    id: `notify-history-${index}`,
+    role: index % 2 ? 'assistant' : 'user',
+    content: `지난 대화 ${index + 1}`,
+    time: null,
+    status: 'complete',
+  }));
+  mac.hold.add('haruka');
+  await start(page);
+  await openThread(page, 'haruka');
+  await input(page).fill('알림에서 이 답장으로 돌아온다.');
+  await send(page).tap();
+  const log = page.locator('.message-history');
+  await input(page).evaluate((el) => el.blur());
+  await log.evaluate((el) => {
+    el.scrollTop = 0;
+    el.dispatchEvent(new Event('scroll'));
+  });
+  await home(page);
+  mac.hold.delete('haruka');
+  await finishAiReply(page, 'haruka');
+  const banner = page.locator('.ai-reply-banner');
+  await expect(banner).toBeVisible();
+  await banner.locator('.day-notification').tap();
+  await expect(page.locator('.app-host:not([hidden]) .messages-app')).toBeVisible();
+  await expect
+    .poll(() => log.evaluate((el) => el.scrollHeight - el.clientHeight - el.scrollTop))
+    .toBeLessThanOrEqual(1);
+  await expect(bubble(page, replyFor('haruka', '알림에서 이 답장으로 돌아온다.'))).toBeInViewport();
+  await page.screenshot({
+    path: `harness/evidence/issue-97/notification-open-${test.info().project.name}.png`,
+  });
+});

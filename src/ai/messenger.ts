@@ -54,8 +54,13 @@ export interface AiReplyNotification {
   character: AiCharacter;
   text: string;
 }
+export interface AiReplyArrival extends AiReplyNotification {
+  jobId?: string;
+  playSound: boolean;
+  sound: 'conversation' | 'notification';
+}
 interface AiSnapshot {
-  arrival: (AiReplyNotification & { jobId?: string; playSound: boolean }) | null;
+  arrival: AiReplyArrival | null;
   notification: AiReplyNotification | null;
   unreadReplies: AiReplyNotification[];
   connection: AiConnection | null;
@@ -165,6 +170,7 @@ export class AiMessenger {
           jobId: receipt.jobId,
           // A suspended page/history catch-up is visual recovery, not a new tone.
           playSound: this.visible && now - receipt.deliverAt < 2000,
+          sound: receipt.read ? 'conversation' : 'notification',
         };
         if (!receipt.read) notification = arrival;
       }

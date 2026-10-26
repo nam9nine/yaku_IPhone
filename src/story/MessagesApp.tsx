@@ -43,6 +43,7 @@ function Compose() {
 export function MessagesApp({
   active,
   selected,
+  requestedLatest,
   onSelect,
   online,
   onOpenNote,
@@ -51,6 +52,7 @@ export function MessagesApp({
   ai: AiMessengerView;
   active: boolean;
   selected: string | null;
+  requestedLatest: number;
   onSelect: (id: string | null) => void;
   online: boolean;
   onOpenNote: (id: string) => void;
@@ -69,8 +71,9 @@ export function MessagesApp({
   const title = useRef<HTMLHeadingElement>(null);
   const history = useRef<HTMLDivElement>(null);
   const positions = useRef<Record<string, number>>({});
-  const previousThread = useRef<{ id: string; count: number } | null>(null);
+  const previousThread = useRef<{ id: string; count: number; typing: boolean } | null>(null);
   const olderAnchor = useRef<{ id: string; top: number; height: number } | null>(null);
+  const handledLatest = useRef(requestedLatest);
   const focusNext = useRef(false);
   const returnId = useRef<string | null>(null);
   const aiEnabled = !!aiCharacter;
@@ -178,20 +181,26 @@ export function MessagesApp({
     }
   }, [ai.connection, ai.threads, state.replies, shoppingDone, dispatch]);
   useLayoutEffect(() => {
-    if (!history.current || !person) return;
-    const changedCount =
-      previousThread.current?.id === person.id && previousThread.current.count !== thread.length;
+    if (!active || !history.current || !person) return;
+    const sameThread = previousThread.current?.id === person.id;
+    const changedCount = sameThread && previousThread.current?.count !== thread.length;
+    const startedTyping = aiBusy && (!sameThread || !previousThread.current?.typing);
     const anchor = olderAnchor.current;
-    if (anchor?.id === person.id && !aiThread?.loadingOlder) {
+    if (handledLatest.current !== requestedLatest) {
+      olderAnchor.current = null;
+      history.current.scrollTop = history.current.scrollHeight;
+    } else if (anchor?.id === person.id && !aiThread?.loadingOlder) {
       history.current.scrollTop = history.current.scrollHeight - anchor.height + anchor.top;
       olderAnchor.current = null;
     } else if (!anchor) {
-      history.current.scrollTop = changedCount
-        ? history.current.scrollHeight
-        : (positions.current[person.id] ?? history.current.scrollHeight);
+      history.current.scrollTop =
+        changedCount || startedTyping
+          ? history.current.scrollHeight
+          : (positions.current[person.id] ?? history.current.scrollHeight);
     }
-    previousThread.current = { id: person.id, count: thread.length };
-  }, [person, thread.length, aiBusy, aiThread?.loadingOlder]);
+    previousThread.current = { id: person.id, count: thread.length, typing: aiBusy };
+    handledLatest.current = requestedLatest;
+  }, [active, person, thread.length, aiBusy, aiThread?.loadingOlder, requestedLatest]);
   useLayoutEffect(() => {
     if (!textarea.current) return;
     textarea.current.style.height = 'auto';

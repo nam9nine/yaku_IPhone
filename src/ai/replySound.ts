@@ -1,20 +1,22 @@
-/** Apple's Note recording, decoded locally; provenance: docs/reply-notifications.md. */
-const loadNote = async (context: AudioContext): Promise<AudioBuffer> => {
-  const response = await fetch(`${import.meta.env.BASE_URL}audio/iphone-note.wav`);
+type ReplySoundKind = 'notification' | 'conversation';
+const soundFiles = { notification: 'iphone-note.wav', conversation: 'iphone-received-message.wav' };
+/** Apple system recordings; provenance: docs/reply-notifications.md. */
+const loadTone = async (context: AudioContext, kind: ReplySoundKind): Promise<AudioBuffer> => {
+  const response = await fetch(`${import.meta.env.BASE_URL}audio/${soundFiles[kind]}`);
   if (!response.ok) throw new Error('Message tone unavailable');
   return context.decodeAudioData(await response.arrayBuffer());
 };
 
 export class ReplySoundPlayer {
   private context: AudioContext | null = null;
-  private buffer: AudioBuffer | null = null;
-  private loading: Promise<void> | null = null;
+  private buffers: Partial<Record<ReplySoundKind, AudioBuffer>> = {};
+  private loading: Partial<Record<ReplySoundKind, Promise<void>>> = {};
   private consumed = new Set<string>();
   private playing = new Set<() => void>();
 
   constructor(
     private create: () => AudioContext = () => new AudioContext(),
-    private load: (context: AudioContext) => Promise<AudioBuffer> = loadNote,
+    private load: (context: AudioContext, kind: ReplySoundKind) => Promise<AudioBuffer> = loadTone,
   ) {}
 
   unlock(): void {
@@ -27,17 +29,19 @@ export class ReplySoundPlayer {
         };
       }
       const context = this.context;
-      if (!this.buffer && !this.loading) {
-        this.loading = this.load(context)
-          .then(
-            (buffer) => {
-              if (this.context === context) this.buffer = buffer;
-            },
-            () => {},
-          )
-          .finally(() => {
-            if (this.context === context) this.loading = null;
-          });
+      for (const kind of ['notification', 'conversation'] as const) {
+        if (!this.buffers[kind] && !this.loading[kind]) {
+          this.loading[kind] = this.load(context, kind)
+            .then(
+              (buffer) => {
+                if (this.context === context) this.buffers[kind] = buffer;
+              },
+              () => {},
+            )
+            .finally(() => {
+              if (this.context === context) delete this.loading[kind];
+            });
+        }
       }
       if (this.context.state !== 'running') {
         // A later tap may unlock audio, but must never resume an old message tone.
@@ -54,7 +58,7 @@ export class ReplySoundPlayer {
     for (const stop of [...this.playing]) stop();
   }
 
-  ready(signal: AbortSignal): Promise<boolean> {
+  ready(signal: AbortSignal, kind: ReplySoundKind = 'notification'): Promise<boolean> {
     const context = this.context;
     if (signal.aborted || !context || context.state === 'closed') return Promise.resolve(false);
     return new Promise((resolve) => {
@@ -69,7 +73,7 @@ export class ReplySoundPlayer {
             !signal.aborted &&
             this.context === context &&
             context.state === 'running' &&
-            !!this.buffer,
+            !!this.buffers[kind],
         );
       };
       const cancelled = () => finish(false);
@@ -77,7 +81,7 @@ export class ReplySoundPlayer {
       signal.addEventListener('abort', cancelled, { once: true });
       try {
         const resumed = context.state === 'running' ? Promise.resolve() : context.resume();
-        void Promise.all([resumed, this.loading]).then(
+        void Promise.all([resumed, this.loading[kind]]).then(
           () => finish(true),
           () => finish(false),
         );
@@ -87,7 +91,13 @@ export class ReplySoundPlayer {
     });
   }
 
-  play(id: string, silent: boolean, volume: number, visible: boolean): boolean {
+  play(
+    id: string,
+    silent: boolean,
+    volume: number,
+    visible: boolean,
+    kind: ReplySoundKind = 'notification',
+  ): boolean {
     if (this.consumed.has(id)) return false;
     this.consumed.add(id);
     if (this.consumed.size > 200) this.consumed.delete(this.consumed.values().next().value!);
@@ -98,12 +108,13 @@ export class ReplySoundPlayer {
       volume <= 0 ||
       !context ||
       context.state !== 'running' ||
-      !this.buffer
+      !this.buffers[kind]
     )
       return false;
+    const buffer = this.buffers[kind]!;
     const source = context.createBufferSource();
     const gain = context.createGain();
-    source.buffer = this.buffer;
+    source.buffer = buffer;
     gain.gain.value = Math.min(1, Math.max(0, volume / 100));
     source.connect(gain).connect(context.destination);
     const stop = () => {
@@ -115,7 +126,7 @@ export class ReplySoundPlayer {
       gain.disconnect();
     };
     // This uses wall time rather than AudioContext time, which pauses on iOS.
-    const expiry = setTimeout(stop, this.buffer.duration * 1000 + 100);
+    const expiry = setTimeout(stop, buffer.duration * 1000 + 100);
     this.playing.add(stop);
     source.onended = stop;
     source.start();
@@ -127,7 +138,7 @@ export class ReplySoundPlayer {
     if (this.context) this.context.onstatechange = null;
     void this.context?.close().catch(() => {});
     this.context = null;
-    this.buffer = null;
-    this.loading = null;
+    this.buffers = {};
+    this.loading = {};
   }
 }

@@ -65,7 +65,7 @@ async function setup(page: Page, push = true, hold = false) {
       get pendingResumes() {
         return pendingResumes.length;
       },
-      frequencies: [] as number[],
+      durations: [] as number[],
       get states() {
         return contexts.map((context) => context.state);
       },
@@ -78,6 +78,7 @@ async function setup(page: Page, push = true, hold = false) {
       oscillator.start = (when) => {
         counts.starts++;
         record('buffer-start');
+        counts.durations.push(oscillator.buffer?.duration ?? 0);
 
         start(when);
       };
@@ -268,9 +269,16 @@ for (const width of [360, 390, 430]) {
     await expect(page.locator('.ai-reply-banner')).toBeVisible();
     await expect(page.locator('.ai-reply-banner')).toContainText('우동 재료는 제가 챙길게요.');
     await expect.poll(() => soundCount(page)).toBe(1);
+    expect(
+      await page.evaluate(() =>
+        (
+          window as unknown as { notificationAudio: { durations: number[] } }
+        ).notificationAudio.durations.at(-1),
+      ),
+    ).toBeCloseTo(4.4, 2);
     if (width === 390)
       await page.screenshot({
-        path: `harness/evidence/issue-95/subscribed-fallback-${test.info().project.name}.png`,
+        path: `harness/evidence/issue-97/subscribed-fallback-${test.info().project.name}.png`,
         animations: 'disabled',
       });
     await page.clock.runFor(6001);
@@ -287,6 +295,13 @@ test('현재 대화의 답장은 배너 없이 수신음으로 알리고 새로�
   await expect(page.getByText('우동 재료는 제가 챙길게요.', { exact: true })).toBeVisible();
   await expect(page.locator('.ai-reply-banner')).toHaveCount(0);
   await expect.poll(() => soundCount(page)).toBe(1);
+  expect(
+    await page.evaluate(() =>
+      (
+        window as unknown as { notificationAudio: { durations: number[] } }
+      ).notificationAudio.durations.at(-1),
+    ),
+  ).toBeCloseTo(0.517642, 3);
   await page.clock.resume();
   await page.reload();
   await unlockPhone(page);
@@ -636,7 +651,7 @@ test('답장 작성 말풍선이 나타날 때 보낸 문자를 읽음으로 표
   await expect(page.locator('.message-typing')).toBeVisible();
   await expect(page.locator('.message-time').last()).toContainText('읽음');
   expect(await soundCount(page)).toBe(0);
-  await page.screenshot({ path: `harness/evidence/issue-95/read-${test.info().project.name}.png` });
+  await page.screenshot({ path: `harness/evidence/issue-97/read-${test.info().project.name}.png` });
   await page.clock.runFor(1600);
   await expect(page.getByText('우동 재료는 제가 챙길게요.', { exact: true })).toBeVisible();
   await expect.poll(() => soundCount(page)).toBe(1);
