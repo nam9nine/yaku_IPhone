@@ -5,8 +5,8 @@ import copy
 import json
 import socket
 import tempfile
-import unittest
 import time
+import unittest
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -96,14 +96,23 @@ class PushTests(unittest.TestCase):
         with self.push.connection() as connection:
             return [dict(row) for row in connection.execute("SELECT * FROM " + table)]
 
-    def presence(self, *, active=True, sequence=1, jobs=None, client=None, visitor=None, sid=None):
-        self.push.foreground(visitor or self.a, {
-            "subscription_id": sid or self.sid,
-            "client_id": client or "00000000-0000-4000-8000-000000000001",
-            "sequence": sequence, "active": active, "job_ids": jobs or [],
-        })
+    def presence(
+        self, *, active=True, sequence=1, jobs=None, client=None, visitor=None, sid=None
+    ):
+        self.push.foreground(
+            visitor or self.a,
+            {
+                "subscription_id": sid or self.sid,
+                "client_id": client or "00000000-0000-4000-8000-000000000001",
+                "sequence": sequence,
+                "active": active,
+                "job_ids": jobs or [],
+            },
+        )
 
-    def test_foreground_defers_native_push_and_delivery_receipt_prevents_old_alert_on_exit(self):
+    def test_foreground_defers_native_push_and_delivery_receipt_prevents_old_alert_on_exit(
+        self,
+    ):
         job, _, _, _ = self.complete()
         self.now += 40
         self.presence()
@@ -148,10 +157,13 @@ class PushTests(unittest.TestCase):
         self.now += 26
         self.assertTrue(self.push.tick())
 
-    def test_presence_is_subscription_owned_and_stale_exit_cannot_override_new_active(self):
-        job, _, _, _ = self.complete()
+    def test_presence_is_subscription_owned_and_stale_exit_cannot_override_new_active(
+        self,
+    ):
+        _job, _, _, _ = self.complete()
         self.now += 40
-        with self.assertRaises(ValueError): self.presence(visitor=self.b)
+        with self.assertRaises(ValueError):
+            self.presence(visitor=self.b)
         second = self.push.subscribe(self.a, subscription("second-device"))
         self.presence(sequence=3)
         self.presence(sequence=2, active=False)
@@ -522,17 +534,51 @@ class PushApiTests(unittest.TestCase):
 
     def test_foreground_http_is_owned_authenticated_and_sequence_fenced(self):
         info = subscription()
-        sid = self.client.post("/v1/push/subscriptions", headers=self.auth,
-            json={"subscription": info, "platform": "web"}).json()["id"]
-        presence = {"subscription_id": sid, "client_id": str(uuid4()),
-                    "sequence": 2, "active": True, "job_ids": []}
-        self.assertEqual(self.client.post("/v1/push/subscriptions", json={"presence": presence}).status_code, 401)
-        self.assertEqual(self.client.post("/v1/push/subscriptions", headers=self.auth, json={"presence": presence}).status_code, 200)
+        sid = self.client.post(
+            "/v1/push/subscriptions",
+            headers=self.auth,
+            json={"subscription": info, "platform": "web"},
+        ).json()["id"]
+        presence = {
+            "subscription_id": sid,
+            "client_id": str(uuid4()),
+            "sequence": 2,
+            "active": True,
+            "job_ids": [],
+        }
+        self.assertEqual(
+            self.client.post(
+                "/v1/push/subscriptions", json={"presence": presence}
+            ).status_code,
+            401,
+        )
+        self.assertEqual(
+            self.client.post(
+                "/v1/push/subscriptions", headers=self.auth, json={"presence": presence}
+            ).status_code,
+            200,
+        )
         other = self.client.post("/v1/sessions", json={}).json()["token"]
-        self.assertEqual(self.client.post("/v1/push/subscriptions", headers={"Authorization": "Bearer " + other}, json={"presence": presence}).status_code, 400)
-        self.assertEqual(self.client.post("/v1/push/subscriptions", headers=self.auth, json={"presence": {**presence, "active": False, "sequence": 1}}).status_code, 200)
+        self.assertEqual(
+            self.client.post(
+                "/v1/push/subscriptions",
+                headers={"Authorization": "Bearer " + other},
+                json={"presence": presence},
+            ).status_code,
+            400,
+        )
+        self.assertEqual(
+            self.client.post(
+                "/v1/push/subscriptions",
+                headers=self.auth,
+                json={"presence": {**presence, "active": False, "sequence": 1}},
+            ).status_code,
+            200,
+        )
         with self.app.state.service.push.connection() as connection:
-            row = connection.execute("SELECT * FROM foreground_clients WHERE subscription_id=?", (sid,)).fetchone()
+            row = connection.execute(
+                "SELECT * FROM foreground_clients WHERE subscription_id=?", (sid,)
+            ).fetchone()
             self.assertEqual(row["sequence"], 2)
             self.assertGreater(row["expires_at"], time.time())
 
