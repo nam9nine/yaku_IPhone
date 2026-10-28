@@ -270,7 +270,7 @@ test('구 토큰은 고정 API에서 확인하고 만료됐으면 익명 세션�
   expect(mac.requests.every(({ url }) => url.startsWith(endpoint))).toBe(true);
 });
 
-test('서버가 꺼져도 연결 설정을 요구하지 않고 재시도로 복구한다', async ({ page }) => {
+test('서버가 꺼져도 연결 설정을 요구하지 않고 재시도로 복구한다', async ({ page }, testInfo) => {
   const mac = await mockMac(page);
   mac.unavailable = true;
   await start(page);
@@ -282,6 +282,8 @@ test('서버가 꺼져도 연결 설정을 요구하지 않고 재시도로 복�
   mac.unavailable = false;
   await page.getByRole('button', { name: '다시 시도', exact: true }).tap();
   await expect(send(page)).toBeEnabled();
+  await expect(input(page)).toBeFocused();
+  await page.screenshot({ path: testInfo.outputPath('retry-ready.png'), animations: 'disabled' });
   expect(mac.chats).toEqual([]);
   await send(page).tap();
   await finishAiReply(page, 'haruka');
@@ -393,7 +395,7 @@ test('서버가 수락한 POST 응답이 유실되어도 같은 요청으로 재
 
 test('영구 입력 오류와 답변 길이 오류는 원문을 다시 작성해 새 요청으로 보낼 수 있다', async ({
   page,
-}) => {
+}, testInfo) => {
   const mac = await mockMac(page);
   mac.rejectOnce = 422;
   await start(page);
@@ -403,6 +405,11 @@ test('영구 입력 오류와 답변 길이 오류는 원문을 다시 작성해
   await send(page).tap();
   await page.getByRole('button', { name: '다시 작성', exact: true }).tap();
   await expect(input(page)).toHaveValue('원래 질문');
+  await expect(input(page)).toBeFocused();
+  await page.screenshot({
+    path: testInfo.outputPath('rewrite-restored.png'),
+    animations: 'disabled',
+  });
   await input(page).fill('수정한 질문');
   mac.failJobOnce = 'output_limit';
   await send(page).tap();

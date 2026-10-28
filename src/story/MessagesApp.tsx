@@ -457,6 +457,18 @@ export function MessagesApp({
           <div
             className={`message-composer${aiEnabled ? ' message-composer--ai' : ''}`}
             aria-label="메시지 작성"
+            onMouseDown={(event) => {
+              // Keep the composer in place until the normal click. A pointer
+              // focus change can add/remove its home-gesture spacing before
+              // pointerup, moving send/retry/rewrite away from the finger.
+              // Keyboard focus and normal click activation remain available.
+              if (
+                event.button === 0 &&
+                event.target instanceof Element &&
+                event.target.closest('button')
+              )
+                event.preventDefault();
+            }}
           >
             {aiEnabled && aiCharacter && aiThread ? (
               <>
@@ -549,12 +561,6 @@ export function MessagesApp({
                     type="submit"
                     aria-label="메시지 보내기"
                     disabled={!canSendAi}
-                    onMouseDown={(event) => {
-                      // Keep the keyboard open until the normal click submits. Blurring
-                      // here can move the composer below the finger before pointerup.
-                      if (event.button === 0 && document.activeElement === textarea.current)
-                        event.preventDefault();
-                    }}
                   >
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                       <path d="M12 19V5m-6 6 6-6 6 6" />

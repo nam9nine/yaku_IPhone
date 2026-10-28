@@ -183,6 +183,9 @@ async function setup(page: Page, push = true, hold = false) {
       },
     });
   });
+  // Use one clock origin for the browser and pause target. A host Date.now()
+  // sampled after install can already be behind the browser under load.
+  await page.clock.install({ time: new Date('2026-10-26T00:00:00Z') });
   await page.goto('./');
   await unlockPhone(page);
   await launchHomeApp(page, 'messages');
@@ -194,8 +197,7 @@ async function setup(page: Page, push = true, hold = false) {
     await expect(page.getByRole('button', { name: '알림 끄기', exact: true })).toBeVisible();
     await page.getByRole('button', { name: '닫기', exact: true }).tap();
   }
-  await page.clock.install();
-  await page.clock.pauseAt(Date.now());
+  await page.clock.pauseAt(new Date('2026-10-26T00:01:00Z'));
   await page.getByRole('textbox', { name: '하루카에게 메시지 입력' }).fill('저녁은 우동으로 하자.');
   await page.getByRole('button', { name: '메시지 보내기', exact: true }).click();
   await expect.poll(() => state.requestId).not.toBe('');

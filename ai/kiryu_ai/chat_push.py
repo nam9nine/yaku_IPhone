@@ -325,39 +325,77 @@ class ChatPush:
         Expiry releases unseen jobs after a crashed/offline page.
         """
         if not isinstance(presence, dict) or set(presence) != {
-            "subscription_id", "client_id", "sequence", "active", "job_ids"
+            "subscription_id",
+            "client_id",
+            "sequence",
+            "active",
+            "job_ids",
         }:
             raise ValueError("Invalid presence")
         sid, client = presence["subscription_id"], presence["client_id"]
-        sequence, active, jobs = presence["sequence"], presence["active"], presence["job_ids"]
-        if (not isinstance(sid, str) or not re.fullmatch(r"[a-f0-9]{32}", sid)
-            or not isinstance(client, str) or str(UUID(client)) != client
-            or type(sequence) is not int or not 0 < sequence < 2**53
-            or type(active) is not bool or not isinstance(jobs, list) or len(jobs) > 32
-            or any(not isinstance(job, str) or str(UUID(job)) != job for job in jobs)):
+        sequence, active, jobs = (
+            presence["sequence"],
+            presence["active"],
+            presence["job_ids"],
+        )
+        if (
+            not isinstance(sid, str)
+            or not re.fullmatch(r"[a-f0-9]{32}", sid)
+            or not isinstance(client, str)
+            or str(UUID(client)) != client
+            or type(sequence) is not int
+            or not 0 < sequence < 2**53
+            or type(active) is not bool
+            or not isinstance(jobs, list)
+            or len(jobs) > 32
+            or any(not isinstance(job, str) or str(UUID(job)) != job for job in jobs)
+        ):
             raise ValueError("Invalid presence fields")
         now = self.clock()
         # Validate against the owning visitor before touching the push store.
         confirmed = []
         for identifier in set(jobs):
             job = self.chat_db.get_request(identifier, visitor=visitor)
-            if job and job["status"] == "complete" and job["scenario_version"] == "daily-if-v1":
+            if (
+                job
+                and job["status"] == "complete"
+                and job["scenario_version"] == "daily-if-v1"
+            ):
                 confirmed.append(identifier)
         with self.connection() as connection:
             connection.execute("BEGIN IMMEDIATE")
-            if not connection.execute("SELECT 1 FROM subscriptions WHERE id=? AND visitor_id=? AND expires_at>?", (sid, visitor, now)).fetchone():
+            if not connection.execute(
+                "SELECT 1 FROM subscriptions WHERE id=? AND visitor_id=? AND expires_at>?",
+                (sid, visitor, now),
+            ).fetchone():
                 raise ValueError("Unknown subscription")
             # Delivery acknowledgement is monotonic; a newer presence heartbeat
             # must not discard an older in-flight receipt for an already seen reply.
             for identifier in confirmed:
-                connection.execute("INSERT OR REPLACE INTO foreground_receipts VALUES (?,?,?)", (sid, identifier, now + PUSH_TTL))
-            previous = connection.execute("SELECT sequence FROM foreground_clients WHERE subscription_id=? AND client_id=?", (sid, client)).fetchone()
+                connection.execute(
+                    "INSERT OR REPLACE INTO foreground_receipts VALUES (?,?,?)",
+                    (sid, identifier, now + PUSH_TTL),
+                )
+            previous = connection.execute(
+                "SELECT sequence FROM foreground_clients WHERE subscription_id=? AND client_id=?",
+                (sid, client),
+            ).fetchone()
             if previous and previous["sequence"] >= sequence:
                 return
             # Bound untrusted window identifiers without dropping existing leases.
-            if not previous and connection.execute("SELECT count(*) FROM foreground_clients WHERE subscription_id=? AND expires_at>?", (sid, now)).fetchone()[0] >= 16:
+            if (
+                not previous
+                and connection.execute(
+                    "SELECT count(*) FROM foreground_clients WHERE subscription_id=? AND expires_at>?",
+                    (sid, now),
+                ).fetchone()[0]
+                >= 16
+            ):
                 raise ValueError("Too many foreground windows")
-            connection.execute("INSERT INTO foreground_clients VALUES (?,?,?,?) ON CONFLICT(subscription_id,client_id) DO UPDATE SET sequence=excluded.sequence,expires_at=excluded.expires_at", (sid, client, sequence, now + FOREGROUND_SECONDS if active else now))
+            connection.execute(
+                "INSERT INTO foreground_clients VALUES (?,?,?,?) ON CONFLICT(subscription_id,client_id) DO UPDATE SET sequence=excluded.sequence,expires_at=excluded.expires_at",
+                (sid, client, sequence, now + FOREGROUND_SECONDS if active else now),
+            )
 
     def _active_visitor(self, visitor, now):
         with self.chat_db.connection() as connection:
@@ -375,8 +413,12 @@ class ChatPush:
         with self.connection() as connection:
             connection.execute("DELETE FROM subscriptions WHERE expires_at<=?", (now,))
             connection.execute("DELETE FROM outbox WHERE expires_at<=?", (now,))
-            connection.execute("DELETE FROM foreground_clients WHERE expires_at<=?", (now - PUSH_TTL,))
-            connection.execute("DELETE FROM foreground_receipts WHERE expires_at<=?", (now,))
+            connection.execute(
+                "DELETE FROM foreground_clients WHERE expires_at<=?", (now - PUSH_TTL,)
+            )
+            connection.execute(
+                "DELETE FROM foreground_receipts WHERE expires_at<=?", (now,)
+            )
             subscriptions = connection.execute("SELECT * FROM subscriptions").fetchall()
         for sub in subscriptions:
             if not self._active_visitor(sub["visitor_id"], now):
@@ -468,8 +510,20 @@ class ChatPush:
                 (item["subscription_id"], item["visitor_id"]),
             ).fetchone():
                 return False
-            if connection.execute("SELECT 1 FROM foreground_clients WHERE subscription_id=? AND expires_at>? UNION ALL SELECT 1 FROM foreground_receipts WHERE subscription_id=? AND job_id=? AND expires_at>?", (item["subscription_id"], now, item["subscription_id"], item["job_id"], now)).fetchone():
-                connection.execute("UPDATE outbox SET state='pending',attempts=attempts-1,next_attempt=? WHERE subscription_id=? AND job_id=?", (now, item["subscription_id"], item["job_id"]))
+            if connection.execute(
+                "SELECT 1 FROM foreground_clients WHERE subscription_id=? AND expires_at>? UNION ALL SELECT 1 FROM foreground_receipts WHERE subscription_id=? AND job_id=? AND expires_at>?",
+                (
+                    item["subscription_id"],
+                    now,
+                    item["subscription_id"],
+                    item["job_id"],
+                    now,
+                ),
+            ).fetchone():
+                connection.execute(
+                    "UPDATE outbox SET state='pending',attempts=attempts-1,next_attempt=? WHERE subscription_id=? AND job_id=?",
+                    (now, item["subscription_id"], item["job_id"]),
+                )
                 return False
         payload = {
             "type": "chat.reply",
