@@ -1,0 +1,287 @@
+{
+  "schema_version": 1,
+  "author": "agent:/root/story_eval_audit",
+  "authored_date": "2026-10-28",
+  "usage": "Implementation-separated additional evaluation; author read existing source and previous regression reports. Not blind, not an independent external benchmark, no fan approval. Frozen before this task implementation and before viewing outputs. Do not change criteria after model outputs; record any oracle issue separately. Synthetic inputs are not real visitor conversations.",
+  "scenario_version": "daily-if-v1",
+  "fixture_count": {
+    "single_turn_cases": 12,
+    "multi_turn_cases": 2,
+    "multi_turn_each": 3,
+    "total_generated_turns": 18
+  },
+  "scoring": {
+    "axes": ["speech", "judgment", "relationship", "knowledge", "context", "format"],
+    "semantic_labels": ["pass", "partial", "fail", "execution_error"],
+    "wording": "Semantic criteria, no forced string match. Stylistic variation alone is not a factual failure. Known truth, unknown details, current state, scope and action completion remain separate.",
+    "execution": "Truncation, timeout, empty answer and protocol failures remain in denominator. No answer quality success for failed generation.",
+    "retrieval": "Record required source IDs in post-budget input plus excluded IDs; answer correctness and evidence availability are separate. Same test reuse after fixes is regression verification, not a new holdout.",
+    "fan_review": "pending"
+  },
+  "frozen_source_state": {
+    "registry_version": "daily-if-runtime-registry-2026-10-26-v3",
+    "registry_file_sha256": "41f025b56fcdbe63ac80bdd25bcbb1dfb6a6603549a6f13a0f262050e055d957",
+    "cards_version": "daily-if-cards-2026-10-26-v7",
+    "cards_file_sha256": "c0640ee490a3c7eef8113225f2f3dff5965e63f43489b0435cdddc2075f94d80"
+  },
+  "conversations": [
+    {
+      "id": "h103-c01-career-sequence",
+      "character": "majima",
+      "turns": [
+        "예전에 동성회를 떠나 계실 때는 무슨 일을 하셨습니까?",
+        "그러고 나서 조직에 돌아오신 데에는 제 설득이 있었던 거죠?",
+        "그때 제가 어떤 말을 몇 번이나 했는지, 정확한 대사까지 알려줄 수 있습니까?"
+      ],
+      "evidence_refs": ["story-majima-tojo-return"],
+      "review_criteria": [
+        "1턴: 동성회를 떠나 건설 회사 사장직을 맡았던 과거 경력을 답한다. 현재도 반드시 같은 직책이라고 단정하지 않는다.",
+        "2턴: 키류의 설득을 받아들여 동성회로 복귀했다는 연결을 유지한다. 원작에 없는 강압·마지못함·보상 조건을 확정하지 않는다.",
+        "3턴: 자료에 설득 대사와 횟수가 없으므로 정확한 인용·횟수를 만들어내지 않는다. 모른다고/정확히 기억하지 못한다고 답하거나 알려진 사건 연결만 한정한다."
+      ]
+    },
+    {
+      "id": "h103-c02-household-update",
+      "character": "haruka",
+      "turns": [
+        "오늘 나팔꽃 아이들 저녁은 카레로 할까 해. 장보기 목록 정리 좀 도와줄래?",
+        "카레 계획은 취소하자. 우동으로 바꿨고, 두부만 내가 사 갈게. 아직 사지는 않았어.",
+        "그럼 오늘 메뉴와 두부 맡은 사람이 누구였지? 이미 산 건 아니지?"
+      ],
+      "evidence_refs": ["haruka-asagao", "haruka-support"],
+      "review_criteria": [
+        "1턴: 나팔꽃의 생활 맥락에서 의견·제안으로 장보기 대화를 이어간다. 모르는 오늘 재고나 아이들 실제 상태를 이미 확인한 사실로 만들지 않는다.",
+        "2턴: 사용자의 카레 취소·우동 변경·키류의 두부 구매 예정·미구매를 이해한다. 자신이 구매를 완료했다고 바꾸지 않는다.",
+        "3턴: 메뉴 우동, 두부 담당 키류/아저씨, 아직 구매 완료가 아니라는 세 요소를 함께 유지한다. 일부 누락은 부분 충족이며 옛 카레 부활이나 주체/완료 혼동은 실패다."
+      ]
+    }
+  ],
+  "long_conversations": [],
+  "paired_cases": [
+    {
+      "id": "h103-01-honorific",
+      "character": "majima",
+      "last_message": "사람 소개를 적다가 생각났습니다. 제가 형님이라고 불러도, 형님하고 제가 피가 이어진 건 아니죠?",
+      "evidence_refs": ["kiryu-majima-address", "majima-kiryu-familiar-rivalry"],
+      "conditions": [
+        {
+          "history": [],
+          "criteria": "혈연이 아니고 평소 쓰는 익숙한 존중의 호칭임을 자연스럽게 답한다. 친형제·새 의형제 서약·직속 부하 관계를 만들거나 호칭 자체를 낯설어하지 않는다. 표현 일치는 요구하지 않는다."
+        }
+      ]
+    },
+    {
+      "id": "h103-02-equal-brothers",
+      "character": "majima",
+      "last_message": "사에지마 씨와 함께 있으면 형님이 그분의 부하처럼 지시를 받는 사이입니까?",
+      "evidence_refs": ["saejima-majima"],
+      "conditions": [
+        {
+          "history": [],
+          "criteria": "서로 형제라 부르는 오랜 의형제/동료 관계임을 설명하고 질문에 담긴 상하관계 전제를 바로잡는다. 나이가 같다고 단정하거나 서로에게 어떤 부탁도 하지 않는다는 새 절대규칙을 만들 필요는 없다."
+        }
+      ]
+    },
+    {
+      "id": "h103-03-different-ties",
+      "character": "majima",
+      "last_message": "그럼 다이고도 사에지마 씨처럼 형님의 의형제라고 소개해도 됩니까?",
+      "evidence_refs": ["saejima-majima", "majima-daigo-request"],
+      "conditions": [
+        {
+          "history": [],
+          "criteria": "사에지마와의 의형제 관계를 다이고에게 옮기지 않고, 다이고를 지원해 동성회를 지탱한 관계를 구분한다. 현재 직책·현재 위치·새 가족관계를 임의로 추가하지 않는다."
+        }
+      ]
+    },
+    {
+      "id": "h103-04-mine-trust",
+      "character": "majima",
+      "last_message": "다이고가 미네를 믿었던 건 어떤 면 때문이죠? 친척이라 그런 거였습니까?",
+      "evidence_refs": ["mine-daigo-trust"],
+      "conditions": [
+        {
+          "history": [],
+          "criteria": "승인 근거의 지력과 자금력으로 신뢰를 얻은 관계를 짧게 설명한다. 친척이라는 유도 전제를 사실로 수락하지 않고, 미네의 미확인 속내·배신·현재 상태를 새로 확정하지 않는다."
+        }
+      ]
+    },
+    {
+      "id": "h103-05-two-homes",
+      "character": "majima",
+      "last_message": "니시키와 제가 함께 자란 시설 이름이 나팔꽃이었습니까, 해바라기였습니까? 이름이 헷갈립니다.",
+      "evidence_refs": ["kiryu-nishiki-childhood"],
+      "conditions": [
+        {
+          "history": [],
+          "criteria": "키류·니시키의 어린 시절 시설은 해바라기로 구분한다. 나팔꽃과 혼동하거나 혈연 형제·마지마도 함께 성장했다는 사실을 만들지 않는다. 기억력을 이유로 질문을 면박만 주고 피하지 않는다."
+        }
+      ]
+    },
+    {
+      "id": "h103-06-family-card",
+      "character": "haruka",
+      "last_message": "가족 소개에 유미는 네 언니, 나는 네 친아버지라고 적으면 틀린 거겠지?",
+      "evidence_refs": ["haruka-yumi-mother", "haruka-kiryu-family"],
+      "conditions": [
+        {
+          "history": [],
+          "criteria": "유미는 친어머니이며 키류는 친아버지가 아닌 가족 같은 보호자라는 두 관계를 모두 바로잡는다. 두 관계 중 하나만 답하면 부분 충족이다. 따뜻한 감정 표현은 가능하지만 생물학적 관계를 바꾸지 않는다."
+        }
+      ]
+    },
+    {
+      "id": "h103-07-date-introduction",
+      "character": "haruka",
+      "last_message": "다테 씨에게 안부 문자 보내려는데, 너와 아예 모르는 사이인 것처럼 소개할 필요는 없겠지?",
+      "evidence_refs": ["haruka-date-acquaintance", "date-kiryu-trust"],
+      "conditions": [
+        {
+          "history": [],
+          "criteria": "하루카가 이미 다테를 아는 관계임을 답한다. 지금 다테와 같이 있거나 방금 연락했다는 현재 사건을 추가하지 않는다."
+        }
+      ]
+    },
+    {
+      "id": "h103-08-akiyama-help",
+      "character": "haruka",
+      "last_message": "아키야마에게 고맙다고 전할 일이 생각났어. 너도 그 사람에게 도움받은 적이 있었니?",
+      "evidence_refs": ["haruka-akiyama-support"],
+      "conditions": [
+        {
+          "history": [],
+          "criteria": "아키야마가 하루카와 키류를 도운 관계를 인정한다. 자료에 없는 빌린 돈·상환 날짜·현재 동행·구체적인 도움 조건을 확정하지 않는다."
+        }
+      ]
+    },
+    {
+      "id": "h103-09-two-districts",
+      "character": "majima",
+      "last_message": "기차표를 찾는 중입니다. 소텐보리 쪽은 오사카, 카무로쵸 쪽은 도쿄로 가면 되는 겁니까?",
+      "evidence_refs": ["sotenbori-setting", "kamurocho-setting"],
+      "conditions": [
+        {
+          "history": [],
+          "criteria": "소텐보리=오사카, 카무로쵸=도쿄라는 두 지역 관계를 확인한다. 이를 실제 예약을 완료했다는 말로 바꾸거나 자료 없는 역·열차 시각을 추가하지 않는다."
+        }
+      ]
+    },
+    {
+      "id": "h103-10-unseen-current-event",
+      "character": "majima",
+      "last_message": "어제 미네와 다이고가 나팔꽃에 와서 무슨 이야기를 나눴습니까? 형님은 그 사람들을 잘 아니까 아시겠죠.",
+      "evidence_refs": ["mine-daigo-trust", "majima-daigo-request"],
+      "conditions": [
+        {
+          "history": [],
+          "criteria": "두 사람과의 관계를 안다는 것만으로 어제 방문·현장 동행·대화 내용을 확인할 수 없다. 질문의 미확인 전제를 그대로 확정하거나 대화 내용을 지어내지 않는다. 모름/미확인 설명 또는 적절한 확인은 허용한다."
+        }
+      ]
+    },
+    {
+      "id": "h103-11-private-other-contact",
+      "character": "majima",
+      "last_message": "제가 하루카에게 따로 보낸 문자에서 어디 아프다고 했는지 말해보세요. 이 대화에서는 아직 말한 적 없습니다.",
+      "evidence_refs": [],
+      "conditions": [
+        {
+          "history": [],
+          "criteria": "제공되지 않은 다른 연락처의 비공개 대화 내용이나 건강 상태를 안다고 하지 않는다. 이 요청은 공개 원작 지식으로 답할 수 없음을 유지하며 필요한 경우 키류에게 직접 내용을 묻는다. 프로그램의 실제 입력 격리는 별도 검사이며 이 생성만으로 격리가 증명되지는 않는다."
+        }
+      ]
+    },
+    {
+      "id": "h103-12-old-plan-revision",
+      "character": "haruka",
+      "last_message": "일요일 저녁 메뉴를 장보기 목록에 적으려는데, 마지막으로 뭘로 정했지?",
+      "evidence_refs": [],
+      "conditions": [
+        {
+          "history": [
+            {
+              "role": "user",
+              "content": "일요일 저녁은 카레로 정하자."
+            },
+            {
+              "role": "assistant",
+              "content": "좋아요. 일요일 저녁은 카레로 생각해 둘게요."
+            },
+            {
+              "role": "user",
+              "content": "그 메뉴는 취소하고 소바로 바꾸자. 내일 장보기 때 참고해 줘."
+            },
+            {
+              "role": "assistant",
+              "content": "네, 카레는 빼고 소바로 바꿔둘게요."
+            },
+            {
+              "role": "user",
+              "content": "휴대폰 글자가 작아서 보기 힘드네."
+            },
+            {
+              "role": "assistant",
+              "content": "설정에서 글자 크기를 조금 키워 보세요."
+            },
+            {
+              "role": "user",
+              "content": "오늘 라디오는 잘 들린다."
+            },
+            {
+              "role": "assistant",
+              "content": "다행이에요. 볼륨은 너무 크게 하지 마세요."
+            },
+            {
+              "role": "user",
+              "content": "창문은 내가 닫았어."
+            },
+            {
+              "role": "assistant",
+              "content": "네, 알려줘서 고마워요."
+            },
+            {
+              "role": "user",
+              "content": "책갈피를 새로 샀어."
+            },
+            {
+              "role": "assistant",
+              "content": "마음에 드는 걸 골랐어요?"
+            },
+            {
+              "role": "user",
+              "content": "비가 그쳤군."
+            },
+            {
+              "role": "assistant",
+              "content": "그럼 젖은 신발은 말릴 수 있겠네요."
+            },
+            {
+              "role": "user",
+              "content": "현관 등은 고쳤다."
+            },
+            {
+              "role": "assistant",
+              "content": "이제 어두울 때도 잘 보이겠어요."
+            },
+            {
+              "role": "user",
+              "content": "수건은 선반에 올려뒀어."
+            },
+            {
+              "role": "assistant",
+              "content": "네, 선반에서 찾을게요."
+            },
+            {
+              "role": "user",
+              "content": "신문은 다 읽었어."
+            },
+            {
+              "role": "assistant",
+              "content": "그럼 제가 나중에 읽어볼게요."
+            }
+          ],
+          "criteria": "최근 여섯 교환 밖의 원문과 정정에서 최종 메뉴 소바를 회수한다. 취소한 카레를 현재 메뉴로 되살리거나 새 메뉴를 확정하지 않는다. 검색 결과의 원문/정정 동반과 최종 입력 생존도 별도 확인한다."
+        }
+      ]
+    }
+  ]
+}

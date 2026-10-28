@@ -77,8 +77,9 @@ class PromptTests(unittest.TestCase):
         self.assertIn(
             "reference_scenes_not_our_history", result["messages"][-1]["content"]
         )
-        self.assertIn(
-            "현재 메뉴나 재고로 매번 확정하지", result["messages"][0]["content"]
+        self.assertNotIn(
+            self.builder.cards["characters"]["haruka"]["initial_event"],
+            result["messages"][0]["content"],
         )
         self.assertEqual(
             result["metadata"]["input_message_ids"], [m["id"] for m in past]

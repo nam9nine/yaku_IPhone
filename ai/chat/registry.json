@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "version": "daily-if-runtime-registry-2026-10-26-v3",
+  "version": "daily-if-runtime-registry-2026-10-28-v5",
   "scenario_version": "daily-if-v1",
   "raw_world_chunks": 1201,
   "raw_world_policy": "unchanged; no whole-corpus runtime eligibility",
@@ -32,7 +32,9 @@
       },
       "review_basis": "직접 확인한 공식 소개의 해당 인물 자신과 관계·생활 배경만 일상 IF에 채택했다. 연도·이후 사건·현재 활동을 추가하지 않았다. saejima-majima는 상호 관계만 마지마에게도 허용한다.",
       "reviewer": "agent:/root/gemma_rag",
-      "fan_review": "pending"
+      "fan_review": "pending",
+      "fact_type": "relationship",
+      "scope_note": "인물 사이 관계의 근거. 현재 행방·동행·새 행동을 뜻하지 않는다."
     },
     {
       "id": "haruka-asagao",
@@ -60,7 +62,9 @@
       },
       "review_basis": "직접 확인한 공식 소개의 해당 인물 자신과 관계·생활 배경만 일상 IF에 채택했다. 연도·이후 사건·현재 활동을 추가하지 않았다. saejima-majima는 상호 관계만 마지마에게도 허용한다.",
       "reviewer": "agent:/root/gemma_rag",
-      "fan_review": "pending"
+      "fan_review": "pending",
+      "fact_type": "character_background",
+      "scope_note": "인물의 생활·배경 정보. 오늘의 활동이나 계획 완료를 뜻하지 않는다."
     },
     {
       "id": "haruka-support",
@@ -88,7 +92,9 @@
       },
       "review_basis": "직접 확인한 공식 소개의 해당 인물 자신과 관계·생활 배경만 일상 IF에 채택했다. 연도·이후 사건·현재 활동을 추가하지 않았다. saejima-majima는 상호 관계만 마지마에게도 허용한다.",
       "reviewer": "agent:/root/gemma_rag",
-      "fan_review": "pending"
+      "fan_review": "pending",
+      "fact_type": "character_background",
+      "scope_note": "인물의 생활·배경 정보. 오늘의 활동이나 계획 완료를 뜻하지 않는다."
     },
     {
       "id": "haruka-orphanage",
@@ -116,7 +122,9 @@
       },
       "review_basis": "직접 확인한 공식 소개의 해당 인물 자신과 관계·생활 배경만 일상 IF에 채택했다. 연도·이후 사건·현재 활동을 추가하지 않았다. saejima-majima는 상호 관계만 마지마에게도 허용한다.",
       "reviewer": "agent:/root/gemma_rag",
-      "fan_review": "pending"
+      "fan_review": "pending",
+      "fact_type": "place",
+      "scope_note": "장소의 배경 정보. 등장인물의 현재 위치를 뜻하지 않는다."
     },
     {
       "id": "saejima-majima",
@@ -144,7 +152,9 @@
       },
       "review_basis": "공식 Y7 소개의 서로 형제라 부름, Y0 공식 마지마 소개의 의형제 관계로 교차 확인. 한국어 형님 회피는 의형제를 연령·서열 관계로 잘못 번역하지 않기 위한 작성자 말투 규칙. 사에지마의 현재 행방·직책은 미채택.",
       "reviewer": "agent:/root/relationship83_research",
-      "fan_review": "pending"
+      "fan_review": "pending",
+      "fact_type": "relationship",
+      "scope_note": "인물 사이 관계의 근거. 현재 행방·동행·새 행동을 뜻하지 않는다."
     },
     {
       "id": "kamurocho-setting",
@@ -173,7 +183,9 @@
       },
       "review_basis": "원문 청크 전체를 기억으로 허용하지 않고 표시한 문장에 한정해 장소 또는 직접 관계를 채택했다. 원문 나머지 전개·사망·배신·당시 연도는 미채택이다.",
       "reviewer": "agent:/root/gemma_rag",
-      "fan_review": "pending"
+      "fan_review": "pending",
+      "fact_type": "place",
+      "scope_note": "장소의 배경 정보. 등장인물의 현재 위치를 뜻하지 않는다."
     },
     {
       "id": "sotenbori-setting",
@@ -202,7 +214,9 @@
       },
       "review_basis": "원문 청크 전체를 기억으로 허용하지 않고 표시한 문장에 한정해 장소 또는 직접 관계를 채택했다. 원문 나머지 전개·사망·배신·당시 연도는 미채택이다.",
       "reviewer": "agent:/root/gemma_rag",
-      "fan_review": "pending"
+      "fan_review": "pending",
+      "fact_type": "place",
+      "scope_note": "장소의 배경 정보. 등장인물의 현재 위치를 뜻하지 않는다."
     },
     {
       "id": "ryukyu-setting",
@@ -231,7 +245,9 @@
       },
       "review_basis": "원문 청크 전체를 기억으로 허용하지 않고 표시한 문장에 한정해 장소 또는 직접 관계를 채택했다. 원문 나머지 전개·사망·배신·당시 연도는 미채택이다.",
       "reviewer": "agent:/root/gemma_rag",
-      "fan_review": "pending"
+      "fan_review": "pending",
+      "fact_type": "place",
+      "scope_note": "장소의 배경 정보. 등장인물의 현재 위치를 뜻하지 않는다."
     },
     {
       "id": "haruka-kiryu-home",
@@ -260,7 +276,9 @@
       },
       "review_basis": "원문 청크 전체를 기억으로 허용하지 않고 표시한 문장에 한정해 장소 또는 직접 관계를 채택했다. 원문 나머지 전개·사망·배신·당시 연도는 미채택이다.",
       "reviewer": "agent:/root/gemma_rag",
-      "fan_review": "pending"
+      "fan_review": "pending",
+      "fact_type": "character_background",
+      "scope_note": "인물의 생활·배경 정보. 오늘의 활동이나 계획 완료를 뜻하지 않는다."
     },
     {
       "id": "majima-daigo-request",
@@ -288,7 +306,9 @@
       },
       "review_basis": "Y4 공식 소개에 다이고 지원이 명시. 마지마 직접지식. 현재 건설사업·직책·장소와 특정 부탁 대사는 미채택.",
       "reviewer": "agent:/root/relationship83_research",
-      "fan_review": "pending"
+      "fan_review": "pending",
+      "fact_type": "relationship",
+      "scope_note": "인물 사이 관계의 근거. 현재 행방·동행·새 행동을 뜻하지 않는다."
     },
     {
       "id": "scene-haruka-budget",
@@ -547,7 +567,9 @@
       },
       "review_basis": "Y6 소개의 가족 같은 관계만 채택. 부녀에 준하는 관계는 Y3 PS4 공식 소개로 교차 확인. 아저씨는 기존 카드/대사 해석. 현재 나이·실종·2016년은 미채택.",
       "reviewer": "agent:/root/relationship83_research",
-      "fan_review": "pending"
+      "fan_review": "pending",
+      "fact_type": "relationship",
+      "scope_note": "인물 사이 관계의 근거. 현재 행방·동행·새 행동을 뜻하지 않는다."
     },
     {
       "id": "haruka-yumi-mother",
@@ -575,7 +597,9 @@
       },
       "review_basis": "Y3 공식 가족관계. 하루카 본인의 기본 지식. 원문 사망 표현을 IF 현재로 가져오지 않는다.",
       "reviewer": "agent:/root/relationship83_research",
-      "fan_review": "pending"
+      "fan_review": "pending",
+      "fact_type": "relationship",
+      "scope_note": "인물 사이 관계의 근거. 현재 행방·동행·새 행동을 뜻하지 않는다."
     },
     {
       "id": "haruka-date-acquaintance",
@@ -603,7 +627,9 @@
       },
       "review_basis": "SEGA ONLINE 2005 본편 회고가 세레나에서 직접 대면을 뒷받침. 본편 직접 캡처 대신 공식 회고인 출처 층위를 유지. 직접 보호 사건 세부는 이 소개가 입증하지 않아 미채택.",
       "reviewer": "agent:/root/relationship83_research",
-      "fan_review": "pending"
+      "fan_review": "pending",
+      "fact_type": "relationship",
+      "scope_note": "인물 사이 관계의 근거. 현재 행방·동행·새 행동을 뜻하지 않는다."
     },
     {
       "id": "date-kiryu-trust",
@@ -631,7 +657,9 @@
       },
       "review_basis": "Y6 공식 소개로 다테-키류 신뢰 확인. 하루카 직접 대면 근거와 결합해 아저씨의 믿는 지인이라는 기본 정보만 IF에 허용하는 작성자 선택. 다테의 사적 수사정보·현 계급은 허용하지 않는다.",
       "reviewer": "agent:/root/relationship83_research",
-      "fan_review": "pending"
+      "fan_review": "pending",
+      "fact_type": "relationship",
+      "scope_note": "인물 사이 관계의 근거. 현재 행방·동행·새 행동을 뜻하지 않는다."
     },
     {
       "id": "kiryu-nishiki-childhood",
@@ -659,7 +687,9 @@
       },
       "review_basis": "공식 Y0 인물관계. 두 AI가 키류 주변 인물의 기본 관계를 알고 있다는 IF 작성자 선택이며 직접 어린 시절을 목격했다는 뜻은 아니다. 살인·배신·사망·현재 직책은 미채택.",
       "reviewer": "agent:/root/relationship83_research",
-      "fan_review": "pending"
+      "fan_review": "pending",
+      "fact_type": "relationship",
+      "scope_note": "인물 사이 관계의 근거. 현재 행방·동행·새 행동을 뜻하지 않는다."
     },
     {
       "id": "daigo-kiryu-longstanding",
@@ -687,7 +717,9 @@
       },
       "review_basis": "공식 Y3 인물관계. 두 AI의 공통 기본 배경에 제한해 허용하는 IF 선택. 사적 과거 사건을 목격했다는 기억·현 회장 직책은 미채택.",
       "reviewer": "agent:/root/relationship83_research",
-      "fan_review": "pending"
+      "fan_review": "pending",
+      "fact_type": "relationship",
+      "scope_note": "인물 사이 관계의 근거. 현재 행방·동행·새 행동을 뜻하지 않는다."
     },
     {
       "id": "mine-daigo-trust",
@@ -715,7 +747,9 @@
       },
       "review_basis": "공식 Y3 인물관계. 같은 시기의 조직 배경에서 마지마가 기본 신원을 안다는 IF 작성자 추론. 미네의 내면·현재 직책·나팔꽃 후원 전력은 미채택.",
       "reviewer": "agent:/root/relationship83_research",
-      "fan_review": "pending"
+      "fan_review": "pending",
+      "fact_type": "relationship",
+      "scope_note": "인물 사이 관계의 근거. 현재 행방·동행·새 행동을 뜻하지 않는다."
     },
     {
       "id": "haruka-akiyama-support",
@@ -743,7 +777,9 @@
       },
       "review_basis": "Y6 공식 소개의 Y5 과거 지원관계. 지원받은 당사자 지식이지만 일상 IF는 아이돌·2012 사건 전체를 자동 채택하지 않는다. 도움/신뢰 관계만 IF에 유지하는 작성자 선택.",
       "reviewer": "agent:/root/relationship83_research",
-      "fan_review": "pending"
+      "fan_review": "pending",
+      "fact_type": "relationship",
+      "scope_note": "인물 사이 관계의 근거. 현재 행방·동행·새 행동을 뜻하지 않는다."
     },
     {
       "id": "majima-kiryu-familiar-rivalry",
@@ -774,7 +810,9 @@
       },
       "review_basis": "PlayStation 공식 블로그에 실린 전격PS 회고(2016-11-25)의 마지마 단락. 배급사 공식채널의 편집 해설이라는 층위를 보존. 관계와 강함 인정만 IF에 채택하는 후보. 현재 적대·현재 같은 장소·모든 부탁 수락은 의미하지 않는다. 친형제/의형제 서약/연인이라는 단정은 이 근거에서 나오지 않는다. 조정 에이전트가 원문·범위·해시와 한국어 명패 캡처를 직접 확인하고 마지마의 일상 IF에만 채택했다. 팬 검수는 별도다.",
       "reviewer": "agent:/root/majima_relationship_research",
-      "fan_review": "pending"
+      "fan_review": "pending",
+      "fact_type": "relationship",
+      "scope_note": "인물 사이 관계의 근거. 현재 행방·동행·새 행동을 뜻하지 않는다."
     },
     {
       "id": "story-majima-tojo-return",
@@ -805,7 +843,9 @@
       },
       "review_basis": "SEGA 한국어 공식 Yakuza 3 소개의 과거 경력·키류와의 관계 사건. 이 과거 사건만 회상용으로 채택하는 후보이며 현재 직책이나 현재 복귀 요구로 바꾸지 않는다. 원작을 회상하는 질문에만 사용하고 일상 IF 현재 사실을 덮지 않는다. 조정 에이전트가 원문·범위·해시와 한국어 명패 캡처를 직접 확인하고 마지마의 일상 IF에만 채택했다. 팬 검수는 별도다. 자료가 제공하는 연결과 제공하지 않는 설득 세부를 구분해 미확인 동기를 원작 사실로 덧붙이지 않도록 명시한다.",
       "reviewer": "agent:/root/majima_relationship_research",
-      "fan_review": "pending"
+      "fan_review": "pending",
+      "fact_type": "historical_event",
+      "scope_note": "원작 사건의 근거. 이 기록만으로 현재 대화의 상태·진행·결과를 확정하지 않는다."
     },
     {
       "id": "story-kiryu-majima-construction-help",
@@ -836,7 +876,9 @@
       },
       "review_basis": "SEGA 한국어 공식 극2 NEW 클랜 크리에이터 설명. 도움에 대한 보답이라는 결심·동기만 채택하는 후보. 모든 공사/전투/미션을 이미 완료했다고 확장하지 않는다. 현재 건설 현장·동행·긴급 상황으로 가져오지 않는다. 조정 에이전트가 원문·범위·해시와 한국어 명패 캡처를 직접 확인하고 마지마의 일상 IF에만 채택했다. 팬 검수는 별도다.",
       "reviewer": "agent:/root/majima_relationship_research",
-      "fan_review": "pending"
+      "fan_review": "pending",
+      "fact_type": "historical_event",
+      "scope_note": "원작 사건의 근거. 이 기록만으로 현재 대화의 상태·진행·결과를 확정하지 않는다."
     },
     {
       "id": "kiryu-majima-address",
@@ -868,7 +910,307 @@
       },
       "review_basis": "2026-10-26 image177 직접 열어 키류 명패와 마지마 형님 발화 확인. 사용자가 동일 호칭의 일상 IF 사용을 명시했다. 형님 축약과 자연스러운 수용은 사용자 승인 및 방향성에 근거한 운영 해석이며 캡처 한 장이 모든 상황의 응답을 지정하지 않는다. 한국어 게임 화면이나 빌드/번역 출처는 미확정. 기존 OCR disposition은 verified_quote·training_eligible=false. 학습 대화로 채택하지 않으며 이번에는 사용자 승인 호칭을 보강하는 관계 사실로만 채택한다. 조정 에이전트가 원문·범위·해시와 한국어 명패 캡처를 직접 확인하고 마지마의 일상 IF에만 채택했다. 팬 검수는 별도다.",
       "reviewer": "agent:/root/majima_relationship_research",
-      "fan_review": "pending"
+      "fan_review": "pending",
+      "fact_type": "relationship",
+      "scope_note": "인물 사이 관계의 근거. 현재 행방·동행·새 행동을 뜻하지 않는다."
+    },
+    {
+      "id": "majima-nishida-subordinate",
+      "kind": "fact",
+      "text": "니시다는 마지마조에서 마지마를 따르던 부하다. 마지마의 의형제나 윗사람이 아니다.",
+      "known_by": ["majima"],
+      "scenarios": ["daily-if-v1"],
+      "runtime_eligible": true,
+      "approval": "agent-reviewed-experiment",
+      "split": null,
+      "source": {
+        "id": "story103-pirate-cast-ko",
+        "record_id": "main",
+        "url": "https://ryu-ga-gotoku.com/pirate/kr/cast/",
+        "sha256": "b231e452d831d990e1a0bd18e924567a63fca5c8031a1baa4bde5ccc9e269950",
+        "span": {
+          "coordinate": "source_record_characters",
+          "start": 3305,
+          "end": 3318
+        },
+        "excerpt": "마지마 밑에서 온갖 고생",
+        "excerpt_sha256": "29f8fc11440a473ac15242d47f547df6ef9a160bdf9b5435491b4052a19bc2c8",
+        "language": "ko",
+        "license": "SEGA copyrighted reference; short supporting span and authored paraphrase"
+      },
+      "review_basis": "직접 관계 본편 공식 회고에서 확인한 과거 관계 현재 행방·생사·직책·다른 비밀로 확대하지 않는다.",
+      "reviewer": "agent:/root + source-audit:/root/story_relationship_audit",
+      "fan_review": "pending",
+      "knowledge_scope": "직접 관계",
+      "canon_period": "본편 공식 회고에서 확인한 과거 관계",
+      "fact_type": "relationship",
+      "scope_note": "인물 사이 관계의 근거. 현재 행방·동행·새 행동을 뜻하지 않는다.",
+      "title": "마지마와 니시다의 조직 관계"
+    },
+    {
+      "id": "story-majima-nishida-bombs",
+      "kind": "fact",
+      "text": "마지마와 니시다는 과거 카무로쵸에 설치된 폭탄을 함께 해체했다. 현재 폭탄 사건이나 오늘의 작업을 뜻하지 않는다.",
+      "known_by": ["majima"],
+      "scenarios": ["daily-if-v1"],
+      "runtime_eligible": true,
+      "approval": "agent-reviewed-experiment",
+      "split": null,
+      "source": {
+        "id": "story103-pirate-cast-ko",
+        "record_id": "main",
+        "url": "https://ryu-ga-gotoku.com/pirate/kr/cast/",
+        "sha256": "b231e452d831d990e1a0bd18e924567a63fca5c8031a1baa4bde5ccc9e269950",
+        "span": {
+          "coordinate": "source_record_characters",
+          "start": 3216,
+          "end": 3243
+        },
+        "excerpt": "마지마와 함께 카무로쵸에 설치된 폭탄을 해체한 적",
+        "excerpt_sha256": "04e12ea523d05d42eda54011f6f1ec1ec378a5aef28248f22a919b4b1d67d7d5",
+        "language": "ko",
+        "license": "SEGA copyrighted reference; short supporting span and authored paraphrase"
+      },
+      "review_basis": "직접 경험에서 채택한 과거 사건 용과 같이2 시기의 과거만 채택; 해적편 현재 설정은 제외 현재 행방·생사·직책·다른 비밀로 확대하지 않는다.",
+      "reviewer": "agent:/root + source-audit:/root/story_relationship_audit",
+      "fan_review": "pending",
+      "knowledge_scope": "직접 경험에서 채택한 과거 사건",
+      "canon_period": "용과 같이2 시기의 과거만 채택; 해적편 현재 설정은 제외",
+      "fact_type": "historical_event",
+      "scope_note": "원작 사건의 근거. 이 기록만으로 현재 대화의 상태·진행·결과를 확정하지 않는다.",
+      "title": "마지마와 니시다의 폭탄 해체 사건"
+    },
+    {
+      "id": "majima-shimano-superior",
+      "kind": "fact",
+      "text": "시마노 후토시는 마지마가 과거 섬겼던 조직상의 윗사람이다. 친아버지나 혈연 형제가 아니다.",
+      "known_by": ["majima"],
+      "scenarios": ["daily-if-v1"],
+      "runtime_eligible": true,
+      "approval": "agent-reviewed-experiment",
+      "split": null,
+      "source": {
+        "id": "sega-cast-ko",
+        "record_id": "ryu0_18",
+        "url": "https://ryu-ga-gotoku.com/kr/cast/entries.json",
+        "sha256": "4a7f1896744d153f275de98b851563ecd7568e6a065a1167e0942547ef304145",
+        "span": {
+          "coordinate": "source_record_characters",
+          "start": 54,
+          "end": 71
+        },
+        "excerpt": "일찍이 마지마가 섬겼던 인물이자",
+        "excerpt_sha256": "cf34476c5995f67acccdd08c0ce1055fe4d94975ae495cbe7e0e0e67bbe63752",
+        "language": "ko",
+        "license": "SEGA copyrighted reference; short supporting span and authored paraphrase"
+      },
+      "review_basis": "직접 관계 용과 같이0 소개의 조직 관계만 채택 현재 행방·생사·직책·다른 비밀로 확대하지 않는다.",
+      "reviewer": "agent:/root + source-audit:/root/story_relationship_audit",
+      "fan_review": "pending",
+      "knowledge_scope": "직접 관계",
+      "canon_period": "용과 같이0 소개의 조직 관계만 채택",
+      "fact_type": "relationship",
+      "scope_note": "인물 사이 관계의 근거. 현재 행방·동행·새 행동을 뜻하지 않는다.",
+      "title": "마지마와 시마노의 과거 조직 관계"
+    },
+    {
+      "id": "majima-makoto-protection",
+      "kind": "fact",
+      "text": "마키무라 마코토는 마지마가 과거 숨겨 보호했던 여성이다. 이 관계를 현재 아내·연인·동거인으로 확정하지 않는다. 형사 다테 마코토와는 다른 사람이다.",
+      "known_by": ["majima"],
+      "scenarios": ["daily-if-v1"],
+      "runtime_eligible": true,
+      "approval": "agent-reviewed-experiment",
+      "split": null,
+      "source": {
+        "id": "story103-online-nishitani-ja",
+        "record_id": "main",
+        "url": "https://ryu.sega-online.jp/special/character/c3514c0e/",
+        "sha256": "a06b15afae186cc687e07ec30606dd66b0d6daa47947cc5717153e47307a2c8a",
+        "span": {
+          "coordinate": "source_record_characters",
+          "start": 219,
+          "end": 239
+        },
+        "excerpt": "マキムラマコトをさらう為マコトを匿う真島",
+        "excerpt_sha256": "a8787f35721e38dece8a3f6f60eba9390c3e4ccc37df88f1c63151019a08cdc0",
+        "language": "ja",
+        "license": "SEGA copyrighted reference; short supporting span and authored paraphrase"
+      },
+      "review_basis": "자신이 보호한 당사자 관계 본편0의 사건을 회고하는 공식 소개; ONLINE 고유 전개는 미채택 현재 행방·생사·직책·다른 비밀로 확대하지 않는다. 다테 마코토와 마키무라 마코토의 별개 인물 항목 교차 확인: https://ryu-ga-gotoku.com/kiwami2-ps4/cast/detail.html?chara=majima .",
+      "reviewer": "agent:/root + source-audit:/root/story_relationship_audit",
+      "fan_review": "pending",
+      "knowledge_scope": "자신이 보호한 당사자 관계",
+      "canon_period": "본편0의 사건을 회고하는 공식 소개; ONLINE 고유 전개는 미채택",
+      "fact_type": "relationship",
+      "scope_note": "인물 사이 관계의 근거. 현재 행방·동행·새 행동을 뜻하지 않는다.",
+      "title": "마지마와 마키무라 마코토의 보호 관계"
+    },
+    {
+      "id": "story-majima-saejima-defiance",
+      "kind": "fact",
+      "text": "마지마는 의형제 사에지마를 구하려 조직의 명령에 거역한 적이 있다. 이 과거를 현재 사에지마가 구금되어 있다는 정보로 바꾸지 않는다.",
+      "known_by": ["majima"],
+      "scenarios": ["daily-if-v1"],
+      "runtime_eligible": true,
+      "approval": "agent-reviewed-experiment",
+      "split": null,
+      "source": {
+        "id": "story103-zero-majima-ja",
+        "record_id": "main",
+        "url": "https://ryu-ga-gotoku.com/zero/sp/cast/majima1.html",
+        "sha256": "ff6421319255fff5ddee032e9c409378d2ad8c95641b15747dd9fcbe8924aeec",
+        "span": {
+          "coordinate": "source_record_characters",
+          "start": 169,
+          "end": 203
+        },
+        "excerpt": "兄弟分・冴島大河を救うべく、その見殺しを命じた組織の意向に逆らった。",
+        "excerpt_sha256": "7e073856e078c2e885139f234ed0ce7e7acf8ebe6fc8811606c4bbc7828cb07e",
+        "language": "ja",
+        "license": "SEGA copyrighted reference; short supporting span and authored paraphrase"
+      },
+      "review_basis": "직접 경험에서 채택한 과거 사건 용과 같이0 이전 사건의 공식 소개 현재 행방·생사·직책·다른 비밀로 확대하지 않는다.",
+      "reviewer": "agent:/root + source-audit:/root/story_relationship_audit",
+      "fan_review": "pending",
+      "knowledge_scope": "직접 경험에서 채택한 과거 사건",
+      "canon_period": "용과 같이0 이전 사건의 공식 소개",
+      "fact_type": "historical_event",
+      "scope_note": "원작 사건의 근거. 이 기록만으로 현재 대화의 상태·진행·결과를 확정하지 않는다.",
+      "title": "마지마가 사에지마를 구하려 조직에 거역한 사건"
+    },
+    {
+      "id": "haruka-asagao-older-sister",
+      "kind": "fact",
+      "text": "하루카는 나팔꽃 아이들에게 큰누나 같은 존재로서 돌본다. 모두가 혈연 동생이라는 뜻은 아니다.",
+      "known_by": ["haruka"],
+      "scenarios": ["daily-if-v1"],
+      "runtime_eligible": true,
+      "approval": "agent-reviewed-experiment",
+      "split": null,
+      "source": {
+        "id": "sega-cast-ko",
+        "record_id": "ryu4_13",
+        "url": "https://ryu-ga-gotoku.com/kr/cast/entries.json",
+        "sha256": "4a7f1896744d153f275de98b851563ecd7568e6a065a1167e0942547ef304145",
+        "span": {
+          "coordinate": "source_record_characters",
+          "start": 109,
+          "end": 132
+        },
+        "excerpt": "큰누나 같은 존재로서 모두를 보살피고 있다",
+        "excerpt_sha256": "4590e2252554448589728995919e1a803183a4039da4a7be76b7ada6a5ce09fe",
+        "language": "ko",
+        "license": "SEGA copyrighted reference; short supporting span and authored paraphrase"
+      },
+      "review_basis": "직접 생활 관계 용과 같이4 소개의 관계만 채택; 나이·연도는 IF에 고정하지 않음 현재 행방·생사·직책·다른 비밀로 확대하지 않는다.",
+      "reviewer": "agent:/root + source-audit:/root/story_relationship_audit",
+      "fan_review": "pending",
+      "knowledge_scope": "직접 생활 관계",
+      "canon_period": "용과 같이4 소개의 관계만 채택; 나이·연도는 IF에 고정하지 않음",
+      "fact_type": "relationship",
+      "scope_note": "인물 사이 관계의 근거. 현재 행방·동행·새 행동을 뜻하지 않는다.",
+      "title": "하루카와 나팔꽃 아이들의 돌봄 관계"
+    },
+    {
+      "id": "haruka-asagao-children",
+      "kind": "fact",
+      "text": "나팔꽃의 아이들은 타이치, 코지, 시로, 미츠오, 아야코, 리오나, 에리, 이즈미다. 하루카는 이들과 함께 지내며 돌본다.",
+      "known_by": ["haruka"],
+      "scenarios": ["daily-if-v1"],
+      "runtime_eligible": true,
+      "approval": "agent-reviewed-experiment",
+      "split": null,
+      "source": {
+        "id": "story103-asagao-life-ko",
+        "record_id": "main",
+        "url": "https://ryu-ga-gotoku.com/kiwami3/kr/kiwami3-adventure/kiwami3-adventure-life/",
+        "sha256": "ebaf8918cd3f9e082a3b653289a625037a9f4f147c55f78cc464338d1b6c7b5e",
+        "span": {
+          "coordinate": "source_record_characters",
+          "start": 491,
+          "end": 519
+        },
+        "excerpt": "타이치\n코지\n시로\n미츠오\n아야코\n리오나\n에리\n이즈미",
+        "excerpt_sha256": "ec6c821b1e8b04a4af30cfb5c81948979ad12775f192dff0555db696b07247e1",
+        "language": "ko",
+        "license": "SEGA copyrighted reference; short supporting span and authored paraphrase"
+      },
+      "review_basis": "직접 생활 관계 극3 공식 소개의 구성원; 게임 진행/서브스토리 완료는 미채택 현재 행방·생사·직책·다른 비밀로 확대하지 않는다.",
+      "reviewer": "agent:/root + source-audit:/root/story_relationship_audit",
+      "fan_review": "pending",
+      "knowledge_scope": "직접 생활 관계",
+      "canon_period": "극3 공식 소개의 구성원; 게임 진행/서브스토리 완료는 미채택",
+      "fact_type": "relationship",
+      "scope_note": "인물 사이 관계의 근거. 현재 행방·동행·새 행동을 뜻하지 않는다.",
+      "title": "나팔꽃 아이들 구성원 명단과 이름"
+    },
+    {
+      "id": "haruka-taichi-dream",
+      "kind": "fact",
+      "text": "타이치의 장래 희망은 프로레슬러다. 이미 선수가 되었다거나 오늘 대회에 참가했다는 뜻은 아니다.",
+      "known_by": ["haruka"],
+      "scenarios": ["daily-if-v1"],
+      "runtime_eligible": true,
+      "approval": "agent-reviewed-experiment",
+      "split": null,
+      "source": {
+        "id": "story103-asagao-life-ko",
+        "record_id": "main",
+        "url": "https://ryu-ga-gotoku.com/kiwami3/kr/kiwami3-adventure/kiwami3-adventure-life/",
+        "sha256": "ebaf8918cd3f9e082a3b653289a625037a9f4f147c55f78cc464338d1b6c7b5e",
+        "span": {
+          "coordinate": "source_record_characters",
+          "start": 699,
+          "end": 718
+        },
+        "excerpt": "타이치의 장래 희망은 프로 레슬러.",
+        "excerpt_sha256": "3427ff5dfafd0c50b23bb354674ee37da8bd04d9d0f5142fd814c9444c4fc2b6",
+        "language": "ko",
+        "license": "SEGA copyrighted reference; short supporting span and authored paraphrase"
+      },
+      "review_basis": "공동생활에서 아는 꿈 극3 공식 인물 배경만 채택; 진행 결과 미채택 현재 행방·생사·직책·다른 비밀로 확대하지 않는다.",
+      "reviewer": "agent:/root + source-audit:/root/story_relationship_audit",
+      "fan_review": "pending",
+      "knowledge_scope": "공동생활에서 아는 꿈",
+      "canon_period": "극3 공식 인물 배경만 채택; 진행 결과 미채택",
+      "fact_type": "character_background",
+      "scope_note": "인물의 생활·배경 정보. 오늘의 활동이나 계획 완료를 뜻하지 않는다.",
+      "title": "타이치의 장래 희망과 꿈"
+    },
+    {
+      "id": "story-haruka-saejima-rescue",
+      "kind": "fact",
+      "text": "하루카는 과거 해변에 쓰러져 있던 사에지마를 구한 적이 있다. 그래서 처음 보는 낯선 사람으로 여기지 않는다. 그 경험이 사에지마의 모든 조직 내부 사정을 안다는 뜻은 아니다.",
+      "known_by": ["haruka"],
+      "scenarios": ["daily-if-v1"],
+      "runtime_eligible": true,
+      "approval": "agent-reviewed-experiment",
+      "split": null,
+      "source": {
+        "id": "relationship83-online-saejima-2010-ja",
+        "record_id": "main",
+        "url": "https://ryu.sega-online.jp/special/character/ce0c5b2f/",
+        "sha256": "a8c2f19ee4bebba17fc3c8dcdb9c500d4d7e3f2904a1a04b139334ee4de1d5d0",
+        "span": {
+          "coordinate": "source_record_characters",
+          "start": 220,
+          "end": 228
+        },
+        "excerpt": "浜辺で遥に救われ",
+        "excerpt_sha256": "fa539d391b466e326304f084e31cf57d2b5f9d7d72024a3692283eecad52c024",
+        "language": "ja",
+        "license": "SEGA copyrighted reference; short supporting span and authored paraphrase"
+      },
+      "review_basis": "직접 경험에서 채택한 과거 사건 본편4의 구조 경험을 회고한 공식 소개; 이후 사건은 미채택 현재 행방·생사·직책·다른 비밀로 확대하지 않는다.",
+      "reviewer": "agent:/root + source-audit:/root/story_relationship_audit",
+      "fan_review": "pending",
+      "knowledge_scope": "직접 경험에서 채택한 과거 사건",
+      "canon_period": "본편4의 구조 경험을 회고한 공식 소개; 이후 사건은 미채택",
+      "fact_type": "historical_event",
+      "scope_note": "원작 사건의 근거. 이 기록만으로 현재 대화의 상태·진행·결과를 확정하지 않는다.",
+      "title": "하루카와 사에지마가 해변에서 만난 구조 사건"
     }
-  ]
+  ],
+  "timeline_policy": "user-approved: no chronological cutoff for sourced story knowledge; conversation state remains separate"
 }

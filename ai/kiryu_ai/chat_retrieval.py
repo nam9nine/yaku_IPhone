@@ -18,7 +18,7 @@ from zoneinfo import ZoneInfo
 
 EMBEDDING_REPO = "intfloat/multilingual-e5-small"
 EMBEDDING_REVISION = "614241f622f53c4eeff9890bdc4f31cfecc418b3"
-RETRIEVER_VERSION = "daily-if-hybrid-v3"
+RETRIEVER_VERSION = "daily-if-hybrid-v6"
 ALIASES = {
     "키류": ("kiryu", "桐生"),
     "하루카": ("haruka", "遥"),
@@ -30,6 +30,10 @@ ALIASES = {
     "유미": ("yumi", "由美"),
     "미네": ("yoshitaka mine", "峯"),
     "아키야마": ("akiyama", "秋山"),
+    "니시다": ("nishida", "西田"),
+    "시마노": ("shimano", "嶋野"),
+    "마키무라": ("마키무라 마코토", "makimura", "マキムラ"),
+    "타이치": ("taichi", "太一"),
     "나팔꽃": ("아사가오", "asagao", "morning glory", "orphanage", "보육원"),
     "카무로쵸": ("카무로초", "kamurocho", "神室町"),
     "소텐보리": ("sotenbori", "蒼天堀"),
@@ -193,6 +197,13 @@ def load_registry(path):
         seen.add(record["id"])
         if record.get("kind") not in {"fact", "scene"}:
             raise ValueError("Runtime records must separate facts from scenes")
+        if record["kind"] == "fact" and (
+            record.get("fact_type")
+            not in {"relationship", "place", "historical_event", "character_background"}
+            or not isinstance(record.get("scope_note"), str)
+            or not record["scope_note"].strip()
+        ):
+            raise ValueError("Facts require an explicit type and source-level scope")
         source = record.get("source", {})
         if not source.get("url") or not source.get("sha256"):
             raise ValueError("Runtime record requires source identity")
@@ -360,7 +371,9 @@ def _lexical_rank(records, query):
 def evidence_search_text(record):
     """Index original dialogue without turning its speakers into current roles."""
     if record["kind"] != "scene":
-        return record["text"]
+        return "\n".join(
+            part for part in (record.get("title", ""), record["text"]) if part
+        )
     scene = record.get("scene", {})
     # The full scene is still supplied as reference data, never user/assistant
     # history. Indexing only its summary used to miss quoted original lines.
@@ -423,7 +436,9 @@ class HybridRetriever:
             for key in sorted(scores, key=lambda key: (-scores[key], key))[:limit]
         ]
 
-    def evidence(self, character, scenario, query, *, exclude_ids=()):
+    def evidence(
+        self, character, scenario, query, *, exclude_ids=(), current_query=None
+    ):
         query = evidence_query(query)
         if not _tokens(query):
             return {"facts": [], "scenes": []}
@@ -433,12 +448,53 @@ class HybridRetriever:
             if runtime_eligible(record, character, scenario)
             and record["id"] not in exclude_ids
         ]
-        return {
-            "facts": self.rank([r for r in eligible if r["kind"] == "fact"], query, 3),
-            "scenes": self.rank(
-                [r for r in eligible if r["kind"] == "scene"], query, 1
-            ),
-        }
+
+        def select(kind, limit):
+            candidates = [r for r in eligible if r["kind"] == kind]
+            contextual = self.rank(candidates, query, limit)
+            if current_query is None:
+                return contextual
+            current = evidence_query(current_query)
+            primary = self.rank(candidates, current, limit) if _tokens(current) else []
+            primary_ids = {record["id"] for record in primary}
+            if kind == "scene":
+                # One scene slot cannot reserve both a direct and a contextual
+                # candidate. Preserve dialogue speaker/reference resolution.
+                return [
+                    {
+                        **record,
+                        "query_scope": "current"
+                        if record["id"] in primary_ids
+                        else "context",
+                    }
+                    for record in contextual
+                ]
+            selected = []
+            seen = set()
+            # Reserve one direct match, then let recent turns resolve references
+            # such as "that person". Generic current words must not occupy all
+            # slots and erase the named person in the previous exchange.
+            for tier, rows in (
+                ("current", primary[:1]),
+                ("context", contextual),
+                ("current", primary[1:]),
+            ):
+                for record in rows:
+                    if record["id"] not in seen:
+                        selected.append(
+                            {
+                                **record,
+                                "query_scope": "current"
+                                if record["id"] in primary_ids
+                                else tier,
+                            }
+                        )
+                        seen.add(record["id"])
+                    if len(selected) == limit:
+                        return selected
+            return selected
+
+        return {"facts": select("fact", 3), "scenes": select("scene", 1)}
 
     def memories(
         self,
