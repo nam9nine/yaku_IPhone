@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "version": "daily-if-runtime-registry-2026-10-28-v5",
+  "version": "daily-if-runtime-registry-2026-10-28-v6",
   "scenario_version": "daily-if-v1",
   "raw_world_chunks": 1201,
   "raw_world_policy": "unchanged; no whole-corpus runtime eligibility",
@@ -1210,7 +1210,1196 @@
       "fact_type": "historical_event",
       "scope_note": "원작 사건의 근거. 이 기록만으로 현재 대화의 상태·진행·결과를 확정하지 않는다.",
       "title": "하루카와 사에지마가 해변에서 만난 구조 사건"
+    },
+    {
+      "id": "story-majima-grand-manager",
+      "kind": "fact",
+      "title": "마지마의 소텐보리 그랜드 경영",
+      "text": "마지마는 오사카 소텐보리의 카바레 그랜드에서 지배인으로 일했다.",
+      "context": "ryu0 / 마지마의 소텐보리 그랜드 경영. 조직의 감시 아래 놓인 마지마가 그랜드를 경영하던 시기다.",
+      "related_ids": [],
+      "fact_type": "character_background",
+      "scope_note": "원작의 명시된 과거 사실·관계만 참고한다. 현재 방문자의 위치·진행·결과나 출처에 없는 세부를 확정하지 않는다.",
+      "known_by": ["majima"],
+      "scenarios": ["daily-if-v1"],
+      "runtime_eligible": true,
+      "approval": "agent-reviewed-experiment",
+      "split": null,
+      "continuity": "mainline-original",
+      "game_id": "ryu0",
+      "source": {
+        "id": "sega-cast-ko",
+        "record_id": "ryu0_02",
+        "url": "https://ryu-ga-gotoku.com/kr/cast/entries.json",
+        "sha256": "4a7f1896744d153f275de98b851563ecd7568e6a065a1167e0942547ef304145",
+        "language": "ko",
+        "local_raw_path": "references/local/kiryu-ai-2026-10-25/sources/raw/sega-cast-ko-4a7f1896744d153f.json",
+        "local_extracted_path": "references/local/kiryu-ai-2026-10-25/sources/cast-records.jsonl",
+        "section_sha256": "7821f84365075bf7f7337bff5f4a31bf03091083414712e325dba5dd35fcef6b",
+        "license": "SEGA copyrighted reference; short supporting span and authored paraphrase",
+        "span": {
+          "coordinate": "source_record_characters",
+          "start": 0,
+          "end": 30
+        },
+        "excerpt": "오사카 소텐보리를 주름잡는 카바레 '그랜드'의 지배인.",
+        "excerpt_sha256": "218ad3a043ac11f874779cf37257beb56850639bbf6a4c9b28b6c03ed360ef21"
+      },
+      "story": {
+        "episode_id": "zero-sotenbori",
+        "entities": ["majima", "grand", "sotenbori"],
+        "source_context_before": "",
+        "source_context_after": " 사람들은 그랜드를 최고의 카바레로 거듭나게 한 마지마를 \"밤의 제왕\"이라 부른다.\n그러나 그 실체는 언제 제거당해도 이상할 ",
+        "relations": [
+          {
+            "subject": "majima",
+            "predicate": "managed",
+            "object": "grand"
+          },
+          {
+            "subject": "grand",
+            "predicate": "located_in",
+            "object": "sotenbori"
+          }
+        ]
+      },
+      "reviewer": "agent:/root/story_corpus_eval",
+      "review_basis": "원본 SHA·정확한 문자 좌표·발췌 SHA를 검증하고 공식 설명에 명시된 직접 경험 또는 관계만 의역. chronology cutoff 없음. 현재 IF와 과거 원작 구분. 팬 검토와는 별개. 독립 출처 검토 agent:/root/rag_research가 원본·추출문·span·excerpt SHA와 맥락을 확인. 공개된 가족·경력 배경은 이 IF의 공유 배경으로 채택하며, 캐릭터의 비공개 대화·다른 인물의 속내는 허용하지 않음. 지식 습득 장면을 원작에서 확인했다는 뜻은 아님.",
+      "fan_review": "pending",
+      "knowledge_basis": "직접 참여한 과거 사건 또는 직접 맺은 관계라는 검수자 판단. 출처가 챗봇의 지식 권한을 자동 승인하는 것은 아니다."
+    },
+    {
+      "id": "story-majima-sagawa-control",
+      "kind": "fact",
+      "title": "소텐보리의 사가와와 마지마",
+      "text": "사가와 츠카사는 소텐보리에서 연금 상태였던 마지마를 직접 관리하던 인물이다.",
+      "context": "ryu0 / 소텐보리의 사가와와 마지마. 시마노가 추방한 마지마를 현지에서 맡아 관리한 사람이 사가와다.",
+      "related_ids": ["story-sagawa-shimano-brotherhood"],
+      "fact_type": "relationship",
+      "scope_note": "원작의 명시된 과거 사실·관계만 참고한다. 현재 방문자의 위치·진행·결과나 출처에 없는 세부를 확정하지 않는다.",
+      "known_by": ["majima"],
+      "scenarios": ["daily-if-v1"],
+      "runtime_eligible": true,
+      "approval": "agent-reviewed-experiment",
+      "split": null,
+      "continuity": "mainline-original",
+      "game_id": "ryu0",
+      "source": {
+        "id": "sega-cast-ko",
+        "record_id": "ryu0_14",
+        "url": "https://ryu-ga-gotoku.com/kr/cast/entries.json",
+        "sha256": "4a7f1896744d153f275de98b851563ecd7568e6a065a1167e0942547ef304145",
+        "language": "ko",
+        "local_raw_path": "references/local/kiryu-ai-2026-10-25/sources/raw/sega-cast-ko-4a7f1896744d153f.json",
+        "local_extracted_path": "references/local/kiryu-ai-2026-10-25/sources/cast-records.jsonl",
+        "section_sha256": "0e55f82a494cea378e5818ace528b456493216d649716e8854083db88cb33f3c",
+        "license": "SEGA copyrighted reference; short supporting span and authored paraphrase",
+        "span": {
+          "coordinate": "source_record_characters",
+          "start": 0,
+          "end": 45
+        },
+        "excerpt": "소텐보리에서 연금 상태에 처해있는 마지마의 \"관리자\"이자, 생살여탈권을 쥔 남자.",
+        "excerpt_sha256": "d57dfeb85281c5ce0ccc375e4e692e17e60ac229103a5a0d65c93e84146c4998"
+      },
+      "story": {
+        "episode_id": "zero-sotenbori",
+        "entities": ["sagawa", "majima", "sotenbori"],
+        "source_context_before": "",
+        "source_context_after": " 소속은 다르지만 마지마가 과거에 섬겼던 동성회 직계 시마노조 조장인 시마노와 의형제 사이이며, 그 인연으로 도쿄에서 쫓겨난 ",
+        "relations": [
+          {
+            "subject": "sagawa",
+            "predicate": "controlled",
+            "object": "majima"
+          }
+        ]
+      },
+      "reviewer": "agent:/root/story_corpus_eval",
+      "review_basis": "원본 SHA·정확한 문자 좌표·발췌 SHA를 검증하고 공식 설명에 명시된 직접 경험 또는 관계만 의역. chronology cutoff 없음. 현재 IF와 과거 원작 구분. 팬 검토와는 별개. 독립 출처 검토 agent:/root/rag_research가 원본·추출문·span·excerpt SHA와 맥락을 확인. 공개된 가족·경력 배경은 이 IF의 공유 배경으로 채택하며, 캐릭터의 비공개 대화·다른 인물의 속내는 허용하지 않음. 지식 습득 장면을 원작에서 확인했다는 뜻은 아님.",
+      "fan_review": "pending",
+      "knowledge_basis": "직접 참여한 과거 사건 또는 직접 맺은 관계라는 검수자 판단. 출처가 챗봇의 지식 권한을 자동 승인하는 것은 아니다."
+    },
+    {
+      "id": "story-sagawa-shimano-brotherhood",
+      "kind": "fact",
+      "title": "사가와와 시마노의 의형제 관계",
+      "text": "사가와와 시마노는 소속은 다르지만 의형제 사이였다. 그 인연으로 사가와가 소텐보리의 마지마를 맡았다.",
+      "context": "ryu0 / 사가와와 시마노의 의형제 관계. 의형제의 주체는 사가와와 시마노다. 마지마와 사에지마의 의형제 관계와 별개다.",
+      "related_ids": ["story-majima-sagawa-control"],
+      "fact_type": "relationship",
+      "scope_note": "원작의 명시된 과거 사실·관계만 참고한다. 현재 방문자의 위치·진행·결과나 출처에 없는 세부를 확정하지 않는다.",
+      "known_by": ["majima"],
+      "scenarios": ["daily-if-v1"],
+      "runtime_eligible": true,
+      "approval": "agent-reviewed-experiment",
+      "split": null,
+      "continuity": "mainline-original",
+      "game_id": "ryu0",
+      "source": {
+        "id": "sega-cast-ko",
+        "record_id": "ryu0_14",
+        "url": "https://ryu-ga-gotoku.com/kr/cast/entries.json",
+        "sha256": "4a7f1896744d153f275de98b851563ecd7568e6a065a1167e0942547ef304145",
+        "language": "ko",
+        "local_raw_path": "references/local/kiryu-ai-2026-10-25/sources/raw/sega-cast-ko-4a7f1896744d153f.json",
+        "local_extracted_path": "references/local/kiryu-ai-2026-10-25/sources/cast-records.jsonl",
+        "section_sha256": "0e55f82a494cea378e5818ace528b456493216d649716e8854083db88cb33f3c",
+        "license": "SEGA copyrighted reference; short supporting span and authored paraphrase",
+        "span": {
+          "coordinate": "source_record_characters",
+          "start": 46,
+          "end": 133
+        },
+        "excerpt": "소속은 다르지만 마지마가 과거에 섬겼던 동성회 직계 시마노조 조장인 시마노와 의형제 사이이며, 그 인연으로 도쿄에서 쫓겨난 마지마를 일시적으로 맡게 되었다.",
+        "excerpt_sha256": "ba9a51fe49dd65b3c6475dac4e21b60f41cfdbbb1e747eecf150116b902ee5f2"
+      },
+      "story": {
+        "episode_id": "zero-sotenbori",
+        "entities": ["sagawa", "shimano", "majima"],
+        "source_context_before": "소텐보리에서 연금 상태에 처해있는 마지마의 \"관리자\"이자, 생살여탈권을 쥔 남자. ",
+        "source_context_after": "\n장난스럽고 소탈한 말투와 야쿠자답지 않은 용모로 밤거리를 활보하지만, 조금이라도 심기에 거슬리는 일이 생기면 흉포한 본성을 ",
+        "relations": [
+          {
+            "subject": "sagawa",
+            "predicate": "sworn_brother_of",
+            "object": "shimano"
+          },
+          {
+            "subject": "majima",
+            "predicate": "served",
+            "object": "shimano"
+          }
+        ]
+      },
+      "reviewer": "agent:/root/story_corpus_eval",
+      "review_basis": "원본 SHA·정확한 문자 좌표·발췌 SHA를 검증하고 공식 설명에 명시된 직접 경험 또는 관계만 의역. chronology cutoff 없음. 현재 IF와 과거 원작 구분. 팬 검토와는 별개. 독립 출처 검토 agent:/root/rag_research가 원본·추출문·span·excerpt SHA와 맥락을 확인. 공개된 가족·경력 배경은 이 IF의 공유 배경으로 채택하며, 캐릭터의 비공개 대화·다른 인물의 속내는 허용하지 않음. 지식 습득 장면을 원작에서 확인했다는 뜻은 아님.",
+      "fan_review": "pending",
+      "knowledge_basis": "직접 참여한 과거 사건 또는 직접 맺은 관계라는 검수자 판단. 출처가 챗봇의 지식 권한을 자동 승인하는 것은 아니다."
+    },
+    {
+      "id": "story-majima-shimano-exile",
+      "kind": "fact",
+      "title": "시마노가 마지마를 추방한 과거",
+      "text": "시마노는 마지마를 조직에서 추방하고 소텐보리에서 연금 상태로 지내게 한 인물이다.",
+      "context": "ryu0 / 시마노가 마지마를 추방한 과거. 시마노가 마지마를 살려 둔 속내는 이 공식 소개에서는 미스터리로 남는다.",
+      "event_id": "majima-shimano-exile",
+      "related_ids": ["story-majima-sagawa-control"],
+      "fact_type": "historical_event",
+      "scope_note": "원작의 명시된 과거 사실·관계만 참고한다. 현재 방문자의 위치·진행·결과나 출처에 없는 세부를 확정하지 않는다.",
+      "known_by": ["majima"],
+      "scenarios": ["daily-if-v1"],
+      "runtime_eligible": true,
+      "approval": "agent-reviewed-experiment",
+      "split": null,
+      "continuity": "mainline-original",
+      "game_id": "ryu0",
+      "source": {
+        "id": "sega-cast-ko",
+        "record_id": "ryu0_18",
+        "url": "https://ryu-ga-gotoku.com/kr/cast/entries.json",
+        "sha256": "4a7f1896744d153f275de98b851563ecd7568e6a065a1167e0942547ef304145",
+        "language": "ko",
+        "local_raw_path": "references/local/kiryu-ai-2026-10-25/sources/raw/sega-cast-ko-4a7f1896744d153f.json",
+        "local_extracted_path": "references/local/kiryu-ai-2026-10-25/sources/cast-records.jsonl",
+        "section_sha256": "ef1233a8c78f4f78d5fc976682bef9e8112970350c3501c4c2e0f7ce0a39234c",
+        "license": "SEGA copyrighted reference; short supporting span and authored paraphrase",
+        "span": {
+          "coordinate": "source_record_characters",
+          "start": 73,
+          "end": 113
+        },
+        "excerpt": "마지마를 조직에서 추방하고 소텐보리에서 연금 상태로 지내게 만든 장본인.",
+        "excerpt_sha256": "d573ba77de5069af63bf5d14c7fec9c99e986183c5d1464420bf28c7facfd3d7"
+      },
+      "story": {
+        "episode_id": "zero-sotenbori",
+        "entities": ["shimano", "majima", "sotenbori"],
+        "source_context_before": " 거구와 함께 상대를 위압하는 압도적 기백을 지닌 사나이. 그 성격은 대담하고도 잔혹하다. 일찍이 마지마가 섬겼던 인물이자, ",
+        "source_context_after": " 마지마를 죽이지도, 살리지도 않은 채 \"사육하고\" 있는 그의 진의를 아는 이는 아무도 없다.",
+        "relations": [
+          {
+            "subject": "shimano",
+            "predicate": "exiled",
+            "object": "majima"
+          }
+        ]
+      },
+      "reviewer": "agent:/root/story_corpus_eval",
+      "review_basis": "원본 SHA·정확한 문자 좌표·발췌 SHA를 검증하고 공식 설명에 명시된 직접 경험 또는 관계만 의역. chronology cutoff 없음. 현재 IF와 과거 원작 구분. 팬 검토와는 별개. 독립 출처 검토 agent:/root/rag_research가 원본·추출문·span·excerpt SHA와 맥락을 확인. 공개된 가족·경력 배경은 이 IF의 공유 배경으로 채택하며, 캐릭터의 비공개 대화·다른 인물의 속내는 허용하지 않음. 지식 습득 장면을 원작에서 확인했다는 뜻은 아님.",
+      "fan_review": "pending",
+      "knowledge_basis": "직접 참여한 과거 사건 또는 직접 맺은 관계라는 검수자 판단. 출처가 챗봇의 지식 권한을 자동 승인하는 것은 아니다."
+    },
+    {
+      "id": "story-majima-noah-rescue",
+      "kind": "fact",
+      "title": "리치섬에서 마지마를 구한 노아",
+      "text": "노아 리치는 리치섬 해변에 떠밀려 온 마지마를 발견해 구해 준 소년이다.",
+      "context": "ryu8_G / 리치섬에서 마지마를 구한 노아. 해적 외전의 출항 이전 사건이다. 지금 마지마가 조난 중이라는 의미가 아니다.",
+      "event_id": "majima-noah-rescue",
+      "related_ids": ["story-noah-world-dream", "story-majima-noah-voyage"],
+      "fact_type": "historical_event",
+      "scope_note": "원작의 명시된 과거 사실·관계만 참고한다. 현재 방문자의 위치·진행·결과나 출처에 없는 세부를 확정하지 않는다.",
+      "known_by": ["majima"],
+      "scenarios": ["daily-if-v1"],
+      "runtime_eligible": true,
+      "approval": "agent-reviewed-experiment",
+      "split": null,
+      "continuity": "mainline-original",
+      "game_id": "ryu8_G",
+      "source": {
+        "id": "sega-cast-ko",
+        "record_id": "ryu8_G_02",
+        "url": "https://ryu-ga-gotoku.com/kr/cast/entries.json",
+        "sha256": "4a7f1896744d153f275de98b851563ecd7568e6a065a1167e0942547ef304145",
+        "language": "ko",
+        "local_raw_path": "references/local/kiryu-ai-2026-10-25/sources/raw/sega-cast-ko-4a7f1896744d153f.json",
+        "local_extracted_path": "references/local/kiryu-ai-2026-10-25/sources/cast-records.jsonl",
+        "section_sha256": "ac3319bcfc010a334d2793975fae6d42cbfd2d7c577741cf6f03b345e55203ad",
+        "license": "SEGA copyrighted reference; short supporting span and authored paraphrase",
+        "span": {
+          "coordinate": "source_record_characters",
+          "start": 0,
+          "end": 47
+        },
+        "excerpt": "리치섬에 사는 호기심 왕성한 소년.\n해변에 떠밀려 온 마지마를 발견해 구해주게 된다.",
+        "excerpt_sha256": "af0c1d138d84922ffe0bd6ed696880867f5f3289db5aeacf4284b016c7fc4427"
+      },
+      "story": {
+        "episode_id": "pirate-noah-voyage",
+        "entities": ["noah", "majima", "rich-island"],
+        "source_context_before": "",
+        "source_context_after": " 노아의 지병을 걱정하는 아버지의 방침 때문에 섬을 떠나 본 적은 없지만, 늘 좁은 섬 밖으로 나가 넓은 세상을 보고 싶다는 ",
+        "relations": [
+          {
+            "subject": "noah",
+            "predicate": "rescued",
+            "object": "majima"
+          }
+        ]
+      },
+      "reviewer": "agent:/root/story_corpus_eval",
+      "review_basis": "원본 SHA·정확한 문자 좌표·발췌 SHA를 검증하고 공식 설명에 명시된 직접 경험 또는 관계만 의역. chronology cutoff 없음. 현재 IF와 과거 원작 구분. 팬 검토와는 별개. 독립 출처 검토 agent:/root/rag_research가 원본·추출문·span·excerpt SHA와 맥락을 확인. 공개된 가족·경력 배경은 이 IF의 공유 배경으로 채택하며, 캐릭터의 비공개 대화·다른 인물의 속내는 허용하지 않음. 지식 습득 장면을 원작에서 확인했다는 뜻은 아님.",
+      "fan_review": "pending",
+      "knowledge_basis": "직접 참여한 과거 사건 또는 직접 맺은 관계라는 검수자 판단. 출처가 챗봇의 지식 권한을 자동 승인하는 것은 아니다."
+    },
+    {
+      "id": "story-noah-world-dream",
+      "kind": "fact",
+      "title": "노아가 꿈꾸던 섬 밖 세상",
+      "text": "노아는 아버지가 지병을 걱정해 섬을 떠나지 못했지만, 섬 밖의 넓은 세상을 보고 싶어했다.",
+      "context": "ryu8_G / 노아가 꿈꾸던 섬 밖 세상. 출항 전 처지와 소망이다. 질병명·치료 결과·여행 완료 국가 수는 제시하지 않는다.",
+      "related_ids": ["story-majima-noah-rescue", "story-majima-noah-voyage"],
+      "fact_type": "character_background",
+      "scope_note": "원작의 명시된 과거 사실·관계만 참고한다. 현재 방문자의 위치·진행·결과나 출처에 없는 세부를 확정하지 않는다.",
+      "known_by": ["majima"],
+      "scenarios": ["daily-if-v1"],
+      "runtime_eligible": true,
+      "approval": "agent-reviewed-experiment",
+      "split": null,
+      "continuity": "mainline-original",
+      "game_id": "ryu8_G",
+      "source": {
+        "id": "sega-cast-ko",
+        "record_id": "ryu8_G_02",
+        "url": "https://ryu-ga-gotoku.com/kr/cast/entries.json",
+        "sha256": "4a7f1896744d153f275de98b851563ecd7568e6a065a1167e0942547ef304145",
+        "language": "ko",
+        "local_raw_path": "references/local/kiryu-ai-2026-10-25/sources/raw/sega-cast-ko-4a7f1896744d153f.json",
+        "local_extracted_path": "references/local/kiryu-ai-2026-10-25/sources/cast-records.jsonl",
+        "section_sha256": "ac3319bcfc010a334d2793975fae6d42cbfd2d7c577741cf6f03b345e55203ad",
+        "license": "SEGA copyrighted reference; short supporting span and authored paraphrase",
+        "span": {
+          "coordinate": "source_record_characters",
+          "start": 48,
+          "end": 127
+        },
+        "excerpt": "노아의 지병을 걱정하는 아버지의 방침 때문에 섬을 떠나 본 적은 없지만, 늘 좁은 섬 밖으로 나가 넓은 세상을 보고 싶다는 소망을 품고 있다.",
+        "excerpt_sha256": "2394d0d45cc2b45faef44604ba9b2ee03e27429085459158675253b43780c7fa"
+      },
+      "story": {
+        "episode_id": "pirate-noah-voyage",
+        "entities": ["noah", "rich-island"],
+        "source_context_before": "리치섬에 사는 호기심 왕성한 소년.\n해변에 떠밀려 온 마지마를 발견해 구해주게 된다. ",
+        "source_context_after": "",
+        "relations": [
+          {
+            "subject": "noah",
+            "predicate": "wanted",
+            "object": "see-world"
+          }
+        ]
+      },
+      "reviewer": "agent:/root/story_corpus_eval",
+      "review_basis": "원본 SHA·정확한 문자 좌표·발췌 SHA를 검증하고 공식 설명에 명시된 직접 경험 또는 관계만 의역. chronology cutoff 없음. 현재 IF와 과거 원작 구분. 팬 검토와는 별개. 독립 출처 검토 agent:/root/rag_research가 원본·추출문·span·excerpt SHA와 맥락을 확인. 공개된 가족·경력 배경은 이 IF의 공유 배경으로 채택하며, 캐릭터의 비공개 대화·다른 인물의 속내는 허용하지 않음. 지식 습득 장면을 원작에서 확인했다는 뜻은 아님.",
+      "fan_review": "pending",
+      "knowledge_basis": "직접 참여한 과거 사건 또는 직접 맺은 관계라는 검수자 판단. 출처가 챗봇의 지식 권한을 자동 승인하는 것은 아니다."
+    },
+    {
+      "id": "story-majima-noah-voyage",
+      "kind": "fact",
+      "title": "마지마가 노아와 바다로 나선 목적",
+      "text": "마지마는 잃어버린 기억을 되찾고, 넓은 세상을 보고 싶다는 노아의 바람을 이뤄 주기 위해 바다로 나섰다.",
+      "context": "ryu8_G / 마지마가 노아와 바다로 나선 목적. 노아가 마지마를 구한 뒤의 출항 목적이다. 소망과 모든 목적이 완료되었다는 결과는 별개다.",
+      "event_id": "majima-noah-voyage",
+      "related_ids": ["story-majima-noah-rescue", "story-noah-world-dream"],
+      "fact_type": "historical_event",
+      "scope_note": "원작의 명시된 과거 사실·관계만 참고한다. 현재 방문자의 위치·진행·결과나 출처에 없는 세부를 확정하지 않는다.",
+      "known_by": ["majima"],
+      "scenarios": ["daily-if-v1"],
+      "runtime_eligible": true,
+      "approval": "agent-reviewed-experiment",
+      "split": null,
+      "continuity": "mainline-original",
+      "game_id": "ryu8_G",
+      "source": {
+        "id": "sega-cast-ko",
+        "record_id": "ryu8_G_01",
+        "url": "https://ryu-ga-gotoku.com/kr/cast/entries.json",
+        "sha256": "4a7f1896744d153f275de98b851563ecd7568e6a065a1167e0942547ef304145",
+        "language": "ko",
+        "local_raw_path": "references/local/kiryu-ai-2026-10-25/sources/raw/sega-cast-ko-4a7f1896744d153f.json",
+        "local_extracted_path": "references/local/kiryu-ai-2026-10-25/sources/cast-records.jsonl",
+        "section_sha256": "d3774f85a5d54288bca73a253c72071a74ae7f3692aaa49db2e968586f12501d",
+        "license": "SEGA copyrighted reference; short supporting span and authored paraphrase",
+        "span": {
+          "coordinate": "source_record_characters",
+          "start": 107,
+          "end": 184
+        },
+        "excerpt": "마지마는 자신의 잃어버린 기억을 되찾기 위해, 그리고 '넓은 세상을 보고 싶다'라는 노아의 바람을 이루어 주기 위해 드넓은 바다로 나선다.",
+        "excerpt_sha256": "c3e67d8140ee5f6f42da710bab112ae00d930c737ff3bb750c7efe6dd008b1cc"
+      },
+      "story": {
+        "episode_id": "pirate-noah-voyage",
+        "entities": ["majima", "noah"],
+        "source_context_before": "라고도 불린 야쿠자.\n2024년 8월, 절해의 고도인 리치섬에 떠밀려 온 마지마는 노아라는 소년 덕분에 목숨을 건지게 된다. ",
+        "source_context_after": "",
+        "relations": [
+          {
+            "subject": "majima",
+            "predicate": "wanted",
+            "object": "recover-memory"
+          },
+          {
+            "subject": "majima",
+            "predicate": "wanted",
+            "object": "fulfill-noah-dream"
+          }
+        ]
+      },
+      "reviewer": "agent:/root/story_corpus_eval",
+      "review_basis": "원본 SHA·정확한 문자 좌표·발췌 SHA를 검증하고 공식 설명에 명시된 직접 경험 또는 관계만 의역. chronology cutoff 없음. 현재 IF와 과거 원작 구분. 팬 검토와는 별개. 독립 출처 검토 agent:/root/rag_research가 원본·추출문·span·excerpt SHA와 맥락을 확인. 공개된 가족·경력 배경은 이 IF의 공유 배경으로 채택하며, 캐릭터의 비공개 대화·다른 인물의 속내는 허용하지 않음. 지식 습득 장면을 원작에서 확인했다는 뜻은 아님.",
+      "fan_review": "pending",
+      "knowledge_basis": "직접 참여한 과거 사건 또는 직접 맺은 관계라는 검수자 판단. 출처가 챗봇의 지식 권한을 자동 승인하는 것은 아니다."
+    },
+    {
+      "id": "story-majima-minami-nishida-hawaii",
+      "kind": "fact",
+      "title": "마지마를 따라온 미나미와 니시다",
+      "text": "미나미 다이사쿠와 니시다는 마지마조 출신으로 마지마를 따라 하와이에 왔다. 조난 사고 때는 서로 흩어졌다.",
+      "context": "ryu8_G / 마지마를 따라온 미나미와 니시다. 미나미 소개의 동행·사고 당시 분리다. 두 사람의 현재 위치를 확정하지 않는다.",
+      "event_id": "majima-minami-nishida-hawaii",
+      "related_ids": [],
+      "fact_type": "historical_event",
+      "scope_note": "원작의 명시된 과거 사실·관계만 참고한다. 현재 방문자의 위치·진행·결과나 출처에 없는 세부를 확정하지 않는다.",
+      "known_by": ["majima"],
+      "scenarios": ["daily-if-v1"],
+      "runtime_eligible": true,
+      "approval": "agent-reviewed-experiment",
+      "split": null,
+      "continuity": "mainline-original",
+      "game_id": "ryu8_G",
+      "source": {
+        "id": "sega-cast-ko",
+        "record_id": "ryu8_G_15",
+        "url": "https://ryu-ga-gotoku.com/kr/cast/entries.json",
+        "sha256": "4a7f1896744d153f275de98b851563ecd7568e6a065a1167e0942547ef304145",
+        "language": "ko",
+        "local_raw_path": "references/local/kiryu-ai-2026-10-25/sources/raw/sega-cast-ko-4a7f1896744d153f.json",
+        "local_extracted_path": "references/local/kiryu-ai-2026-10-25/sources/cast-records.jsonl",
+        "section_sha256": "670ccbb18d04b64a58c2d6c1a2902705b2ffb039079cbcaef1eec5f2abe63772",
+        "license": "SEGA copyrighted reference; short supporting span and authored paraphrase",
+        "span": {
+          "coordinate": "source_record_characters",
+          "start": 105,
+          "end": 171
+        },
+        "excerpt": "마찬가지로 마지마조 조직원이었던 니시다와 함께 마지마를 따라 하와이로 왔으나, 조난 사고 당시 뿔뿔이 흩어지고 말았다.",
+        "excerpt_sha256": "08d4fcecd0ab61c50542917840147c74522e99367fcc0c5116f89bfb61476d0d"
+      },
+      "story": {
+        "episode_id": "pirate-crew",
+        "entities": ["minami", "nishida", "majima", "hawaii"],
+        "source_context_before": " 젋은 시절에는 가라오케 애호가로 유명했으며, 마이크를 꼭 붙잡고 노래를 부르는 모습이 카무로쵸 곳곳에서 목격되었다고 한다. ",
+        "source_context_after": "",
+        "relations": [
+          {
+            "subject": "minami",
+            "predicate": "followed",
+            "object": "majima"
+          },
+          {
+            "subject": "nishida",
+            "predicate": "followed",
+            "object": "majima"
+          }
+        ]
+      },
+      "reviewer": "agent:/root/story_corpus_eval",
+      "review_basis": "원본 SHA·정확한 문자 좌표·발췌 SHA를 검증하고 공식 설명에 명시된 직접 경험 또는 관계만 의역. chronology cutoff 없음. 현재 IF와 과거 원작 구분. 팬 검토와는 별개. 독립 출처 검토 agent:/root/rag_research가 원본·추출문·span·excerpt SHA와 맥락을 확인. 공개된 가족·경력 배경은 이 IF의 공유 배경으로 채택하며, 캐릭터의 비공개 대화·다른 인물의 속내는 허용하지 않음. 지식 습득 장면을 원작에서 확인했다는 뜻은 아님.",
+      "fan_review": "pending",
+      "knowledge_basis": "직접 참여한 과거 사건 또는 직접 맺은 관계라는 검수자 판단. 출처가 챗봇의 지식 권한을 자동 승인하는 것은 아니다."
+    },
+    {
+      "id": "story-majima-kiryu-millennium",
+      "kind": "fact",
+      "title": "밀레니엄 타워 공동 전투",
+      "text": "마지마는 해적 외전의 조난보다 앞서 밀레니엄 타워에서 키류와 함께 싸운 적이 있다.",
+      "context": "pirate / 밀레니엄 타워 공동 전투. 공식 해적 소개가 회고한 전사다. 당시 대사·각자의 공격·공로 순위는 없다.",
+      "event_id": "majima-kiryu-millennium",
+      "related_ids": [],
+      "fact_type": "historical_event",
+      "scope_note": "원작의 명시된 과거 사실·관계만 참고한다. 현재 방문자의 위치·진행·결과나 출처에 없는 세부를 확정하지 않는다.",
+      "known_by": ["majima"],
+      "scenarios": ["daily-if-v1"],
+      "runtime_eligible": true,
+      "approval": "agent-reviewed-experiment",
+      "split": null,
+      "continuity": "mainline-original",
+      "game_id": "pirate",
+      "source": {
+        "id": "story-f67f7e6d03155d0f",
+        "record_id": "0",
+        "world_reference_id": "world-967ecc6b4b0a23b353e0b143",
+        "url": "https://ryu-ga-gotoku.com/asia_en/story/pirate/",
+        "sha256": "ea7de891ffc122a5ceeb807305ae707baf3157a241390bdd2b818b63323eafeb",
+        "language": "en",
+        "local_raw_path": "references/local/yakuza-corpus/curation/2026-10-26/story-sources/raw/story-f67f7e6d03155d0f.html",
+        "local_extracted_path": "references/local/yakuza-corpus/curation/2026-10-26/story-sources/extracted/story-f67f7e6d03155d0f.json",
+        "section_sha256": "bfc8e54811f7fb00d7d5f6e6347e53c5383871b8558e2edaabaea27e1d2308f9",
+        "license": "Copyrighted source reference; no redistribution permission inferred",
+        "span": {
+          "coordinate": "source_record_characters",
+          "start": 0,
+          "end": 65
+        },
+        "excerpt": "Half a year after fighting alongside Kiryu in the Millenium Tower",
+        "excerpt_sha256": "af2cecc70130a62ce58a676c79e0d259e4e733d1a7540924e410f188c7424964"
+      },
+      "story": {
+        "episode_id": "eight-millennium-battle",
+        "entities": ["majima", "kiryu", "millennium-tower"],
+        "source_context_before": "",
+        "source_context_after": ", Goro Majima, amidst the debris of a shipwreck, washes up on an islan",
+        "relations": [
+          {
+            "subject": "majima",
+            "predicate": "fought_alongside",
+            "object": "kiryu"
+          }
+        ]
+      },
+      "reviewer": "agent:/root/story_corpus_eval",
+      "review_basis": "원본 SHA·정확한 문자 좌표·발췌 SHA를 검증하고 공식 설명에 명시된 직접 경험 또는 관계만 의역. chronology cutoff 없음. 현재 IF와 과거 원작 구분. 팬 검토와는 별개. 독립 출처 검토 agent:/root/rag_research가 원본·추출문·span·excerpt SHA와 맥락을 확인. 공개된 가족·경력 배경은 이 IF의 공유 배경으로 채택하며, 캐릭터의 비공개 대화·다른 인물의 속내는 허용하지 않음. 지식 습득 장면을 원작에서 확인했다는 뜻은 아님.",
+      "fan_review": "pending",
+      "knowledge_basis": "직접 참여한 과거 사건 또는 직접 맺은 관계라는 검수자 판단. 출처가 챗봇의 지식 권한을 자동 승인하는 것은 아니다."
+    },
+    {
+      "id": "story-tojo-omi-dissolution",
+      "kind": "fact",
+      "title": "대해산 뒤 사에지마의 활동",
+      "text": "동성회와 오미연합은 대해산을 겪었고, 그 뒤 사에지마는 조직의 뒷배를 잃은 야쿠자들을 도우려 움직였다.",
+      "context": "ryu8_G / 대해산 뒤 사에지마의 활동. 사에지마의 공식 소개가 전하는 조직 해산 이후의 활동이다. 모든 지원 사업이 성공했다는 뜻은 아니다.",
+      "event_id": "tojo-omi-dissolution",
+      "related_ids": [],
+      "fact_type": "historical_event",
+      "scope_note": "원작의 명시된 과거 사실·관계만 참고한다. 현재 방문자의 위치·진행·결과나 출처에 없는 세부를 확정하지 않는다.",
+      "known_by": ["majima"],
+      "scenarios": ["daily-if-v1"],
+      "runtime_eligible": true,
+      "approval": "agent-reviewed-experiment",
+      "split": null,
+      "continuity": "mainline-original",
+      "game_id": "ryu8_G",
+      "source": {
+        "id": "sega-cast-ko",
+        "record_id": "ryu8_G_14",
+        "url": "https://ryu-ga-gotoku.com/kr/cast/entries.json",
+        "sha256": "4a7f1896744d153f275de98b851563ecd7568e6a065a1167e0942547ef304145",
+        "language": "ko",
+        "local_raw_path": "references/local/kiryu-ai-2026-10-25/sources/raw/sega-cast-ko-4a7f1896744d153f.json",
+        "local_extracted_path": "references/local/kiryu-ai-2026-10-25/sources/cast-records.jsonl",
+        "section_sha256": "c9ce89f5fdabb79a79d094de6bbb8e158b87467c0c19c0c36d9be9416129c58a",
+        "license": "SEGA copyrighted reference; short supporting span and authored paraphrase",
+        "span": {
+          "coordinate": "source_record_characters",
+          "start": 0,
+          "end": 59
+        },
+        "excerpt": "동성회와 오미연합의 대해산 이후, 조직이라는 뒷배를 잃고 방황하게 된 야쿠자들을 돕고자 동분서주하고 있다.",
+        "excerpt_sha256": "51d40fc544c49bc5fd8c9eb8543bd155cdc0e30c159ad54403b9ee9810ffa8db"
+      },
+      "story": {
+        "episode_id": "post-dissolution-support",
+        "entities": ["tojo", "omi", "saejima"],
+        "source_context_before": "",
+        "source_context_after": " 그러나 하와이에서 시작한 '신규 사업'에 관여하던 마지마가 조난되어 행방불명이라는 소식을 듣자, 마지마를 찾아 무사히 일본으",
+        "relations": [
+          {
+            "subject": "saejima",
+            "predicate": "worked_to_help",
+            "object": "former-yakuza"
+          }
+        ]
+      },
+      "reviewer": "agent:/root/story_corpus_eval",
+      "review_basis": "원본 SHA·정확한 문자 좌표·발췌 SHA를 검증하고 공식 설명에 명시된 직접 경험 또는 관계만 의역. chronology cutoff 없음. 현재 IF와 과거 원작 구분. 팬 검토와는 별개. 독립 출처 검토 agent:/root/rag_research가 원본·추출문·span·excerpt SHA와 맥락을 확인. 공개된 가족·경력 배경은 이 IF의 공유 배경으로 채택하며, 캐릭터의 비공개 대화·다른 인물의 속내는 허용하지 않음. 지식 습득 장면을 원작에서 확인했다는 뜻은 아님.",
+      "fan_review": "pending",
+      "knowledge_basis": "동성회 전 간부의 조직 해산 배경으로 허용할 후보. 사에지마의 모든 현재 활동을 마지마가 실시간으로 안다는 뜻은 아니다. 마지마의 공동 조직 배경으로 허용하는 IF 작성자의 판단이다."
+    },
+    {
+      "id": "story-haruka-first-meeting",
+      "kind": "fact",
+      "title": "사라진100억 사건과 하루카 첫 만남",
+      "text": "하루카는 사라진 100억 사건을 쫓던 키류와 함께 행동하며 신뢰를 쌓고 엄마를 찾아 나섰다.",
+      "context": "ryu1 / 사라진100억 사건과 하루카 첫 만남. 첫 작품 도입부의 설명이다. 미즈키라는 당시 명칭을 유미와 별개의 두 친어머니로 만들지 않는다.",
+      "event_id": "haruka-first-meeting",
+      "related_ids": [],
+      "fact_type": "historical_event",
+      "scope_note": "원작의 명시된 과거 사실·관계만 참고한다. 현재 방문자의 위치·진행·결과나 출처에 없는 세부를 확정하지 않는다.",
+      "known_by": ["haruka"],
+      "scenarios": ["daily-if-v1"],
+      "runtime_eligible": true,
+      "approval": "agent-reviewed-experiment",
+      "split": null,
+      "continuity": "mainline-original",
+      "game_id": "ryu1",
+      "source": {
+        "id": "sega-cast-ko",
+        "record_id": "ryu1_02",
+        "url": "https://ryu-ga-gotoku.com/kr/cast/entries.json",
+        "sha256": "4a7f1896744d153f275de98b851563ecd7568e6a065a1167e0942547ef304145",
+        "language": "ko",
+        "local_raw_path": "references/local/kiryu-ai-2026-10-25/sources/raw/sega-cast-ko-4a7f1896744d153f.json",
+        "local_extracted_path": "references/local/kiryu-ai-2026-10-25/sources/cast-records.jsonl",
+        "section_sha256": "001604d768b12dc1dd380df0f5b9c521867aea4472249dad28efbd7f3d7c65cc",
+        "license": "SEGA copyrighted reference; short supporting span and authored paraphrase",
+        "span": {
+          "coordinate": "source_record_characters",
+          "start": 52,
+          "end": 146
+        },
+        "excerpt": "키류와 함께 행동하며 점차 신뢰를 쌓고 자신의 정체를 밝히게 된다.\n하루카는 자신을 사건의 열쇠를 쥔 여성 '미즈키'의 딸이라고 말하며 키류와 함께 엄마를 찾아 나선다.",
+        "excerpt_sha256": "2e65882e5adb119ad958162f6280f9ba2591ba917f7420bf1372cac912b95c79"
+      },
+      "story": {
+        "episode_id": "one-mother-search",
+        "entities": ["haruka", "kiryu", "yumi"],
+        "source_context_before": "동성회의 '사라진 100억' 사건을 쫓는 키류 카즈마의 앞에 홀연히 나타난 수수께끼의 소녀.\n",
+        "source_context_after": "",
+        "relations": [
+          {
+            "subject": "haruka",
+            "predicate": "searched_with",
+            "object": "kiryu"
+          }
+        ]
+      },
+      "reviewer": "agent:/root/story_corpus_eval",
+      "review_basis": "원본 SHA·정확한 문자 좌표·발췌 SHA를 검증하고 공식 설명에 명시된 직접 경험 또는 관계만 의역. chronology cutoff 없음. 현재 IF와 과거 원작 구분. 팬 검토와는 별개. 독립 출처 검토 agent:/root/rag_research가 원본·추출문·span·excerpt SHA와 맥락을 확인. 공개된 가족·경력 배경은 이 IF의 공유 배경으로 채택하며, 캐릭터의 비공개 대화·다른 인물의 속내는 허용하지 않음. 지식 습득 장면을 원작에서 확인했다는 뜻은 아님.",
+      "fan_review": "pending",
+      "knowledge_basis": "직접 참여한 과거 사건 또는 직접 맺은 관계라는 검수자 판단. 출처가 챗봇의 지식 권한을 자동 승인하는 것은 아니다."
+    },
+    {
+      "id": "story-haruka-dynachair-osaka",
+      "kind": "fact",
+      "title": "하루카의 다이너체어 훈련",
+      "text": "하루카는 아이돌을 꿈꾸며 홀로 오사카로 건너가 소텐보리의 연예 기획사 다이너체어에서 노래와 춤을 훈련했다.",
+      "context": "ryu5 / 하루카의 다이너체어 훈련. 같은 인물 설명 앞부분이 다이너체어의 소재지를 오사카 소텐보리로 명시한다. 과거 훈련을 오늘 일정으로 바꾸지 않는다.",
+      "event_id": "haruka-dynachair-osaka",
+      "related_ids": ["story-haruka-park-mentor"],
+      "fact_type": "historical_event",
+      "scope_note": "원작의 명시된 과거 사실·관계만 참고한다. 현재 방문자의 위치·진행·결과나 출처에 없는 세부를 확정하지 않는다.",
+      "known_by": ["haruka"],
+      "scenarios": ["daily-if-v1"],
+      "runtime_eligible": true,
+      "approval": "agent-reviewed-experiment",
+      "split": null,
+      "continuity": "mainline-original",
+      "game_id": "ryu5",
+      "source": {
+        "id": "sega-cast-ko",
+        "record_id": "ryu5_03",
+        "url": "https://ryu-ga-gotoku.com/kr/cast/entries.json",
+        "sha256": "4a7f1896744d153f275de98b851563ecd7568e6a065a1167e0942547ef304145",
+        "language": "ko",
+        "local_raw_path": "references/local/kiryu-ai-2026-10-25/sources/raw/sega-cast-ko-4a7f1896744d153f.json",
+        "local_extracted_path": "references/local/kiryu-ai-2026-10-25/sources/cast-records.jsonl",
+        "section_sha256": "64d02ff38c821546d26d609f92a673f0f92b46cc5c9b2816e8968422a4e9b2b9",
+        "license": "SEGA copyrighted reference; short supporting span and authored paraphrase",
+        "span": {
+          "coordinate": "source_record_characters",
+          "start": 388,
+          "end": 540
+        },
+        "excerpt": "그로부터 1년…… 하루카는 다이너체어 연예 기획사의 스튜디오에서 혹독한 노래와 춤 훈련에 매진하는 나날을 보내고 있었다. 오키나와를 떠나 홀로 오사카로 건너온 하루카는 외로운 고교 생활에 곤혹스러워하면서도, 소중한 사람들의 사랑을 가슴에 새기고 꿈을 향해 나아가고 있었다.",
+        "excerpt_sha256": "812ad76f30dd5d3671debb34685047b8db86bf81b8ba390dd0708f22c0e69163",
+        "supporting_spans": [
+          {
+            "id": "sega-cast-ko",
+            "record_id": "ryu5_03",
+            "url": "https://ryu-ga-gotoku.com/kr/cast/entries.json",
+            "sha256": "4a7f1896744d153f275de98b851563ecd7568e6a065a1167e0942547ef304145",
+            "span": {
+              "coordinate": "source_record_characters",
+              "start": 198,
+              "end": 230
+            },
+            "excerpt": "오사카 소텐보리에 사무소를 둔 연예 기획사 '다이너체어'.",
+            "excerpt_sha256": "e3fbf46c384fa679ea10788c209c1f0e141984e34728834f949c6fb85dd59cb7"
+          }
+        ]
+      },
+      "story": {
+        "episode_id": "five-idol-career",
+        "entities": ["haruka", "dynachair", "sotenbori", "osaka", "park"],
+        "source_context_before": " 만들 수 있어.'\n하루카에게 접근하는 박미려.\n그리고 박미려는 하루카를 \"마음의 감옥\"에서 꺼내기 위해 꿈을 이야기한다……\n",
+        "source_context_after": "\n그러던 어느 날, 사건이 일어난다. 자신을 지지해 준 사무소 관계자들을 노린 마수……\n16세의 소녀는 은인의 '꿈'을 이어가",
+        "relations": [
+          {
+            "subject": "haruka",
+            "predicate": "trained_at",
+            "object": "dynachair"
+          },
+          {
+            "subject": "dynachair",
+            "predicate": "located_in",
+            "object": "sotenbori"
+          }
+        ]
+      },
+      "reviewer": "agent:/root/story_corpus_eval",
+      "review_basis": "원본 SHA·정확한 문자 좌표·발췌 SHA를 검증하고 공식 설명에 명시된 직접 경험 또는 관계만 의역. chronology cutoff 없음. 현재 IF와 과거 원작 구분. 팬 검토와는 별개. 독립 출처 검토 agent:/root/rag_research가 원본·추출문·span·excerpt SHA와 맥락을 확인. 공개된 가족·경력 배경은 이 IF의 공유 배경으로 채택하며, 캐릭터의 비공개 대화·다른 인물의 속내는 허용하지 않음. 지식 습득 장면을 원작에서 확인했다는 뜻은 아님.",
+      "fan_review": "pending",
+      "knowledge_basis": "직접 참여한 과거 사건 또는 직접 맺은 관계라는 검수자 판단. 출처가 챗봇의 지식 권한을 자동 승인하는 것은 아니다."
+    },
+    {
+      "id": "story-haruka-park-mentor",
+      "kind": "fact",
+      "title": "박미려의 하루카 데뷔 지도",
+      "text": "박미려는 오키나와에서 하루카를 만나 재능을 알아보고, 오사카에서 정식 데뷔를 준비하도록 지도한 다이너체어 사장이다.",
+      "context": "ryu5 / 박미려의 하루카 데뷔 지도. 사장 명칭은 ryu5_03에도 명시되어 있다. 발굴·지도 관계를 친어머니 관계로 바꾸지 않는다.",
+      "related_ids": ["story-haruka-dynachair-osaka", "story-park-idol-past"],
+      "fact_type": "relationship",
+      "scope_note": "원작의 명시된 과거 사실·관계만 참고한다. 현재 방문자의 위치·진행·결과나 출처에 없는 세부를 확정하지 않는다.",
+      "known_by": ["haruka"],
+      "scenarios": ["daily-if-v1"],
+      "runtime_eligible": true,
+      "approval": "agent-reviewed-experiment",
+      "split": null,
+      "continuity": "mainline-original",
+      "game_id": "ryu5",
+      "source": {
+        "id": "sega-cast-ko",
+        "record_id": "ryu5_22",
+        "url": "https://ryu-ga-gotoku.com/kr/cast/entries.json",
+        "sha256": "4a7f1896744d153f275de98b851563ecd7568e6a065a1167e0942547ef304145",
+        "language": "ko",
+        "local_raw_path": "references/local/kiryu-ai-2026-10-25/sources/raw/sega-cast-ko-4a7f1896744d153f.json",
+        "local_extracted_path": "references/local/kiryu-ai-2026-10-25/sources/cast-records.jsonl",
+        "section_sha256": "89d63f44cabfe4e6bf5130f1ce2c5455c1ac0112d96b1be3f632ba464d35c609",
+        "license": "SEGA copyrighted reference; short supporting span and authored paraphrase",
+        "span": {
+          "coordinate": "source_record_characters",
+          "start": 189,
+          "end": 335
+        },
+        "excerpt": "그리고 1년 반 전, 박미려는 오키나와에서 사와무라 하루카와 운명적으로 만나게 된다.\n그 후, 고등학교 진학과 함께 오사카로 건너온 하루카를 불과 반년 만에 정식 데뷔시키겠다는 꿈을 그리는 박미려. 그녀는 최고의 스태프를 고용해 엄격하게 하루카를 지도해 나간다.",
+        "excerpt_sha256": "aed5557575d89250136f2de1f7a2208ea3f17a53f4bbc7a6d8cf5d06a87a795b",
+        "supporting_spans": [
+          {
+            "id": "sega-cast-ko",
+            "record_id": "ryu5_03",
+            "url": "https://ryu-ga-gotoku.com/kr/cast/entries.json",
+            "sha256": "4a7f1896744d153f275de98b851563ecd7568e6a065a1167e0942547ef304145",
+            "span": {
+              "coordinate": "source_record_characters",
+              "start": 198,
+              "end": 286
+            },
+            "excerpt": "오사카 소텐보리에 사무소를 둔 연예 기획사 '다이너체어'. 간사이 연예계에 폭넓은 인맥을 가진 능력 있는 여사장 '박미려'는 하루카의 존재에 주목하고 있었다.",
+            "excerpt_sha256": "c57d89ffcee1a36e3b45877135468677c0e15fb89cffd6586d3a7503ed1c7765"
+          }
+        ]
+      },
+      "story": {
+        "episode_id": "five-idol-career",
+        "entities": ["park", "haruka", "dynachair"],
+        "source_context_before": " 꿈을 포기할 수밖에 없었던 과거를 가지고 있다. 그 이후, 자신의 꿈을 이어줄 뛰어난 인재를 찾으며 후진 양성에 힘써왔다. ",
+        "source_context_after": "\n매일 레슨이 이어지는 힘들고 혹독한 나날. 박미려는 연예계의 정점에 서겠다는 꿈을 이루기 위해 하루카에게 자신의 모든 것을 ",
+        "relations": [
+          {
+            "subject": "park",
+            "predicate": "mentored",
+            "object": "haruka"
+          },
+          {
+            "subject": "park",
+            "predicate": "led",
+            "object": "dynachair"
+          }
+        ]
+      },
+      "reviewer": "agent:/root/story_corpus_eval",
+      "review_basis": "원본 SHA·정확한 문자 좌표·발췌 SHA를 검증하고 공식 설명에 명시된 직접 경험 또는 관계만 의역. chronology cutoff 없음. 현재 IF와 과거 원작 구분. 팬 검토와는 별개. 독립 출처 검토 agent:/root/rag_research가 원본·추출문·span·excerpt SHA와 맥락을 확인. 공개된 가족·경력 배경은 이 IF의 공유 배경으로 채택하며, 캐릭터의 비공개 대화·다른 인물의 속내는 허용하지 않음. 지식 습득 장면을 원작에서 확인했다는 뜻은 아님.",
+      "fan_review": "pending",
+      "knowledge_basis": "직접 참여한 과거 사건 또는 직접 맺은 관계라는 검수자 판단. 출처가 챗봇의 지식 권한을 자동 승인하는 것은 아니다."
+    },
+    {
+      "id": "story-park-idol-past",
+      "kind": "fact",
+      "title": "박미려의 아이돌 과거",
+      "text": "박미려는 과거 아이돌로 활동하다 꿈을 포기한 경험이 있었고, 이후 자신의 꿈을 이어갈 인재를 찾으며 후진 양성에 힘썼다.",
+      "context": "ryu5 / 박미려의 아이돌 과거. 출처는 구체적 장애물과 은퇴의 단일 원인을 밝히지 않는다.",
+      "related_ids": ["story-haruka-park-mentor"],
+      "fact_type": "character_background",
+      "scope_note": "원작의 명시된 과거 사실·관계만 참고한다. 현재 방문자의 위치·진행·결과나 출처에 없는 세부를 확정하지 않는다.",
+      "known_by": ["haruka"],
+      "scenarios": ["daily-if-v1"],
+      "runtime_eligible": true,
+      "approval": "agent-reviewed-experiment",
+      "split": null,
+      "continuity": "mainline-original",
+      "game_id": "ryu5",
+      "source": {
+        "id": "sega-cast-ko",
+        "record_id": "ryu5_22",
+        "url": "https://ryu-ga-gotoku.com/kr/cast/entries.json",
+        "sha256": "4a7f1896744d153f275de98b851563ecd7568e6a065a1167e0942547ef304145",
+        "language": "ko",
+        "local_raw_path": "references/local/kiryu-ai-2026-10-25/sources/raw/sega-cast-ko-4a7f1896744d153f.json",
+        "local_extracted_path": "references/local/kiryu-ai-2026-10-25/sources/cast-records.jsonl",
+        "section_sha256": "89d63f44cabfe4e6bf5130f1ce2c5455c1ac0112d96b1be3f632ba464d35c609",
+        "license": "SEGA copyrighted reference; short supporting span and authored paraphrase",
+        "span": {
+          "coordinate": "source_record_characters",
+          "start": 67,
+          "end": 188
+        },
+        "excerpt": "과거에는 자신도 아이돌로 활동했으나, 연예계라는 특수한 세계에 따라붙는 다양한 장애물에 부딪혀 꿈을 포기할 수밖에 없었던 과거를 가지고 있다. 그 이후, 자신의 꿈을 이어줄 뛰어난 인재를 찾으며 후진 양성에 힘써왔다.",
+        "excerpt_sha256": "0a3a9c47ce5639a6d627655cd6b5a911f9ca23e8a871db680cd43073989a76a0"
+      },
+      "story": {
+        "episode_id": "five-idol-career",
+        "entities": ["park", "haruka"],
+        "source_context_before": "그다지 규모가 크지는 않은 프로덕션이지만 성공할 인재를 정확히 알아보는 안목을 지녀 간사이 연예계에서도 주목받는 인물.\n",
+        "source_context_after": " 그리고 1년 반 전, 박미려는 오키나와에서 사와무라 하루카와 운명적으로 만나게 된다.\n그 후, 고등학교 진학과 함께 오사카로",
+        "relations": [
+          {
+            "subject": "park",
+            "predicate": "formerly_worked_as",
+            "object": "idol"
+          }
+        ]
+      },
+      "reviewer": "agent:/root/story_corpus_eval",
+      "review_basis": "원본 SHA·정확한 문자 좌표·발췌 SHA를 검증하고 공식 설명에 명시된 직접 경험 또는 관계만 의역. chronology cutoff 없음. 현재 IF와 과거 원작 구분. 팬 검토와는 별개. 독립 출처 검토 agent:/root/rag_research가 원본·추출문·span·excerpt SHA와 맥락을 확인. 공개된 가족·경력 배경은 이 IF의 공유 배경으로 채택하며, 캐릭터의 비공개 대화·다른 인물의 속내는 허용하지 않음. 지식 습득 장면을 원작에서 확인했다는 뜻은 아님.",
+      "fan_review": "pending",
+      "knowledge_basis": "직접 참여한 과거 사건 또는 직접 맺은 관계라는 검수자 판단. 출처가 챗봇의 지식 권한을 자동 승인하는 것은 아니다. 하루카에게 지도자의 공개된 기본 이력을 허용하는 IF 작성자 판단이다."
+    },
+    {
+      "id": "story-haruka-horie-support",
+      "kind": "fact",
+      "title": "하루카를 지원한 호리에",
+      "text": "호리에 히로시는 하루카를 성실하게 대하고, 데뷔 준비를 위해 공연과 방송 출연 같은 일거리를 구해 주던 믿을 수 있는 기획사 관계자다.",
+      "context": "ryu5 / 하루카를 지원한 호리에. 과거 기획사 활동이다. 오늘 잡힌 공연이나 현 직책을 뜻하지 않는다.",
+      "related_ids": [],
+      "fact_type": "relationship",
+      "scope_note": "원작의 명시된 과거 사실·관계만 참고한다. 현재 방문자의 위치·진행·결과나 출처에 없는 세부를 확정하지 않는다.",
+      "known_by": ["haruka"],
+      "scenarios": ["daily-if-v1"],
+      "runtime_eligible": true,
+      "approval": "agent-reviewed-experiment",
+      "split": null,
+      "continuity": "mainline-original",
+      "game_id": "ryu5",
+      "source": {
+        "id": "sega-cast-ko",
+        "record_id": "ryu5_26",
+        "url": "https://ryu-ga-gotoku.com/kr/cast/entries.json",
+        "sha256": "4a7f1896744d153f275de98b851563ecd7568e6a065a1167e0942547ef304145",
+        "language": "ko",
+        "local_raw_path": "references/local/kiryu-ai-2026-10-25/sources/raw/sega-cast-ko-4a7f1896744d153f.json",
+        "local_extracted_path": "references/local/kiryu-ai-2026-10-25/sources/cast-records.jsonl",
+        "section_sha256": "167c024d3b7eca3eb7c48d2558a2463c7b739a38987cab8d5e758ab14ceecd60",
+        "license": "SEGA copyrighted reference; short supporting span and authored paraphrase",
+        "span": {
+          "coordinate": "source_record_characters",
+          "start": 0,
+          "end": 162
+        },
+        "excerpt": "붙임성이 좋고 나이가 어린 하루카에게도 성실한 자세로 대하여, 오사카에 아는 사람이 없는 하루카에게는 몇 안 되는 믿을 수 있는 인물.\n정식 데뷔를 노리는 하루카의 인지도를 높이고자 각 방면에서 꾸준히 영업 활동을 하며, 라이브 공연이나 TV 프로그램 출연 등 다양한 일거리를 따오고 있다.",
+        "excerpt_sha256": "b9a8f7324224dacd7189b9ff4c904d150a3d9a38010ac33d4b0da17df6a4a1fc"
+      },
+      "story": {
+        "episode_id": "five-idol-career",
+        "entities": ["horie", "haruka", "dynachair", "park"],
+        "source_context_before": "",
+        "source_context_after": " 하지만 마무리가 허술한 면도 있어, 사장인 박미려에게 업무상 실수를 질책당할 때도 종종 있다.\n호리에 자신도 과거에 아이돌 ",
+        "relations": [
+          {
+            "subject": "horie",
+            "predicate": "supported",
+            "object": "haruka"
+          }
+        ]
+      },
+      "reviewer": "agent:/root/story_corpus_eval",
+      "review_basis": "원본 SHA·정확한 문자 좌표·발췌 SHA를 검증하고 공식 설명에 명시된 직접 경험 또는 관계만 의역. chronology cutoff 없음. 현재 IF와 과거 원작 구분. 팬 검토와는 별개. 독립 출처 검토 agent:/root/rag_research가 원본·추출문·span·excerpt SHA와 맥락을 확인. 공개된 가족·경력 배경은 이 IF의 공유 배경으로 채택하며, 캐릭터의 비공개 대화·다른 인물의 속내는 허용하지 않음. 지식 습득 장면을 원작에서 확인했다는 뜻은 아님.",
+      "fan_review": "pending",
+      "knowledge_basis": "직접 참여한 과거 사건 또는 직접 맺은 관계라는 검수자 판단. 출처가 챗봇의 지식 권한을 자동 승인하는 것은 아니다."
+    },
+    {
+      "id": "story-haruka-akari-friend",
+      "kind": "fact",
+      "title": "하루카의 댄서 친구 아카리",
+      "text": "아카리는 하루카의 친구이자 댄서이며 트레이너 크리스티나의 지도를 받고 싶어했다.",
+      "context": "ryu5 / 하루카의 댄서 친구 아카리. 하루카의 트레이너로 크리스티나를 영입하려던 배경이다. 이 소개만으로 최종 선택 결과를 정하지 않는다.",
+      "related_ids": [],
+      "fact_type": "relationship",
+      "scope_note": "원작의 명시된 과거 사실·관계만 참고한다. 현재 방문자의 위치·진행·결과나 출처에 없는 세부를 확정하지 않는다.",
+      "known_by": ["haruka"],
+      "scenarios": ["daily-if-v1"],
+      "runtime_eligible": true,
+      "approval": "agent-reviewed-experiment",
+      "split": null,
+      "continuity": "mainline-original",
+      "game_id": "ryu5",
+      "source": {
+        "id": "sega-cast-ko",
+        "record_id": "ryu5_28",
+        "url": "https://ryu-ga-gotoku.com/kr/cast/entries.json",
+        "sha256": "4a7f1896744d153f275de98b851563ecd7568e6a065a1167e0942547ef304145",
+        "language": "ko",
+        "local_raw_path": "references/local/kiryu-ai-2026-10-25/sources/raw/sega-cast-ko-4a7f1896744d153f.json",
+        "local_extracted_path": "references/local/kiryu-ai-2026-10-25/sources/cast-records.jsonl",
+        "section_sha256": "072a161e4dd5e5eba8c8a15c1e7611171a99413c3266961ce220f12891baaf3e",
+        "license": "SEGA copyrighted reference; short supporting span and authored paraphrase",
+        "span": {
+          "coordinate": "source_record_characters",
+          "start": 234,
+          "end": 281
+        },
+        "excerpt": "그 와중, 하루카의 친구이자 댄서인 아카리도 크리스티나의 지도를 받고자 그를 찾는다.",
+        "excerpt_sha256": "241bba9c26fc5f89199e644b933e4c4da96ad2dc228aaa4afb18debd4165f8dc"
+      },
+      "story": {
+        "episode_id": "five-dance-training",
+        "entities": ["akari", "haruka", "christina"],
+        "source_context_before": "문을 들은 박미려는 데뷔까지 시간이 부족한 하루카를 단기간에 성장시키기 위해 크리스티나를 하루카의 트레이너로 영입하려 한다.\n",
+        "source_context_after": "\n전설의 트레이너가 선택하는 것은 과연 하루카일까, 아니면 아카리일까. 마치 두 사람의 우정을 갈라놓기라도 하듯 크리스티나는 ",
+        "relations": [
+          {
+            "subject": "akari",
+            "predicate": "friend_of",
+            "object": "haruka"
+          },
+          {
+            "subject": "akari",
+            "predicate": "wanted_training_from",
+            "object": "christina"
+          }
+        ]
+      },
+      "reviewer": "agent:/root/story_corpus_eval",
+      "review_basis": "원본 SHA·정확한 문자 좌표·발췌 SHA를 검증하고 공식 설명에 명시된 직접 경험 또는 관계만 의역. chronology cutoff 없음. 현재 IF와 과거 원작 구분. 팬 검토와는 별개. 독립 출처 검토 agent:/root/rag_research가 원본·추출문·span·excerpt SHA와 맥락을 확인. 공개된 가족·경력 배경은 이 IF의 공유 배경으로 채택하며, 캐릭터의 비공개 대화·다른 인물의 속내는 허용하지 않음. 지식 습득 장면을 원작에서 확인했다는 뜻은 아님.",
+      "fan_review": "pending",
+      "knowledge_basis": "직접 참여한 과거 사건 또는 직접 맺은 관계라는 검수자 판단. 출처가 챗봇의 지식 권한을 자동 승인하는 것은 아니다."
+    },
+    {
+      "id": "story-haruka-idol-retirement",
+      "kind": "fact",
+      "title": "하루카의 은퇴 선언",
+      "text": "하루카는 아이돌로 활동한 뒤 일본의 큰 공연장에서 갑작스럽게 은퇴를 선언한 적이 있다.",
+      "context": "yakuza-6 / 하루카의 은퇴 선언. 용과 같이6 도입부가 이전 은퇴를 회고한다. 지금 다시 무대에 서고 싶은지까지 고정하지 않는다.",
+      "event_id": "haruka-idol-retirement",
+      "related_ids": [],
+      "fact_type": "historical_event",
+      "scope_note": "원작의 명시된 과거 사실·관계만 참고한다. 현재 방문자의 위치·진행·결과나 출처에 없는 세부를 확정하지 않는다.",
+      "known_by": ["haruka"],
+      "scenarios": ["daily-if-v1"],
+      "runtime_eligible": true,
+      "approval": "agent-reviewed-experiment",
+      "split": null,
+      "continuity": "mainline-original",
+      "game_id": "yakuza-6",
+      "source": {
+        "id": "story-3aeb35a965620974",
+        "record_id": "0",
+        "world_reference_id": "world-1e7d4b44aa52c95971501fbe",
+        "url": "https://ryu-ga-gotoku.com/asia_en/story/six/",
+        "sha256": "0e3588d77b4d59ea9243c26bd5dcaa0d585fc82c22420fe26a8ca74ceed16968",
+        "language": "en",
+        "local_raw_path": "references/local/yakuza-corpus/curation/2026-10-26/story-sources/raw/story-3aeb35a965620974.html",
+        "local_extracted_path": "references/local/yakuza-corpus/curation/2026-10-26/story-sources/extracted/story-3aeb35a965620974.json",
+        "section_sha256": "9646b5b95d6e95ba7487560718d2ff55d94a95b0695694981e7e5d29f8ebe3bc",
+        "license": "Copyrighted source reference; no redistribution permission inferred",
+        "span": {
+          "coordinate": "source_record_characters",
+          "start": 27,
+          "end": 127
+        },
+        "excerpt": "idol Haruka Sawamura shocked the nation with her sudden retirement at Japan's largest concert venue.",
+        "excerpt_sha256": "e4f421f8c63c7df3211a0eb14c0ffe1801f298bf4823bbb7ef10d8ba7ee967ec"
+      },
+      "story": {
+        "episode_id": "six-after-retirement",
+        "entities": ["haruka", "idol"],
+        "source_context_before": "On a winter night in 2012, ",
+        "source_context_after": " At the same time, Kazuma Kiryu brought an end to a massive conflict e",
+        "relations": [
+          {
+            "subject": "haruka",
+            "predicate": "retired_from",
+            "object": "idol"
+          }
+        ]
+      },
+      "reviewer": "agent:/root/story_corpus_eval",
+      "review_basis": "원본 SHA·정확한 문자 좌표·발췌 SHA를 검증하고 공식 설명에 명시된 직접 경험 또는 관계만 의역. chronology cutoff 없음. 현재 IF와 과거 원작 구분. 팬 검토와는 별개. 독립 출처 검토 agent:/root/rag_research가 원본·추출문·span·excerpt SHA와 맥락을 확인. 공개된 가족·경력 배경은 이 IF의 공유 배경으로 채택하며, 캐릭터의 비공개 대화·다른 인물의 속내는 허용하지 않음. 지식 습득 장면을 원작에서 확인했다는 뜻은 아님.",
+      "fan_review": "pending",
+      "knowledge_basis": "직접 참여한 과거 사건 또는 직접 맺은 관계라는 검수자 판단. 출처가 챗봇의 지식 권한을 자동 승인하는 것은 아니다."
+    },
+    {
+      "id": "story-haruka-haruto-son",
+      "kind": "fact",
+      "title": "하루카의 아들 하루토",
+      "text": "사와무라 하루토는 하루카의 아들이다.",
+      "context": "yakuza-6 / 하루카의 아들 하루토. 키류가 하루토의 존재를 알게 되는 도입부다. 이 발췌에는 아버지 이름·현재 나이·현재 위치가 없다.",
+      "related_ids": [],
+      "fact_type": "relationship",
+      "scope_note": "원작의 명시된 과거 사실·관계만 참고한다. 현재 방문자의 위치·진행·결과나 출처에 없는 세부를 확정하지 않는다.",
+      "known_by": ["haruka"],
+      "scenarios": ["daily-if-v1"],
+      "runtime_eligible": true,
+      "approval": "agent-reviewed-experiment",
+      "split": null,
+      "continuity": "mainline-original",
+      "game_id": "yakuza-6",
+      "source": {
+        "id": "story-3aeb35a965620974",
+        "record_id": "0",
+        "world_reference_id": "world-1e7d4b44aa52c95971501fbe",
+        "url": "https://ryu-ga-gotoku.com/asia_en/story/six/",
+        "sha256": "0e3588d77b4d59ea9243c26bd5dcaa0d585fc82c22420fe26a8ca74ceed16968",
+        "language": "en",
+        "local_raw_path": "references/local/yakuza-corpus/curation/2026-10-26/story-sources/raw/story-3aeb35a965620974.html",
+        "local_extracted_path": "references/local/yakuza-corpus/curation/2026-10-26/story-sources/extracted/story-3aeb35a965620974.json",
+        "section_sha256": "9646b5b95d6e95ba7487560718d2ff55d94a95b0695694981e7e5d29f8ebe3bc",
+        "license": "Copyrighted source reference; no redistribution permission inferred",
+        "span": {
+          "coordinate": "source_record_characters",
+          "start": 1024,
+          "end": 1093
+        },
+        "excerpt": "Haruka has a son he must now look after. His name is Haruto Sawamura.",
+        "excerpt_sha256": "1a3a41b5013a9a0b50ac9460b0ab8193cf83e2f2cf6cfc822c866e700b0b00b4"
+      },
+      "story": {
+        "episode_id": "six-haruto-onomichi",
+        "entities": ["haruka", "haruto"],
+        "source_context_before": "n the midst of his despair, he discovers an even more shocking truth: ",
+        "source_context_after": " Now, Kiryu has two mysteries to unravel—the identity of the father an",
+        "relations": [
+          {
+            "subject": "haruka",
+            "predicate": "mother_of",
+            "object": "haruto"
+          }
+        ]
+      },
+      "reviewer": "agent:/root/story_corpus_eval",
+      "review_basis": "원본 SHA·정확한 문자 좌표·발췌 SHA를 검증하고 공식 설명에 명시된 직접 경험 또는 관계만 의역. chronology cutoff 없음. 현재 IF와 과거 원작 구분. 팬 검토와는 별개. 독립 출처 검토 agent:/root/rag_research가 원본·추출문·span·excerpt SHA와 맥락을 확인. 공개된 가족·경력 배경은 이 IF의 공유 배경으로 채택하며, 캐릭터의 비공개 대화·다른 인물의 속내는 허용하지 않음. 지식 습득 장면을 원작에서 확인했다는 뜻은 아님.",
+      "fan_review": "pending",
+      "knowledge_basis": "직접 참여한 과거 사건 또는 직접 맺은 관계라는 검수자 판단. 출처가 챗봇의 지식 권한을 자동 승인하는 것은 아니다."
+    },
+    {
+      "id": "story-haruka-onomichi-stay",
+      "kind": "fact",
+      "title": "하루카가 지낸 오노미치",
+      "text": "하루카는 히로시마의 바닷가 마을 오노미치에서 지낸 적이 있다.",
+      "context": "yakuza-6 / 하루카가 지낸 오노미치. 키류가 하루카의 행적을 찾아 오노미치로 향하는 배경이다. 숙소 번지·방 번호 자료가 아니다.",
+      "event_id": "haruka-onomichi-stay",
+      "related_ids": [],
+      "fact_type": "historical_event",
+      "scope_note": "원작의 명시된 과거 사실·관계만 참고한다. 현재 방문자의 위치·진행·결과나 출처에 없는 세부를 확정하지 않는다.",
+      "known_by": ["haruka"],
+      "scenarios": ["daily-if-v1"],
+      "runtime_eligible": true,
+      "approval": "agent-reviewed-experiment",
+      "split": null,
+      "continuity": "mainline-original",
+      "game_id": "yakuza-6",
+      "source": {
+        "id": "story-3aeb35a965620974",
+        "record_id": "0",
+        "world_reference_id": "world-11f937b80e862a3219871f9b",
+        "url": "https://ryu-ga-gotoku.com/asia_en/story/six/",
+        "sha256": "0e3588d77b4d59ea9243c26bd5dcaa0d585fc82c22420fe26a8ca74ceed16968",
+        "language": "en",
+        "local_raw_path": "references/local/yakuza-corpus/curation/2026-10-26/story-sources/raw/story-3aeb35a965620974.html",
+        "local_extracted_path": "references/local/yakuza-corpus/curation/2026-10-26/story-sources/extracted/story-3aeb35a965620974.json",
+        "section_sha256": "9646b5b95d6e95ba7487560718d2ff55d94a95b0695694981e7e5d29f8ebe3bc",
+        "license": "Copyrighted source reference; no redistribution permission inferred",
+        "span": {
+          "coordinate": "source_record_characters",
+          "start": 1226,
+          "end": 1293
+        },
+        "excerpt": "Haruka had been staying in Onomichi, Hiroshima—a quiet seaside town",
+        "excerpt_sha256": "dd694db266a5b5688ce3504d4710dcf33d47659e493f7a41860e9deea42a1069"
+      },
+      "story": {
+        "episode_id": "six-haruto-onomichi",
+        "entities": ["haruka", "onomichi", "hiroshima"],
+        "source_context_before": "ther and why Haruka came to Kamurocho.\nSoon after, it's revealed that ",
+        "source_context_after": " ruled by the Yomei Alliance, a powerful yakuza group unaffiliated wit",
+        "relations": [
+          {
+            "subject": "haruka",
+            "predicate": "stayed_in",
+            "object": "onomichi"
+          },
+          {
+            "subject": "onomichi",
+            "predicate": "located_in",
+            "object": "hiroshima"
+          }
+        ]
+      },
+      "reviewer": "agent:/root/story_corpus_eval",
+      "review_basis": "원본 SHA·정확한 문자 좌표·발췌 SHA를 검증하고 공식 설명에 명시된 직접 경험 또는 관계만 의역. chronology cutoff 없음. 현재 IF와 과거 원작 구분. 팬 검토와는 별개. 독립 출처 검토 agent:/root/rag_research가 원본·추출문·span·excerpt SHA와 맥락을 확인. 공개된 가족·경력 배경은 이 IF의 공유 배경으로 채택하며, 캐릭터의 비공개 대화·다른 인물의 속내는 허용하지 않음. 지식 습득 장면을 원작에서 확인했다는 뜻은 아님.",
+      "fan_review": "pending",
+      "knowledge_basis": "직접 참여한 과거 사건 또는 직접 맺은 관계라는 검수자 판단. 출처가 챗봇의 지식 권한을 자동 승인하는 것은 아니다."
+    },
+    {
+      "id": "story-kazama-sunflower-founder",
+      "kind": "fact",
+      "title": "해바라기를 세운 카자마",
+      "text": "카자마 신타로는 해바라기 보육원을 설립해 의지할 곳 없는 아이들을 보살폈다.",
+      "context": "ryu0 / 해바라기를 세운 카자마. 키류와 니시키가 자란 시설의 가족 배경이다. 나팔꽃과 다른 시설이다.",
+      "event_id": "kazama-sunflower-founder",
+      "related_ids": ["story-kazama-kiryu-nishiki-guardian"],
+      "fact_type": "historical_event",
+      "scope_note": "원작의 명시된 과거 사실·관계만 참고한다. 현재 방문자의 위치·진행·결과나 출처에 없는 세부를 확정하지 않는다.",
+      "known_by": ["haruka", "majima"],
+      "scenarios": ["daily-if-v1"],
+      "runtime_eligible": true,
+      "approval": "agent-reviewed-experiment",
+      "split": null,
+      "continuity": "mainline-original",
+      "game_id": "ryu0",
+      "source": {
+        "id": "sega-cast-ko",
+        "record_id": "ryu0_11",
+        "url": "https://ryu-ga-gotoku.com/kr/cast/entries.json",
+        "sha256": "4a7f1896744d153f275de98b851563ecd7568e6a065a1167e0942547ef304145",
+        "language": "ko",
+        "local_raw_path": "references/local/kiryu-ai-2026-10-25/sources/raw/sega-cast-ko-4a7f1896744d153f.json",
+        "local_extracted_path": "references/local/kiryu-ai-2026-10-25/sources/cast-records.jsonl",
+        "section_sha256": "43de8214b7981170a81bfa99f8517019fd5b2efff820ec9b4fca341c43a304c6",
+        "license": "SEGA copyrighted reference; short supporting span and authored paraphrase",
+        "span": {
+          "coordinate": "source_record_characters",
+          "start": 65,
+          "end": 112
+        },
+        "excerpt": "개인적으로 '해바라기'라는 보육원을 설립해 의지할 곳 없는 아이들을 보살피기도 했다.",
+        "excerpt_sha256": "e831adf4d594934aa1c9b1c7b966cdfe77565e76f03816d2918f281f16b3983c"
+      },
+      "story": {
+        "episode_id": "sunflower-background",
+        "entities": ["kazama", "sunflower", "kiryu", "nishiki"],
+        "source_context_before": "동성회 최강이라 불리며 도지마조를 성장시켜 온 뛰어난 인물이자, 실력과 인품을 두루 갖춘 특출난 야쿠자.\n한편으로는 ",
+        "source_context_after": " 그곳에서 자란 키류와 니시키야마에게는 아버지나 다름없는 존재이자 동경의 대상.\n반년 전, 카자마조에서 관리하던 도박장이 경찰",
+        "relations": [
+          {
+            "subject": "kazama",
+            "predicate": "founded",
+            "object": "sunflower"
+          }
+        ]
+      },
+      "reviewer": "agent:/root/story_corpus_eval",
+      "review_basis": "원본 SHA·정확한 문자 좌표·발췌 SHA를 검증하고 공식 설명에 명시된 직접 경험 또는 관계만 의역. chronology cutoff 없음. 현재 IF와 과거 원작 구분. 팬 검토와는 별개. 독립 출처 검토 agent:/root/rag_research가 원본·추출문·span·excerpt SHA와 맥락을 확인. 공개된 가족·경력 배경은 이 IF의 공유 배경으로 채택하며, 캐릭터의 비공개 대화·다른 인물의 속내는 허용하지 않음. 지식 습득 장면을 원작에서 확인했다는 뜻은 아님.",
+      "fan_review": "pending",
+      "knowledge_basis": "가족 관계 배경으로 허용할 IF 정책 후보. 원문은 카자마·키류·니시키의 사실을 입증하지만 하루카가 이 사실을 배운 장면까지 입증하지는 않는다. 루트가 명시적으로 허용할지 판단해야 한다."
+    },
+    {
+      "id": "story-kazama-kiryu-nishiki-guardian",
+      "kind": "fact",
+      "title": "키류와 니시키의 보호자 카자마",
+      "text": "해바라기에서 자란 키류와 니시키에게 카자마 신타로는 아버지 같은 보호자이자 동경의 대상이었다.",
+      "context": "ryu0 / 키류와 니시키의 보호자 카자마. 그곳은 앞 문장의 해바라기다. 아버지 같은 관계를 친부로 바꾸지 않는다.",
+      "related_ids": ["story-kazama-sunflower-founder"],
+      "fact_type": "relationship",
+      "scope_note": "원작의 명시된 과거 사실·관계만 참고한다. 현재 방문자의 위치·진행·결과나 출처에 없는 세부를 확정하지 않는다.",
+      "known_by": ["haruka", "majima"],
+      "scenarios": ["daily-if-v1"],
+      "runtime_eligible": true,
+      "approval": "agent-reviewed-experiment",
+      "split": null,
+      "continuity": "mainline-original",
+      "game_id": "ryu0",
+      "source": {
+        "id": "sega-cast-ko",
+        "record_id": "ryu0_11",
+        "url": "https://ryu-ga-gotoku.com/kr/cast/entries.json",
+        "sha256": "4a7f1896744d153f275de98b851563ecd7568e6a065a1167e0942547ef304145",
+        "language": "ko",
+        "local_raw_path": "references/local/kiryu-ai-2026-10-25/sources/raw/sega-cast-ko-4a7f1896744d153f.json",
+        "local_extracted_path": "references/local/kiryu-ai-2026-10-25/sources/cast-records.jsonl",
+        "section_sha256": "43de8214b7981170a81bfa99f8517019fd5b2efff820ec9b4fca341c43a304c6",
+        "license": "SEGA copyrighted reference; short supporting span and authored paraphrase",
+        "span": {
+          "coordinate": "source_record_characters",
+          "start": 113,
+          "end": 156
+        },
+        "excerpt": "그곳에서 자란 키류와 니시키야마에게는 아버지나 다름없는 존재이자 동경의 대상.",
+        "excerpt_sha256": "a49b56e74b77594cb54ab10a4a8342f24213c6574b9034600ff0f89493be7e16"
+      },
+      "story": {
+        "episode_id": "sunflower-background",
+        "entities": ["kazama", "sunflower", "kiryu", "nishiki"],
+        "source_context_before": " 두루 갖춘 특출난 야쿠자.\n한편으로는 개인적으로 '해바라기'라는 보육원을 설립해 의지할 곳 없는 아이들을 보살피기도 했다. ",
+        "source_context_after": "\n반년 전, 카자마조에서 관리하던 도박장이 경찰에 적발된 사건으로 인해 현재는 수감 중이며, 도지마조 간부 3인방에게 자리를 ",
+        "relations": [
+          {
+            "subject": "kazama",
+            "predicate": "father_figure_to",
+            "object": "kiryu"
+          },
+          {
+            "subject": "kazama",
+            "predicate": "father_figure_to",
+            "object": "nishiki"
+          }
+        ]
+      },
+      "reviewer": "agent:/root/story_corpus_eval",
+      "review_basis": "원본 SHA·정확한 문자 좌표·발췌 SHA를 검증하고 공식 설명에 명시된 직접 경험 또는 관계만 의역. chronology cutoff 없음. 현재 IF와 과거 원작 구분. 팬 검토와는 별개. 독립 출처 검토 agent:/root/rag_research가 원본·추출문·span·excerpt SHA와 맥락을 확인. 공개된 가족·경력 배경은 이 IF의 공유 배경으로 채택하며, 캐릭터의 비공개 대화·다른 인물의 속내는 허용하지 않음. 지식 습득 장면을 원작에서 확인했다는 뜻은 아님.",
+      "fan_review": "pending",
+      "knowledge_basis": "가족 관계 배경으로 허용할 IF 정책 후보. 원문은 카자마·키류·니시키의 사실을 입증하지만 하루카가 이 사실을 배운 장면까지 입증하지는 않는다. 루트가 명시적으로 허용할지 판단해야 한다."
     }
   ],
-  "timeline_policy": "user-approved: no chronological cutoff for sourced story knowledge; conversation state remains separate"
+  "timeline_policy": "user-approved: no chronological cutoff for sourced story knowledge; conversation state remains separate",
+  "source_expansion_review": {
+    "candidate_sha256": "08fd3e35cdb61adee23f24c2615a24716b0e6ece97e8b61498ca0db26b007101",
+    "reviewer": "agent:/root/rag_research",
+    "adopted": 21,
+    "raw_corpus_auto_approved": false,
+    "fan_review": "pending"
+  }
 }

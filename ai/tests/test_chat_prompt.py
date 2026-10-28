@@ -117,6 +117,52 @@ class PromptTests(unittest.TestCase):
             "candidate-not-confirmed-state", result["messages"][-1]["content"]
         )
 
+    def test_reader_selected_memory_cannot_outlive_its_correction_window(self):
+        class Reader:
+            def read(self, **kwargs):
+                return {
+                    "mode": "grounded",
+                    "notes": [{"id": "conversation:m0-user", "quote": "카레 먹자"}],
+                    "answer": "원래는 카레였지만 취소됐습니다.",
+                    "unknowns": [],
+                }, {"version": "CPU_READER"}
+
+        self.builder.reader = Reader()
+        past = history(
+            [
+                ("카레 먹자", "네."),
+                ("그거 취소하자", "취소할게요."),
+                *[(f"다른 이야기 {i}", "응.") for i in range(10)],
+            ]
+        )
+
+        def count(messages):
+            # Reproduces the boundary where removing the old window would fit,
+            # but leave its selected quote/brief detached from the cancellation.
+            return 5000 if "그거 취소하자" in messages[-1]["content"] else 100
+
+        with self.assertRaises(InputBudgetError):
+            self.build("카레 먹기로 했었지?", past, count_tokens=count)
+
+    def test_reader_selected_recent_utterance_keeps_its_following_correction(self):
+        class Reader:
+            def read(self, **kwargs):
+                return {
+                    "mode": "grounded",
+                    "notes": [{"id": "conversation:m0-user", "quote": "카레 먹자"}],
+                    "answer": "그 계획은 취소됐습니다.",
+                    "unknowns": [],
+                }, {"version": "CPU_READER"}
+
+        self.builder.reader = Reader()
+        past = history([("카레 먹자", "네."), ("그거 취소하자", "취소했어요.")])
+        with self.assertRaises(InputBudgetError):
+            self.build(
+                "이전 계획은?",
+                past,
+                count_tokens=lambda messages: 5000 if len(messages) > 2 else 100,
+            )
+
     def test_assistant_originated_proposal_keeps_later_user_correction(self):
         # Independent review reproduction: only the assistant names the old
         # menu. The later correction is outside both recent history and the

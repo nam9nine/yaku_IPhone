@@ -131,6 +131,17 @@ class GemmaEngineTests(unittest.TestCase):
         self.assertEqual(caught.exception.code, "context_limit")
         self.assertEqual(len(calls), 2)
 
+    def test_reader_sampling_and_json_contract_do_not_change_default_writer(self):
+        engine, calls, _ = self.engine()
+        schema = {"type": "object"}
+        result = engine.reply(MESSAGES, temperature=0, response_schema=schema)
+        self.assertEqual(calls[-1][1]["temperature"], 0)
+        self.assertEqual(calls[-1][1]["response_format"]["schema"], schema)
+        self.assertEqual(result["sampling"]["temperature"], 0)
+        engine.reply(MESSAGES)
+        self.assertEqual(calls[-1][1]["temperature"], 1)
+        self.assertNotIn("response_format", calls[-1][1])
+
     def test_exact_budget_is_allowed(self):
         engine, _, _ = self.engine(tokens=CONTEXT_TOKENS - OUTPUT_TOKENS)
         self.assertEqual(engine.reply(MESSAGES)["finish_reason"], "stop")

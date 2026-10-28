@@ -1,0 +1,44 @@
+[
+  {
+    "url": "https://arxiv.org/html/2410.10813v2",
+    "path": "references/local/gemma-chat/rag-research/primary-sources/longmemeval.html",
+    "sha256": "da4c3fa52b22496cb9b13b5a4e41b01a44f4542256a0e21a5bef094f18111053",
+    "checked_date": "2026-10-28",
+    "purpose": "Local primary-source research reference; not app assets or executed external code"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/xiaowu0162/LongMemEval/main/src/generation/run_generation.py",
+    "path": "references/local/gemma-chat/rag-research/primary-sources/longmemeval-generation.py",
+    "sha256": "4f1eb3c69d7ad40f04065b9c0bc86f6582441018fc6ff751d162d66c95baf672",
+    "checked_date": "2026-10-28",
+    "purpose": "Local primary-source research reference; not app assets or executed external code"
+  },
+  {
+    "url": "https://www.anthropic.com/research/contextual-retrieval",
+    "path": "references/local/gemma-chat/rag-research/primary-sources/contextual-retrieval.html",
+    "sha256": "6e3df938070d58ae4e49c043742fad3608f3c495f53b38f70894f7db30e1b8dd",
+    "checked_date": "2026-10-28",
+    "purpose": "Local primary-source research reference; not app assets or executed external code"
+  },
+  {
+    "url": "https://arxiv.org/html/2502.14802v1",
+    "path": "references/local/gemma-chat/rag-research/primary-sources/hipporag2.html",
+    "sha256": "8f38456cb042936b4b3a2bd6e6affad9d5f6fda5eec550ff6e825bce00488f25",
+    "checked_date": "2026-10-28",
+    "purpose": "Local primary-source research reference; not app assets or executed external code"
+  },
+  {
+    "url": "https://aclanthology.org/2023.acl-long.910/",
+    "path": "references/local/gemma-chat/rag-research/primary-sources/rarr.html",
+    "sha256": "d31e418023b478e4d067d2dfab000d6f86bafcdb50f0983599596e35afa4bd13",
+    "checked_date": "2026-10-28",
+    "purpose": "Local primary-source research reference; not app assets or executed external code"
+  },
+  {
+    "url": "https://huggingface.co/intfloat/multilingual-e5-small/raw/614241f622f53c4eeff9890bdc4f31cfecc418b3/README.md",
+    "path": "references/local/gemma-chat/rag-research/primary-sources/e5-readme.md",
+    "sha256": "0038de97aee16258cecbad7ffda4b4febd6953e747a00e0ddbc8e6ed241e9c1c",
+    "checked_date": "2026-10-28",
+    "purpose": "Official E5 model FAQ: relative score ordering vs absolute cosine relevance; local snapshot only"
+  }
+]

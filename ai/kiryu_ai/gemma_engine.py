@@ -230,13 +230,30 @@ class GemmaEngine:
             raise GemmaFailure("model_protocol")
         return len(tokens)
 
-    def reply(self, messages, *, seed=None, max_tokens=OUTPUT_TOKENS):
+    def reply(
+        self,
+        messages,
+        *,
+        seed=None,
+        max_tokens=OUTPUT_TOKENS,
+        temperature=None,
+        response_schema=None,
+    ):
         if not isinstance(max_tokens, int) or not 1 <= max_tokens <= OUTPUT_TOKENS:
             raise ValueError(f"Output budget must be 1–{OUTPUT_TOKENS} tokens")
         if self.thinking and max_tokens <= self.reasoning_tokens:
             raise ValueError("Output budget must reserve tokens after reasoning")
         if seed is not None and (type(seed) is not int or not 0 <= seed < 2**32):
             raise ValueError("Seed must be a uint32 or None")
+        if temperature is not None and (
+            type(temperature) not in (int, float) or not 0 <= temperature <= 2
+        ):
+            raise ValueError("Temperature must be between zero and two")
+        sampling = {**SAMPLING}
+        if temperature is not None:
+            sampling["temperature"] = temperature
+        if response_schema is not None and not isinstance(response_schema, dict):
+            raise ValueError("Response schema must be a JSON schema object")
         messages = _messages(messages)
         # The HTTP bridge queues requests. This also prevents accidental overlap
         # from local callers of the same engine instance.
@@ -244,9 +261,13 @@ class GemmaEngine:
             token_count = self.count_tokens(messages)
             if token_count + max_tokens > self.context_tokens:
                 raise GemmaFailure("context_limit")
-            return self._reply(messages, token_count, seed, max_tokens)
+            return self._reply(
+                messages, token_count, seed, max_tokens, sampling, response_schema
+            )
 
-    def _reply(self, messages, token_count, seed, max_tokens):
+    def _reply(
+        self, messages, token_count, seed, max_tokens, sampling, response_schema
+    ):
         payload = {
             "model": MODEL_ALIAS,
             "messages": messages,
@@ -258,10 +279,15 @@ class GemmaEngine:
             "reasoning_format": "deepseek",
             "reasoning_budget_tokens": self.reasoning_tokens,
             **self.template_options,
-            **SAMPLING,
+            **sampling,
         }
         if seed is not None:
             payload["seed"] = seed
+        if response_schema is not None:
+            payload["response_format"] = {
+                "type": "json_object",
+                "schema": response_schema,
+            }
         started = time.monotonic()
         connection = None
         deadline_timer = None
@@ -283,7 +309,7 @@ class GemmaEngine:
                 "prompt_tokens": usage.get("prompt_tokens", token_count),
                 "completion_tokens": usage.get("completion_tokens"),
                 "usage": dict(usage),
-                "sampling": {**SAMPLING, "seed": seed},
+                "sampling": {**sampling, "seed": seed},
                 "model_manifest": dict(self.manifest),
                 "generation": {
                     "thinking": self.thinking,

@@ -77,6 +77,58 @@ class ChatDBTests(unittest.TestCase):
                 if sidecar.exists():
                     self.assertEqual(stat.S_IMODE(sidecar.stat().st_mode), 0o600)
 
+    def test_run_input_stage_changes_preserve_reader_audit_and_raw_messages(self):
+        job, _ = self.accept()
+        reader_input = [{"role": "user", "content": "읽기 자료"}]
+        audit = {"version": "reader-fixture", "input_messages": reader_input}
+        with self.assertRaises(InvalidTransition):
+            self.db.record_run_input(job["job_id"], reader_input, {})
+        run_id = self.db.begin_run(
+            job["job_id"],
+            reader_input,
+            {"stage": "reader_generating", "grounding": audit},
+        )
+        original = copy.deepcopy(self.db.request_detail(job["job_id"])["messages"])
+        renderer_input = [{"role": "user", "content": "문자 작성 자료"}]
+        self.db.record_run_input(
+            job["job_id"],
+            renderer_input,
+            {"stage": "renderer_generating"},
+            [{"id": "new-source", "kind": "fact"}],
+        )
+        detail = self.db.request_detail(job["job_id"])
+        self.assertEqual(detail["run"]["run_id"], run_id)
+        self.assertEqual(
+            detail["run"]["input_sha256"], digest(json_text(renderer_input))
+        )
+        self.assertEqual(detail["run"]["metadata"]["grounding"], audit)
+        self.assertEqual(
+            detail["retrieval_hits"], [{"id": "new-source", "kind": "fact"}]
+        )
+        self.assertEqual(detail["messages"], original)
+        self.db.complete(job["job_id"], "답장")
+        complete = self.db.request_detail(job["job_id"])
+        with self.assertRaises(InvalidTransition):
+            self.db.record_run_input(job["job_id"], reader_input, {})
+        self.assertEqual(self.db.request_detail(job["job_id"]), complete)
+
+    def test_crash_recovery_keeps_reader_stage_and_rejects_late_stage_write(self):
+        job, _ = self.accept()
+        metadata = {
+            "stage": "reader_generating",
+            "grounding": {"candidate_ids": ["source-a"]},
+        }
+        self.db.begin_run(
+            job["job_id"], [{"role": "user", "content": "읽기 자료"}], metadata
+        )
+        self.db.recover_interrupted()
+        detail = self.db.request_detail(job["job_id"])
+        self.assertEqual(detail["status"], "error")
+        self.assertEqual(detail["error_code"], "interrupted")
+        self.assertEqual(detail["run"]["metadata"], metadata)
+        with self.assertRaises(InvalidTransition):
+            self.db.record_run_input(job["job_id"], [], {})
+
     def test_sliding_session_expiry_and_original_visitor_retained(self):
         days = 24 * 60 * 60
         token = self.session["token"]

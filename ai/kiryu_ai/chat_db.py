@@ -399,6 +399,45 @@ class ChatDB:
                 )
         return run_id
 
+    def record_run_input(self, job_id, input_messages, metadata, retrieval_hits=()):
+        """Record the next inference stage without reopening a queued request.
+
+        The reader audit stays in metadata when the renderer replaces the active
+        input. This does not alter raw messages or hold a transaction in inference.
+        Terminal requests cannot be rewritten, including after crash recovery.
+        """
+        with self.connection(write=True) as connection:
+            run = connection.execute(
+                "SELECT g.run_id,g.metadata_json FROM generation_runs g "
+                "JOIN requests r ON r.job_id=g.job_id "
+                "WHERE g.job_id=? AND r.status='generating'",
+                (job_id,),
+            ).fetchone()
+            if run is None:
+                raise InvalidTransition("Only a generating request can record input")
+            previous = json.loads(run["metadata_json"])
+            updated = dict(metadata)
+            if "grounding" in previous and "grounding" not in updated:
+                updated["grounding"] = previous["grounding"]
+            connection.execute(
+                "UPDATE generation_runs SET input_sha256=?,metadata_json=? WHERE run_id=?",
+                (digest(json_text(input_messages)), json_text(updated), run["run_id"]),
+            )
+            connection.execute(
+                "DELETE FROM retrieval_hits WHERE run_id=?", (run["run_id"],)
+            )
+            for position, hit in enumerate(retrieval_hits):
+                connection.execute(
+                    "INSERT INTO retrieval_hits VALUES (?, ?, ?, ?, ?)",
+                    (
+                        run["run_id"],
+                        position,
+                        hit.get("kind", "unknown"),
+                        str(hit.get("id", hit.get("source_id", "unknown"))),
+                        json_text(hit),
+                    ),
+                )
+
     def complete(self, job_id, reply, metrics=None, *, now=None):
         completed_at = timestamp(now)
         with self.connection(write=True) as connection:

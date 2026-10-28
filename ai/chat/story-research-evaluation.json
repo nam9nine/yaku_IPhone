@@ -1,0 +1,221 @@
+{
+  "schema_version": 1,
+  "version": "story-research-evaluation-2026-10-28-v1",
+  "frozen_date": "2026-10-28",
+  "author": "agent:/root/story_corpus_eval",
+  "scope": "20 conditions: four conversations of three turns and eight single-turn conditions. Local pipeline diagnosis, not all-series mastery or fan approval.",
+  "freeze_policy": "Written before observing new implementation outputs. Do not change expected evidence or criteria to fit outputs. Source author also authored fixtures; implementation-separated but not external blind evaluation.",
+  "evaluation_axes": [
+    "source_coverage",
+    "candidate_retrieval",
+    "reader_evidence_selection",
+    "reader_claim_support",
+    "final_claim_support",
+    "context",
+    "speech"
+  ],
+  "grading": "Judge semantic equivalence, not exact words. Correct answers need only the question's requested details. Unsupported extra claims can fail factual support even if core facts are correct. Keep cautious paraphrase, in-character emphasis and invented events separate. Explicitly score whether omission came from missing source, retrieval, reader or renderer.",
+  "conversations": [
+    {
+      "id": "research-sagawa-chain",
+      "character": "majima",
+      "categories": ["direct_fact", "multi_hop_relation", "pronoun", "relationship_boundary"],
+      "turns": [
+        "형님이 소텐보리에 묶여 계시던 시절, 바로 곁에서 관리하던 사람이 누구였습니까?",
+        "그 사람은 시마노와 무슨 사이였길래 형님을 맡았습니까?",
+        "그 두 사람이 의형제라는 거군요. 그러면 사에지마 씨하고 형님 사이와는 별개의 관계인 거죠?"
+      ],
+      "review_criteria": [
+        "1턴: 직접 관리하던 인물을 사가와 츠카사로 답한다. 추방 주도자 시마노와 현지 관리자를 구분한다.",
+        "2턴: 그 사람=사가와를 유지하고 시마노와 의형제였기 때문에 마지마를 맡은 연결을 답한다. 마지마와 사가와가 의형제라고 바꾸지 않는다.",
+        "3턴: 사가와-시마노와 마지마-사에지마의 서로 다른 의형제 연결을 구분한다. 새로운 서열·혈연을 덧붙이지 않는다."
+      ],
+      "expected_evidence_by_turn": [
+        ["story-majima-sagawa-control"],
+        ["story-sagawa-shimano-brotherhood", "story-majima-sagawa-control"],
+        ["story-sagawa-shimano-brotherhood", "saejima-majima"]
+      ]
+    },
+    {
+      "id": "research-noah-cause",
+      "character": "majima",
+      "categories": ["direct_fact", "causal", "pronoun", "insufficient_source"],
+      "turns": [
+        "리치섬 해변에 떠밀려 오셨을 때 형님을 구해 준 아이 이름이 뭐였죠?",
+        "그 아이와 바다로 나선 건 단순히 보물을 찾으려고만 한 건 아니었죠?",
+        "그때 그 아이에게 몇 개 나라를 구경시켜 줬는지 정확한 숫자도 알려 주세요."
+      ],
+      "review_criteria": [
+        "1턴: 노아 또는 노아 리치로 답한다. 노아가 마지마를 구한 주체 방향을 유지한다.",
+        "2턴: 그 아이=노아. 기억 회복과 노아가 넓은 세상을 보고 싶다는 바람을 돕는 두 목적을 연결한다. 보물 하나로 원인을 축소하지 않는다.",
+        "3턴: 채택 자료에 실제 방문 국가 수가 없으므로 정확한 수나 나라 목록을 창작하지 않는다. 여행 목적과 모든 꿈의 완료를 구분한다."
+      ],
+      "expected_evidence_by_turn": [
+        ["story-majima-noah-rescue"],
+        ["story-majima-noah-voyage", "story-noah-world-dream"],
+        ["story-majima-noah-voyage"]
+      ]
+    },
+    {
+      "id": "research-haruka-career",
+      "character": "haruka",
+      "categories": ["direct_fact", "relationship", "pronoun", "background"],
+      "turns": [
+        "네가 노래하고 춤추는 훈련을 하던 기획사 이름과 도시는 어디였지?",
+        "그곳 박미려 사장님은 너와 어떤 인연이었니?",
+        "그분도 예전부터 기획사 일만 하신 거야, 직접 무대에 선 적도 있었어?"
+      ],
+      "review_criteria": [
+        "1턴: 다이너체어와 오사카(소텐보리)를 답한다. 지금 나팔꽃에 있는 기본 위치를 과거 훈련 장소 대신 답하지 않는다.",
+        "2턴: 박미려가 하루카를 만나 발굴·지도하고 데뷔를 준비시킨 관계를 답한다. 생모로 바꾸지 않으며, 질문하지 않은 죽음·가해자·은퇴 원인은 보태지 않는다.",
+        "3턴: 그분=박미려. 과거 아이돌 활동 후 후진 양성으로 이어졌음을 답한다. 구체적인 은퇴 이유는 승인 근거에 없으면 새로 단정하지 않는다."
+      ],
+      "expected_evidence_by_turn": [
+        ["story-haruka-dynachair-osaka"],
+        ["story-haruka-park-mentor"],
+        ["story-park-idol-past"]
+      ]
+    },
+    {
+      "id": "research-haruka-onomichi",
+      "character": "haruka",
+      "categories": ["relationship", "place", "pronoun", "unknown_detail"],
+      "turns": [
+        "하루토를 네 동생이라고 소개하면 틀리겠지?",
+        "네가 지냈던 오노미치는 어느 지역에 있는 곳이더라?",
+        "거기서 묵었던 숙소의 정확한 번지와 방 번호도 기억하니?"
+      ],
+      "review_criteria": [
+        "1턴: 하루토는 하루카의 아들임을 바로잡는다. 나이·현재 동행인·현재 돌봄 상태를 만들어 넣지 않는다.",
+        "2턴: 오노미치는 히로시마에 있는 곳으로 답한다. 오키나와나 도쿄로 바꾸지 않고 과거 거주와 현재 위치를 구분한다.",
+        "3턴: 거기=오노미치이지만 정확한 숙소 번지·방 번호의 승인 근거가 없다. 정확한 주소·방 번호를 지어내지 않는다."
+      ],
+      "expected_evidence_by_turn": [
+        ["story-haruka-haruto-son"],
+        ["story-haruka-onomichi-stay"],
+        ["story-haruka-onomichi-stay"]
+      ]
+    }
+  ],
+  "long_conversations": [],
+  "paired_cases": [
+    {
+      "id": "research-grand-work",
+      "character": "majima",
+      "category": "direct_fact",
+      "last_message": "형님이 그랜드에 계셨다던데, 거기는 무슨 가게였고 형님은 무슨 일을 하셨습니까?",
+      "conditions": [
+        {
+          "history": [],
+          "criteria": "그랜드는 소텐보리의 카바레이며 마지마가 지배인으로 일했다고 답한다. 조직 본부·병원·단순 손님으로 바꾸지 않는다.",
+          "expected_evidence_ids": ["story-majima-grand-manager"]
+        }
+      ]
+    },
+    {
+      "id": "research-first-meeting",
+      "character": "haruka",
+      "category": "story_background",
+      "last_message": "우리가 처음 만났을 무렵 너는 나랑 누구를 찾고 있었지?",
+      "conditions": [
+        {
+          "history": [],
+          "criteria": "엄마를 찾고 있었다고 답한다. 사라진100억 사건은 관련 배경이지만 질문이 요구하지 않는 정확 날짜·장소·대사까지 보태지 않아도 통과다.",
+          "expected_evidence_ids": ["story-haruka-first-meeting", "haruka-yumi-mother"]
+        }
+      ]
+    },
+    {
+      "id": "research-makoto-ambiguity",
+      "character": "majima",
+      "category": "ambiguous_entity",
+      "last_message": "마코토하고는 어떤 사이였죠?",
+      "conditions": [
+        {
+          "history": [],
+          "criteria": "이전 문맥이 없으므로 마키무라 마코토와 다테 마코토를 합치지 않는다. 어느 마코토인지 짧게 확인하거나 이름을 명시해 조건부로 보호 관계를 설명할 수 있다. 무조건 아내·경찰·동일 인물이라고 확정하지 않는다.",
+          "expected_evidence_ids": [],
+          "optional_evidence_ids": ["majima-makoto-protection"],
+          "forbidden_evidence_ids": ["date-kiryu-trust"],
+          "retrieval_scoring": "No mandatory source for clarification; never include the Haruka-only Date record."
+        }
+      ]
+    },
+    {
+      "id": "research-unobserved-event",
+      "character": "haruka",
+      "category": "current_if_boundary",
+      "last_message": "오늘 낮에 다이고와 미네가 나눈 얘기를 네가 현장에서 직접 들었지? 내가 이 대화에선 아직 아무 얘기도 안 했는데, 뭐라고 하던가?",
+      "conditions": [
+        {
+          "history": [],
+          "criteria": "관계 자료만으로 오늘 현장에 있었거나 대화를 들었다고 답하지 않는다. 제공되지 않은 대화 내용은 모른다고 구분하고 필요한 확인만 한다. 원작의 두 사람 관계를 현재 목격담으로 바꾸지 않는다.",
+          "expected_evidence_ids": [],
+          "answerability": "not_answerable_from_allowed_input"
+        }
+      ]
+    },
+    {
+      "id": "research-saejima-purpose",
+      "character": "majima",
+      "category": "causal",
+      "last_message": "사에지마 씨 일로 조직의 뜻을 거스르셨던 건, 그분을 구하려고 그러셨던 겁니까?",
+      "conditions": [
+        {
+          "history": [],
+          "criteria": "사에지마를 구하려 조직 뜻에 거역한 근거를 인정한다. 몇 번 명령을 거부했는지·누구와 구체적으로 어떤 대화를 했는지는 만들어내지 않는다.",
+          "expected_evidence_ids": ["story-majima-saejima-defiance", "saejima-majima"]
+        }
+      ]
+    },
+    {
+      "id": "research-topic-game",
+      "character": "haruka",
+      "category": "topic_variety",
+      "last_message": "오늘은 게임 이야기나 하자. 퍼즐이랑 리듬 게임 중에 같이 할 거라면 어느 쪽을 고르고 싶어?",
+      "conditions": [
+        {
+          "history": [],
+          "criteria": "현재 선택이나 의견으로 게임 주제에 답한다. 나팔꽃·아이들·장보기로 이유 없이 돌리지 않는다. 리듬 또는 퍼즐 어느 선택도 가능하며 원작에서 좋아했던 확정 취향이라고 꾸밀 필요는 없다.",
+          "expected_evidence_ids": [],
+          "answerability": "creative_current_preference_not_canon_fact"
+        }
+      ]
+    },
+    {
+      "id": "research-objective-not-outcome",
+      "character": "majima",
+      "category": "source_insufficient",
+      "last_message": "공략에 형님한테 키류와 승부하라고 목표가 적혀 있던데, 그러면 그 판은 형님이 이겼다는 뜻입니까?",
+      "conditions": [
+        {
+          "history": [],
+          "criteria": "승부 목표나 전투 선호만으로 해당 판의 승리를 확정하지 않는다. 어떤 판인지 확인하거나 목표와 실제 결과를 구분한다. 특정 승패·대사·점수를 새로 만들지 않는다.",
+          "expected_evidence_ids": [],
+          "answerability": "outcome_not_supported"
+        }
+      ]
+    },
+    {
+      "id": "research-sunflower-chain",
+      "character": "haruka",
+      "category": "multi_hop_relation",
+      "last_message": "나와 니시키가 함께 자란 시설을 세운 분은 누구였지? 그분은 우리에게 어떤 존재였는지도 기억하니?",
+      "conditions": [
+        {
+          "history": [],
+          "criteria": "해바라기를 세운 카자마 신타로, 키류와 니시키에게 아버지 같은 보호자라는 연결을 답한다. 나팔꽃 창립자·생물학적 친부로 바꾸지 않는다.",
+          "expected_evidence_ids": [
+            "kiryu-nishiki-childhood",
+            "story-kazama-sunflower-founder",
+            "story-kazama-kiryu-nishiki-guardian"
+          ]
+        }
+      ]
+    }
+  ],
+  "pre_output_oracle_amendment": {
+    "original_sha256": "ac9cab1e1eebd721b19d0dc27cff99bdca008f0e9033e59222bf736266c8d749",
+    "reason": "Independent source review found Haruka-only date-kiryu-trust incorrectly required for Majima. Removed mandatory retrieval target; semantic criterion unchanged. No new evaluation output had been observed."
+  }
+}
