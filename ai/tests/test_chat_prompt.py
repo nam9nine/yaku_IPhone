@@ -3,6 +3,7 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from kiryu_ai.chat_prompt import (
     DEFAULT_DATA,
@@ -14,6 +15,7 @@ from kiryu_ai.chat_retrieval import (
     HybridRetriever,
     load_registry,
     normalize,
+    runtime_eligible,
     stable_hash,
 )
 
@@ -77,8 +79,9 @@ class PromptTests(unittest.TestCase):
         self.assertIn(
             "reference_scenes_not_our_history", result["messages"][-1]["content"]
         )
-        self.assertIn(
-            "현재 메뉴나 재고로 매번 확정하지", result["messages"][0]["content"]
+        self.assertNotIn(
+            self.builder.cards["characters"]["haruka"]["initial_event"],
+            result["messages"][0]["content"],
         )
         self.assertEqual(
             result["metadata"]["input_message_ids"], [m["id"] for m in past]
@@ -115,6 +118,148 @@ class PromptTests(unittest.TestCase):
         self.assertIn(
             "candidate-not-confirmed-state", result["messages"][-1]["content"]
         )
+
+    def test_renderer_uses_selected_sources_without_reader_draft_or_unknowns(self):
+        core_ids = self.builder.cards["characters"]["haruka"]["relationship_refs"]
+        dynamic = next(
+            record
+            for record in self.builder.registry["records"]
+            if record["kind"] == "fact"
+            and record["id"] not in core_ids
+            and runtime_eligible(record, "haruka", "daily-if-v1")
+        )
+        dynamic = {**dynamic, "score": 0.1, "retrieval_mode": "CPU_ONLY"}
+        past = history([("약속은 취소하자", "알겠어요.")])
+        past[0]["time"] = "2026-10-28T09:00:00+09:00"
+        bad_draft = "WRONG_READER_PERSON_AND_REGISTER"
+        bad_unknown = "WRONG_READER_UNKNOWNS"
+
+        class Reader:
+            def __init__(self, mode):
+                self.mode = mode
+                self.reading = None
+
+            def read(self, **kwargs):
+                records = [kwargs["relationships"][0], kwargs["candidates"][0]]
+                self.reading = {
+                    "mode": self.mode,
+                    "notes": [
+                        {"id": record["id"], "quote": record["source"]["excerpt"]}
+                        for record in records
+                    ]
+                    + [
+                        {
+                            "id": "conversation:" + past[0]["id"],
+                            "quote": past[0]["content"],
+                            "role": past[0]["role"],
+                            "time": past[0]["time"],
+                        }
+                    ],
+                    "answer": bad_draft,
+                    "unknowns": [bad_unknown],
+                }
+                return self.reading, {
+                    "version": "CPU_READER",
+                    "notes": copy.deepcopy(self.reading),
+                }
+
+        for mode in ("grounded", "conversation"):
+            with self.subTest(mode=mode):
+                reader = Reader(mode)
+                self.builder.reader = reader
+                with patch.object(
+                    self.builder.retriever, "candidates", return_value=[dynamic]
+                ):
+                    result = self.build("선택된 근거를 알려줘", past)
+                envelope = result["messages"][-1]["content"]
+                context = json.loads(
+                    envelope.split("\n", 1)[1].split("\n방금 받은", 1)[0]
+                )
+                notes = context["source_reading_notes"]
+                self.assertEqual(set(notes), {"mode", "notes"})
+                self.assertEqual(notes["mode"], mode)
+                self.assertNotIn(bad_draft, json.dumps(result["messages"]))
+                self.assertNotIn(bad_unknown, json.dumps(result["messages"]))
+                self.assertNotIn("초안", envelope)
+                self.assertEqual(
+                    result["metadata"]["grounding"]["notes"]["answer"], bad_draft
+                )
+                self.assertNotIn("source_snapshot", reader.reading["notes"][0])
+                by_id = {
+                    record["id"]: record for record in self.builder.registry["records"]
+                }
+                for note in notes["notes"][:2]:
+                    record = by_id[note["id"]]
+                    self.assertEqual(note["quote"], record["source"]["excerpt"])
+                    self.assertEqual(
+                        note["source_snapshot"],
+                        {
+                            key: record[key]
+                            for key in ("text", "fact_type", "scope_note")
+                        },
+                    )
+                selected_core = notes["notes"][0]
+                self.assertIn(selected_core["id"], core_ids)
+                self.assertIn(
+                    selected_core["source_snapshot"]["text"],
+                    result["messages"][0]["content"],
+                )
+                self.assertEqual(context["allowed_canon"], [])
+                hit_ids = [hit["id"] for hit in result["retrieval_hits"]]
+                self.assertEqual(len(hit_ids), len(set(hit_ids)))
+                self.assertEqual(hit_ids.count(selected_core["id"]), 1)
+                self.assertEqual(hit_ids.count(dynamic["id"]), 1)
+                conversation_note = notes["notes"][2]
+                self.assertEqual(conversation_note["role"], past[0]["role"])
+                self.assertEqual(conversation_note["time"], past[0]["time"])
+                self.assertNotIn("source_snapshot", conversation_note)
+                self.assertIn(past[0]["content"], result["messages"][1]["content"])
+
+    def test_reader_selected_memory_cannot_outlive_its_correction_window(self):
+        class Reader:
+            def read(self, **kwargs):
+                return {
+                    "mode": "grounded",
+                    "notes": [{"id": "conversation:m0-user", "quote": "카레 먹자"}],
+                    "answer": "원래는 카레였지만 취소됐습니다.",
+                    "unknowns": [],
+                }, {"version": "CPU_READER"}
+
+        self.builder.reader = Reader()
+        past = history(
+            [
+                ("카레 먹자", "네."),
+                ("그거 취소하자", "취소할게요."),
+                *[(f"다른 이야기 {i}", "응.") for i in range(10)],
+            ]
+        )
+
+        def count(messages):
+            # Reproduces the boundary where removing the old window would fit,
+            # but leave its selected quote/brief detached from the cancellation.
+            return 5000 if "그거 취소하자" in messages[-1]["content"] else 100
+
+        with self.assertRaises(InputBudgetError):
+            self.build("카레 먹기로 했었지?", past, count_tokens=count)
+
+    def test_reader_selected_recent_utterance_keeps_its_following_correction(self):
+        class Reader:
+            def read(self, **kwargs):
+                return {
+                    "mode": "grounded",
+                    "notes": [{"id": "conversation:m0-user", "quote": "카레 먹자"}],
+                    "answer": "그 계획은 취소됐습니다.",
+                    "unknowns": [],
+                }, {"version": "CPU_READER"}
+
+        self.builder.reader = Reader()
+        past = history([("카레 먹자", "네."), ("그거 취소하자", "취소했어요.")])
+        with self.assertRaises(InputBudgetError):
+            self.build(
+                "이전 계획은?",
+                past,
+                count_tokens=lambda messages: 5000 if len(messages) > 2 else 100,
+            )
 
     def test_assistant_originated_proposal_keeps_later_user_correction(self):
         # Independent review reproduction: only the assistant names the old

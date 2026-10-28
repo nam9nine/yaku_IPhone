@@ -18,7 +18,7 @@ from zoneinfo import ZoneInfo
 
 EMBEDDING_REPO = "intfloat/multilingual-e5-small"
 EMBEDDING_REVISION = "614241f622f53c4eeff9890bdc4f31cfecc418b3"
-RETRIEVER_VERSION = "daily-if-hybrid-v3"
+RETRIEVER_VERSION = "daily-if-contextual-v8"
 ALIASES = {
     "키류": ("kiryu", "桐生"),
     "하루카": ("haruka", "遥"),
@@ -30,6 +30,10 @@ ALIASES = {
     "유미": ("yumi", "由美"),
     "미네": ("yoshitaka mine", "峯"),
     "아키야마": ("akiyama", "秋山"),
+    "니시다": ("nishida", "西田"),
+    "시마노": ("shimano", "嶋野"),
+    "마키무라": ("마키무라 마코토", "makimura", "マキムラ"),
+    "타이치": ("taichi", "太一"),
     "나팔꽃": ("아사가오", "asagao", "morning glory", "orphanage", "보육원"),
     "카무로쵸": ("카무로초", "kamurocho", "神室町"),
     "소텐보리": ("sotenbori", "蒼天堀"),
@@ -193,6 +197,13 @@ def load_registry(path):
         seen.add(record["id"])
         if record.get("kind") not in {"fact", "scene"}:
             raise ValueError("Runtime records must separate facts from scenes")
+        if record["kind"] == "fact" and (
+            record.get("fact_type")
+            not in {"relationship", "place", "historical_event", "character_background"}
+            or not isinstance(record.get("scope_note"), str)
+            or not record["scope_note"].strip()
+        ):
+            raise ValueError("Facts require an explicit type and source-level scope")
         source = record.get("source", {})
         if not source.get("url") or not source.get("sha256"):
             raise ValueError("Runtime record requires source identity")
@@ -213,6 +224,18 @@ def load_registry(path):
                 raise ValueError("Runtime evidence requires explicit scope lists")
         if not record.get("review_basis"):
             raise ValueError("Missing explicit adoption basis")
+        for field in ("context", "event_id"):
+            if field in record and (
+                not isinstance(record[field], str) or not record[field].strip()
+            ):
+                raise ValueError("Context and event identities must be nonempty text")
+        if not isinstance(record.get("related_ids", []), list) or any(
+            not isinstance(x, str) or not x for x in record.get("related_ids", [])
+        ):
+            raise ValueError("Curated links require explicit IDs")
+    for record in value["records"]:
+        if any(identifier not in seen for identifier in record.get("related_ids", [])):
+            raise ValueError("Curated event link points to a missing source")
     return value
 
 
@@ -360,7 +383,15 @@ def _lexical_rank(records, query):
 def evidence_search_text(record):
     """Index original dialogue without turning its speakers into current roles."""
     if record["kind"] != "scene":
-        return record["text"]
+        return "\n".join(
+            part
+            for part in (
+                record.get("context", ""),
+                record.get("title", ""),
+                record["text"],
+            )
+            if part
+        )
     scene = record.get("scene", {})
     # The full scene is still supplied as reference data, never user/assistant
     # history. Indexing only its summary used to miss quoted original lines.
@@ -393,7 +424,7 @@ class HybridRetriever:
         self.version = RETRIEVER_VERSION
         self.mode = "bm25-e5-rrf" if encoder else "bm25-only"
 
-    def rank(self, records, query, limit):
+    def rank(self, records, query, limit, *, recall_pool=False):
         lexical = _lexical_rank(records, query)
         semantic = []
         similarities = {}
@@ -405,9 +436,16 @@ class HybridRetriever:
                 for r, v in zip(records, vectors, strict=True)
             }
             semantic = sorted(similarities, key=lambda key: (-similarities[key], key))
-            semantic = [
-                key for key in semantic if similarities[key] >= self.semantic_threshold
-            ]
+            if not recall_pool:
+                semantic = [
+                    key
+                    for key in semantic
+                    if similarities[key] >= self.semantic_threshold
+                ]
+            # A reader candidate is not an accepted fact. E5 scores express
+            # relative similarity, not a calibrated probability of relevance.
+            # Preserve bounded top-ranked semantic candidates for the reader
+            # instead of dropping paraphrases below an absolute cosine floor.
         scores = {}
         for ranking in (lexical, semantic):
             for rank, key in enumerate(ranking, 1):
@@ -423,7 +461,9 @@ class HybridRetriever:
             for key in sorted(scores, key=lambda key: (-scores[key], key))[:limit]
         ]
 
-    def evidence(self, character, scenario, query, *, exclude_ids=()):
+    def evidence(
+        self, character, scenario, query, *, exclude_ids=(), current_query=None
+    ):
         query = evidence_query(query)
         if not _tokens(query):
             return {"facts": [], "scenes": []}
@@ -433,12 +473,110 @@ class HybridRetriever:
             if runtime_eligible(record, character, scenario)
             and record["id"] not in exclude_ids
         ]
-        return {
-            "facts": self.rank([r for r in eligible if r["kind"] == "fact"], query, 3),
-            "scenes": self.rank(
-                [r for r in eligible if r["kind"] == "scene"], query, 1
-            ),
-        }
+
+        def select(kind, limit):
+            candidates = [r for r in eligible if r["kind"] == kind]
+            contextual = self.rank(candidates, query, limit)
+            if current_query is None:
+                return contextual
+            current = evidence_query(current_query)
+            primary = self.rank(candidates, current, limit) if _tokens(current) else []
+            primary_ids = {record["id"] for record in primary}
+            if kind == "scene":
+                # One scene slot cannot reserve both a direct and a contextual
+                # candidate. Preserve dialogue speaker/reference resolution.
+                return [
+                    {
+                        **record,
+                        "query_scope": "current"
+                        if record["id"] in primary_ids
+                        else "context",
+                    }
+                    for record in contextual
+                ]
+            selected = []
+            seen = set()
+            # Reserve one direct match, then let recent turns resolve references
+            # such as "that person". Generic current words must not occupy all
+            # slots and erase the named person in the previous exchange.
+            for tier, rows in (
+                ("current", primary[:1]),
+                ("context", contextual),
+                ("current", primary[1:]),
+            ):
+                for record in rows:
+                    if record["id"] not in seen:
+                        selected.append(
+                            {
+                                **record,
+                                "query_scope": "current"
+                                if record["id"] in primary_ids
+                                else tier,
+                            }
+                        )
+                        seen.add(record["id"])
+                    if len(selected) == limit:
+                        return selected
+            return selected
+
+        return {"facts": select("fact", 3), "scenes": select("scene", 1)}
+
+    def candidates(
+        self, character, scenario, current, contextual, limit=12, exclude_ids=()
+    ):
+        """A bounded recall pool; selection is performed by the evidence reader.
+
+        Contextual Retrieval: index context + original value. Keep both direct
+        and recent-dialogue rankings, then expand explicitly curated event links.
+        Shared characters alone are not graph edges or permission to expand.
+        """
+        eligible = [
+            {**r, "search_text": evidence_search_text(r)}
+            for r in self.registry["records"]
+            if r["kind"] == "fact"
+            and runtime_eligible(r, character, scenario)
+            and r["id"] not in exclude_ids
+        ]
+        rankings = []
+        for text in (current, contextual):
+            query = evidence_query(text)
+            rankings.append(
+                self.rank(eligible, query, limit, recall_pool=True)
+                if _tokens(query)
+                else []
+            )
+        selected = []
+        seen = set()
+
+        def add(record, route):
+            if record["id"] not in seen and len(selected) < limit:
+                seen.add(record["id"])
+                selected.append({**record, "candidate_route": route})
+
+        # Interleave rather than letting a long recent topic occupy every slot.
+        for index in range(limit):
+            for route, rows in zip(("current", "context"), rankings, strict=True):
+                if index < len(rows):
+                    add(rows[index], route)
+        linked = []
+        for seed in selected[:4]:
+            event = seed.get("event_id")
+            for record in eligible:
+                if record["id"] in seen:
+                    continue
+                if (event and event == record.get("event_id")) or record[
+                    "id"
+                ] in seed.get("related_ids", []):
+                    linked.append(
+                        {
+                            **record,
+                            "score": None,
+                            "retrieval_mode": self.mode,
+                            "candidate_route": "curated-event",
+                        }
+                    )
+                    seen.add(record["id"])
+        return selected + linked[:4]
 
     def memories(
         self,

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
 import os
@@ -11,7 +12,8 @@ import time
 from datetime import UTC, datetime
 from pathlib import Path
 
-from .chat_prompt import ChatPromptBuilder
+from .chat_prompt import ChatPromptBuilder, InputBudgetError
+from .chat_reader import EvidenceReader
 from .chat_retrieval import E5Onnx, HybridRetriever
 from .gemma_engine import (
     CONTEXT_TOKENS,
@@ -66,7 +68,31 @@ def evaluate(args):
     )
     engine.record_template()
     retriever = HybridRetriever(args.registry, E5Onnx(args.embedding_dir))
-    builder = ChatPromptBuilder(args.registry, args.cards, retriever)
+    reader = None
+    if args.reading == "separate":
+        reader = EvidenceReader(
+            GemmaEngine(
+                api_key_file=args.api_key_file,
+                manifest_path=args.manifest,
+                thinking=False,
+            ),
+            seed=42,
+        )
+    builder = ChatPromptBuilder(args.registry, args.cards, retriever, reader)
+    source_paths = [Path(args.registry), Path(args.cards), Path(args.fixtures)] + [
+        Path(__file__).with_name(name)
+        for name in (
+            "chat_prompt.py",
+            "chat_reader.py",
+            "chat_retrieval.py",
+            "gemma_engine.py",
+            "chat_evaluate.py",
+        )
+    ]
+    source_hashes = {
+        str(path.resolve()): hashlib.sha256(path.read_bytes()).hexdigest()
+        for path in source_paths
+    }
     fixtures = json.loads(Path(args.fixtures).read_text())
     logs = []
     engine.reply(
@@ -81,23 +107,32 @@ def evaluate(args):
 
     def run_turn(case_id, character, history, message, turn, criteria, phase):
         begin = time.monotonic()
-        assembled = builder.build(
-            case_id,
-            character,
-            "daily-if-v1",
-            message,
-            history,
-            engine.count_tokens,
-            context_limit=args.context_tokens,
-            max_tokens=args.max_tokens,
-        )
+        assembled = {"metadata": {}, "retrieval_hits": []}
         error = None
+
+        def record_stage(stage):
+            nonlocal assembled
+            assembled = stage
+
         try:
+            assembled = builder.build(
+                case_id,
+                character,
+                "daily-if-v1",
+                message,
+                history,
+                engine.count_tokens,
+                context_limit=args.context_tokens,
+                max_tokens=args.max_tokens,
+                on_stage=record_stage,
+            )
             result = engine.reply(
                 assembled["messages"], seed=42, max_tokens=args.max_tokens
             )
         except GemmaFailure as failure:
             result, error = failure.result, failure.code
+        except InputBudgetError:
+            result, error = {}, "context_limit"
         total = time.monotonic() - begin
         record = {
             "case_id": case_id,
@@ -124,6 +159,7 @@ def evaluate(args):
             ),
             "fan_review": "pending",
             "synthetic_evaluation": True,
+            "reading_mode": args.reading,
         }
         logs.append(record)
         with (output / "responses.jsonl").open("a", encoding="utf-8") as handle:
@@ -208,7 +244,7 @@ def evaluate(args):
         "initial_memory": initial_memory,
         "final_memory": memory_observation(args.model_pid),
         "peak_observed_completion_tokens": max(
-            (r["result"].get("completion_tokens", 0) for r in logs), default=0
+            (r["result"].get("completion_tokens") or 0 for r in logs), default=0
         ),
         "model_manifest": engine.manifest,
         "generation_seed": 42,
@@ -216,6 +252,12 @@ def evaluate(args):
         "quality_review": "pending separate six-axis agent review; fan review pending",
         "heldout_claim": False,
         "note": "Author-created conversational diagnostics; not external benchmark reproduction",
+        "reading_mode": args.reading,
+        "source_sha256": source_hashes,
+        "source_files_unchanged": all(
+            hashlib.sha256(Path(path).read_bytes()).hexdigest() == sha
+            for path, sha in source_hashes.items()
+        ),
     }
     (output / "summary.json").write_text(
         json.dumps(summary, ensure_ascii=False, indent=2) + "\n"
@@ -246,6 +288,7 @@ def main():
     ]:
         p.add_argument("--" + name, required=True)
     p.add_argument("--model-pid", type=int)
+    p.add_argument("--reading", choices=["direct", "separate"], default="separate")
     p.add_argument("--thinking", choices=["on", "off"], default="on")
     p.add_argument("--reasoning-tokens", type=int, default=REASONING_TOKENS)
     p.add_argument("--context-tokens", type=int, default=CONTEXT_TOKENS)

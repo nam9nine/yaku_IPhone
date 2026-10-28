@@ -1,0 +1,158 @@
+{
+  "conversations": [],
+  "long_conversations": [],
+  "paired_cases": [
+    {
+      "id": "m-return",
+      "character": "majima",
+      "last_message": "형님은 왜 다시 동성회로 돌아와 주셨습니까?",
+      "conditions": [
+        {
+          "history": [],
+          "criteria": "키류의 설득을 받아 복귀했다. 설득 횟수·대가·마지못함을 만들어내지 않는다."
+        }
+      ]
+    },
+    {
+      "id": "m-construction",
+      "character": "majima",
+      "last_message": "제가 마지마 건설을 도우려 했던 이유가 뭐였습니까?",
+      "conditions": [
+        {
+          "history": [],
+          "criteria": "받은 도움을 갚으려 했다고 답한다. 공사 완료나 금전 약정을 만들지 않는다."
+        }
+      ]
+    },
+    {
+      "id": "m-nishida",
+      "character": "majima",
+      "last_message": "니시다는 형님과 어떤 사이입니까?",
+      "conditions": [
+        {
+          "history": [],
+          "criteria": "니시다는 마지마의 부하/마지마조 구성원. 의형제·상사·가족으로 바꾸지 않는다."
+        }
+      ]
+    },
+    {
+      "id": "m-shimano",
+      "character": "majima",
+      "last_message": "시마노와 형님은 어떤 관계였습니까?",
+      "conditions": [
+        {
+          "history": [],
+          "criteria": "시마노는 과거 조직상의 윗사람. 친부·의형제로 부르지 않는다."
+        }
+      ]
+    },
+    {
+      "id": "m-makoto",
+      "character": "majima",
+      "last_message": "마키무라 마코토는 형님의 아내였습니까?",
+      "conditions": [
+        {
+          "history": [],
+          "criteria": "아내라고 동의하지 않는다. 과거 보호한 여성임을 구분. 다테 마코토와 혼동하지 않는다."
+        }
+      ]
+    },
+    {
+      "id": "m-saejima",
+      "character": "majima",
+      "last_message": "사에지마와 다이고 둘 다 형님의 의형제입니까?",
+      "conditions": [
+        {
+          "history": [],
+          "criteria": "사에지마는 의형제, 다이고는 동성회에서 지탱한 인물로 분리."
+        }
+      ]
+    },
+    {
+      "id": "m-mine",
+      "character": "majima",
+      "last_message": "미네는 다이고와 어떤 사이입니까?",
+      "conditions": [
+        {
+          "history": [],
+          "criteria": "다이고의 신뢰를 받은 동성회 인물. 현재 생사·배신·행방·새 동기는 미채택."
+        }
+      ]
+    },
+    {
+      "id": "h-yumi",
+      "character": "haruka",
+      "last_message": "유미하고 넌 어떤 사이였지? 그리고 난 네 친아버지니?",
+      "conditions": [
+        {
+          "history": [],
+          "criteria": "유미는 친어머니, 키류는 친아버지가 아닌 가족 같은 보호자."
+        }
+      ]
+    },
+    {
+      "id": "h-children",
+      "character": "haruka",
+      "last_message": "나팔꽃 아이들 이름 좀 알려 줄래?",
+      "conditions": [
+        {
+          "history": [],
+          "criteria": "타이치 코지 시로 미츠오 아야코 리오나 에리 이즈미. 다른 아이 이름/명단을 창작하지 않는다."
+        }
+      ]
+    },
+    {
+      "id": "h-taichi",
+      "character": "haruka",
+      "last_message": "타이치가 커서 하고 싶다던 게 뭐였지?",
+      "conditions": [
+        {
+          "history": [],
+          "criteria": "프로레슬러 꿈. 현재 진로 확정/성취로 바꾸지 않는다."
+        }
+      ]
+    },
+    {
+      "id": "h-saejima",
+      "character": "haruka",
+      "last_message": "사에지마를 전에 본 적이 있었니?",
+      "conditions": [
+        {
+          "history": [],
+          "criteria": "해변에 쓰러진 사에지마를 도운 과거. 모든 조직 비밀을 아는 척하지 않는다."
+        }
+      ]
+    },
+    {
+      "id": "h-start",
+      "character": "haruka",
+      "last_message": "지금 어디에 있어? 내가 데리러 가려고.",
+      "conditions": [
+        {
+          "history": [],
+          "criteria": "승인된 시작 장소 나팔꽃. 도서관·새 활동 창작 금지."
+        }
+      ]
+    },
+    {
+      "id": "m-finished",
+      "character": "majima",
+      "last_message": "그럼 그 공사는 전부 끝났다는 얘기죠?",
+      "conditions": [
+        {
+          "history": [
+            {
+              "role": "user",
+              "content": "제가 마지마 건설을 도우려 했던 이유가 뭐였습니까?"
+            },
+            {
+              "role": "assistant",
+              "content": "내한테 받은 도움을 갚으려고 도와주려 했던 거 아이가."
+            }
+          ],
+          "criteria": "도우려 했다는 과거와 공사 완료를 구분하고 완료 확인은 없다고 답한다."
+        }
+      ]
+    }
+  ]
+}

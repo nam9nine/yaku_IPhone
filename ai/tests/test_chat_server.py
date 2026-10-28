@@ -347,6 +347,126 @@ class ChatServerTests(unittest.TestCase):
                 self.assertNotIn("reply", metrics)
                 self.assertEqual(detail["status"], "error")
 
+    def test_reader_starts_in_db_before_inference_and_keeps_failed_output_private(self):
+        from kiryu_ai.chat_prompt import ChatPromptBuilder
+        from kiryu_ai.chat_reader import EvidenceReader
+        from kiryu_ai.chat_server import public_job
+
+        reader_engine = Engine()
+        reader_engine.count_tokens = lambda messages: 100
+        service = ChatService(
+            self.root,
+            engine_factory=lambda: self.engine,
+            builder=ChatPromptBuilder(reader=EvidenceReader(reader_engine)),
+        )
+        service.engine = self.engine
+        visitor = service.db.issue_session()["visitor_id"]
+        for code in ("generation_timeout", "response_truncated"):
+            with self.subTest(code=code):
+                job, _ = service.db.accept(
+                    visitor,
+                    "majima",
+                    "daily-if-v1",
+                    "형님, 과거 이야기는?",
+                    str(uuid4()),
+                )
+
+                def fail(messages, job=job, code=code, **kwargs):
+                    detail = service.db.request_detail(job["job_id"])
+                    self.assertEqual(detail["status"], "generating")
+                    audit = detail["run"]["metadata"]["grounding"]
+                    self.assertEqual(audit["stage"], "reader_generating")
+                    self.assertEqual(audit["input_messages"], messages)
+                    self.assertIn("candidate_ids", audit)
+                    raise GemmaFailure(code, {"reply": "PRIVATE_READER_PARTIAL"})
+
+                reader_engine.reply = fail
+                service._generate(job)
+                detail = service.db.request_detail(job["job_id"])
+                self.assertEqual(detail["status"], "error")
+                self.assertEqual(detail["run"]["output_text"], "PRIVATE_READER_PARTIAL")
+                self.assertEqual(
+                    detail["run"]["metadata"]["grounding"]["stage"], "reader_failed"
+                )
+                self.assertEqual(
+                    detail["run"]["metrics"]["grounding"]["reader_result"]["reply"],
+                    "PRIVATE_READER_PARTIAL",
+                )
+                self.assertNotIn(
+                    "PRIVATE_READER_PARTIAL", json.dumps(public_job(detail))
+                )
+                self.assertNotIn("grounding", public_job(detail))
+                self.assertEqual(
+                    service.db.history(visitor, "majima", "daily-if-v1"), []
+                )
+                self.assertEqual(self.engine.calls, [])
+
+    def test_successful_reader_and_renderer_keep_both_inputs_and_one_run(self):
+        from kiryu_ai.chat_prompt import ChatPromptBuilder, reconstruct_input
+        from kiryu_ai.chat_reader import EvidenceReader
+
+        reader_engine = Engine()
+        reader_engine.count_tokens = lambda messages: 100
+        reader_engine.result["reply"] = json.dumps(
+            {"mode": "conversation", "notes": [], "answer": "대화", "unknowns": []}
+        )
+        self.engine.count_tokens = lambda messages: 100
+        service = ChatService(
+            self.root,
+            engine_factory=lambda: self.engine,
+            builder=ChatPromptBuilder(reader=EvidenceReader(reader_engine)),
+        )
+        service.engine = self.engine
+        visitor = service.db.issue_session()["visitor_id"]
+        job, _ = service.db.accept(
+            visitor, "haruka", "daily-if-v1", "안녕", str(uuid4())
+        )
+        service._generate(job)
+        detail = service.db.request_detail(job["job_id"])
+        self.assertEqual(detail["status"], "complete")
+        metadata = detail["run"]["metadata"]
+        self.assertEqual(metadata["stage"], "renderer_generating")
+        self.assertEqual(metadata["grounding"]["stage"], "reader_complete")
+        self.assertEqual(
+            metadata["grounding"]["input_messages"], reader_engine.calls[0]
+        )
+        self.assertEqual(reconstruct_input(metadata, []), self.engine.calls[0])
+        with service.db.connection() as connection:
+            self.assertEqual(
+                connection.execute("SELECT count(*) FROM generation_runs").fetchone()[
+                    0
+                ],
+                1,
+            )
+
+    def test_renderer_budget_failure_preserves_completed_reader_audit(self):
+        from kiryu_ai.chat_prompt import ChatPromptBuilder
+        from kiryu_ai.chat_reader import EvidenceReader
+
+        reader_engine = Engine()
+        reader_engine.count_tokens = lambda messages: 100
+        reader_engine.result["reply"] = json.dumps(
+            {"mode": "conversation", "notes": [], "answer": "대화", "unknowns": []}
+        )
+        self.engine.count_tokens = lambda messages: 100_000
+        service = ChatService(
+            self.root,
+            engine_factory=lambda: self.engine,
+            builder=ChatPromptBuilder(reader=EvidenceReader(reader_engine)),
+        )
+        service.engine = self.engine
+        visitor = service.db.issue_session()["visitor_id"]
+        job, _ = service.db.accept(
+            visitor, "haruka", "daily-if-v1", "안녕", str(uuid4())
+        )
+        service._generate(job)
+        detail = service.db.request_detail(job["job_id"])
+        self.assertEqual(detail["error_code"], "context_limit")
+        self.assertEqual(
+            detail["run"]["metadata"]["grounding"]["stage"], "reader_complete"
+        )
+        self.assertEqual(self.engine.calls, [])
+
 
 class ProductionManifestTests(unittest.TestCase):
     """Tiny pinned fixtures exercise verification; no GGUF download or model process."""

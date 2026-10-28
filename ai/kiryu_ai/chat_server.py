@@ -321,6 +321,7 @@ class ChatService:
                 raise ValueError("Runtime manifest changed while connecting")
             verify_native_server(self.engine, manifest, directory)
         if self.builder is None:
+            from .chat_reader import EvidenceReader
             from .chat_retrieval import E5Onnx, HybridRetriever
 
             if not self.embedding_dir:
@@ -331,7 +332,17 @@ class ChatService:
                 CHAT_ASSETS / "registry.json", E5Onnx(self.embedding_dir)
             )
             self.builder = ChatPromptBuilder(
-                CHAT_ASSETS / "registry.json", CHAT_ASSETS / "cards.json", retriever
+                CHAT_ASSETS / "registry.json",
+                CHAT_ASSETS / "cards.json",
+                retriever,
+                reader=EvidenceReader(
+                    GemmaEngine(
+                        base_url=self.model_url,
+                        api_key_file=self.api_key_file,
+                        manifest_path=self.manifest_path,
+                        thinking=False,
+                    )
+                ),
             )
         # Connection only validates existing provenance; the process owner records
         # the initial template after verifying and starting its pinned binary.
@@ -360,6 +371,27 @@ class ChatService:
             metrics["queue_seconds"] = queue_seconds
             return metrics
 
+        run_started = False
+
+        def record_stage(assembled):
+            nonlocal run_started
+            manifest = getattr(self.engine, "manifest", {})
+            metadata = {
+                **assembled["metadata"],
+                "model": manifest.get("model_file", "test-engine"),
+                "model_manifest": manifest,
+                "sampling": SAMPLING,
+                "seed": None,
+            }
+            record = self.db.record_run_input if run_started else self.db.begin_run
+            record(
+                job["job_id"],
+                assembled["messages"],
+                metadata,
+                assembled["retrieval_hits"],
+            )
+            run_started = True
+
         try:
             history = self.db.history(job["visitor_id"], job["character"], SCENARIO)
             assembled = self.builder.build(
@@ -371,20 +403,9 @@ class ChatService:
                 count_tokens=self.engine.count_tokens,
                 context_limit=CONTEXT_TOKENS,
                 max_tokens=OUTPUT_TOKENS,
+                on_stage=record_stage,
             )
-            manifest = getattr(self.engine, "manifest", {})
-            assembled["metadata"].update(
-                model=manifest.get("model_file", "test-engine"),
-                model_manifest=manifest,
-                sampling=SAMPLING,
-                seed=None,
-            )
-            self.db.begin_run(
-                job["job_id"],
-                assembled["messages"],
-                assembled["metadata"],
-                assembled["retrieval_hits"],
-            )
+            record_stage(assembled)
             result = self.engine.reply(assembled["messages"], max_tokens=OUTPUT_TOKENS)
             metrics = timings(result)
             if result.get("finish_reason") not in {"stop", "eos"}:
