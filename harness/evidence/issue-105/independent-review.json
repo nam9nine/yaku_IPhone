@@ -42,7 +42,13 @@
     "related": ".tooling/ci105-final-related.log:116 passed",
     "targeted": ".tooling/ci105-final-targeted.log:18 passed"
   },
-  "artifacts": {
+  "limitations": [
+    "No actual iPhone Safari or physical keyboard execution performed. Native keyboard-to-composer gap and real touch timing remain device verification items.",
+    "Review is of candidate source1f44e3c and224 candidate images; ordinary non-update visual CI and final-head checks must still pass after adoption.",
+    "No claim of pixel-perfect iPhone recreation; unchanged product differences from reference are outside this focused regression fix."
+  ],
+  "local_review_directory": ".tooling/ci105-baseline-review/ (ignored; full 31-sheet inspection set)",
+  "local_artifacts_not_committed": {
     "per_image": "delta-summary.json",
     "status_sheets": [
       "status-01.png",
@@ -79,9 +85,18 @@
     ],
     "desktop_detail": ["desktop-chromium.png", "desktop-webkit.png"]
   },
-  "limitations": [
-    "No actual iPhone Safari or physical keyboard execution performed. Native keyboard-to-composer gap and real touch timing remain device verification items.",
-    "Review is of candidate source1f44e3c and224 candidate images; ordinary non-update visual CI and final-head checks must still pass after adoption.",
-    "No claim of pixel-perfect iPhone recreation; unchanged product differences from reference are outside this focused regression fix."
+  "tracked_artifacts": [
+    "harness/evidence/issue-105/delta-summary.json",
+    "harness/evidence/issue-105/status-01.png",
+    "harness/evidence/issue-105/status-05.png",
+    "harness/evidence/issue-105/full-02.png",
+    "harness/evidence/issue-105/full-08.png",
+    "harness/evidence/issue-105/full-11.png",
+    "harness/evidence/issue-105/full-18.png",
+    "harness/evidence/issue-105/desktop-chromium.png",
+    "harness/evidence/issue-105/chromium-retry-ready.png",
+    "harness/evidence/issue-105/chromium-rewrite-restored.png",
+    "harness/evidence/issue-105/webkit-retry-ready.png",
+    "harness/evidence/issue-105/webkit-rewrite-restored.png"
   ]
 }
