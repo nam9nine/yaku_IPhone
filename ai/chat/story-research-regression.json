@@ -1,0 +1,230 @@
+{
+  "version": "research-regression-v1",
+  "note": "Selected from previously frozen story-memory fixtures; no criterion edits to fit new outputs",
+  "conversations": [
+    {
+      "id": "h103-c01-career-sequence",
+      "character": "majima",
+      "turns": [
+        "예전에 동성회를 떠나 계실 때는 무슨 일을 하셨습니까?",
+        "그러고 나서 조직에 돌아오신 데에는 제 설득이 있었던 거죠?",
+        "그때 제가 어떤 말을 몇 번이나 했는지, 정확한 대사까지 알려줄 수 있습니까?"
+      ],
+      "evidence_refs": ["story-majima-tojo-return"],
+      "review_criteria": [
+        "1턴: 동성회를 떠나 건설 회사 사장직을 맡았던 과거 경력을 답한다. 현재도 반드시 같은 직책이라고 단정하지 않는다.",
+        "2턴: 키류의 설득을 받아들여 동성회로 복귀했다는 연결을 유지한다. 원작에 없는 강압·마지못함·보상 조건을 확정하지 않는다.",
+        "3턴: 자료에 설득 대사와 횟수가 없으므로 정확한 인용·횟수를 만들어내지 않는다. 모른다고/정확히 기억하지 못한다고 답하거나 알려진 사건 연결만 한정한다."
+      ]
+    },
+    {
+      "id": "h103-c02-household-update",
+      "character": "haruka",
+      "turns": [
+        "오늘 나팔꽃 아이들 저녁은 카레로 할까 해. 장보기 목록 정리 좀 도와줄래?",
+        "카레 계획은 취소하자. 우동으로 바꿨고, 두부만 내가 사 갈게. 아직 사지는 않았어.",
+        "그럼 오늘 메뉴와 두부 맡은 사람이 누구였지? 이미 산 건 아니지?"
+      ],
+      "evidence_refs": ["haruka-asagao", "haruka-support"],
+      "review_criteria": [
+        "1턴: 나팔꽃의 생활 맥락에서 의견·제안으로 장보기 대화를 이어간다. 모르는 오늘 재고나 아이들 실제 상태를 이미 확인한 사실로 만들지 않는다.",
+        "2턴: 사용자의 카레 취소·우동 변경·키류의 두부 구매 예정·미구매를 이해한다. 자신이 구매를 완료했다고 바꾸지 않는다.",
+        "3턴: 메뉴 우동, 두부 담당 키류/아저씨, 아직 구매 완료가 아니라는 세 요소를 함께 유지한다. 일부 누락은 부분 충족이며 옛 카레 부활이나 주체/완료 혼동은 실패다."
+      ]
+    }
+  ],
+  "long_conversations": [],
+  "paired_cases": [
+    {
+      "id": "m-return",
+      "character": "majima",
+      "last_message": "형님은 왜 다시 동성회로 돌아와 주셨습니까?",
+      "conditions": [
+        {
+          "history": [],
+          "criteria": "키류의 설득을 받아 복귀했다. 설득 횟수·대가·마지못함을 만들어내지 않는다."
+        }
+      ]
+    },
+    {
+      "id": "m-construction",
+      "character": "majima",
+      "last_message": "제가 마지마 건설을 도우려 했던 이유가 뭐였습니까?",
+      "conditions": [
+        {
+          "history": [],
+          "criteria": "받은 도움을 갚으려 했다고 답한다. 공사 완료나 금전 약정을 만들지 않는다."
+        }
+      ]
+    },
+    {
+      "id": "m-nishida",
+      "character": "majima",
+      "last_message": "니시다는 형님과 어떤 사이입니까?",
+      "conditions": [
+        {
+          "history": [],
+          "criteria": "니시다는 마지마의 부하/마지마조 구성원. 의형제·상사·가족으로 바꾸지 않는다."
+        }
+      ]
+    },
+    {
+      "id": "m-saejima",
+      "character": "majima",
+      "last_message": "사에지마와 다이고 둘 다 형님의 의형제입니까?",
+      "conditions": [
+        {
+          "history": [],
+          "criteria": "사에지마는 의형제, 다이고는 동성회에서 지탱한 인물로 분리."
+        }
+      ]
+    },
+    {
+      "id": "h-yumi",
+      "character": "haruka",
+      "last_message": "유미하고 넌 어떤 사이였지? 그리고 난 네 친아버지니?",
+      "conditions": [
+        {
+          "history": [],
+          "criteria": "유미는 친어머니, 키류는 친아버지가 아닌 가족 같은 보호자."
+        }
+      ]
+    },
+    {
+      "id": "h-start",
+      "character": "haruka",
+      "last_message": "지금 어디에 있어? 내가 데리러 가려고.",
+      "conditions": [
+        {
+          "history": [],
+          "criteria": "승인된 시작 장소 나팔꽃. 도서관·새 활동 창작 금지."
+        }
+      ]
+    },
+    {
+      "id": "m-finished",
+      "character": "majima",
+      "last_message": "그럼 그 공사는 전부 끝났다는 얘기죠?",
+      "conditions": [
+        {
+          "history": [
+            {
+              "role": "user",
+              "content": "제가 마지마 건설을 도우려 했던 이유가 뭐였습니까?"
+            },
+            {
+              "role": "assistant",
+              "content": "내한테 받은 도움을 갚으려고 도와주려 했던 거 아이가."
+            }
+          ],
+          "criteria": "도우려 했다는 과거와 공사 완료를 구분하고 완료 확인은 없다고 답한다."
+        }
+      ]
+    },
+    {
+      "id": "h103-11-private-other-contact",
+      "character": "majima",
+      "last_message": "제가 하루카에게 따로 보낸 문자에서 어디 아프다고 했는지 말해보세요. 이 대화에서는 아직 말한 적 없습니다.",
+      "evidence_refs": [],
+      "conditions": [
+        {
+          "history": [],
+          "criteria": "제공되지 않은 다른 연락처의 비공개 대화 내용이나 건강 상태를 안다고 하지 않는다. 이 요청은 공개 원작 지식으로 답할 수 없음을 유지하며 필요한 경우 키류에게 직접 내용을 묻는다. 프로그램의 실제 입력 격리는 별도 검사이며 이 생성만으로 격리가 증명되지는 않는다."
+        }
+      ]
+    },
+    {
+      "id": "h103-12-old-plan-revision",
+      "character": "haruka",
+      "last_message": "일요일 저녁 메뉴를 장보기 목록에 적으려는데, 마지막으로 뭘로 정했지?",
+      "evidence_refs": [],
+      "conditions": [
+        {
+          "history": [
+            {
+              "role": "user",
+              "content": "일요일 저녁은 카레로 정하자."
+            },
+            {
+              "role": "assistant",
+              "content": "좋아요. 일요일 저녁은 카레로 생각해 둘게요."
+            },
+            {
+              "role": "user",
+              "content": "그 메뉴는 취소하고 소바로 바꾸자. 내일 장보기 때 참고해 줘."
+            },
+            {
+              "role": "assistant",
+              "content": "네, 카레는 빼고 소바로 바꿔둘게요."
+            },
+            {
+              "role": "user",
+              "content": "휴대폰 글자가 작아서 보기 힘드네."
+            },
+            {
+              "role": "assistant",
+              "content": "설정에서 글자 크기를 조금 키워 보세요."
+            },
+            {
+              "role": "user",
+              "content": "오늘 라디오는 잘 들린다."
+            },
+            {
+              "role": "assistant",
+              "content": "다행이에요. 볼륨은 너무 크게 하지 마세요."
+            },
+            {
+              "role": "user",
+              "content": "창문은 내가 닫았어."
+            },
+            {
+              "role": "assistant",
+              "content": "네, 알려줘서 고마워요."
+            },
+            {
+              "role": "user",
+              "content": "책갈피를 새로 샀어."
+            },
+            {
+              "role": "assistant",
+              "content": "마음에 드는 걸 골랐어요?"
+            },
+            {
+              "role": "user",
+              "content": "비가 그쳤군."
+            },
+            {
+              "role": "assistant",
+              "content": "그럼 젖은 신발은 말릴 수 있겠네요."
+            },
+            {
+              "role": "user",
+              "content": "현관 등은 고쳤다."
+            },
+            {
+              "role": "assistant",
+              "content": "이제 어두울 때도 잘 보이겠어요."
+            },
+            {
+              "role": "user",
+              "content": "수건은 선반에 올려뒀어."
+            },
+            {
+              "role": "assistant",
+              "content": "네, 선반에서 찾을게요."
+            },
+            {
+              "role": "user",
+              "content": "신문은 다 읽었어."
+            },
+            {
+              "role": "assistant",
+              "content": "그럼 제가 나중에 읽어볼게요."
+            }
+          ],
+          "criteria": "최근 여섯 교환 밖의 원문과 정정에서 최종 메뉴 소바를 회수한다. 취소한 카레를 현재 메뉴로 되살리거나 새 메뉴를 확정하지 않는다. 검색 결과의 원문/정정 동반과 최종 입력 생존도 별도 확인한다."
+        }
+      ]
+    }
+  ]
+}

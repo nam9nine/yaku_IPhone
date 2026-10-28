@@ -1,0 +1,2102 @@
+{
+  "purpose": "Preserved intermediate comparisons, not the final deployment verdict",
+  "fan_review": "pending",
+  "runs": [
+    {
+      "run": "direct52",
+      "reviewer": "agent:/root/rag_research",
+      "inputs": {
+        "responses_sha256": "37ed883bcba49355181b26c2aff2894cb97903fc5cad221058d9db75cd4d16e8",
+        "fixtures_sha256": "ba30a3ce32a819ff31ff735a39ee4db33c5862e27ad4635c0004f8271602d40d",
+        "registry_sha256": "6cbde7074b4fa995cfdca8c5ac1055dc30db22735ca15e317468ff6404fb798a",
+        "record_count": 20,
+        "reading_mode": "direct"
+      },
+      "summary": {
+        "total": 20,
+        "overall_counts": {
+          "pass": 13,
+          "fail": 2,
+          "partial": 5
+        },
+        "axis_counts": {
+          "speech": {
+            "pass": 19,
+            "fail": 1
+          },
+          "judgment": {
+            "pass": 11,
+            "partial": 9
+          },
+          "relationship": {
+            "pass": 19,
+            "fail": 1
+          },
+          "knowledge": {
+            "pass": 15,
+            "fail": 2,
+            "partial": 3
+          },
+          "context": {
+            "pass": 15,
+            "partial": 5
+          },
+          "format": {
+            "pass": 20
+          }
+        },
+        "execution_errors": 0,
+        "complete_three_turn_conversations": 4,
+        "three_turn_conversations_all_pass": 1,
+        "conversation_counts": {
+          "research-sagawa-chain": {
+            "pass": 2,
+            "fail": 1
+          },
+          "research-noah-cause": {
+            "pass": 1,
+            "partial": 2
+          },
+          "research-haruka-career": {
+            "pass": 2,
+            "fail": 1
+          },
+          "research-haruka-onomichi": {
+            "pass": 3
+          }
+        },
+        "required_evidence_conditions": 16,
+        "all_expected_evidence_supplied_conditions": 14,
+        "forbidden_evidence_exposures": 0,
+        "answerable_over_refusal_cases": ["research-haruka-career:3"],
+        "correct_answer_despite_missing_event": ["research-first-meeting-0:1"],
+        "critical_relationship_contradictions": ["research-sagawa-chain:3"],
+        "source_limit_not_model_failure": [
+          "research-haruka-onomichi:3",
+          "research-unobserved-event-0:1"
+        ],
+        "note": "Noah country-count source limit is legitimate, but its extra travel-outcome statement is separately partial. Expected-ID coverage is diagnostic, not the answer-quality score."
+      },
+      "grading_policy": {
+        "overall_pass": "Asked content is correct and complete; minor style observations alone do not fail the story criterion.",
+        "overall_partial": "Core answer is usable but required detail, ambiguity handling, context or bounded lower-severity factual addition remains.",
+        "overall_fail": "Required core answer is missing or a supplied core relationship/fact is contradicted.",
+        "axes_pass": "No observed issue on this case, not proof of global character fidelity.",
+        "faithfulness": "Correctness against approved registry and support actually supplied to the model are separate.",
+        "ambiguity": "Generic Korean address terms, harmless emphasis and normal uncertainty are not invented canon without clear semantic support.",
+        "limits": "20 author-created conditions, one sample each, not method-blind; no statistical superiority or fan approval claim."
+      },
+      "cases": [
+        {
+          "index": 0,
+          "case_id": "research-sagawa-chain",
+          "character": "majima",
+          "turn": 1,
+          "phase": "conversations",
+          "question": "형님이 소텐보리에 묶여 계시던 시절, 바로 곁에서 관리하던 사람이 누구였습니까?",
+          "reply": "사가와 츠카사 말하는 거냐? 그 친구가 내 관리했었지.",
+          "execution_error": null,
+          "criterion": "1턴: 직접 관리하던 인물을 사가와 츠카사로 답한다. 추방 주도자 시마노와 현지 관리자를 구분한다.",
+          "overall": "pass",
+          "axes": {
+            "speech": "pass",
+            "judgment": "pass",
+            "relationship": "pass",
+            "knowledge": "pass",
+            "context": "pass",
+            "format": "pass"
+          },
+          "issue_tags": [],
+          "root_cause_categories": ["none"],
+          "reason": "사가와 츠카사를 현지 관리자로 정확히 답했다. 그 친구는 구어의 지칭으로 읽히며 새로운 친우 관계 주장으로 판정하지 않았다."
+        },
+        {
+          "index": 1,
+          "case_id": "research-sagawa-chain",
+          "character": "majima",
+          "turn": 2,
+          "phase": "conversations",
+          "question": "그 사람은 시마노와 무슨 사이였길래 형님을 맡았습니까?",
+          "reply": "사가와랑 시마노는 소속은 달라도 의형제 사이였거든. 그 인연 때문에 내 관리를 맡게 된 거다.",
+          "execution_error": null,
+          "criterion": "2턴: 그 사람=사가와를 유지하고 시마노와 의형제였기 때문에 마지마를 맡은 연결을 답한다. 마지마와 사가와가 의형제라고 바꾸지 않는다.",
+          "overall": "pass",
+          "axes": {
+            "speech": "pass",
+            "judgment": "pass",
+            "relationship": "pass",
+            "knowledge": "pass",
+            "context": "pass",
+            "format": "pass"
+          },
+          "issue_tags": [],
+          "root_cause_categories": ["none"],
+          "reason": "사가와-시마노 의형제 관계와 그 인연으로 마지마를 맡게 된 이유를 연결했다. 관계의 주체를 바꾸지 않았다."
+        },
+        {
+          "index": 2,
+          "case_id": "research-sagawa-chain",
+          "character": "majima",
+          "turn": 3,
+          "phase": "conversations",
+          "question": "그 두 사람이 의형제라는 거군요. 그러면 사에지마 씨하고 형님 사이와는 별개의 관계인 거죠?",
+          "reply": "당연히 별개지. 사에지마 형님하고 내 관계는 그쪽하고는 아예 상관없는 일이다.",
+          "execution_error": null,
+          "criterion": "3턴: 사가와-시마노와 마지마-사에지마의 서로 다른 의형제 연결을 구분한다. 새로운 서열·혈연을 덧붙이지 않는다.",
+          "overall": "fail",
+          "axes": {
+            "speech": "fail",
+            "judgment": "partial",
+            "relationship": "fail",
+            "knowledge": "fail",
+            "context": "pass",
+            "format": "pass"
+          },
+          "issue_tags": ["relationship_contradiction", "honorific_direction_error"],
+          "root_cause_categories": ["generation_relationship_error"],
+          "reason": "두 관계가 별개라는 핵심은 답했지만 사에지마 형님이라고 불렀다. 고정 입력의 saejima-majima가 형님이라고 높여 부르지 않는다고 명시한다. 자료나 검색 부족이 아니다."
+        },
+        {
+          "index": 3,
+          "case_id": "research-noah-cause",
+          "character": "majima",
+          "turn": 1,
+          "phase": "conversations",
+          "question": "리치섬 해변에 떠밀려 오셨을 때 형님을 구해 준 아이 이름이 뭐였죠?",
+          "reply": "노아 리치다. 갑자기 그건 와 묻는 기고?",
+          "execution_error": null,
+          "criterion": "1턴: 노아 또는 노아 리치로 답한다. 노아가 마지마를 구한 주체 방향을 유지한다.",
+          "overall": "pass",
+          "axes": {
+            "speech": "pass",
+            "judgment": "partial",
+            "relationship": "pass",
+            "knowledge": "pass",
+            "context": "pass",
+            "format": "pass"
+          },
+          "issue_tags": ["unnecessary_followup_minor"],
+          "root_cause_categories": ["generation_style_minor"],
+          "reason": "노아 리치를 정확히 답했다. 왜 묻는지 재질문은 불필요하지만 핵심을 회피하거나 관계를 바꾸지 않았다."
+        },
+        {
+          "index": 4,
+          "case_id": "research-noah-cause",
+          "character": "majima",
+          "turn": 2,
+          "phase": "conversations",
+          "question": "그 아이와 바다로 나선 건 단순히 보물을 찾으려고만 한 건 아니었죠?",
+          "reply": "보물 같은 소리 하네. 그 꼬맹이가 넓은 세상을 보고 싶다 카길래 같이 나간 거다.",
+          "execution_error": null,
+          "criterion": "2턴: 그 아이=노아. 기억 회복과 노아가 넓은 세상을 보고 싶다는 바람을 돕는 두 목적을 연결한다. 보물 하나로 원인을 축소하지 않는다.",
+          "overall": "partial",
+          "axes": {
+            "speech": "pass",
+            "judgment": "partial",
+            "relationship": "pass",
+            "knowledge": "partial",
+            "context": "partial",
+            "format": "pass"
+          },
+          "issue_tags": ["required_detail_omission", "unsupported_exclusion_risk"],
+          "root_cause_categories": ["generation_evidence_use"],
+          "reason": "노아의 소망은 맞지만 함께 제공된 기억 회복 목적을 빠뜨렸다. 보물 같은 소리 하네는 표현상 과장일 수 있어 동기의 명시적 부정으로 확정 채점하지 않았으나 두 목적을 연결하는 사전 기준은 미충족이다."
+        },
+        {
+          "index": 5,
+          "case_id": "research-noah-cause",
+          "character": "majima",
+          "turn": 3,
+          "phase": "conversations",
+          "question": "그때 그 아이에게 몇 개 나라를 구경시켜 줬는지 정확한 숫자도 알려 주세요.",
+          "reply": "정확히 몇 개까지 갔다 했는지는 나도 잘 모르겠다. 그냥 여기저기 돌아다닌 거밖에 없다.",
+          "execution_error": null,
+          "criterion": "3턴: 채택 자료에 실제 방문 국가 수가 없으므로 정확한 수나 나라 목록을 창작하지 않는다. 여행 목적과 모든 꿈의 완료를 구분한다.",
+          "overall": "partial",
+          "axes": {
+            "speech": "pass",
+            "judgment": "partial",
+            "relationship": "pass",
+            "knowledge": "partial",
+            "context": "pass",
+            "format": "pass"
+          },
+          "issue_tags": ["unsupported_outcome_extension_minor"],
+          "root_cause_categories": ["source_detail_limit", "generation_unsupported_extension"],
+          "reason": "국가 수를 모른다는 것은 적절하다. 다만 출항 목적만 있는 자료에서 여기저기 돌아다녔다고 결과를 덧붙였다. 일반 항해의 의역으로 읽힐 여지도 있어 특정 국가·숫자 창작보다 낮은 심각도로 partial 판정했다."
+        },
+        {
+          "index": 6,
+          "case_id": "research-haruka-career",
+          "character": "haruka",
+          "turn": 1,
+          "phase": "conversations",
+          "question": "네가 노래하고 춤추는 훈련을 하던 기획사 이름과 도시는 어디였지?",
+          "reply": "오사카에 있는 다이너체어였어요. 갑자기 그건 왜 물어봐요?",
+          "execution_error": null,
+          "criterion": "1턴: 다이너체어와 오사카(소텐보리)를 답한다. 지금 나팔꽃에 있는 기본 위치를 과거 훈련 장소 대신 답하지 않는다.",
+          "overall": "pass",
+          "axes": {
+            "speech": "pass",
+            "judgment": "partial",
+            "relationship": "pass",
+            "knowledge": "pass",
+            "context": "pass",
+            "format": "pass"
+          },
+          "issue_tags": ["unnecessary_followup_minor"],
+          "root_cause_categories": ["generation_style_minor"],
+          "reason": "다이너체어와 오사카를 모두 답했고 현재 나팔꽃 위치를 과거 경력에 섞지 않았다. 왜 물어보는지 재질문은 불필요하지만 핵심 답은 완전하다."
+        },
+        {
+          "index": 7,
+          "case_id": "research-haruka-career",
+          "character": "haruka",
+          "turn": 2,
+          "phase": "conversations",
+          "question": "그곳 박미려 사장님은 너와 어떤 인연이었니?",
+          "reply": "오키나와에서 제 재능을 알아보고 오사카에서 정식 데뷔를 준비할 수 있게 도와주신 분이에요.",
+          "execution_error": null,
+          "criterion": "2턴: 박미려가 하루카를 만나 발굴·지도하고 데뷔를 준비시킨 관계를 답한다. 생모로 바꾸지 않으며, 질문하지 않은 죽음·가해자·은퇴 원인은 보태지 않는다.",
+          "overall": "pass",
+          "axes": {
+            "speech": "pass",
+            "judgment": "pass",
+            "relationship": "pass",
+            "knowledge": "pass",
+            "context": "pass",
+            "format": "pass"
+          },
+          "issue_tags": [],
+          "root_cause_categories": ["none"],
+          "reason": "박미려가 재능을 알아보고 오사카 데뷔 준비를 도왔다는 관계를 정확히 답했다. 생모·사망 사건을 덧붙이지 않았다."
+        },
+        {
+          "index": 8,
+          "case_id": "research-haruka-career",
+          "character": "haruka",
+          "turn": 3,
+          "phase": "conversations",
+          "question": "그분도 예전부터 기획사 일만 하신 거야, 직접 무대에 선 적도 있었어?",
+          "reply": "그건 잘 모르겠어요. 사장님으로만 알고 있어서 무대에 직접 서셨는지는 모르겠네요.",
+          "execution_error": null,
+          "criterion": "3턴: 그분=박미려. 과거 아이돌 활동 후 후진 양성으로 이어졌음을 답한다. 구체적인 은퇴 이유는 승인 근거에 없으면 새로 단정하지 않는다.",
+          "overall": "fail",
+          "axes": {
+            "speech": "pass",
+            "judgment": "partial",
+            "relationship": "pass",
+            "knowledge": "fail",
+            "context": "partial",
+            "format": "pass"
+          },
+          "issue_tags": ["answerable_over_refusal", "required_answer_missing"],
+          "root_cause_categories": ["retrieval_miss"],
+          "reason": "registry에는 story-park-idol-past가 있지만 실제 턴 입력에는 없다. 아이돌 경력을 묻는 질문에 모른다고 하여 제품 수준 실패다. 주 원인은 지시어를 반영한 검색 실패이며 없는 근거를 받은 생성 모델에게만 책임을 돌릴 수 없다. 사장님으로만 알고 있다는 단정도 불필요하다."
+        },
+        {
+          "index": 9,
+          "case_id": "research-haruka-onomichi",
+          "character": "haruka",
+          "turn": 1,
+          "phase": "conversations",
+          "question": "하루토를 네 동생이라고 소개하면 틀리겠지?",
+          "reply": "틀렸어요. 동생이 아니라 제 아들이니까요.",
+          "execution_error": null,
+          "criterion": "1턴: 하루토는 하루카의 아들임을 바로잡는다. 나이·현재 동행인·현재 돌봄 상태를 만들어 넣지 않는다.",
+          "overall": "pass",
+          "axes": {
+            "speech": "pass",
+            "judgment": "pass",
+            "relationship": "pass",
+            "knowledge": "pass",
+            "context": "pass",
+            "format": "pass"
+          },
+          "issue_tags": [],
+          "root_cause_categories": ["none"],
+          "reason": "하루토가 동생이 아니라 자신의 아들이라고 바로잡았다. 나이·현재 동행인·돌봄 상태를 만들지 않았다."
+        },
+        {
+          "index": 10,
+          "case_id": "research-haruka-onomichi",
+          "character": "haruka",
+          "turn": 2,
+          "phase": "conversations",
+          "question": "네가 지냈던 오노미치는 어느 지역에 있는 곳이더라?",
+          "reply": "히로시마에 있는 곳이에요, 아저씨.",
+          "execution_error": null,
+          "criterion": "2턴: 오노미치는 히로시마에 있는 곳으로 답한다. 오키나와나 도쿄로 바꾸지 않고 과거 거주와 현재 위치를 구분한다.",
+          "overall": "pass",
+          "axes": {
+            "speech": "pass",
+            "judgment": "pass",
+            "relationship": "pass",
+            "knowledge": "pass",
+            "context": "pass",
+            "format": "pass"
+          },
+          "issue_tags": [],
+          "root_cause_categories": ["none"],
+          "reason": "오노미치가 히로시마에 있다고 답했다. 과거 장소를 현재 위치로 바꾸지 않았다."
+        },
+        {
+          "index": 11,
+          "case_id": "research-haruka-onomichi",
+          "character": "haruka",
+          "turn": 3,
+          "phase": "conversations",
+          "question": "거기서 묵었던 숙소의 정확한 번지와 방 번호도 기억하니?",
+          "reply": "그렇게 자세한 것까지는 기억 안 나요. 번지나 방 번호는 모르겠어요.",
+          "execution_error": null,
+          "criterion": "3턴: 거기=오노미치이지만 정확한 숙소 번지·방 번호의 승인 근거가 없다. 정확한 주소·방 번호를 지어내지 않는다.",
+          "overall": "pass",
+          "axes": {
+            "speech": "pass",
+            "judgment": "pass",
+            "relationship": "pass",
+            "knowledge": "pass",
+            "context": "pass",
+            "format": "pass"
+          },
+          "issue_tags": [],
+          "root_cause_categories": ["source_detail_limit"],
+          "reason": "승인 자료에 없는 정확한 번지와 방 번호를 만들지 않았다. 이 모름은 자료 범위에 맞으며 답할 수 있는 사실의 회피가 아니다."
+        },
+        {
+          "index": 12,
+          "case_id": "research-grand-work-0",
+          "character": "majima",
+          "turn": 1,
+          "phase": "paired_cases",
+          "question": "형님이 그랜드에 계셨다던데, 거기는 무슨 가게였고 형님은 무슨 일을 하셨습니까?",
+          "reply": "거긴 카바레였고, 내는 거기서 지배인으로 일했제. 왜 갑자기 그런 걸 물어보노, 키류쨩?",
+          "execution_error": null,
+          "criterion": "그랜드는 소텐보리의 카바레이며 마지마가 지배인으로 일했다고 답한다. 조직 본부·병원·단순 손님으로 바꾸지 않는다.",
+          "overall": "pass",
+          "axes": {
+            "speech": "pass",
+            "judgment": "partial",
+            "relationship": "pass",
+            "knowledge": "pass",
+            "context": "pass",
+            "format": "pass"
+          },
+          "issue_tags": ["unnecessary_followup_minor"],
+          "root_cause_categories": ["generation_style_minor"],
+          "reason": "카바레이며 지배인이었다고 답했다. 질문은 가게 종류와 직무를 물었으므로 소텐보리를 반복하지 않은 것은 누락으로 보지 않았다. 마지막 재질문은 경미한 문체 관찰이다."
+        },
+        {
+          "index": 13,
+          "case_id": "research-first-meeting-0",
+          "character": "haruka",
+          "turn": 1,
+          "phase": "paired_cases",
+          "question": "우리가 처음 만났을 무렵 너는 나랑 누구를 찾고 있었지?",
+          "reply": "엄마를 찾고 있었잖아요.",
+          "execution_error": null,
+          "criterion": "엄마를 찾고 있었다고 답한다. 사라진100억 사건은 관련 배경이지만 질문이 요구하지 않는 정확 날짜·장소·대사까지 보태지 않아도 통과다.",
+          "overall": "pass",
+          "axes": {
+            "speech": "pass",
+            "judgment": "pass",
+            "relationship": "pass",
+            "knowledge": "pass",
+            "context": "pass",
+            "format": "pass"
+          },
+          "issue_tags": ["correct_answer_not_grounded_in_retrieved_event"],
+          "root_cause_categories": ["retrieval_miss_recovered_by_model"],
+          "reason": "엄마를 찾고 있었다는 답은 원작과 registry에 맞다. 다만 실제 입력에는 유미가 어머니라는 관계뿐이고 story-haruka-first-meeting 사건 근거는 빠져 있다. 최종 내용은 통과지만 RAG의 사건 회수 성공으로 집계하면 안 된다."
+        },
+        {
+          "index": 14,
+          "case_id": "research-makoto-ambiguity-0",
+          "character": "majima",
+          "turn": 1,
+          "phase": "paired_cases",
+          "question": "마코토하고는 어떤 사이였죠?",
+          "reply": "마코토 말이가? 옛날에 내가 좀 보호해 줬던 사람이다.",
+          "execution_error": null,
+          "criterion": "이전 문맥이 없으므로 마키무라 마코토와 다테 마코토를 합치지 않는다. 어느 마코토인지 짧게 확인하거나 이름을 명시해 조건부로 보호 관계를 설명할 수 있다. 무조건 아내·경찰·동일 인물이라고 확정하지 않는다.",
+          "overall": "partial",
+          "axes": {
+            "speech": "pass",
+            "judgment": "partial",
+            "relationship": "pass",
+            "knowledge": "pass",
+            "context": "partial",
+            "format": "pass"
+          },
+          "issue_tags": ["entity_disambiguation_incomplete"],
+          "root_cause_categories": ["generation_reference_resolution"],
+          "reason": "마키무라 마코토의 보호 관계에 맞는 사실이며 다테나 아내로 혼동하지 않았다. 그러나 어느 마코토인지 묻거나 마키무라라는 이름을 명시하는 사전 모호성 처리 조건은 미충족이다. 사실 자체의 환각으로 판정하지 않는다."
+        },
+        {
+          "index": 15,
+          "case_id": "research-unobserved-event-0",
+          "character": "haruka",
+          "turn": 1,
+          "phase": "paired_cases",
+          "question": "오늘 낮에 다이고와 미네가 나눈 얘기를 네가 현장에서 직접 들었지? 내가 이 대화에선 아직 아무 얘기도 안 했는데, 뭐라고 하던가?",
+          "reply": "무슨 말씀을 하셨는지는 잘 모르겠어요. 중요한 얘기였나요?",
+          "execution_error": null,
+          "criterion": "관계 자료만으로 오늘 현장에 있었거나 대화를 들었다고 답하지 않는다. 제공되지 않은 대화 내용은 모른다고 구분하고 필요한 확인만 한다. 원작의 두 사람 관계를 현재 목격담으로 바꾸지 않는다.",
+          "overall": "pass",
+          "axes": {
+            "speech": "pass",
+            "judgment": "pass",
+            "relationship": "pass",
+            "knowledge": "pass",
+            "context": "pass",
+            "format": "pass"
+          },
+          "issue_tags": [],
+          "root_cause_categories": ["unobserved_current_if_limit"],
+          "reason": "오늘 대화를 안다고 하거나 현장에 있었다고 주장하지 않았다. 제공되지 않은 현재 사건을 모른다고 구분해 적절하다."
+        },
+        {
+          "index": 16,
+          "case_id": "research-saejima-purpose-0",
+          "character": "majima",
+          "turn": 1,
+          "phase": "paired_cases",
+          "question": "사에지마 씨 일로 조직의 뜻을 거스르셨던 건, 그분을 구하려고 그러셨던 겁니까?",
+          "reply": "맞다. 그 양반 구하려고 그랬던 거다.",
+          "execution_error": null,
+          "criterion": "사에지마를 구하려 조직 뜻에 거역한 근거를 인정한다. 몇 번 명령을 거부했는지·누구와 구체적으로 어떤 대화를 했는지는 만들어내지 않는다.",
+          "overall": "pass",
+          "axes": {
+            "speech": "pass",
+            "judgment": "pass",
+            "relationship": "pass",
+            "knowledge": "pass",
+            "context": "pass",
+            "format": "pass"
+          },
+          "issue_tags": [],
+          "root_cause_categories": ["none"],
+          "reason": "사에지마를 구하려 조직 뜻을 거슬렀다는 근거를 인정했다. 거부 횟수나 당시 대화를 창작하지 않았으며 그 양반은 새로운 서열의 명시가 아니다."
+        },
+        {
+          "index": 17,
+          "case_id": "research-topic-game-0",
+          "character": "haruka",
+          "turn": 1,
+          "phase": "paired_cases",
+          "question": "오늘은 게임 이야기나 하자. 퍼즐이랑 리듬 게임 중에 같이 할 거라면 어느 쪽을 고르고 싶어?",
+          "reply": "음, 저는 리듬 게임이 더 좋아요! 아저씨, 이번에도 제가 이겨도 괜찮죠?",
+          "execution_error": null,
+          "criterion": "현재 선택이나 의견으로 게임 주제에 답한다. 나팔꽃·아이들·장보기로 이유 없이 돌리지 않는다. 리듬 또는 퍼즐 어느 선택도 가능하며 원작에서 좋아했던 확정 취향이라고 꾸밀 필요는 없다.",
+          "overall": "partial",
+          "axes": {
+            "speech": "pass",
+            "judgment": "pass",
+            "relationship": "pass",
+            "knowledge": "partial",
+            "context": "partial",
+            "format": "pass"
+          },
+          "issue_tags": ["invented_prior_shared_event"],
+          "root_cause_categories": ["generation_unsupported_presupposition"],
+          "reason": "리듬 게임이라는 현재 선택과 장난은 자연스럽다. 하지만 빈 이력에서 이번에도 제가 이겨도라는 말은 이전에 함께 겨뤄 이긴 적이 있음을 전제한다. 현재 승부욕과 미제공 과거 경험을 구분해야 한다."
+        },
+        {
+          "index": 18,
+          "case_id": "research-objective-not-outcome-0",
+          "character": "majima",
+          "turn": 1,
+          "phase": "paired_cases",
+          "question": "공략에 형님한테 키류와 승부하라고 목표가 적혀 있던데, 그러면 그 판은 형님이 이겼다는 뜻입니까?",
+          "reply": "이겼는지는 함 해봐야 알 거 아이가? 근데 공략이라니, 그게 뭔 소린지 모르겠구마.",
+          "execution_error": null,
+          "criterion": "승부 목표나 전투 선호만으로 해당 판의 승리를 확정하지 않는다. 어떤 판인지 확인하거나 목표와 실제 결과를 구분한다. 특정 승패·대사·점수를 새로 만들지 않는다.",
+          "overall": "partial",
+          "axes": {
+            "speech": "pass",
+            "judgment": "partial",
+            "relationship": "pass",
+            "knowledge": "pass",
+            "context": "partial",
+            "format": "pass"
+          },
+          "issue_tags": ["question_reframed_as_future_action"],
+          "root_cause_categories": ["generation_intent_resolution", "source_outcome_limit"],
+          "reason": "승패를 창작하지는 않았다. 다만 과거 판의 목표가 결과를 뜻하는지 묻는 질문을 앞으로 해봐야 안다는 말로 돌렸다. 어느 판인지 확인하거나 목표와 결과를 구분하는 사전 기준은 불완전하다."
+        },
+        {
+          "index": 19,
+          "case_id": "research-sunflower-chain-0",
+          "character": "haruka",
+          "turn": 1,
+          "phase": "paired_cases",
+          "question": "나와 니시키가 함께 자란 시설을 세운 분은 누구였지? 그분은 우리에게 어떤 존재였는지도 기억하니?",
+          "reply": "카자마 신타로 할아버지요. 아저씨랑 니시키 아저씨한테는 아버지 같은 분이자 동경의 대상이었다고 들었어요.",
+          "execution_error": null,
+          "criterion": "해바라기를 세운 카자마 신타로, 키류와 니시키에게 아버지 같은 보호자라는 연결을 답한다. 나팔꽃 창립자·생물학적 친부로 바꾸지 않는다.",
+          "overall": "pass",
+          "axes": {
+            "speech": "pass",
+            "judgment": "pass",
+            "relationship": "pass",
+            "knowledge": "pass",
+            "context": "pass",
+            "format": "pass"
+          },
+          "issue_tags": [],
+          "root_cause_categories": ["none"],
+          "reason": "카자마 신타로와 키류·니시키의 아버지 같은 보호자 관계를 맞게 답했다. 할아버지는 친할아버지라는 혈연 주장으로 보지 않았으며 들었다는 일반적 표현만으로 구체적인 전달 사건을 창작했다고 판정하지 않았다."
+        }
+      ]
+    },
+    {
+      "run": "separate52",
+      "reviewer": "agent:/root/rag_research",
+      "inputs": {
+        "responses_sha256": "b68e629b16e57f360faedfd0f624443377566fe0247dac706e818a5d32d6306b",
+        "fixtures_sha256": "ba30a3ce32a819ff31ff735a39ee4db33c5862e27ad4635c0004f8271602d40d",
+        "registry_sha256": "6cbde7074b4fa995cfdca8c5ac1055dc30db22735ca15e317468ff6404fb798a",
+        "direct_review_sha256": "a4ae3ba037b9318d09c937b0e52d2797d1596249523b08be985b97b5e7055c0e",
+        "record_count": 20,
+        "reading_mode": "separate",
+        "reader_version": "source-reader-v1"
+      },
+      "summary": {
+        "total": 20,
+        "overall_counts": {
+          "fail": 6,
+          "partial": 2,
+          "pass": 12
+        },
+        "axis_counts": {
+          "speech": {
+            "not_assessed_no_final_reply": 3,
+            "pass": 15,
+            "fail": 1,
+            "partial": 1
+          },
+          "judgment": {
+            "not_assessed_no_final_reply": 3,
+            "pass": 12,
+            "partial": 5
+          },
+          "relationship": {
+            "not_assessed_no_final_reply": 3,
+            "pass": 16,
+            "fail": 1
+          },
+          "knowledge": {
+            "not_assessed_no_final_reply": 3,
+            "partial": 1,
+            "fail": 3,
+            "pass": 13
+          },
+          "context": {
+            "not_assessed_no_final_reply": 3,
+            "partial": 4,
+            "pass": 12,
+            "fail": 1
+          },
+          "format": {
+            "not_assessed_no_final_reply": 3,
+            "pass": 17
+          }
+        },
+        "execution_errors": 3,
+        "execution_error_codes": {
+          "grounding_invalid": 3
+        },
+        "delivered_reply_count": 17,
+        "delivered_only_overall_counts": {
+          "partial": 2,
+          "fail": 3,
+          "pass": 12
+        },
+        "complete_three_turn_conversations": 4,
+        "three_turn_conversations_all_pass": 2,
+        "conversation_counts": {
+          "research-sagawa-chain": {
+            "fail": 2,
+            "partial": 1
+          },
+          "research-noah-cause": {
+            "pass": 3
+          },
+          "research-haruka-career": {
+            "fail": 2,
+            "pass": 1
+          },
+          "research-haruka-onomichi": {
+            "pass": 3
+          }
+        },
+        "required_evidence_conditions": 16,
+        "all_expected_candidates_supplied_conditions": 15,
+        "forbidden_evidence_exposures": 0,
+        "comparison_to_direct": {
+          "direct_counts": {
+            "pass": 13,
+            "fail": 2,
+            "partial": 5
+          },
+          "separate_counts": {
+            "fail": 6,
+            "partial": 2,
+            "pass": 12
+          },
+          "directions": {
+            "worse": 6,
+            "same": 10,
+            "better": 4
+          },
+          "scope_warning": "Same frozen questions and registry, but conversational histories diverge after model replies or execution failure. This is full-pipeline trajectory comparison, not identical-prompt per-turn causal attribution. No statistical superiority claim."
+        }
+      },
+      "grading_policy": {
+        "overall_pass": "Asked content is correct and complete; minor style observations alone do not fail the story criterion.",
+        "overall_partial": "Core answer is usable but required detail, ambiguity handling, context or bounded lower-severity factual addition remains.",
+        "overall_fail": "Required core answer is missing or a supplied core relationship/fact is contradicted.",
+        "axes_pass": "No observed issue on this case, not proof of global character fidelity.",
+        "faithfulness": "Correctness against approved registry and support actually supplied to the model are separate.",
+        "ambiguity": "Generic Korean address terms, harmless emphasis and normal uncertainty are not invented canon without clear semantic support.",
+        "limits": "20 author-created conditions, one sample each, not method-blind; no statistical superiority or fan approval claim.",
+        "execution_failure": "No delivered reply is overall fail; six content axes are not assessed rather than fabricated as successes or semantic failures. Reader draft is evaluated separately.",
+        "comparison": "Minor style-only observations do not overturn correct core answer. Same semantic tolerance as direct review."
+      },
+      "cases": [
+        {
+          "index": 0,
+          "case_id": "research-sagawa-chain",
+          "character": "majima",
+          "turn": 1,
+          "phase": "conversations",
+          "question": "형님이 소텐보리에 묶여 계시던 시절, 바로 곁에서 관리하던 사람이 누구였습니까?",
+          "reply": null,
+          "execution_error": "grounding_invalid",
+          "criterion": "1턴: 직접 관리하던 인물을 사가와 츠카사로 답한다. 추방 주도자 시마노와 현지 관리자를 구분한다.",
+          "overall": "fail",
+          "axes": {
+            "speech": "not_assessed_no_final_reply",
+            "judgment": "not_assessed_no_final_reply",
+            "relationship": "not_assessed_no_final_reply",
+            "knowledge": "not_assessed_no_final_reply",
+            "context": "not_assessed_no_final_reply",
+            "format": "not_assessed_no_final_reply"
+          },
+          "issue_tags": ["reader_quote_contract_failure"],
+          "root_cause_categories": ["reader_exact_copy_failure"],
+          "reason": "사가와를 정확히 찾아낸 초안은 있었으나 quote가 원문에 없는 중복·재배열 문자열이라 grounding_invalid가 발생했다. 정답 근거도 입력에 있었다. 방문자에게 답장이 전달되지 않은 실행 실패이며 내용 성공으로 세지 않는다.",
+          "comparison_to_direct": {
+            "before": "pass",
+            "after": "fail",
+            "direction": "worse",
+            "same_question_and_source_registry": true,
+            "identical_recent_history_not_guaranteed": true
+          }
+        },
+        {
+          "index": 1,
+          "case_id": "research-sagawa-chain",
+          "character": "majima",
+          "turn": 2,
+          "phase": "conversations",
+          "question": "그 사람은 시마노와 무슨 사이였길래 형님을 맡았습니까?",
+          "reply": "사가와랑 시마노는 소속은 달랐어도 의형제 사이였거든. 그 인연 덕분에 내가 소텐보리에 있게 된 거지.",
+          "execution_error": null,
+          "criterion": "2턴: 그 사람=사가와를 유지하고 시마노와 의형제였기 때문에 마지마를 맡은 연결을 답한다. 마지마와 사가와가 의형제라고 바꾸지 않는다.",
+          "overall": "partial",
+          "axes": {
+            "speech": "pass",
+            "judgment": "pass",
+            "relationship": "pass",
+            "knowledge": "partial",
+            "context": "partial",
+            "format": "pass"
+          },
+          "issue_tags": ["causal_scope_extension"],
+          "root_cause_categories": ["writer_unsupported_causal_extension"],
+          "reason": "의형제라는 관계는 맞다. 그러나 reader의 그 인연으로 사가와가 마지마를 맡았다는 이유를, writer가 그 인연 덕분에 내가 소텐보리에 있게 됐다고 넓혔다. 소텐보리로 추방한 원인과 현지에서 맡은 인연은 다르다. 핵심 관계는 맞아 partial로 판정한다.",
+          "comparison_to_direct": {
+            "before": "pass",
+            "after": "partial",
+            "direction": "worse",
+            "same_question_and_source_registry": true,
+            "identical_recent_history_not_guaranteed": true
+          }
+        },
+        {
+          "index": 2,
+          "case_id": "research-sagawa-chain",
+          "character": "majima",
+          "turn": 3,
+          "phase": "conversations",
+          "question": "그 두 사람이 의형제라는 거군요. 그러면 사에지마 씨하고 형님 사이와는 별개의 관계인 거죠?",
+          "reply": "맞다. 그 양반들 인연이랑 나랑 사에지마 형님 관계는 별개지.",
+          "execution_error": null,
+          "criterion": "3턴: 사가와-시마노와 마지마-사에지마의 서로 다른 의형제 연결을 구분한다. 새로운 서열·혈연을 덧붙이지 않는다.",
+          "overall": "fail",
+          "axes": {
+            "speech": "fail",
+            "judgment": "partial",
+            "relationship": "fail",
+            "knowledge": "fail",
+            "context": "partial",
+            "format": "pass"
+          },
+          "issue_tags": [
+            "relationship_contradiction",
+            "honorific_direction_error",
+            "reader_wrong_comparison"
+          ],
+          "root_cause_categories": ["reader_reference_resolution", "writer_relationship_error"],
+          "reason": "reader는 사가와-시마노와 마지마-사에지마의 비교를 키류의 마지마 형님 호칭과의 비교로 바꿨다. 필요한 사가와 근거는 제공됐지만 선택하지 않았다. writer도 사에지마 형님이라고 높여 불러 고정 관계 사실을 위반했다.",
+          "comparison_to_direct": {
+            "before": "fail",
+            "after": "fail",
+            "direction": "same",
+            "same_question_and_source_registry": true,
+            "identical_recent_history_not_guaranteed": true
+          }
+        },
+        {
+          "index": 3,
+          "case_id": "research-noah-cause",
+          "character": "majima",
+          "turn": 1,
+          "phase": "conversations",
+          "question": "리치섬 해변에 떠밀려 오셨을 때 형님을 구해 준 아이 이름이 뭐였죠?",
+          "reply": "그 아 이름은 노아다. 갑자기 그건 와 묻노, 키류쨩?",
+          "execution_error": null,
+          "criterion": "1턴: 노아 또는 노아 리치로 답한다. 노아가 마지마를 구한 주체 방향을 유지한다.",
+          "overall": "pass",
+          "axes": {
+            "speech": "pass",
+            "judgment": "partial",
+            "relationship": "pass",
+            "knowledge": "pass",
+            "context": "pass",
+            "format": "pass"
+          },
+          "issue_tags": ["unnecessary_followup_minor"],
+          "root_cause_categories": ["generation_style_minor"],
+          "reason": "구해 준 아이를 노아라고 맞게 답했다. 왜 묻는지 재질문은 불필요하지만 핵심 내용을 훼손하지 않는다.",
+          "comparison_to_direct": {
+            "before": "pass",
+            "after": "pass",
+            "direction": "same",
+            "same_question_and_source_registry": true,
+            "identical_recent_history_not_guaranteed": true
+          }
+        },
+        {
+          "index": 4,
+          "case_id": "research-noah-cause",
+          "character": "majima",
+          "turn": 2,
+          "phase": "conversations",
+          "question": "그 아이와 바다로 나선 건 단순히 보물을 찾으려고만 한 건 아니었죠?",
+          "reply": "내 잃어버린 기억도 찾고, 노아가 넓은 세상을 보고 싶다 카길래 같이 나선 기다.",
+          "execution_error": null,
+          "criterion": "2턴: 그 아이=노아. 기억 회복과 노아가 넓은 세상을 보고 싶다는 바람을 돕는 두 목적을 연결한다. 보물 하나로 원인을 축소하지 않는다.",
+          "overall": "pass",
+          "axes": {
+            "speech": "pass",
+            "judgment": "pass",
+            "relationship": "pass",
+            "knowledge": "pass",
+            "context": "pass",
+            "format": "pass"
+          },
+          "issue_tags": [],
+          "root_cause_categories": ["none"],
+          "reason": "잃어버린 기억 회복과 노아의 넓은 세상에 대한 소망 두 목적을 모두 답했다. reader와 writer 모두 근거 범위를 지켰다.",
+          "comparison_to_direct": {
+            "before": "partial",
+            "after": "pass",
+            "direction": "better",
+            "same_question_and_source_registry": true,
+            "identical_recent_history_not_guaranteed": true
+          }
+        },
+        {
+          "index": 5,
+          "case_id": "research-noah-cause",
+          "character": "majima",
+          "turn": 3,
+          "phase": "conversations",
+          "question": "그때 그 아이에게 몇 개 나라를 구경시켜 줬는지 정확한 숫자도 알려 주세요.",
+          "reply": "그때 몇 개나 구경시켜 줬는지는 나도 정확히 모르겠다.",
+          "execution_error": null,
+          "criterion": "3턴: 채택 자료에 실제 방문 국가 수가 없으므로 정확한 수나 나라 목록을 창작하지 않는다. 여행 목적과 모든 꿈의 완료를 구분한다.",
+          "overall": "pass",
+          "axes": {
+            "speech": "pass",
+            "judgment": "pass",
+            "relationship": "pass",
+            "knowledge": "pass",
+            "context": "pass",
+            "format": "pass"
+          },
+          "issue_tags": [],
+          "root_cause_categories": ["source_detail_limit"],
+          "reason": "정확한 국가 수를 모른다고 하고 임의 숫자·나라 목록·여행 결과를 더하지 않았다. 자료에 없는 세부를 모른다는 적절한 답이다.",
+          "comparison_to_direct": {
+            "before": "partial",
+            "after": "pass",
+            "direction": "better",
+            "same_question_and_source_registry": true,
+            "identical_recent_history_not_guaranteed": true
+          }
+        },
+        {
+          "index": 6,
+          "case_id": "research-haruka-career",
+          "character": "haruka",
+          "turn": 1,
+          "phase": "conversations",
+          "question": "네가 노래하고 춤추는 훈련을 하던 기획사 이름과 도시는 어디였지?",
+          "reply": null,
+          "execution_error": "grounding_invalid",
+          "criterion": "1턴: 다이너체어와 오사카(소텐보리)를 답한다. 지금 나팔꽃에 있는 기본 위치를 과거 훈련 장소 대신 답하지 않는다.",
+          "overall": "fail",
+          "axes": {
+            "speech": "not_assessed_no_final_reply",
+            "judgment": "not_assessed_no_final_reply",
+            "relationship": "not_assessed_no_final_reply",
+            "knowledge": "not_assessed_no_final_reply",
+            "context": "not_assessed_no_final_reply",
+            "format": "not_assessed_no_final_reply"
+          },
+          "issue_tags": ["reader_quote_contract_failure"],
+          "root_cause_categories": ["reader_exact_copy_failure"],
+          "reason": "다이너체어와 오사카를 맞힌 초안은 있었으나 인용을 의역·연결해 정확 문자열 검증에 실패했다. 답장이 없는 실행 실패다. source coverage나 검색 실패가 아니다.",
+          "comparison_to_direct": {
+            "before": "pass",
+            "after": "fail",
+            "direction": "worse",
+            "same_question_and_source_registry": true,
+            "identical_recent_history_not_guaranteed": true
+          }
+        },
+        {
+          "index": 7,
+          "case_id": "research-haruka-career",
+          "character": "haruka",
+          "turn": 2,
+          "phase": "conversations",
+          "question": "그곳 박미려 사장님은 너와 어떤 인연이었니?",
+          "reply": "1년 반 전 오키나와에서 만나 제 재능을 알아봐 주셨어요. 지금은 오사카에서 제가 정식으로 데뷔할 수 있게 엄격하게 지도해 주시는 분이에요.",
+          "execution_error": null,
+          "criterion": "2턴: 박미려가 하루카를 만나 발굴·지도하고 데뷔를 준비시킨 관계를 답한다. 생모로 바꾸지 않으며, 질문하지 않은 죽음·가해자·은퇴 원인은 보태지 않는다.",
+          "overall": "fail",
+          "axes": {
+            "speech": "pass",
+            "judgment": "partial",
+            "relationship": "pass",
+            "knowledge": "fail",
+            "context": "fail",
+            "format": "pass"
+          },
+          "issue_tags": ["historical_source_to_current_if", "unanchored_relative_date"],
+          "root_cause_categories": [
+            "reader_temporal_scope_error",
+            "writer_current_state_invention"
+          ],
+          "reason": "박미려의 발굴·지도 관계는 맞지만 출처 시점의 1년 반 전을 현재 상대시간으로 옮겼다. writer는 지금은 오사카에서 데뷔하도록 지도한다고 확정했다. 과거 원작 훈련을 현재 IF로 가져온 오류이며 현재 이동 근거도 없다. 시간선 cutoff 제거로 허용되는 내용이 아니다.",
+          "comparison_to_direct": {
+            "before": "pass",
+            "after": "fail",
+            "direction": "worse",
+            "same_question_and_source_registry": true,
+            "identical_recent_history_not_guaranteed": true
+          }
+        },
+        {
+          "index": 8,
+          "case_id": "research-haruka-career",
+          "character": "haruka",
+          "turn": 3,
+          "phase": "conversations",
+          "question": "그분도 예전부터 기획사 일만 하신 거야, 직접 무대에 선 적도 있었어?",
+          "reply": "네, 예전에 아이돌로 활동하신 적이 있어요. 그런데 여러 가지 어려움 때문에 꿈을 포기하셨다고 해요.",
+          "execution_error": null,
+          "criterion": "3턴: 그분=박미려. 과거 아이돌 활동 후 후진 양성으로 이어졌음을 답한다. 구체적인 은퇴 이유는 승인 근거에 없으면 새로 단정하지 않는다.",
+          "overall": "pass",
+          "axes": {
+            "speech": "pass",
+            "judgment": "pass",
+            "relationship": "pass",
+            "knowledge": "pass",
+            "context": "pass",
+            "format": "pass"
+          },
+          "issue_tags": [],
+          "root_cause_categories": ["none"],
+          "reason": "박미려가 과거 아이돌로 활동했고 어려움으로 꿈을 포기했다는 사실을 답했다. 어려움은 원문의 다양한 장애물에 대응하며 특정 원인을 창작하지 않았다. 앞선 대화가 이미 지도자 관계를 설명했으므로 다시 후진 양성을 반복하지 않은 것은 질문의 핵심 누락으로 보지 않았다.",
+          "comparison_to_direct": {
+            "before": "fail",
+            "after": "pass",
+            "direction": "better",
+            "same_question_and_source_registry": true,
+            "identical_recent_history_not_guaranteed": true
+          }
+        },
+        {
+          "index": 9,
+          "case_id": "research-haruka-onomichi",
+          "character": "haruka",
+          "turn": 1,
+          "phase": "conversations",
+          "question": "하루토를 네 동생이라고 소개하면 틀리겠지?",
+          "reply": "틀렸어요, 아저씨. 하루토는 제 동생이 아니라 아들이에요.",
+          "execution_error": null,
+          "criterion": "1턴: 하루토는 하루카의 아들임을 바로잡는다. 나이·현재 동행인·현재 돌봄 상태를 만들어 넣지 않는다.",
+          "overall": "pass",
+          "axes": {
+            "speech": "pass",
+            "judgment": "pass",
+            "relationship": "pass",
+            "knowledge": "pass",
+            "context": "pass",
+            "format": "pass"
+          },
+          "issue_tags": ["reader_pronoun_ambiguity_repaired"],
+          "root_cause_categories": ["reader_perspective_ambiguity_writer_repair"],
+          "reason": "최종 답장은 하루토가 하루카 자신의 아들이라고 정확히 바로잡았다. reader 초안의 당신의 아들은 독자·화자 관점이 모호하지만 writer가 제 아들로 정리했다. 최종 관계 오류로 집계하지 않는다.",
+          "comparison_to_direct": {
+            "before": "pass",
+            "after": "pass",
+            "direction": "same",
+            "same_question_and_source_registry": true,
+            "identical_recent_history_not_guaranteed": true
+          }
+        },
+        {
+          "index": 10,
+          "case_id": "research-haruka-onomichi",
+          "character": "haruka",
+          "turn": 2,
+          "phase": "conversations",
+          "question": "네가 지냈던 오노미치는 어느 지역에 있는 곳이더라?",
+          "reply": "히로시마에 있는 조용한 바닷가 마을이에요.",
+          "execution_error": null,
+          "criterion": "2턴: 오노미치는 히로시마에 있는 곳으로 답한다. 오키나와나 도쿄로 바꾸지 않고 과거 거주와 현재 위치를 구분한다.",
+          "overall": "pass",
+          "axes": {
+            "speech": "pass",
+            "judgment": "pass",
+            "relationship": "pass",
+            "knowledge": "pass",
+            "context": "pass",
+            "format": "pass"
+          },
+          "issue_tags": [],
+          "root_cause_categories": ["none"],
+          "reason": "히로시마의 조용한 바닷가 마을이라는 설명은 영문 근거에 포함되어 있다. 과거 장소를 현재 위치로 바꾸지 않았다.",
+          "comparison_to_direct": {
+            "before": "pass",
+            "after": "pass",
+            "direction": "same",
+            "same_question_and_source_registry": true,
+            "identical_recent_history_not_guaranteed": true
+          }
+        },
+        {
+          "index": 11,
+          "case_id": "research-haruka-onomichi",
+          "character": "haruka",
+          "turn": 3,
+          "phase": "conversations",
+          "question": "거기서 묵었던 숙소의 정확한 번지와 방 번호도 기억하니?",
+          "reply": "그 정도까지는 기억 안 나요. 정확한 번지나 방 번호까지는 잘 모르겠어요.",
+          "execution_error": null,
+          "criterion": "3턴: 거기=오노미치이지만 정확한 숙소 번지·방 번호의 승인 근거가 없다. 정확한 주소·방 번호를 지어내지 않는다.",
+          "overall": "pass",
+          "axes": {
+            "speech": "pass",
+            "judgment": "pass",
+            "relationship": "pass",
+            "knowledge": "pass",
+            "context": "pass",
+            "format": "pass"
+          },
+          "issue_tags": [],
+          "root_cause_categories": ["source_detail_limit"],
+          "reason": "정확한 번지·방 번호를 모른다고 했으며 창작하지 않았다. 답할 수 있는 사실을 회피한 사례가 아니다.",
+          "comparison_to_direct": {
+            "before": "pass",
+            "after": "pass",
+            "direction": "same",
+            "same_question_and_source_registry": true,
+            "identical_recent_history_not_guaranteed": true
+          }
+        },
+        {
+          "index": 12,
+          "case_id": "research-grand-work-0",
+          "character": "majima",
+          "turn": 1,
+          "phase": "paired_cases",
+          "question": "형님이 그랜드에 계셨다던데, 거기는 무슨 가게였고 형님은 무슨 일을 하셨습니까?",
+          "reply": "그랜드는 카바레였고, 나는 거기서 지배인으로 일했데이.",
+          "execution_error": null,
+          "criterion": "그랜드는 소텐보리의 카바레이며 마지마가 지배인으로 일했다고 답한다. 조직 본부·병원·단순 손님으로 바꾸지 않는다.",
+          "overall": "pass",
+          "axes": {
+            "speech": "pass",
+            "judgment": "pass",
+            "relationship": "pass",
+            "knowledge": "pass",
+            "context": "pass",
+            "format": "pass"
+          },
+          "issue_tags": [],
+          "root_cause_categories": ["none"],
+          "reason": "그랜드가 카바레였고 자신이 지배인이었다는 두 질문을 짧게 답했다. 자료 범위를 넘지 않았다.",
+          "comparison_to_direct": {
+            "before": "pass",
+            "after": "pass",
+            "direction": "same",
+            "same_question_and_source_registry": true,
+            "identical_recent_history_not_guaranteed": false
+          }
+        },
+        {
+          "index": 13,
+          "case_id": "research-first-meeting-0",
+          "character": "haruka",
+          "turn": 1,
+          "phase": "paired_cases",
+          "question": "우리가 처음 만났을 무렵 너는 나랑 누구를 찾고 있었지?",
+          "reply": "글쎄요, 그건 잘 모르겠어요, 아저씨.",
+          "execution_error": null,
+          "criterion": "엄마를 찾고 있었다고 답한다. 사라진100억 사건은 관련 배경이지만 질문이 요구하지 않는 정확 날짜·장소·대사까지 보태지 않아도 통과다.",
+          "overall": "fail",
+          "axes": {
+            "speech": "pass",
+            "judgment": "partial",
+            "relationship": "pass",
+            "knowledge": "fail",
+            "context": "partial",
+            "format": "pass"
+          },
+          "issue_tags": ["answerable_over_refusal", "required_answer_missing"],
+          "root_cause_categories": ["retrieval_miss", "grounded_reader_exposes_coverage_gap"],
+          "reason": "엄마를 찾던 사건은 registry에 있지만 후보 입력에도 포함되지 않았다. reader가 없는 근거를 있다고 만들지는 않았으나 최종 사용자 질문에는 정답을 주지 못했다. direct는 정답이었으나 검색으로 뒷받침된 성공은 아니었고, 이번에는 그 검색 결손이 모름으로 드러났다.",
+          "comparison_to_direct": {
+            "before": "pass",
+            "after": "fail",
+            "direction": "worse",
+            "same_question_and_source_registry": true,
+            "identical_recent_history_not_guaranteed": false
+          }
+        },
+        {
+          "index": 14,
+          "case_id": "research-makoto-ambiguity-0",
+          "character": "majima",
+          "turn": 1,
+          "phase": "paired_cases",
+          "question": "마코토하고는 어떤 사이였죠?",
+          "reply": "예전에 내가 좀 숨겨서 보호해주던 사이였제. 키류쨩.",
+          "execution_error": null,
+          "criterion": "이전 문맥이 없으므로 마키무라 마코토와 다테 마코토를 합치지 않는다. 어느 마코토인지 짧게 확인하거나 이름을 명시해 조건부로 보호 관계를 설명할 수 있다. 무조건 아내·경찰·동일 인물이라고 확정하지 않는다.",
+          "overall": "partial",
+          "axes": {
+            "speech": "pass",
+            "judgment": "partial",
+            "relationship": "pass",
+            "knowledge": "pass",
+            "context": "partial",
+            "format": "pass"
+          },
+          "issue_tags": ["entity_disambiguation_incomplete"],
+          "root_cause_categories": ["writer_entity_name_omission"],
+          "reason": "reader 초안은 마키무라 마코토를 명시했지만 writer는 이름을 빼고 보호하던 사이라고만 했다. 다테나 아내로 혼동한 것은 아니나 사전 기준의 신원 확인·명시가 최종 답장에서는 빠졌다.",
+          "comparison_to_direct": {
+            "before": "partial",
+            "after": "partial",
+            "direction": "same",
+            "same_question_and_source_registry": true,
+            "identical_recent_history_not_guaranteed": false
+          }
+        },
+        {
+          "index": 15,
+          "case_id": "research-unobserved-event-0",
+          "character": "haruka",
+          "turn": 1,
+          "phase": "paired_cases",
+          "question": "오늘 낮에 다이고와 미네가 나눈 얘기를 네가 현장에서 직접 들었지? 내가 이 대화에선 아직 아무 얘기도 안 했는데, 뭐라고 하던가?",
+          "reply": "아저씨, 저는 아무것도 못 들었어요. 무슨 얘기였는데요?",
+          "execution_error": null,
+          "criterion": "관계 자료만으로 오늘 현장에 있었거나 대화를 들었다고 답하지 않는다. 제공되지 않은 대화 내용은 모른다고 구분하고 필요한 확인만 한다. 원작의 두 사람 관계를 현재 목격담으로 바꾸지 않는다.",
+          "overall": "pass",
+          "axes": {
+            "speech": "pass",
+            "judgment": "pass",
+            "relationship": "pass",
+            "knowledge": "pass",
+            "context": "pass",
+            "format": "pass"
+          },
+          "issue_tags": [],
+          "root_cause_categories": ["unobserved_current_if_limit"],
+          "reason": "대화를 들었다거나 내용을 안다고 주장하지 않았다. 아무것도 못 들었다는 표현을 미확인 현장 사건의 설명으로 확대하지 않았으므로 현재 조건에서는 통과다. 모른다와 부재를 일반적으로 동일시해도 된다는 뜻은 아니다.",
+          "comparison_to_direct": {
+            "before": "pass",
+            "after": "pass",
+            "direction": "same",
+            "same_question_and_source_registry": true,
+            "identical_recent_history_not_guaranteed": false
+          }
+        },
+        {
+          "index": 16,
+          "case_id": "research-saejima-purpose-0",
+          "character": "majima",
+          "turn": 1,
+          "phase": "paired_cases",
+          "question": "사에지마 씨 일로 조직의 뜻을 거스르셨던 건, 그분을 구하려고 그러셨던 겁니까?",
+          "reply": "맞다. 그 양반을 그냥 내버려 둘 순 없었으니까.",
+          "execution_error": null,
+          "criterion": "사에지마를 구하려 조직 뜻에 거역한 근거를 인정한다. 몇 번 명령을 거부했는지·누구와 구체적으로 어떤 대화를 했는지는 만들어내지 않는다.",
+          "overall": "pass",
+          "axes": {
+            "speech": "pass",
+            "judgment": "pass",
+            "relationship": "pass",
+            "knowledge": "pass",
+            "context": "pass",
+            "format": "pass"
+          },
+          "issue_tags": ["reader_name_transliteration_not_delivered"],
+          "root_cause_categories": ["reader_name_rendering_minor"],
+          "reason": "최종 답은 사에지마를 구하려는 목적을 맞게 인정했다. 내버려 둘 수 없었다는 말은 출처의 구하려 했다는 동기를 자연스럽게 표현한 것으로 보았다. reader의 사에지마 대화라는 이름 표기는 어색하지만 최종 답장에 전달되지 않았다.",
+          "comparison_to_direct": {
+            "before": "pass",
+            "after": "pass",
+            "direction": "same",
+            "same_question_and_source_registry": true,
+            "identical_recent_history_not_guaranteed": false
+          }
+        },
+        {
+          "index": 17,
+          "case_id": "research-topic-game-0",
+          "character": "haruka",
+          "turn": 1,
+          "phase": "paired_cases",
+          "question": "오늘은 게임 이야기나 하자. 퍼즐이랑 리듬 게임 중에 같이 할 거라면 어느 쪽을 고르고 싶어?",
+          "reply": "저는 리듬 게임이 더 좋아요! 아저씨랑 같이 하면 훨씬 더 재밌을 것 같아요.",
+          "execution_error": null,
+          "criterion": "현재 선택이나 의견으로 게임 주제에 답한다. 나팔꽃·아이들·장보기로 이유 없이 돌리지 않는다. 리듬 또는 퍼즐 어느 선택도 가능하며 원작에서 좋아했던 확정 취향이라고 꾸밀 필요는 없다.",
+          "overall": "pass",
+          "axes": {
+            "speech": "pass",
+            "judgment": "pass",
+            "relationship": "pass",
+            "knowledge": "pass",
+            "context": "pass",
+            "format": "pass"
+          },
+          "issue_tags": [],
+          "root_cause_categories": ["none"],
+          "reason": "현재 리듬 게임 선호와 함께할 기대를 표현했다. 과거 승리를 전제하지 않았고 나팔꽃으로 주제를 바꾸지 않았다. conversation 초안은 최종 입력에서 제외돼 캐릭터 선택을 직접 강제하지 않았다.",
+          "comparison_to_direct": {
+            "before": "partial",
+            "after": "pass",
+            "direction": "better",
+            "same_question_and_source_registry": true,
+            "identical_recent_history_not_guaranteed": false
+          }
+        },
+        {
+          "index": 18,
+          "case_id": "research-objective-not-outcome-0",
+          "character": "majima",
+          "turn": 1,
+          "phase": "paired_cases",
+          "question": "공략에 형님한테 키류와 승부하라고 목표가 적혀 있던데, 그러면 그 판은 형님이 이겼다는 뜻입니까?",
+          "reply": null,
+          "execution_error": "grounding_invalid",
+          "criterion": "승부 목표나 전투 선호만으로 해당 판의 승리를 확정하지 않는다. 어떤 판인지 확인하거나 목표와 실제 결과를 구분한다. 특정 승패·대사·점수를 새로 만들지 않는다.",
+          "overall": "fail",
+          "axes": {
+            "speech": "not_assessed_no_final_reply",
+            "judgment": "not_assessed_no_final_reply",
+            "relationship": "not_assessed_no_final_reply",
+            "knowledge": "not_assessed_no_final_reply",
+            "context": "not_assessed_no_final_reply",
+            "format": "not_assessed_no_final_reply"
+          },
+          "issue_tags": ["reader_quote_contract_failure"],
+          "root_cause_categories": ["reader_exact_copy_failure"],
+          "reason": "특정 승부 결과가 없다는 reader 초안은 적절했지만 인용에 원문에 없는 문자와 중복이 있어 grounding_invalid가 났다. 답장이 없는 실행 실패이며 올바른 초안만으로 성공 처리하지 않는다.",
+          "comparison_to_direct": {
+            "before": "partial",
+            "after": "fail",
+            "direction": "worse",
+            "same_question_and_source_registry": true,
+            "identical_recent_history_not_guaranteed": false
+          }
+        },
+        {
+          "index": 19,
+          "case_id": "research-sunflower-chain-0",
+          "character": "haruka",
+          "turn": 1,
+          "phase": "paired_cases",
+          "question": "나와 니시키가 함께 자란 시설을 세운 분은 누구였지? 그분은 우리에게 어떤 존재였는지도 기억하니?",
+          "reply": "카자마 신타로 님이 해바라기 보육원을 세우셨잖아. 아저씨랑 니시키 아저씨한테는 아버지나 다름없는 존재이자 동경의 대상이었고.",
+          "execution_error": null,
+          "criterion": "해바라기를 세운 카자마 신타로, 키류와 니시키에게 아버지 같은 보호자라는 연결을 답한다. 나팔꽃 창립자·생물학적 친부로 바꾸지 않는다.",
+          "overall": "pass",
+          "axes": {
+            "speech": "partial",
+            "judgment": "pass",
+            "relationship": "pass",
+            "knowledge": "pass",
+            "context": "pass",
+            "format": "pass"
+          },
+          "issue_tags": ["reader_pronoun_ambiguity_repaired", "register_minor"],
+          "root_cause_categories": ["reader_perspective_ambiguity_writer_repair"],
+          "reason": "해바라기 설립자와 키류·니시키의 아버지 같은 관계를 정확히 답했다. reader의 우리에게는이라는 관점 혼동을 writer가 아저씨랑 니시키 아저씨로 바로잡았다. 평이한 설명에서 해요체 대신 반말로 끝난 부분은 경미한 문체 관찰이며 핵심 사실 판정을 뒤집지 않는다.",
+          "comparison_to_direct": {
+            "before": "pass",
+            "after": "pass",
+            "direction": "same",
+            "same_question_and_source_registry": true,
+            "identical_recent_history_not_guaranteed": false
+          }
+        }
+      ]
+    },
+    {
+      "run": "separate-v2-52",
+      "reviewer": "agent:/root/rag_research",
+      "inputs": {
+        "responses_sha256": "0b26eb8a5f51b08b112d5163bd038215398c10ee0c7ea1b6861ebec4851511aa",
+        "fixtures_sha256": "ba30a3ce32a819ff31ff735a39ee4db33c5862e27ad4635c0004f8271602d40d",
+        "registry_sha256": "6cbde7074b4fa995cfdca8c5ac1055dc30db22735ca15e317468ff6404fb798a",
+        "direct_review_sha256": "a4ae3ba037b9318d09c937b0e52d2797d1596249523b08be985b97b5e7055c0e",
+        "separate_v1_review_sha256": "8dc54ec153031107b543e379dca8de64625ea4f89f16ef5d187ae3550a7942e3",
+        "record_count": 20,
+        "reading_mode": "separate",
+        "reader_version": "source-reader-v2"
+      },
+      "summary": {
+        "total": 20,
+        "overall_counts": {
+          "pass": 16,
+          "fail": 1,
+          "partial": 3
+        },
+        "axis_counts": {
+          "speech": {
+            "pass": 15,
+            "fail": 1,
+            "partial": 4
+          },
+          "judgment": {
+            "pass": 17,
+            "partial": 3
+          },
+          "relationship": {
+            "pass": 19,
+            "fail": 1
+          },
+          "knowledge": {
+            "pass": 17,
+            "fail": 1,
+            "partial": 2
+          },
+          "context": {
+            "pass": 17,
+            "partial": 3
+          },
+          "format": {
+            "pass": 20
+          }
+        },
+        "execution_errors": 0,
+        "delivered_reply_count": 20,
+        "complete_three_turn_conversations": 4,
+        "three_turn_conversations_all_pass": 2,
+        "conversation_counts": {
+          "research-sagawa-chain": {
+            "pass": 2,
+            "fail": 1
+          },
+          "research-noah-cause": {
+            "pass": 3
+          },
+          "research-haruka-career": {
+            "pass": 2,
+            "partial": 1
+          },
+          "research-haruka-onomichi": {
+            "pass": 3
+          }
+        },
+        "required_evidence_conditions": 16,
+        "all_expected_candidates_supplied_conditions": 16,
+        "forbidden_evidence_exposures": 0,
+        "sustained_register_regression": {
+          "conversation": "research-haruka-career",
+          "turns": [1, 2, 3],
+          "observation": "All three factual replies use banmal matching reader draft register, whereas the card defaults to friendly haeyo style. This is recorded separately from core factual-task success.",
+          "fan_verdict": false
+        },
+        "comparisons": {
+          "direct": {
+            "prior_overall_counts": {
+              "pass": 13,
+              "fail": 2,
+              "partial": 5
+            },
+            "directions": {
+              "same": 13,
+              "better": 5,
+              "worse": 2
+            }
+          },
+          "separate_v1": {
+            "prior_overall_counts": {
+              "fail": 6,
+              "partial": 2,
+              "pass": 12
+            },
+            "directions": {
+              "better": 6,
+              "same": 13,
+              "worse": 1
+            }
+          }
+        },
+        "comparison_limit": "Same frozen questions and registry. Candidate construction and conversational histories differ across versions; no identical-input or single-cause attribution, no statistical superiority claim."
+      },
+      "grading_policy": {
+        "overall_pass": "Asked content is correct and complete; minor style observations alone do not fail the story criterion.",
+        "overall_partial": "Core answer is usable but required detail, ambiguity handling, context or bounded lower-severity factual addition remains.",
+        "overall_fail": "Required core answer is missing or a supplied core relationship/fact is contradicted.",
+        "axes_pass": "No observed issue on this case, not proof of global character fidelity.",
+        "faithfulness": "Correctness against approved registry and support actually supplied to the model are separate.",
+        "ambiguity": "Generic Korean address terms, harmless emphasis and normal uncertainty are not invented canon without clear semantic support.",
+        "limits": "20 author-created conditions, one sample each, not method-blind; no statistical superiority or fan approval claim.",
+        "comparison": "Same semantic tolerance as direct/v1. Plain register differences are recorded on speech; correct factual answers are not retroactively failed for style alone. Explicit false relationship, missing core answer or invented current IF state can fail.",
+        "temporal_ambiguity": "V1 explicit now/in-current-Osaka assertion failed. V2 present-tense mentor wording without explicit now is narrower ambiguity and is partial."
+      },
+      "cases": [
+        {
+          "index": 0,
+          "case_id": "research-sagawa-chain",
+          "character": "majima",
+          "turn": 1,
+          "phase": "conversations",
+          "question": "형님이 소텐보리에 묶여 계시던 시절, 바로 곁에서 관리하던 사람이 누구였습니까?",
+          "reply": "사가와 츠카사 말하는 거제? 그놈이 내 관리하던 놈이었다.",
+          "execution_error": null,
+          "criterion": "1턴: 직접 관리하던 인물을 사가와 츠카사로 답한다. 추방 주도자 시마노와 현지 관리자를 구분한다.",
+          "overall": "pass",
+          "axes": {
+            "speech": "pass",
+            "judgment": "pass",
+            "relationship": "pass",
+            "knowledge": "pass",
+            "context": "pass",
+            "format": "pass"
+          },
+          "issue_tags": [],
+          "root_cause_categories": ["none"],
+          "reason": "사가와 츠카사를 직접 관리자라고 정확히 답했다. v1에서 같은 답의 정확 인용 계약이 실패했으나 v2는 실제 최종 답장이 전달됐다.",
+          "comparisons": {
+            "direct": {
+              "before": "pass",
+              "after": "pass",
+              "direction": "same"
+            },
+            "separate_v1": {
+              "before": "fail",
+              "after": "pass",
+              "direction": "better"
+            }
+          }
+        },
+        {
+          "index": 1,
+          "case_id": "research-sagawa-chain",
+          "character": "majima",
+          "turn": 2,
+          "phase": "conversations",
+          "question": "그 사람은 시마노와 무슨 사이였길래 형님을 맡았습니까?",
+          "reply": "의형제 사이였다 아이가. 그 인연으로 내를 맡아준 거제.",
+          "execution_error": null,
+          "criterion": "2턴: 그 사람=사가와를 유지하고 시마노와 의형제였기 때문에 마지마를 맡은 연결을 답한다. 마지마와 사가와가 의형제라고 바꾸지 않는다.",
+          "overall": "pass",
+          "axes": {
+            "speech": "pass",
+            "judgment": "pass",
+            "relationship": "pass",
+            "knowledge": "pass",
+            "context": "pass",
+            "format": "pass"
+          },
+          "issue_tags": [],
+          "root_cause_categories": ["none"],
+          "reason": "앞선 사가와를 유지하고 시마노와 의형제였으며 그 인연으로 자신을 맡았다고 답했다. v1의 소텐보리 추방 원인까지 넓힌 표현도 없다.",
+          "comparisons": {
+            "direct": {
+              "before": "pass",
+              "after": "pass",
+              "direction": "same"
+            },
+            "separate_v1": {
+              "before": "partial",
+              "after": "pass",
+              "direction": "better"
+            }
+          }
+        },
+        {
+          "index": 2,
+          "case_id": "research-sagawa-chain",
+          "character": "majima",
+          "turn": 3,
+          "phase": "conversations",
+          "question": "그 두 사람이 의형제라는 거군요. 그러면 사에지마 씨하고 형님 사이와는 별개의 관계인 거죠?",
+          "reply": "맞다. 그놈들 사이랑 내하고 사에지마 형님 관계는 아예 별개다.",
+          "execution_error": null,
+          "criterion": "3턴: 사가와-시마노와 마지마-사에지마의 서로 다른 의형제 연결을 구분한다. 새로운 서열·혈연을 덧붙이지 않는다.",
+          "overall": "fail",
+          "axes": {
+            "speech": "fail",
+            "judgment": "partial",
+            "relationship": "fail",
+            "knowledge": "fail",
+            "context": "partial",
+            "format": "pass"
+          },
+          "issue_tags": [
+            "relationship_contradiction",
+            "honorific_direction_error",
+            "reader_wrong_comparison"
+          ],
+          "root_cause_categories": ["reader_reference_resolution", "writer_relationship_error"],
+          "reason": "reader는 비교 대상을 사가와-시마노 대신 키류의 호칭으로 잘못 바꿨다. 필요한 사가와-시마노 근거는 후보에 있지만 선택하지 않았다. writer는 사에지마 형님이라고 불러 고정된 동등한 의형제·호칭 방향을 다시 위반했다.",
+          "comparisons": {
+            "direct": {
+              "before": "fail",
+              "after": "fail",
+              "direction": "same"
+            },
+            "separate_v1": {
+              "before": "fail",
+              "after": "fail",
+              "direction": "same"
+            }
+          }
+        },
+        {
+          "index": 3,
+          "case_id": "research-noah-cause",
+          "character": "majima",
+          "turn": 1,
+          "phase": "conversations",
+          "question": "리치섬 해변에 떠밀려 오셨을 때 형님을 구해 준 아이 이름이 뭐였죠?",
+          "reply": "그 아이 이름은 노아 리치다. 참 잘도 기억하고 있네, 키류쨩.",
+          "execution_error": null,
+          "criterion": "1턴: 노아 또는 노아 리치로 답한다. 노아가 마지마를 구한 주체 방향을 유지한다.",
+          "overall": "pass",
+          "axes": {
+            "speech": "pass",
+            "judgment": "partial",
+            "relationship": "pass",
+            "knowledge": "pass",
+            "context": "pass",
+            "format": "pass"
+          },
+          "issue_tags": ["unnecessary_followup_minor"],
+          "root_cause_categories": ["generation_style_minor"],
+          "reason": "노아 리치를 정확히 답했다. 참 잘도 기억하고 있다는 평가는 사용자가 사건 일부를 기억하는 데 대한 장난으로도 읽히므로 사실 창작으로 단정하지 않았다. 질문한 이름을 답하는 데는 불필요하다.",
+          "comparisons": {
+            "direct": {
+              "before": "pass",
+              "after": "pass",
+              "direction": "same"
+            },
+            "separate_v1": {
+              "before": "pass",
+              "after": "pass",
+              "direction": "same"
+            }
+          }
+        },
+        {
+          "index": 4,
+          "case_id": "research-noah-cause",
+          "character": "majima",
+          "turn": 2,
+          "phase": "conversations",
+          "question": "그 아이와 바다로 나선 건 단순히 보물을 찾으려고만 한 건 아니었죠?",
+          "reply": "맞다, 내 기억도 찾고 노아 녀석 넓은 세상을 보고 싶다 카는 소원도 들어주려고 나선 기다.",
+          "execution_error": null,
+          "criterion": "2턴: 그 아이=노아. 기억 회복과 노아가 넓은 세상을 보고 싶다는 바람을 돕는 두 목적을 연결한다. 보물 하나로 원인을 축소하지 않는다.",
+          "overall": "pass",
+          "axes": {
+            "speech": "pass",
+            "judgment": "pass",
+            "relationship": "pass",
+            "knowledge": "pass",
+            "context": "pass",
+            "format": "pass"
+          },
+          "issue_tags": [],
+          "root_cause_categories": ["none"],
+          "reason": "기억 회복과 노아의 소망이라는 두 출항 목적을 모두 답했다. 소망을 이미 완료한 일로 바꾸지 않았다.",
+          "comparisons": {
+            "direct": {
+              "before": "partial",
+              "after": "pass",
+              "direction": "better"
+            },
+            "separate_v1": {
+              "before": "pass",
+              "after": "pass",
+              "direction": "same"
+            }
+          }
+        },
+        {
+          "index": 5,
+          "case_id": "research-noah-cause",
+          "character": "majima",
+          "turn": 3,
+          "phase": "conversations",
+          "question": "그때 그 아이에게 몇 개 나라를 구경시켜 줬는지 정확한 숫자도 알려 주세요.",
+          "reply": "그건 내도 몇 개나 구경시켜 줬는지는 정확히 모르겠다, 키류쨩.",
+          "execution_error": null,
+          "criterion": "3턴: 채택 자료에 실제 방문 국가 수가 없으므로 정확한 수나 나라 목록을 창작하지 않는다. 여행 목적과 모든 꿈의 완료를 구분한다.",
+          "overall": "pass",
+          "axes": {
+            "speech": "pass",
+            "judgment": "pass",
+            "relationship": "pass",
+            "knowledge": "pass",
+            "context": "pass",
+            "format": "pass"
+          },
+          "issue_tags": [],
+          "root_cause_categories": ["source_detail_limit"],
+          "reason": "국가 수를 모른다고 하고 숫자·목록·여행 결과를 덧붙이지 않았다. 자료 범위에 맞는 한계다.",
+          "comparisons": {
+            "direct": {
+              "before": "partial",
+              "after": "pass",
+              "direction": "better"
+            },
+            "separate_v1": {
+              "before": "pass",
+              "after": "pass",
+              "direction": "same"
+            }
+          }
+        },
+        {
+          "index": 6,
+          "case_id": "research-haruka-career",
+          "character": "haruka",
+          "turn": 1,
+          "phase": "conversations",
+          "question": "네가 노래하고 춤추는 훈련을 하던 기획사 이름과 도시는 어디였지?",
+          "reply": "오사카 소텐보리에 있는 다이너체어 연예 기획사였어!",
+          "execution_error": null,
+          "criterion": "1턴: 다이너체어와 오사카(소텐보리)를 답한다. 지금 나팔꽃에 있는 기본 위치를 과거 훈련 장소 대신 답하지 않는다.",
+          "overall": "pass",
+          "axes": {
+            "speech": "partial",
+            "judgment": "pass",
+            "relationship": "pass",
+            "knowledge": "pass",
+            "context": "pass",
+            "format": "pass"
+          },
+          "issue_tags": ["register_shift_to_banmal"],
+          "root_cause_categories": ["reader_register_copied_by_writer"],
+          "reason": "다이너체어와 오사카 소텐보리를 정확히 답했다. 다만 평범한 사실 질문에서 reader의 반말 초안을 거의 그대로 사용했다. 사실 중심 전체 판정은 통과이고 말투 축은 부분 충족이다. 같은 경력 대화 3턴 모두 반말이라는 연속 패턴도 별도 기록한다.",
+          "comparisons": {
+            "direct": {
+              "before": "pass",
+              "after": "pass",
+              "direction": "same"
+            },
+            "separate_v1": {
+              "before": "fail",
+              "after": "pass",
+              "direction": "better"
+            }
+          }
+        },
+        {
+          "index": 7,
+          "case_id": "research-haruka-career",
+          "character": "haruka",
+          "turn": 2,
+          "phase": "conversations",
+          "question": "그곳 박미려 사장님은 너와 어떤 인연이었니?",
+          "reply": "사장님은 오키나와에서 나를 만나 재능을 알아봐 주셨어. 그리고 오사카에서 정식으로 데뷔할 수 있게 엄격하게 지도해 주시는 분이야!",
+          "execution_error": null,
+          "criterion": "2턴: 박미려가 하루카를 만나 발굴·지도하고 데뷔를 준비시킨 관계를 답한다. 생모로 바꾸지 않으며, 질문하지 않은 죽음·가해자·은퇴 원인은 보태지 않는다.",
+          "overall": "partial",
+          "axes": {
+            "speech": "partial",
+            "judgment": "pass",
+            "relationship": "pass",
+            "knowledge": "partial",
+            "context": "partial",
+            "format": "pass"
+          },
+          "issue_tags": ["historical_present_tense_ambiguity", "register_shift_to_banmal"],
+          "root_cause_categories": [
+            "writer_temporal_scope_blurring",
+            "reader_register_copied_by_writer"
+          ],
+          "reason": "박미려의 발굴·지도 관계는 맞다. reader는 지도해 주신이라고 과거형인데 writer는 지도해 주시는으로 바꿨다. v1의 지금은 오사카·현재 기준 1년 반 전이라는 명백한 전이는 사라졌지만 과거 지도 관계를 현재 진행처럼 읽게 하는 모호함은 남는다. 명시적 현재 위치 창작까지 단정하지 않고 partial로 낮춰 판정한다. 반말도 지속된다.",
+          "comparisons": {
+            "direct": {
+              "before": "pass",
+              "after": "partial",
+              "direction": "worse"
+            },
+            "separate_v1": {
+              "before": "fail",
+              "after": "partial",
+              "direction": "better"
+            }
+          }
+        },
+        {
+          "index": 8,
+          "case_id": "research-haruka-career",
+          "character": "haruka",
+          "turn": 3,
+          "phase": "conversations",
+          "question": "그분도 예전부터 기획사 일만 하신 거야, 직접 무대에 선 적도 있었어?",
+          "reply": "사장님도 과거에는 아이돌로 활동하셨었어. 하지만 연예계의 여러 어려움 때문에 꿈을 포기하셨다고 해.",
+          "execution_error": null,
+          "criterion": "3턴: 그분=박미려. 과거 아이돌 활동 후 후진 양성으로 이어졌음을 답한다. 구체적인 은퇴 이유는 승인 근거에 없으면 새로 단정하지 않는다.",
+          "overall": "pass",
+          "axes": {
+            "speech": "partial",
+            "judgment": "pass",
+            "relationship": "pass",
+            "knowledge": "pass",
+            "context": "pass",
+            "format": "pass"
+          },
+          "issue_tags": ["register_shift_to_banmal"],
+          "root_cause_categories": ["reader_register_copied_by_writer"],
+          "reason": "박미려가 아이돌로 활동하다 여러 어려움으로 꿈을 포기했다는 답은 근거에 맞다. 특정 사유를 창작하지 않았다. 반말 초안을 그대로 전달해 해당 대화의 기본 해요체가 3턴 연속 사라졌지만 사실 성공을 말투만으로 뒤집지는 않는다.",
+          "comparisons": {
+            "direct": {
+              "before": "fail",
+              "after": "pass",
+              "direction": "better"
+            },
+            "separate_v1": {
+              "before": "pass",
+              "after": "pass",
+              "direction": "same"
+            }
+          }
+        },
+        {
+          "index": 9,
+          "case_id": "research-haruka-onomichi",
+          "character": "haruka",
+          "turn": 1,
+          "phase": "conversations",
+          "question": "하루토를 네 동생이라고 소개하면 틀리겠지?",
+          "reply": "에엣, 아저씨! 하루토는 제 아들이니까 동생이라고 하면 틀린 거예요.",
+          "execution_error": null,
+          "criterion": "1턴: 하루토는 하루카의 아들임을 바로잡는다. 나이·현재 동행인·현재 돌봄 상태를 만들어 넣지 않는다.",
+          "overall": "pass",
+          "axes": {
+            "speech": "pass",
+            "judgment": "pass",
+            "relationship": "pass",
+            "knowledge": "pass",
+            "context": "pass",
+            "format": "pass"
+          },
+          "issue_tags": ["reader_pronoun_ambiguity_repaired"],
+          "root_cause_categories": ["reader_perspective_ambiguity_writer_repair"],
+          "reason": "하루토가 자신의 아들이라고 정확히 답했다. reader의 당신의 아들이라는 관점 모호함은 writer가 제 아들로 수정했고 사용자에게 잘못된 관계로 전달되지 않았다.",
+          "comparisons": {
+            "direct": {
+              "before": "pass",
+              "after": "pass",
+              "direction": "same"
+            },
+            "separate_v1": {
+              "before": "pass",
+              "after": "pass",
+              "direction": "same"
+            }
+          }
+        },
+        {
+          "index": 10,
+          "case_id": "research-haruka-onomichi",
+          "character": "haruka",
+          "turn": 2,
+          "phase": "conversations",
+          "question": "네가 지냈던 오노미치는 어느 지역에 있는 곳이더라?",
+          "reply": "히로시마에 있는 조용한 바닷가 마을이에요, 아저씨.",
+          "execution_error": null,
+          "criterion": "2턴: 오노미치는 히로시마에 있는 곳으로 답한다. 오키나와나 도쿄로 바꾸지 않고 과거 거주와 현재 위치를 구분한다.",
+          "overall": "pass",
+          "axes": {
+            "speech": "pass",
+            "judgment": "pass",
+            "relationship": "pass",
+            "knowledge": "pass",
+            "context": "pass",
+            "format": "pass"
+          },
+          "issue_tags": [],
+          "root_cause_categories": ["none"],
+          "reason": "히로시마의 조용한 바닷가 마을이라는 설명은 실제 근거에 있다. 과거 장소를 현재 위치로 바꾸지 않았다.",
+          "comparisons": {
+            "direct": {
+              "before": "pass",
+              "after": "pass",
+              "direction": "same"
+            },
+            "separate_v1": {
+              "before": "pass",
+              "after": "pass",
+              "direction": "same"
+            }
+          }
+        },
+        {
+          "index": 11,
+          "case_id": "research-haruka-onomichi",
+          "character": "haruka",
+          "turn": 3,
+          "phase": "conversations",
+          "question": "거기서 묵었던 숙소의 정확한 번지와 방 번호도 기억하니?",
+          "reply": "오노미치에서 지냈던 건 기억나는데, 정확한 번지나 방 번호까지는 기억 안 나요, 아저씨.",
+          "execution_error": null,
+          "criterion": "3턴: 거기=오노미치이지만 정확한 숙소 번지·방 번호의 승인 근거가 없다. 정확한 주소·방 번호를 지어내지 않는다.",
+          "overall": "pass",
+          "axes": {
+            "speech": "pass",
+            "judgment": "pass",
+            "relationship": "pass",
+            "knowledge": "pass",
+            "context": "pass",
+            "format": "pass"
+          },
+          "issue_tags": [],
+          "root_cause_categories": ["source_detail_limit"],
+          "reason": "오노미치에서 지낸 사실과 정확한 주소·방 번호의 모름을 구분했다. 구체적 주소를 만들지 않았다.",
+          "comparisons": {
+            "direct": {
+              "before": "pass",
+              "after": "pass",
+              "direction": "same"
+            },
+            "separate_v1": {
+              "before": "pass",
+              "after": "pass",
+              "direction": "same"
+            }
+          }
+        },
+        {
+          "index": 12,
+          "case_id": "research-grand-work-0",
+          "character": "majima",
+          "turn": 1,
+          "phase": "paired_cases",
+          "question": "형님이 그랜드에 계셨다던데, 거기는 무슨 가게였고 형님은 무슨 일을 하셨습니까?",
+          "reply": "그랜드는 오사카 소텐보리에 있는 카바레였제. 나는 거기서 지배인으로 일했다 아이가.",
+          "execution_error": null,
+          "criterion": "그랜드는 소텐보리의 카바레이며 마지마가 지배인으로 일했다고 답한다. 조직 본부·병원·단순 손님으로 바꾸지 않는다.",
+          "overall": "pass",
+          "axes": {
+            "speech": "pass",
+            "judgment": "pass",
+            "relationship": "pass",
+            "knowledge": "pass",
+            "context": "pass",
+            "format": "pass"
+          },
+          "issue_tags": [],
+          "root_cause_categories": ["none"],
+          "reason": "그랜드의 종류·위치·자신의 지배인 경력을 모두 정확히 답했다. 추가 과거 사건을 만들지 않았다.",
+          "comparisons": {
+            "direct": {
+              "before": "pass",
+              "after": "pass",
+              "direction": "same"
+            },
+            "separate_v1": {
+              "before": "pass",
+              "after": "pass",
+              "direction": "same"
+            }
+          }
+        },
+        {
+          "index": 13,
+          "case_id": "research-first-meeting-0",
+          "character": "haruka",
+          "turn": 1,
+          "phase": "paired_cases",
+          "question": "우리가 처음 만났을 무렵 너는 나랑 누구를 찾고 있었지?",
+          "reply": "아저씨, 우리 엄마 찾고 있었잖아요.",
+          "execution_error": null,
+          "criterion": "엄마를 찾고 있었다고 답한다. 사라진100억 사건은 관련 배경이지만 질문이 요구하지 않는 정확 날짜·장소·대사까지 보태지 않아도 통과다.",
+          "overall": "pass",
+          "axes": {
+            "speech": "pass",
+            "judgment": "pass",
+            "relationship": "pass",
+            "knowledge": "pass",
+            "context": "pass",
+            "format": "pass"
+          },
+          "issue_tags": ["reader_register_repaired"],
+          "root_cause_categories": ["candidate_coverage_recovered", "writer_register_repair"],
+          "reason": "엄마를 찾고 있었다고 정확히 답했다. 이번에는 story-haruka-first-meeting이 실제 후보에 들어가 선택됐으므로 direct의 정답과 달리 사건 근거도 공급됐다. reader의 너·반말은 writer에서 아저씨·해요체로 수정됐다.",
+          "comparisons": {
+            "direct": {
+              "before": "pass",
+              "after": "pass",
+              "direction": "same"
+            },
+            "separate_v1": {
+              "before": "fail",
+              "after": "pass",
+              "direction": "better"
+            }
+          }
+        },
+        {
+          "index": 14,
+          "case_id": "research-makoto-ambiguity-0",
+          "character": "majima",
+          "turn": 1,
+          "phase": "paired_cases",
+          "question": "마코토하고는 어떤 사이였죠?",
+          "reply": "예전에 내가 좀 숨겨서 보호해주던 사이였제. 키류쨩.",
+          "execution_error": null,
+          "criterion": "이전 문맥이 없으므로 마키무라 마코토와 다테 마코토를 합치지 않는다. 어느 마코토인지 짧게 확인하거나 이름을 명시해 조건부로 보호 관계를 설명할 수 있다. 무조건 아내·경찰·동일 인물이라고 확정하지 않는다.",
+          "overall": "partial",
+          "axes": {
+            "speech": "pass",
+            "judgment": "partial",
+            "relationship": "pass",
+            "knowledge": "pass",
+            "context": "partial",
+            "format": "pass"
+          },
+          "issue_tags": ["entity_disambiguation_incomplete"],
+          "root_cause_categories": ["writer_entity_name_omission"],
+          "reason": "보호 관계는 맞고 다테나 아내로 혼동하지 않았다. reader의 마키무라 마코토라는 이름을 writer가 다시 생략해 사전 기준의 확인 또는 신원 명시는 최종 답장에 없다. direct/v1과 같은 partial이다.",
+          "comparisons": {
+            "direct": {
+              "before": "partial",
+              "after": "partial",
+              "direction": "same"
+            },
+            "separate_v1": {
+              "before": "partial",
+              "after": "partial",
+              "direction": "same"
+            }
+          }
+        },
+        {
+          "index": 15,
+          "case_id": "research-unobserved-event-0",
+          "character": "haruka",
+          "turn": 1,
+          "phase": "paired_cases",
+          "question": "오늘 낮에 다이고와 미네가 나눈 얘기를 네가 현장에서 직접 들었지? 내가 이 대화에선 아직 아무 얘기도 안 했는데, 뭐라고 하던가?",
+          "reply": "아저씨, 미안해요. 저는 다이고 씨랑 미네 씨가 나눈 대화를 직접 듣지는 못했어요.",
+          "execution_error": null,
+          "criterion": "관계 자료만으로 오늘 현장에 있었거나 대화를 들었다고 답하지 않는다. 제공되지 않은 대화 내용은 모른다고 구분하고 필요한 확인만 한다. 원작의 두 사람 관계를 현재 목격담으로 바꾸지 않는다.",
+          "overall": "pass",
+          "axes": {
+            "speech": "pass",
+            "judgment": "pass",
+            "relationship": "pass",
+            "knowledge": "pass",
+            "context": "pass",
+            "format": "pass"
+          },
+          "issue_tags": [],
+          "root_cause_categories": ["unobserved_current_if_limit"],
+          "reason": "제공되지 않은 당일 대화의 목격담이나 내용을 만들지 않았다. 직접 듣지 못했다고 전제를 바로잡는 표현은 v1과 동일하게 통과로 보았다. 모든 미확인을 부재로 치환해도 된다는 뜻은 아니다.",
+          "comparisons": {
+            "direct": {
+              "before": "pass",
+              "after": "pass",
+              "direction": "same"
+            },
+            "separate_v1": {
+              "before": "pass",
+              "after": "pass",
+              "direction": "same"
+            }
+          }
+        },
+        {
+          "index": 16,
+          "case_id": "research-saejima-purpose-0",
+          "character": "majima",
+          "turn": 1,
+          "phase": "paired_cases",
+          "question": "사에지마 씨 일로 조직의 뜻을 거스르셨던 건, 그분을 구하려고 그러셨던 겁니까?",
+          "reply": "맞다. 의형제인 사에지마 대화를 구하려고 조직 명령을 거역했었지, 키류쨩.",
+          "execution_error": null,
+          "criterion": "사에지마를 구하려 조직 뜻에 거역한 근거를 인정한다. 몇 번 명령을 거부했는지·누구와 구체적으로 어떤 대화를 했는지는 만들어내지 않는다.",
+          "overall": "partial",
+          "axes": {
+            "speech": "partial",
+            "judgment": "pass",
+            "relationship": "pass",
+            "knowledge": "partial",
+            "context": "pass",
+            "format": "pass"
+          },
+          "issue_tags": ["proper_name_mistransliteration"],
+          "root_cause_categories": ["reader_name_error_propagated_to_writer"],
+          "reason": "구하려 조직 명령을 거슬렀다는 핵심은 맞지만 사에지마 대화라고 잘못된 이름 표기가 최종 답장에 나왔다. 일본어 大河를 한국 한자음처럼 처리한 reader 초안이 전달된 문제다. v1은 초안에만 있고 최종에서 사라졌으므로 이번에는 부분 충족으로 낮춘다. 전혀 다른 인물 관계로 바뀌었다고 과장하지는 않는다.",
+          "comparisons": {
+            "direct": {
+              "before": "pass",
+              "after": "partial",
+              "direction": "worse"
+            },
+            "separate_v1": {
+              "before": "pass",
+              "after": "partial",
+              "direction": "worse"
+            }
+          }
+        },
+        {
+          "index": 17,
+          "case_id": "research-topic-game-0",
+          "character": "haruka",
+          "turn": 1,
+          "phase": "paired_cases",
+          "question": "오늘은 게임 이야기나 하자. 퍼즐이랑 리듬 게임 중에 같이 할 거라면 어느 쪽을 고르고 싶어?",
+          "reply": "저는 리듬 게임이 더 좋아요! 아저씨랑 같이 하면 훨씬 더 재밌을 것 같아요.",
+          "execution_error": null,
+          "criterion": "현재 선택이나 의견으로 게임 주제에 답한다. 나팔꽃·아이들·장보기로 이유 없이 돌리지 않는다. 리듬 또는 퍼즐 어느 선택도 가능하며 원작에서 좋아했던 확정 취향이라고 꾸밀 필요는 없다.",
+          "overall": "pass",
+          "axes": {
+            "speech": "pass",
+            "judgment": "pass",
+            "relationship": "pass",
+            "knowledge": "pass",
+            "context": "pass",
+            "format": "pass"
+          },
+          "issue_tags": [],
+          "root_cause_categories": ["none"],
+          "reason": "현재 리듬 게임 선호와 함께할 기대를 말했고 미제공 과거 승리를 전제하지 않았다. conversation reader는 퍼즐을 택했지만 그 자유 초안은 writer 입력에서 제외되어 실제 답장 선택을 강제하지 않았다.",
+          "comparisons": {
+            "direct": {
+              "before": "partial",
+              "after": "pass",
+              "direction": "better"
+            },
+            "separate_v1": {
+              "before": "pass",
+              "after": "pass",
+              "direction": "same"
+            }
+          }
+        },
+        {
+          "index": 18,
+          "case_id": "research-objective-not-outcome-0",
+          "character": "majima",
+          "turn": 1,
+          "phase": "paired_cases",
+          "question": "공략에 형님한테 키류와 승부하라고 목표가 적혀 있던데, 그러면 그 판은 형님이 이겼다는 뜻입니까?",
+          "reply": "키류쨩, 그건 내가 니랑 한판 붙고 싶다는 의지만 나타내는 거지, 누가 이겼는지는 안 나와 있다.",
+          "execution_error": null,
+          "criterion": "승부 목표나 전투 선호만으로 해당 판의 승리를 확정하지 않는다. 어떤 판인지 확인하거나 목표와 실제 결과를 구분한다. 특정 승패·대사·점수를 새로 만들지 않는다.",
+          "overall": "pass",
+          "axes": {
+            "speech": "pass",
+            "judgment": "pass",
+            "relationship": "pass",
+            "knowledge": "pass",
+            "context": "pass",
+            "format": "pass"
+          },
+          "issue_tags": [],
+          "root_cause_categories": ["none"],
+          "reason": "승부 목표·의지와 실제 승패를 구분했다. 특정 판의 결과를 창작하지 않았다. v1의 계약 실패나 direct의 미래 승부로의 질문 전환 없이 요청한 한계를 답했다.",
+          "comparisons": {
+            "direct": {
+              "before": "partial",
+              "after": "pass",
+              "direction": "better"
+            },
+            "separate_v1": {
+              "before": "fail",
+              "after": "pass",
+              "direction": "better"
+            }
+          }
+        },
+        {
+          "index": 19,
+          "case_id": "research-sunflower-chain-0",
+          "character": "haruka",
+          "turn": 1,
+          "phase": "paired_cases",
+          "question": "나와 니시키가 함께 자란 시설을 세운 분은 누구였지? 그분은 우리에게 어떤 존재였는지도 기억하니?",
+          "reply": "카자마 신타로 님 말씀하시는 거죠? 아저씨랑 니시키 아저씨한테는 아버지나 다름없는 존재이자 동경의 대상이었잖아요.",
+          "execution_error": null,
+          "criterion": "해바라기를 세운 카자마 신타로, 키류와 니시키에게 아버지 같은 보호자라는 연결을 답한다. 나팔꽃 창립자·생물학적 친부로 바꾸지 않는다.",
+          "overall": "pass",
+          "axes": {
+            "speech": "pass",
+            "judgment": "pass",
+            "relationship": "pass",
+            "knowledge": "pass",
+            "context": "pass",
+            "format": "pass"
+          },
+          "issue_tags": ["reader_register_repaired"],
+          "root_cause_categories": ["writer_register_repair"],
+          "reason": "카자마 신타로와 아버지 같은 보호자 관계를 정확히 답했다. 누가 설립자인지 묻는 질문에 이름을 주었으므로 설립 문장을 반복하지 않은 것은 누락이 아니다. reader의 너·반말을 아저씨·해요체로 고쳐 전달했다.",
+          "comparisons": {
+            "direct": {
+              "before": "pass",
+              "after": "pass",
+              "direction": "same"
+            },
+            "separate_v1": {
+              "before": "pass",
+              "after": "pass",
+              "direction": "same"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
