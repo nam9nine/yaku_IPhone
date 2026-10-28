@@ -1,0 +1,45 @@
+name: Issue 105 Linux visual candidates
+on:
+  push:
+    branches: [fix/105-message-regressions]
+    paths: [.github/workflows/issue105-candidates.yml]
+permissions:
+  contents: read
+concurrency:
+  group: issue105-linux-candidates
+  cancel-in-progress: false
+jobs:
+  capture:
+    if: github.ref == 'refs/heads/fix/105-message-regressions'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - run: npm ci
+      - name: Configure official Ubuntu APT mirror
+        run: sudo "$(command -v node)" scripts/configure-apt-mirror.mjs
+      - run: npx playwright install-deps chromium webkit
+      - run: npx playwright install chromium webkit
+      - name: Generate candidates for independent before-after review
+        run: npm run test:visual -- --update-snapshots --output=test-results/visual
+      - name: Record capture provenance
+        if: always()
+        run: |
+          git rev-parse HEAD > candidate-source.txt
+          git rev-parse HEAD:src >> candidate-source.txt
+          git rev-parse HEAD:tests >> candidate-source.txt
+      - if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: issue105-linux-candidates-${{ github.sha }}
+          path: |
+            tests/visual/baselines/linux/
+            candidate-source.txt
+          retention-days: 30
+          if-no-files-found: error

@@ -609,7 +609,11 @@ def create_app(data_root, *, allow_origins=(), **options):
             raise ApiFailure(
                 503, "push_unavailable", "알림 연결을 준비하지 못했습니다."
             )
-        if not service.limiter.allow(("presence:" if foreground else "push:") + record["visitor_id"], 90 if foreground else 20, 60):
+        if not service.limiter.allow(
+            ("presence:" if foreground else "push:") + record["visitor_id"],
+            90 if foreground else 20,
+            60,
+        ):
             raise ApiFailure(429, "rate_limited", "잠시 후 다시 시도해 주세요.")
         return record
 

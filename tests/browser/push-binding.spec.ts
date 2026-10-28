@@ -51,7 +51,7 @@ async function setup(context: BrowserContext) {
     });
     Object.defineProperty(navigator, 'serviceWorker', { configurable: true, value: serviceWorker });
   });
-  const state = { posts: 0, deferred: null as Route | null, hold: false };
+  const state = { posts: 0, presenceReports: 0, deferred: null as Route | null, hold: false };
   await context.route(`${AI_ENDPOINT}/v1/**`, async (route) => {
     const request = route.request();
     const path = new URL(request.url()).pathname;
@@ -60,7 +60,14 @@ async function setup(context: BrowserContext) {
     else if (path === '/v1/health') data = { status: 'ready' };
     else if (path === '/v1/history') data = { messages: [], pending_job: null, next_cursor: null };
     else if (path === '/v1/push/key') data = { public_key: 'BAAAAAAA' };
-    else if (path === '/v1/push/subscriptions' && request.method() === 'POST') {
+    else if (
+      path === '/v1/push/subscriptions' &&
+      request.method() === 'POST' &&
+      'presence' in request.postDataJSON()
+    ) {
+      state.presenceReports++;
+      data = { ok: true };
+    } else if (path === '/v1/push/subscriptions' && request.method() === 'POST') {
       state.posts++;
       if (state.hold) {
         state.deferred = route;
@@ -175,6 +182,7 @@ test('구독 복원에서 서버 id가 바뀌면 binding을 갱신하고 브라�
   await page.getByRole('button', { name: '알림 켜기', exact: true }).click();
   await expect(page.getByRole('button', { name: '알림 끄기', exact: true })).toBeVisible();
   expect(((await readState(page, 'binding')) as { id: string }).id).toBe('subscription-1');
+  await expect.poll(() => service.presenceReports).toBeGreaterThan(0);
   await page.reload();
   await expect.poll(() => service.posts).toBeGreaterThan(1);
   await expect
