@@ -1,4 +1,4 @@
-name: Issue 105 Linux visual candidates
+name: Issue 105 approved visual verification
 on:
   push:
     branches: [fix/105-message-regressions]
@@ -26,8 +26,8 @@ jobs:
         run: sudo "$(command -v node)" scripts/configure-apt-mirror.mjs
       - run: npx playwright install-deps chromium webkit
       - run: npx playwright install chromium webkit
-      - name: Generate candidates for independent before-after review
-        run: npm run test:visual -- --update-snapshots --output=test-results/visual
+      - name: Verify independently reviewed baselines without updating
+        run: npm run test:visual -- --output=test-results/visual
       - name: Record capture provenance
         if: always()
         run: |

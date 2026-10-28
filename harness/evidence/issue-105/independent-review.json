@@ -1,0 +1,87 @@
+{
+  "reviewer": "story_corpus_eval (UI implementation independent)",
+  "reviewed_head": "1f44e3ce8008ecb97c6903ff2dc0596c8bd7e99f",
+  "base_main": "1c6e43570c61e63eb9ffef19f2640386093647c1",
+  "candidate_workflow_run": "40656395924",
+  "source_tree": "14a8211d1d5d3d965e981cf0a254adfc9e3a2e63",
+  "tests_tree": "a2f6d10e9f81e6d6e94f5425eabca76ba10f279f",
+  "code_verdict": "pass_no_blocking_findings",
+  "baseline_verdict": "accept_candidates_in_reviewed_scope",
+  "blocking_findings": [],
+  "reviewed_capture_count": 224,
+  "dimensions_unchanged": 224,
+  "categories": {
+    "control_home_backdrop": 12,
+    "messages_design": 16,
+    "status_bar": 189,
+    "subvisual_raster_delta": 4,
+    "switcher_home_backdrop": 3
+  },
+  "code_notes": [
+    "Composer primary-button mousedown prevention preserves textarea focus/layout until normal click; no click interception or keyboard-key cancellation was introduced.",
+    "Retry/rewrite tests strengthen successful restoration/focus assertions and attach captures. Push fixture now distinguishes foreground presence from subscription registration; clock setup avoids dependence on host current time.",
+    "chat_push.py and chat_server.py parsed ASTs match main exactly. test_chat_push.py has import ordering, formatting and unused job→_job rename; call/assert behavior unchanged.",
+    "Candidate workflow generates isolated Linux candidates with exact SHA/src/tests provenance and read-only repository credentials; candidate creation alone is not baseline approval."
+  ],
+  "visual_notes": [
+    "187 mobile captures differ only within top55px; all status crops directly opened in10 old/new/diff sheets. Two desktop lock images differ only in the centered phone status bar. Time weight/size, Wi-Fi/cellular and white80 battery follow previously requested status-bar changes.",
+    "16 message captures directly opened as old/new/diff full views, plus two desktop crops at native phone resolution. Blue outgoing bubbles/send button, back unread badge, larger centered avatar/name capsule, removed dividing line match previously requested message design. No new clipping/overlap or missing controls found.",
+    "12 control-center and3 switcher captures retain control/card geometry. Broad differences are blurred home background colors. These baselines date to7197943(#48), before home/apps.ts added music/taxi/cooking/karaoke; current home baselines date to550836e(#62). Inspected source history and unchanged control source support expected accumulated home-backdrop change.",
+    "Four captures have tiny non-status raster differences: Chromium music390/430 each1pixel at max channel delta1; WebKit home360 has80pixels and search390 has19pixels at max channel delta1. Full views show no text/content/geometry change. No tolerance was changed.",
+    "Four local Chromium/WebKit retry-ready/rewrite-restored screenshots were directly opened; draft and complete send control are visible, with textarea focus asserted in tests."
+  ],
+  "reference": {
+    "id": "idb-messages-ios27",
+    "local_path": "references/local/real-device/ios27-messages-compose.jpg",
+    "source": "https://www.idownloadblog.com/2026/06/12/send-handwritten-message-iphone/",
+    "sha256": "1ae893bfacf0d1f003811a78cffe1740cd3b38b6712fe1fcad977bf15a8b7bc4",
+    "comparison": "Centered profile/name, upper controls, blue/gray rounded bubbles and lower rounded composer compared directly; bell replacing video and omitting attachment plus are existing project choices."
+  },
+  "logs_observed_not_rerun_by_reviewer": {
+    "check": ".tooling/ci105-final-check.log: type/lint/format,400 unit tests,build,harness passed",
+    "related": ".tooling/ci105-final-related.log:116 passed",
+    "targeted": ".tooling/ci105-final-targeted.log:18 passed"
+  },
+  "artifacts": {
+    "per_image": "delta-summary.json",
+    "status_sheets": [
+      "status-01.png",
+      "status-02.png",
+      "status-03.png",
+      "status-04.png",
+      "status-05.png",
+      "status-06.png",
+      "status-07.png",
+      "status-08.png",
+      "status-09.png",
+      "status-10.png"
+    ],
+    "full_sheets": [
+      "full-01.png",
+      "full-02.png",
+      "full-03.png",
+      "full-04.png",
+      "full-05.png",
+      "full-06.png",
+      "full-07.png",
+      "full-08.png",
+      "full-09.png",
+      "full-10.png",
+      "full-11.png",
+      "full-12.png",
+      "full-13.png",
+      "full-14.png",
+      "full-15.png",
+      "full-16.png",
+      "full-17.png",
+      "full-18.png",
+      "full-19.png"
+    ],
+    "desktop_detail": ["desktop-chromium.png", "desktop-webkit.png"]
+  },
+  "limitations": [
+    "No actual iPhone Safari or physical keyboard execution performed. Native keyboard-to-composer gap and real touch timing remain device verification items.",
+    "Review is of candidate source1f44e3c and224 candidate images; ordinary non-update visual CI and final-head checks must still pass after adoption.",
+    "No claim of pixel-perfect iPhone recreation; unchanged product differences from reference are outside this focused regression fix."
+  ]
+}
