@@ -96,7 +96,7 @@ export function PasscodeScreen({
           ))}
         </div>
         <p id="passcode-feedback" className="passcode-feedback" role="status" aria-live="polite">
-          {state.error ? '암호가 올바르지 않습니다.' : '크리스마스는 몇 월 며칠이지.'}
+          {state.error ? '암호가 올바르지 않습니다.' : ''}
         </p>
         <div className="passcode-keypad" aria-label="암호 숫자판">
           {keys.map(([digit, letters]) => (

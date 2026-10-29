@@ -19,5 +19,13 @@
   },
   "ci": "skipped at explicit user request",
   "full_visual_and_baselines": "not run or updated; Haruka thread visual baseline follow-up remains",
-  "physical_iphone": "not tested"
+  "physical_iphone": "not tested",
+  "passcode_followup": {
+    "change": "Removed Christmas hint; wrong-passcode error remains",
+    "typecheck": "pass",
+    "build": "pass",
+    "personal_phone_browser_passed": 16,
+    "screenshot": "passcode-no-hint.png",
+    "deployment": "pending explicit approval for temporary required-check change"
+  }
 }
