@@ -1,4 +1,5 @@
 import { ReplyPresentation } from './presentation';
+import { displayedMessageTime } from './messageOrder';
 import {
   aiCharacters,
   AiRequestError,
@@ -8,9 +9,13 @@ import {
   getJob,
   generationError,
   messageWithinLimits,
+  isRelationshipTone,
+  isPhoneEvents,
   postChat,
   type AiCharacter,
   type AiMessage,
+  type RelationshipTone,
+  type PhoneEventId,
 } from './client';
 import {
   configuredEndpoint,
@@ -27,9 +32,12 @@ export interface PendingMessage {
   jobId: string | null;
   historyId?: string;
   phase: 'submitting' | 'generating' | 'failed';
+  relationshipTone: RelationshipTone;
+  phoneEvents: PhoneEventId[];
 }
 export interface AiThread {
   messages: AiMessage[];
+  completedCount: number;
   displayedMessages: AiMessage[];
   typing: boolean;
   readRequestIds: string[];
@@ -54,10 +62,16 @@ export interface AiReplyNotification {
   character: AiCharacter;
   text: string;
 }
-export interface AiReplyArrival extends AiReplyNotification {
+export interface AiReplyDelivery extends AiReplyNotification {
   jobId?: string;
   playSound: boolean;
   sound: 'conversation' | 'notification';
+  deliveredAt?: number;
+}
+export interface AiReplyArrival extends AiReplyDelivery {
+  /** A bounded event journal keeps React-batched deliveries from overwriting each other. */
+  deliveries?: AiReplyDelivery[];
+  deliveredJobIds?: string[];
 }
 interface AiSnapshot {
   arrival: AiReplyArrival | null;
@@ -72,6 +86,7 @@ interface AiSnapshot {
 }
 const emptyThread = (): AiThread => ({
   messages: [],
+  completedCount: 0,
   displayedMessages: [],
   typing: false,
   readRequestIds: [],
@@ -98,6 +113,13 @@ function mergeMessages(previous: AiMessage[], incoming: AiMessage[]): AiMessage[
   return [...merged.values()];
 }
 
+function knownCompletedCount(messages: AiMessage[]): number {
+  return messages.filter(
+    (message) =>
+      message.role === 'user' && (message.status === undefined || message.status === 'complete'),
+  ).length;
+}
+
 /** A single Messages instance owns requests. Switching contacts never changes their owner. */
 export class AiMessenger {
   private snapshot: AiSnapshot;
@@ -114,6 +136,8 @@ export class AiMessenger {
   private refreshTask: Promise<void> | null = null;
   private renewed = false;
   private resetId = readAiResetId();
+  private notificationQueue: AiReplyNotification[] = [];
+  private deliveries: AiReplyDelivery[] = [];
 
   constructor(connection = readAiConnection()) {
     this.presentation.use(connection);
@@ -155,6 +179,7 @@ export class AiMessenger {
     let next = Infinity;
     let notification = this.snapshot.notification;
     let arrival = this.snapshot.arrival;
+    let delivered = false;
     for (const receipt of this.presentation.receipts) {
       if (receipt.delivered || !receipt.replyId || now < receipt.deliverAt) continue;
       receipt.delivered = true;
@@ -171,10 +196,20 @@ export class AiMessenger {
           // A suspended page/history catch-up is visual recovery, not a new tone.
           playSound: this.visible && now - receipt.deliverAt < 2000,
           sound: receipt.read ? 'conversation' : 'notification',
+          deliveredAt: now,
         };
-        if (!receipt.read) notification = arrival;
+        delivered = true;
+        this.deliveries = [...this.deliveries, arrival].slice(-64);
+        if (!receipt.read) this.notificationQueue.push(arrival);
       }
     }
+    if (delivered && arrival)
+      arrival = {
+        ...arrival,
+        deliveries: this.deliveries,
+        deliveredJobIds: this.deliveries.flatMap((item) => (item.jobId ? [item.jobId] : [])),
+      };
+    notification ??= this.notificationQueue.shift() ?? null;
     const threads = { ...this.snapshot.threads };
     const unreadReplies: AiReplyNotification[] = [];
     for (const character of aiCharacters) {
@@ -191,7 +226,20 @@ export class AiMessenger {
       }
       threads[character] = {
         ...thread,
-        displayedMessages: thread.messages.filter((m) => !waiting.some((r) => r.replyId === m.id)),
+        displayedMessages: thread.messages
+          .filter((message) => !waiting.some((receipt) => receipt.replyId === message.id))
+          .map((message) => ({
+            ...message,
+            displayedAt: displayedMessageTime(
+              message,
+              receipts.find((receipt) =>
+                message.role === 'assistant'
+                  ? receipt.replyId === message.id ||
+                    (!!message.request_id && receipt.requestId === message.request_id)
+                  : !!message.request_id && receipt.requestId === message.request_id,
+              ),
+            ),
+          })),
         readRequestIds: receipts
           .filter(
             (r) => now >= r.typingAt && (r.replyId || thread.pending?.requestId === r.requestId),
@@ -212,6 +260,7 @@ export class AiMessenger {
   }
 
   markRead = (character: AiCharacter): void => {
+    this.notificationQueue = this.notificationQueue.filter((item) => item.character !== character);
     for (const receipt of this.presentation.receipts)
       if (receipt.character === character && receipt.delivered) receipt.read = true;
     if (this.snapshot.notification?.character === character)
@@ -219,7 +268,7 @@ export class AiMessenger {
     this.present();
   };
   dismissNotification = (): void => {
-    this.update({ notification: null });
+    this.update({ notification: this.notificationQueue.shift() ?? null });
   };
   receivePush = async (character: AiCharacter): Promise<boolean> => {
     if (
@@ -267,6 +316,8 @@ export class AiMessenger {
     this.renewed = false;
     const connection = readAiConnection();
     this.presentation.use(connection);
+    this.notificationQueue = [];
+    this.deliveries = [];
     this.update({
       connection,
       threads: emptyThreads(),
@@ -413,7 +464,15 @@ export class AiMessenger {
                   reason: 'input',
                 };
             }
-            this.update({ connection: null, threads });
+            this.notificationQueue = [];
+            this.deliveries = [];
+            this.update({
+              connection: null,
+              threads,
+              notification: null,
+              arrival: null,
+              unreadReplies: [],
+            });
             saveAiConnection(null, this.resetId);
           }
           if (!this.snapshot.connection) {
@@ -488,6 +547,9 @@ export class AiMessenger {
             jobId: result.pending_job,
             historyId: accepted?.id,
             phase: 'generating' as const,
+            relationshipTone:
+              accepted?.relationship_tone ?? existing?.relationshipTone ?? 'neutral',
+            phoneEvents: [...(accepted?.phone_events ?? existing?.phoneEvents ?? [])],
           }
         : resolved
           ? null
@@ -502,6 +564,11 @@ export class AiMessenger {
       }
       this.thread(character, {
         messages: mergeMessages(thread.messages, result.messages),
+        completedCount: Math.max(
+          thread.completedCount,
+          result.completed_exchanges ??
+            knownCompletedCount(mergeMessages(thread.messages, result.messages)),
+        ),
         loaded: true,
         loading: false,
         nextCursor: thread.olderLoaded ? thread.nextCursor : result.next_cursor,
@@ -542,6 +609,10 @@ export class AiMessenger {
       if (!this.current(generation)) return;
       this.thread(character, {
         messages: mergeMessages(result.messages, this.snapshot.threads[character].messages),
+        completedCount: Math.max(
+          this.snapshot.threads[character].completedCount,
+          result.completed_exchanges ?? this.snapshot.threads[character].completedCount,
+        ),
         nextCursor: result.next_cursor,
         olderLoaded: true,
         loadingOlder: false,
@@ -553,9 +624,17 @@ export class AiMessenger {
     }
   };
 
-  send(character: AiCharacter, text: string, active: boolean, online: boolean): boolean {
+  send(
+    character: AiCharacter,
+    text: string,
+    active: boolean,
+    online: boolean,
+    options: { relationshipTone?: RelationshipTone; phoneEvents?: readonly PhoneEventId[] } = {},
+  ): boolean {
     const thread = this.snapshot.threads[character];
     const message = text.trim();
+    const relationshipTone = options.relationshipTone ?? 'neutral';
+    const phoneEvents = options.phoneEvents === undefined ? [] : options.phoneEvents;
     if (
       !active ||
       !online ||
@@ -563,12 +642,13 @@ export class AiMessenger {
       !this.current(this.generation) ||
       !message ||
       !messageWithinLimits(message) ||
+      !isRelationshipTone(relationshipTone) ||
+      !isPhoneEvents(character, phoneEvents) ||
       this.snapshot.status !== 'ready' ||
       !thread.loaded ||
       thread.loading ||
-      aiCharacters.some(
-        (id) => this.snapshot.threads[id].pending || this.snapshot.threads[id].deliveryPending,
-      )
+      thread.pending ||
+      thread.deliveryPending
     )
       return false;
     const pending: PendingMessage = {
@@ -577,6 +657,8 @@ export class AiMessenger {
       time: new Date().toISOString(),
       jobId: null,
       phase: 'submitting',
+      relationshipTone,
+      phoneEvents: [...phoneEvents],
     };
     this.presentation.begin(character, pending.requestId);
     this.thread(character, { pending, error: null });
@@ -625,6 +707,8 @@ export class AiMessenger {
         pending.message,
         pending.requestId,
         this.controller.signal,
+        pending.relationshipTone,
+        pending.phoneEvents,
       );
       if (!this.current(generation)) return;
       this.thread(character, { pending: { ...pending, jobId, phase: 'generating' } });
@@ -633,7 +717,7 @@ export class AiMessenger {
       if (!this.current(generation)) return;
       if (
         error instanceof AiRequestError &&
-        ['invalid_input', 'input_limit'].includes(error.code)
+        ['invalid_input', 'input_limit', 'content_blocked'].includes(error.code)
       ) {
         this.presentation.cancel(pending.requestId);
         this.thread(character, {
@@ -685,6 +769,8 @@ export class AiMessenger {
             requestId: job.request.id,
             message: job.request.message,
             time: job.request.time,
+            relationshipTone: job.request.relationship_tone ?? previous.relationshipTone,
+            phoneEvents: [...(job.request.phone_events ?? previous.phoneEvents)],
           },
         });
       if (job.status === 'complete' || job.status === 'error') {
@@ -700,6 +786,11 @@ export class AiMessenger {
         if (job.status === 'error' && pending) this.presentation.cancel(pending.requestId);
         this.thread(character, {
           messages: mergeMessages(thread.messages, result.messages),
+          completedCount: Math.max(
+            thread.completedCount,
+            result.completed_exchanges ??
+              knownCompletedCount(mergeMessages(thread.messages, result.messages)),
+          ),
           pending: null,
           nextCursor: thread.olderLoaded ? thread.nextCursor : result.next_cursor,
           ...(job.status === 'error' && failedText

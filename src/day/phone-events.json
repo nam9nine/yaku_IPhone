@@ -1,0 +1,81 @@
+{
+  "version": "phone-events-v1",
+  "events": {
+    "majima-call-missed": {
+      "character": "majima",
+      "text": "브라우저의 가상 전화에서 키류와 마지마의 통화가 응답 없이 부재중으로 끝났다고 보고됐다. 통화 내용은 전달되지 않았다."
+    },
+    "majima-call-declined": {
+      "character": "majima",
+      "text": "브라우저의 가상 전화에서 키류와 마지마 사이의 전화가 연결되기 전에 거절되거나 취소됐다고 보고됐다. 구체적인 발신 방향·이유·통화 내용은 전달되지 않았다."
+    },
+    "majima-call-short": {
+      "character": "majima",
+      "text": "브라우저의 가상 전화에서 키류와 마지마의 연결된 통화가 12초 미만에 끝났다고 보고됐다. 어느 쪽이 왜 끝냈는지와 통화 내용은 전달되지 않았다."
+    },
+    "majima-call-completed": {
+      "character": "majima",
+      "text": "브라우저의 가상 전화에서 키류와 마지마의 연결된 통화가 12초 이상 이어진 뒤 끝났다고 보고됐다. 구체적인 통화 내용이나 새 약속은 전달되지 않았다."
+    },
+    "haruka-shopping-checked": {
+      "character": "haruka",
+      "text": "브라우저에서 키류가 장보기 할 일을 완료로 체크했다고 보고됐다. 실제 구매나 물품 확보를 검증한 기록은 아니다."
+    },
+    "haruka-garden-checked": {
+      "character": "haruka",
+      "text": "브라우저에서 키류가 텃밭 물 주기 할 일을 완료로 체크했다고 보고됐다. 실제 물 주기를 검증한 기록은 아니다."
+    },
+    "haruka-mame-checked": {
+      "character": "haruka",
+      "text": "브라우저에서 키류가 마메 밥 주기 할 일을 완료로 체크했다고 보고됐다. 실제로 먹이를 준 것을 검증한 기록은 아니다."
+    },
+    "haruka-uniform-checked": {
+      "character": "haruka",
+      "text": "브라우저에서 키류가 체육복 이름표 달기 할 일을 완료로 체크했다고 보고됐다. 실제 바느질을 검증한 기록은 아니다."
+    },
+    "majima-kamurocho-intent": {
+      "character": "majima",
+      "text": "브라우저의 가상 택시에서 카무로쵸를 고른 키류가 마지마에게 갈 생각이며 도착하면 연락하겠다고 알리는 버튼을 눌렀다. 마지마의 전화 대본은 아직 도착 전임을 확인하고 볼일을 마친 뒤 연락하라는 내용이다. 실제 이동·도착·싸움 완료는 아니다."
+    },
+    "majima-proactive-check-phone": {
+      "character": "majima",
+      "text": "브라우저의 IF 이벤트로 마지마가 먼저 보낸 문자: “키류쨩! 폰은 살아 있나?” 키류의 수락·일정 확정·실제 만남이나 행동 완료는 보고되지 않았다."
+    },
+    "majima-proactive-challenge": {
+      "character": "majima",
+      "text": "브라우저의 IF 이벤트로 마지마가 먼저 보낸 문자: “오늘은 내가 먼저 찾았다! 볼일 끝나면 연락해라.” 키류의 수락·일정 확정·실제 만남이나 행동 완료는 보고되지 않았다."
+    },
+    "majima-proactive-karaoke": {
+      "character": "majima",
+      "text": "브라우저의 IF 이벤트로 마지마가 먼저 보낸 문자: “노래 한 곡 뽑고 싶은데, 니도 한 곡 할래?” 키류의 수락·일정 확정·실제 만남이나 행동 완료는 보고되지 않았다."
+    },
+    "majima-proactive-rematch": {
+      "character": "majima",
+      "text": "브라우저의 IF 이벤트로 마지마가 먼저 보낸 문자: “니랑 한 판 겨룰 생각만 하면 몸이 근질근질하네.” 키류의 수락·일정 확정·실제 만남이나 행동 완료는 보고되지 않았다."
+    },
+    "majima-proactive-call-me": {
+      "character": "majima",
+      "text": "브라우저의 IF 이벤트로 마지마가 먼저 보낸 문자: “문자로 하려니 답답하구마. 시간 나면 전화 걸어라.” 키류의 수락·일정 확정·실제 만남이나 행동 완료는 보고되지 않았다."
+    },
+    "majima-proactive-plans": {
+      "character": "majima",
+      "text": "브라우저의 IF 이벤트로 마지마가 먼저 보낸 문자: “오늘 뭐 할 생각이고? 아직 안 정했으면 내 얘기도 들어 봐라.” 키류의 수락·일정 확정·실제 만남이나 행동 완료는 보고되지 않았다."
+    },
+    "majima-proactive-quiet": {
+      "character": "majima",
+      "text": "브라우저의 IF 이벤트로 마지마가 먼저 보낸 문자: “조용하다 싶으면 니 생각이 난다. 너무 얌전하게 살지는 마라!” 키류의 수락·일정 확정·실제 만남이나 행동 완료는 보고되지 않았다."
+    },
+    "majima-proactive-hello": {
+      "character": "majima",
+      "text": "브라우저의 IF 이벤트로 마지마가 먼저 보낸 문자: “키류쨩! 별일 없제? 나중에 얘기 좀 하자.” 키류의 수락·일정 확정·실제 만남이나 행동 완료는 보고되지 않았다."
+    },
+    "majima-call-live": {
+      "character": "majima",
+      "text": "이번 입력은 진행 중인 가상 통화 화면에서 사용자가 확인해 보낸 말이다. 음성 인식 또는 직접 입력을 사용했다. 상대의 말에 짧은 한국어 글로 답한다. 소리로 말했다거나 실제 마이크를 들었다고 주장하지 않는다."
+    },
+    "haruka-call-live": {
+      "character": "haruka",
+      "text": "이번 입력은 진행 중인 가상 통화 화면에서 사용자가 확인해 보낸 말이다. 음성 인식 또는 직접 입력을 사용했다. 상대의 말에 짧은 한국어 글로 답한다. 소리로 말했다거나 실제 마이크를 들었다고 주장하지 않는다."
+    }
+  }
+}

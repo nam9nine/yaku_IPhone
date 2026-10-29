@@ -3,7 +3,10 @@ import { expect, type Page } from '@playwright/test';
 import { AI_ENDPOINT } from '../../src/ai/config';
 
 /** Deterministic HTTP fixture for legacy phone/story flows; never calls the local model. */
-export async function mockStoryAi(page: Page) {
+export async function mockStoryAi(
+  page: Page,
+  { majimaCompletedExchanges = 0 }: { majimaCompletedExchanges?: number } = {},
+) {
   await installAiClock(page);
   type Character = 'haruka' | 'majima';
   type Message = {
@@ -15,7 +18,29 @@ export async function mockStoryAi(page: Page) {
     job_id: string;
     request_id?: string;
   };
-  const histories: Record<Character, Message[]> = { haruka: [], majima: [] };
+  const histories: Record<Character, Message[]> = {
+    haruka: [],
+    majima: Array.from({ length: majimaCompletedExchanges }, (_, index): Message[] => [
+      {
+        id: `seed-${index}-user`,
+        role: 'user',
+        content: `이전 질문 ${index + 1}`,
+        time: '2026-10-25T00:00:00Z',
+        status: 'complete',
+        job_id: `seed-${index}`,
+        request_id: `seed-${index}`,
+      },
+      {
+        id: `seed-${index}-assistant`,
+        role: 'assistant',
+        content: `이전 답장 ${index + 1}`,
+        time: '2026-10-25T00:00:01Z',
+        status: 'complete',
+        job_id: `seed-${index}`,
+        request_id: `seed-${index}`,
+      },
+    ]).flat(),
+  };
   const jobs = new Map<string, { character: Character; message: string; id: string }>();
   await page.route(`${AI_ENDPOINT}/v1/**`, async (route) => {
     const request = route.request();
@@ -27,6 +52,9 @@ export async function mockStoryAi(page: Page) {
     else if (url.pathname === '/v1/history')
       result = {
         messages: histories[url.searchParams.get('character') as Character],
+        completed_exchanges: histories[url.searchParams.get('character') as Character].filter(
+          (message) => message.role === 'user' && message.status === 'complete',
+        ).length,
         pending_job: null,
         next_cursor: null,
       };
@@ -50,6 +78,7 @@ export async function mockStoryAi(page: Page) {
             role: 'assistant',
             content: `검증용 ${body.character === 'haruka' ? '하루카' : '마지마'} 답장`,
             time: '2026-10-26T00:00:01Z',
+            request_id: id,
             job_id: id,
             status: 'complete',
           },

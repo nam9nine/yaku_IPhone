@@ -44,7 +44,7 @@ export function ContactsApp({
     setLastRequest(requestedContact);
     if (requestedContact) setSelected(requestedContact.id);
   }
-  const { extraContacts, setExtraContacts } = useDay();
+  const { extraContacts, setExtraContacts, dispatch } = useDay();
   const people = useMemo(
     () => [
       ...contacts.map((person) => ({ ...person, phone: '' })),
@@ -189,16 +189,26 @@ export function ContactsApp({
                 {contact.name}
               </h1>
               {contacts.some((person) => person.id === contact.id) && (
-                <button
-                  type="button"
-                  className="contact-message"
-                  onClick={() => onMessage(contact.id)}
-                  aria-label={`${contact.name}에게 메시지 보내기`}
-                >
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M21 11.5c0 4.7-4 8.5-9 8.5-1.4 0-2.8-.3-4-.8L3 21l1.2-4.1A8.1 8.1 0 0 1 3 11.5C3 6.8 7 3 12 3s9 3.8 9 8.5Z" />
-                  </svg>
-                </button>
+                <div className="contact-actions">
+                  <button
+                    type="button"
+                    className="contact-message"
+                    onClick={() => dispatch({ type: 'start-call', id: contact.id })}
+                    aria-label={`${contact.name}에게 전화 걸기`}
+                  >
+                    <PhoneIcon name="call" />
+                  </button>
+                  <button
+                    type="button"
+                    className="contact-message"
+                    onClick={() => onMessage(contact.id)}
+                    aria-label={`${contact.name}에게 메시지 보내기`}
+                  >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M21 11.5c0 4.7-4 8.5-9 8.5-1.4 0-2.8-.3-4-.8L3 21l1.2-4.1A8.1 8.1 0 0 1 3 11.5C3 6.8 7 3 12 3s9 3.8 9 8.5Z" />
+                    </svg>
+                  </button>
+                </div>
               )}
             </div>
             {contact.phone && (

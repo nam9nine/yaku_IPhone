@@ -74,13 +74,10 @@ test('전화 응답은 통화 화면으로 이어지고 종료하면 기존 메�
   await boot(page);
   await trigger(page);
   await page.getByRole('button', { name: '전화 응답', exact: true }).tap();
-  const call = page.getByRole('dialog', { name: '마지마 형님과 통화' });
+  const call = page.getByRole('dialog', { name: '마지마 형님 통화' });
   await expect(call).toBeVisible();
-  await call.getByRole('button', { name: '소리 끔', exact: true }).tap();
-  await expect(call.getByRole('button', { name: '소리 끔', exact: true })).toHaveAttribute(
-    'aria-pressed',
-    'true',
-  );
+  await call.getByRole('button', { name: '글로 입력', exact: true }).tap();
+  await expect(call.getByRole('textbox', { name: '통화에서 보낼 말', exact: true })).toBeFocused();
   await call.getByRole('button', { name: '통화 종료' }).tap();
   await expect(call).not.toBeVisible();
   await expect(page.locator('.note-paper h2')).toHaveText('오늘 저녁 카레');
@@ -96,12 +93,14 @@ test('거절하면 알림·배지·통화 기록이 일치하고 알림을 읽�
   await page.keyboard.press('Alt+Home');
   await expect(page.locator('[data-launch-app=phone] .home-badge')).toHaveText('1');
   await page.keyboard.press('Alt+n');
-  await page.getByRole('button', { name: '마지마 부재중 전화 알림 열기' }).tap();
+  await page.getByRole('button', { name: '마지마 형님 부재중 전화 알림 열기' }).tap();
   await expect(page.locator('.phone-call').first()).toHaveAttribute('data-missed', 'true');
   await page.keyboard.press('Alt+Home');
   await expect(page.locator('[data-launch-app=phone] .home-badge')).toHaveCount(0);
   await page.keyboard.press('Alt+n');
-  await expect(page.getByRole('button', { name: '마지마 부재중 전화 알림 열기' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: '마지마 형님 부재중 전화 알림 열기' })).toHaveCount(
+    0,
+  );
 });
 test('잠금 상태 수신 화면과 시간 초과, 새로고침 후 재수신 방지', async ({ page }) => {
   await page.clock.install();
@@ -112,12 +111,16 @@ test('잠금 상태 수신 화면과 시간 초과, 새로고침 후 재수신 �
   await lock.focus();
   await lock.press('Enter');
   await expect(page.getByRole('dialog', { name: '마지마 형님 전화 수신' })).toBeVisible();
-  await page.clock.fastForward(15001);
+  await page.clock.runFor(20_001);
   await expect(page.getByRole('dialog', { name: '마지마 형님 전화 수신' })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: '마지마 부재중 전화 알림 열기' })).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: '마지마 형님 부재중 전화 알림 열기' }),
+  ).toBeVisible();
   await page.reload();
   await expect(page.getByRole('dialog', { name: '마지마 형님 전화 수신' })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: '마지마 부재중 전화 알림 열기' })).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: '마지마 형님 부재중 전화 알림 열기' }),
+  ).toBeVisible();
 });
 test('상단 드래그는 안쪽에서 시작하고 이동 중 패널이 손가락을 추적하며 취소 후 버튼이 눌린다', async ({
   page,
@@ -188,9 +191,11 @@ test('부재중 알림은 이전 키패드 대신 최근 통화 기록으로 연
   await trigger(page);
   await page.getByRole('button', { name: '전화 거절' }).tap();
   await page.keyboard.press('Alt+n');
-  await page.getByRole('button', { name: '마지마 부재중 전화 알림 열기' }).tap();
+  await page.getByRole('button', { name: '마지마 형님 부재중 전화 알림 열기' }).tap();
   await expect(page.getByRole('heading', { name: '최근 통화', exact: true })).toBeVisible();
-  await expect(page.getByRole('button', { name: '마지마 부재중 전화, 메시지 열기' })).toBeVisible();
+  const missedCall = page.locator('.phone-call').first();
+  await expect(missedCall).toHaveAttribute('data-missed', 'true');
+  await expect(missedCall.getByRole('button', { name: '마지마 고로에게 전화' })).toBeVisible();
 });
 
 test('작은 높이 키패드도 첫 숫자부터 통화 버튼까지 내부 스크롤로 접근한다', async ({ page }) => {
@@ -212,5 +217,5 @@ test('통화 중 높이가 줄어도 종료 버튼을 눌러 나갈 수 있다',
   await page.getByRole('button', { name: '전화 응답', exact: true }).tap();
   await page.setViewportSize({ width: 390, height: 320 });
   await page.getByRole('button', { name: '통화 종료', exact: true }).tap();
-  await expect(page.getByRole('dialog', { name: '마지마 형님과 통화' })).toHaveCount(0);
+  await expect(page.getByRole('dialog', { name: '마지마 형님 통화' })).toHaveCount(0);
 });

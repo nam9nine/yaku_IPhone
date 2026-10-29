@@ -73,14 +73,22 @@ test('합성 iPhone standalone은 잠금·암호·홈·메시지·전화의 웹 
   await expectNativeLayout(page);
   await expect(page.locator('.system-top-edge').first()).toHaveCSS('top', '50px');
 
+  await launchHomeApp(page, 'reminders');
+  await page.getByRole('checkbox', { name: '텃밭 물 주기 완료', exact: true }).check();
+  await page.keyboard.press('Alt+Home');
   await launchHomeApp(page, 'messages');
   await page.locator('[data-conversation=haruka]').tap();
-  await expect(page.getByRole('textbox', { name: '하루카에게 메시지 입력' })).toBeEnabled();
+  await expect(page.getByRole('log', { name: '사와무라 하루카와의 대화' })).toBeVisible();
+  await expect(page.getByRole('textbox', { name: '하루카에게 메시지 입력' })).toHaveCount(0);
+  const reply = page.getByRole('button', {
+    name: '오늘 할 일에 적힌 텃밭 물 주기는 끝냈다. 보내기',
+    exact: true,
+  });
+  await expect(reply).toBeEnabled();
   await expectNativeLayout(page);
   await expect(page.locator('[data-app-window=messages]')).toHaveCSS('padding-top', '44px');
   await page.screenshot({ path: testInfo.outputPath('standalone-messages.png') });
-  await page.getByRole('textbox', { name: '하루카에게 메시지 입력' }).fill('잘 지내고 있니?');
-  await page.getByRole('button', { name: '메시지 보내기', exact: true }).tap();
+  await reply.tap();
   await page.keyboard.press('Alt+Home');
   await finishAiReply(page, 'haruka');
   await expect(page.locator('.ai-reply-banner')).toBeVisible();

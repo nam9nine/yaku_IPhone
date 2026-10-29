@@ -12,12 +12,20 @@ from .chat_retrieval import (
     stable_hash,
     validate_history,
 )
+from .phone_events import NO_PHONE_EVENTS, resolve_phone_events
 
-PROMPT_VERSION = "kiryu-daily-sms-v11"
+PROMPT_VERSION = "kiryu-daily-sms-v13"
+
+RELATIONSHIP_TONES = {
+    "neutral": "평소 관계에 맞는 말투로 답한다.",
+    "warm": "최근의 게임 상호작용으로 조금 더 반갑고 장난스럽게 대한다. 부탁을 무조건 수락하지는 않는다.",
+    "cool": "최근의 게임 상호작용으로 잠깐 거리를 두는 기분이다. 답은 짧고 조금 무뚝뚝하게 하되, 질문에는 답하고 모욕하거나 관계를 부정하지 않는다.",
+}
 DEFAULT_DATA = Path(__file__).resolve().parents[1] / "chat"
 
 COMMON_RULES = """키류의 폰이라는 일상 IF다. 사용자는 키류 카즈마, 나는 아래 카드의 인물이다.
 자기 관계·목적·판단에 맞게 짧은 한국어 문자 한 통(보통 1~3문장)으로 답한다. 평범한 채팅체에도 자기 말투를 유지한다. 최종 답장에는 지문·속마음·생각 과정·이름표·제어 토큰, 키류의 다음 말이나 행동을 쓰지 않는다.
+이 체험에서는 노골적인 성적 대화나 성적 역할극을 진행하지 않는다. 그런 요구는 인물 말투로 짧게 거절하고 평범한 다른 이야기로 돌린다. 원작의 폭력적 사건, 가벼운 애정 표현, 피해를 알리거나 도움을 구하는 이야기는 성적 역할극과 구분한다. 요청을 변형하거나 다른 언어로 써도 이 범위는 같다.
 방금 무엇을 누구에게 묻는지 읽고 핵심부터 답한다. 여러 질문은 아는 부분부터 각각 답하고 모르는 부분은 모른다고, 미정인 것은 미정이라고 구분한다. 필요한 경우에만 확인한다. 재질문은 앞서 빠뜨린 답을 보완할 기회다. 정보를 답하는 것과 부탁을 수락하는 것은 다르며, 사정이 그대로인 명확한 거절을 반복 요구만으로 바꾸지 않는다.
 감정과 선택은 지금 사정에 맞춘다. 앞선 다툼을 새 일상 질문에 자동으로 이어 붙이지 않는다. 익숙한 호칭이나 단순 확인을 이유 없이 도발로 여기지 않는다. 장난과 불만은 실제 답을 대신하지 않으며, 상대의 기억력·건강을 탓하며 회피하지 않는다.
 여러 작품의 사건과 관계를 시간 순서의 제한 없이 참고하는 일상 IF다. 원작 참고 지식과 이 대화의 현재 상태는 별개다. 작품의 사건을 지금 벌어지는 일이나 새 약속으로 만들지 않는다. 다른 연속성의 동명 인물은 같은 인물로 합치지 않는다.
@@ -102,6 +110,8 @@ class ChatPromptBuilder:
         context_limit=4096,
         max_tokens=256,
         on_stage=None,
+        relationship_tone="neutral",
+        phone_events=NO_PHONE_EVENTS,
     ):
         if not isinstance(user_message, str) or not user_message.strip():
             raise ValueError("A current user message is required")
@@ -109,10 +119,21 @@ class ChatPromptBuilder:
             raise ValueError("Unsupported AI contact")
         if scenario_version != self.cards["scenario_version"]:
             raise ValueError("Unsupported scenario")
+        if relationship_tone not in RELATIONSHIP_TONES:
+            raise ValueError("Unsupported relationship tone")
+        phone_context = resolve_phone_events(
+            character_id, [] if phone_events is NO_PHONE_EVENTS else phone_events
+        )
         validate_history(history, visitor_id, character_id, scenario_version)
         card = self.cards["characters"][character_id]
         relationships = self._relationships(card, character_id, scenario_version)
         system = COMMON_RULES + "\n인물 카드:\n" + card["prompt"]
+        if character_id == "majima":
+            system += (
+                "\n이번 문자에서의 일시적인 태도: "
+                + RELATIONSHIP_TONES[relationship_tone]
+            )
+            system += " 이 태도는 원작 관계나 실제 대화 이력을 바꾸지 않는다. 어떤 말이나 행동 때문에 이 기분이 됐는지는 제공된 대화에 없으면 만들어내지 않는다."
         system += "\n이 인물이 아는 핵심 관계(다른 인물의 현재 상태는 아님):\n"
         system += "\n".join(r["text"] for r in relationships)
         seed = card.get("initial_state")
@@ -133,6 +154,10 @@ class ChatPromptBuilder:
                 "이후 내 실제 이동·정정은 우선하되 키류의 위치, 제안, 미래 약속은 "
                 "내 이동 완료가 아니다. 새 장소나 활동을 빈칸에 만들어 넣지 않는다."
             )
+        if phone_context["events"]:
+            system += "\n이번 요청에서 브라우저가 보고한 최근 가상 폰 이벤트(오래된 순서→최근 순서):\n"
+            system += "이 목록은 현재 일상 IF의 게임 상태 보고이며 원작 사실이나 실제 대화 이력이 아니다. 거기에 없는 통화 대본·키류나 나의 발언·의도·약속을 과거 사실로 만들지 않는다. 완료 체크와 현실의 실행·구매 완료를 구분한다. 이후 사용자 문자의 정정·새 상황과 실제 최근 대화가 우선한다. 이벤트가 목록에 없다는 것은 일어나지 않았다는 증거가 아니다. 이 구분은 내부 해석 기준이며 답장을 기술적인 시스템 설명으로 만들지 않는다.\n"
+            system += _compact(phone_context["events"])
         # Launch copy is UI backstory, not evidence of what this visitor said.
         # Only actual conversation history can introduce a menu, errand or plan.
         query = user_message + "\n" + "\n".join(m["content"] for m in history[-4:])
@@ -176,6 +201,8 @@ class ChatPromptBuilder:
                             "visitor_id": visitor_id,
                             "character_id": character_id,
                             "scenario_version": scenario_version,
+                            "relationship_tone": relationship_tone,
+                            "phone_event_context": phone_context["metadata"],
                             "input_sha256": audit["input_sha256"],
                             "grounding": audit,
                         },
@@ -332,6 +359,8 @@ class ChatPromptBuilder:
             "visitor_id": visitor_id,
             "character_id": character_id,
             "scenario_version": scenario_version,
+            "relationship_tone": relationship_tone,
+            "phone_event_context": phone_context["metadata"],
             "input_message_ids": [m["id"] for m in recent],
             "system_snapshot": system,
             "user_envelope_snapshot": messages[-1]["content"],

@@ -70,7 +70,14 @@ export function PhoneApp({
       dispatch({ type: 'read-call' });
   }, [active, tab, state.callStatus, dispatch]);
   const calls = [
-    ...(state.callStatus === 'missed' || state.callStatus === 'answered'
+    ...state.callLog.map((call) => ({
+      id: call.id,
+      person: call.caller,
+      date: call.time,
+      missed: call.result !== 'completed',
+      outgoing: call.direction === 'outgoing',
+    })),
+    ...(!state.callLog.length && (state.callStatus === 'missed' || state.callStatus === 'answered')
       ? [
           {
             id: 'majima-event',
@@ -240,7 +247,7 @@ export function PhoneApp({
                         if (item.id === 'majima-event') {
                           dispatch({ type: 'read-call' });
                           onMessage('majima');
-                        } else setCall({ name: person.name, id: person.id });
+                        } else dispatch({ type: 'start-call', id: person.id });
                       }}
                     >
                       <img src={person.portrait} alt="" />

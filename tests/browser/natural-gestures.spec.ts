@@ -297,7 +297,7 @@ test('통화 화면의 막대 없이 통화 종료 버튼이 작은 이동이 �
   for (const item of ['감자', '양파', '고기', '카레'])
     await page.getByRole('checkbox', { name: `${item} 완료`, exact: true }).check();
   await page.getByRole('button', { name: '전화 응답', exact: true }).tap();
-  await expect(page.getByRole('dialog', { name: '마지마 형님과 통화' })).toBeVisible();
+  await expect(page.getByRole('dialog', { name: '마지마 형님 통화' })).toBeVisible();
   await expect(page.locator('.home-indicator')).toHaveCount(0);
   await driftTap(
     page,
@@ -306,5 +306,5 @@ test('통화 화면의 막대 없이 통화 종료 버튼이 작은 이동이 �
     0,
     9,
   );
-  await expect(page.getByRole('dialog', { name: '마지마 형님과 통화' })).toHaveCount(0);
+  await expect(page.getByRole('dialog', { name: '마지마 형님 통화' })).toHaveCount(0);
 });

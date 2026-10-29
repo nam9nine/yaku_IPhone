@@ -4,6 +4,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useRef,
   useState,
   type Dispatch,
@@ -29,6 +30,7 @@ interface DayValue {
   shoppingDone: boolean;
   storageUnavailable: boolean;
   reset: () => void;
+  setCallActivity: (active: boolean) => void;
 }
 const DayContext = createContext<DayValue | null>(null);
 export function DayProvider({ children }: { children: ReactNode }) {
@@ -39,7 +41,7 @@ export function DayProvider({ children }: { children: ReactNode }) {
   );
   const [loaded] = useState(() => {
     try {
-      return loadDay(window.localStorage);
+      return loadDay(window.localStorage, Date.now());
     } catch {
       return { state: initialDay(), unavailable: true };
     }
@@ -47,8 +49,12 @@ export function DayProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState(loaded.state);
   const [storageUnavailable, setStorageUnavailable] = useState(loaded.unavailable);
   const latest = useRef(state);
+  const callsActive = useRef(false);
+  const setCallActivity = useCallback((active: boolean) => {
+    callsActive.current = active;
+  }, []);
   const dispatch = useCallback<Dispatch<DayAction>>((action) => {
-    const next = dayReducer(latest.current, action);
+    const next = dayReducer(latest.current, action, Date.now());
     if (next === latest.current) return;
     latest.current = next;
     setState(next);
@@ -59,6 +65,13 @@ export function DayProvider({ children }: { children: ReactNode }) {
       setStorageUnavailable(true);
     }
   }, []);
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === 'visible')
+        dispatch({ type: 'tick', elapsedMs: 1000, allowCalls: callsActive.current });
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [dispatch]);
   const reset = useCallback(() => {
     dispatch({ type: 'reset' });
     setExtraContacts([]);
@@ -70,6 +83,7 @@ export function DayProvider({ children }: { children: ReactNode }) {
         extraContacts,
         setExtraContacts,
         dispatch,
+        setCallActivity,
         remaining: remainingReminders(state),
         shoppingDone: shoppingComplete(state),
         storageUnavailable: storageUnavailable || contactsUnavailable,

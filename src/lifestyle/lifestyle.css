@@ -194,6 +194,9 @@
   width: 32px;
   text-align: center;
 }
+.taxi-preview-note {
+  word-break: keep-all;
+}
 .cooking-app {
   --lifestyle-accent: #b94a15;
 }

@@ -423,3 +423,55 @@
 .phone-dial-actions {
   flex-shrink: 0;
 }
+
+/* Shared call actions are also available from a contact card. */
+.contact-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+.contact-actions .contact-message {
+  margin: 0;
+}
+.call-transcript {
+  width: min(100%, 340px);
+  padding: 14px 0;
+  text-align: center;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+.call-transcript p {
+  margin: 5px 0;
+  text-wrap: pretty;
+}
+.outgoing-cancel {
+  margin-top: auto;
+}
+.incoming-call-screen .call-end {
+  margin-top: 24px;
+  flex-shrink: 0;
+}
+.incoming-call-screen .outgoing-cancel {
+  margin-top: auto;
+}
+@media (max-height: 700px) {
+  .incoming-call-screen .call-screen-content {
+    padding-top: calc(var(--safe-area-top) + 32px);
+    padding-bottom: calc(var(--safe-area-bottom) + 24px);
+  }
+  .incoming-call-screen .call-identity img {
+    width: 64px;
+    height: 64px;
+    margin-bottom: 2px;
+  }
+  .incoming-call-screen .call-tools button > span {
+    width: 54px;
+    height: 54px;
+  }
+  .incoming-call-screen .call-end {
+    margin-top: 12px;
+    width: 58px;
+    height: 58px;
+  }
+}

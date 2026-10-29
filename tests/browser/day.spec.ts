@@ -22,11 +22,11 @@ async function openCurryFromNotification(page: Page) {
   await expect(page.getByRole('log', { name: '사와무라 하루카와의 대화' })).toBeVisible();
   await expect(
     page.getByRole('textbox', { name: '하루카에게 메시지 입력', exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByText('메모의 장보기 목록부터 확인해 보세요.', { exact: true }),
   ).toBeVisible();
-  await expect(page.getByRole('button', { name: '메시지 보내기', exact: true })).toBeDisabled();
-  await page
-    .getByRole('button', { name: '장보기 목록: 오늘 저녁 카레 메모 열기', exact: true })
-    .tap();
+  await page.getByRole('button', { name: '오늘 저녁 카레 열기', exact: true }).tap();
   await expect(page.locator('.note-paper h2')).toHaveText('오늘 저녁 카레');
 }
 async function completeCurry(page: Page) {
@@ -70,7 +70,7 @@ for (const width of [360, 390, 430]) {
   }) => {
     await page.setViewportSize({ width, height: width === 360 ? 800 : width === 390 ? 844 : 932 });
     await boot(page);
-    await expect(page.getByRole('button', { name: '남은 할 일 3개', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: '남은 할 일 5개', exact: true })).toBeVisible();
     await openCurryFromNotification(page);
     await expect(page.locator('.day-carrot s')).toHaveText('당근');
     await expect(page.getByText('하루카: 냉장고에 있어요.', { exact: true })).toBeVisible();
@@ -85,20 +85,26 @@ for (const width of [360, 390, 430]) {
     await expect(
       page.getByRole('checkbox', { name: '저녁 장보기 완료', exact: true }),
     ).toBeChecked();
-    await expect(page.locator('.day-reminder-heading > strong')).toHaveText('2');
+    await expect(page.locator('.day-reminder-heading > strong')).toHaveText('4');
     await home(page);
     await launchHomeApp(page, 'messages');
-    await page.getByRole('button', { name: '다 샀다. 보내기', exact: true }).tap();
+    await page
+      .getByRole('button', { name: '메모에 적힌 카레 재료는 다 샀다. 보내기', exact: true })
+      .tap();
     await finishAiReply(page, 'haruka');
     await expect(page.getByText('검증용 하루카 답장', { exact: true })).toBeVisible();
     await expect(
-      page.locator('.message-bubble').getByText('다 샀다.', { exact: true }),
+      page
+        .locator('.message-bubble')
+        .getByText('메모에 적힌 카레 재료는 다 샀다.', { exact: true }),
     ).toHaveCount(1);
-    await expect(page.getByRole('button', { name: '다 샀다. 보내기', exact: true })).toHaveCount(0);
+    await expect(
+      page.getByRole('button', { name: '메모에 적힌 카레 재료는 다 샀다. 보내기', exact: true }),
+    ).toHaveCount(0);
     await lock(page);
-    await expect(page.getByRole('button', { name: '남은 할 일 2개', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: '남은 할 일 4개', exact: true })).toBeVisible();
     await page.reload();
-    await expect(page.getByRole('button', { name: '남은 할 일 2개', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: '남은 할 일 4개', exact: true })).toBeVisible();
     await expect(
       page.getByRole('button', { name: '하루카의 메시지 알림 열기', exact: true }),
     ).toHaveCount(0);
@@ -116,13 +122,17 @@ for (const width of [360, 390, 430]) {
     await launchHomeApp(page, 'messages');
     await page.locator('[data-conversation=haruka]').tap();
     await expect(
-      page.locator('.message-bubble').getByText('다 샀다.', { exact: true }),
+      page
+        .locator('.message-bubble')
+        .getByText('메모에 적힌 카레 재료는 다 샀다.', { exact: true }),
     ).toHaveCount(1);
     await expect(page.getByText('검증용 하루카 답장', { exact: true })).toHaveCount(1);
     await home(page);
     await launchHomeApp(page, 'phone');
     await expect(
-      page.getByRole('button', { name: '마지마 부재중 전화, 메시지 열기', exact: true }),
+      page
+        .locator('.phone-call[data-missed=true]')
+        .getByRole('button', { name: '마지마 고로에게 전화', exact: true }),
     ).toHaveCount(1);
     expect(await page.evaluate(() => ({ x: scrollX, y: scrollY }))).toEqual({ x: 0, y: 0 });
   });
@@ -137,7 +147,7 @@ test('확인 전 초기화는 취소되고 확인 후 로컬 체크·배경을 �
   await page.getByRole('button', { name: '전화 거절' }).tap();
   await home(page);
   await launchHomeApp(page, 'messages');
-  await page.getByRole('button', { name: '다 샀다. 보내기' }).tap();
+  await page.getByRole('button', { name: '메모에 적힌 카레 재료는 다 샀다. 보내기' }).tap();
   await home(page);
   await launchHomeApp(page, 'settings');
   await page.getByRole('button', { name: '배경화면', exact: true }).tap();
@@ -158,7 +168,7 @@ test('확인 전 초기화는 취소되고 확인 후 로컬 체크·배경을 �
   await page.getByRole('button', { name: '처음 상태로 되돌리기', exact: true }).tap();
   await dialog.getByRole('button', { name: '초기화', exact: true }).tap();
   await expect(page.getByTestId('lock-screen')).toBeVisible();
-  await expect(page.getByRole('button', { name: '남은 할 일 3개', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: '남은 할 일 5개', exact: true })).toBeVisible();
   await expect(page.locator('.mobile-shell')).toHaveAttribute('data-wallpaper', 'default');
   await page.reload();
   await openCurryFromNotification(page);
@@ -186,11 +196,11 @@ test('저장소 읽기와 쓰기가 거부되어도 현재 세션의 카레 흐�
   await page.getByRole('button', { name: '전화 거절' }).tap();
   await home(page);
   await launchHomeApp(page, 'messages');
-  await page.getByRole('button', { name: '다 샀다. 보내기' }).tap();
+  await page.getByRole('button', { name: '메모에 적힌 카레 재료는 다 샀다. 보내기' }).tap();
   await finishAiReply(page, 'haruka');
   await expect(page.getByText('검증용 하루카 답장', { exact: true })).toBeVisible();
   await lock(page);
-  await expect(page.getByRole('button', { name: '남은 할 일 2개', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: '남은 할 일 4개', exact: true })).toBeVisible();
 });
 
 test('사진에서 배경을 선택하고 설정에서 위치·다른 배경을 바꾸면 재접속에도 유지한다', async ({
@@ -247,7 +257,7 @@ test('잠금 위젯은 해당 앱으로 연결되고 키보드로 할 일과 사
   const detail = page.getByRole('dialog', { name: '나팔꽃 날씨', exact: true });
   await expect(detail).toContainText('27° · 맑음');
   await detail.getByRole('button', { name: '닫기', exact: true }).click();
-  const reminders = page.getByRole('button', { name: '남은 할 일 3개', exact: true });
+  const reminders = page.getByRole('button', { name: '남은 할 일 5개', exact: true });
   await reminders.focus();
   await reminders.press('Enter');
   await enterPasscode(page);
@@ -255,7 +265,7 @@ test('잠금 위젯은 해당 앱으로 연결되고 키보드로 할 일과 사
   await garden.focus();
   await garden.press('Space');
   await expect(garden).toBeChecked();
-  await expect(page.locator('.day-reminder-heading > strong')).toHaveText('2');
+  await expect(page.locator('.day-reminder-heading > strong')).toHaveText('4');
   await home(page);
   const photo = page.getByRole('button', { name: '사진 위젯', exact: true });
   await photo.focus();
@@ -311,9 +321,7 @@ test('긴 메모 아래에서 홈을 거쳐 하루카의 링크를 열면 카레
   await home(page);
   await launchHomeApp(page, 'messages');
   await page.locator('[data-conversation=haruka]').tap();
-  await page
-    .getByRole('button', { name: '장보기 목록: 오늘 저녁 카레 메모 열기', exact: true })
-    .tap();
+  await page.getByRole('button', { name: '오늘 저녁 카레 열기', exact: true }).tap();
   await expect(page.locator('.note-paper h2')).toHaveText('오늘 저녁 카레');
   await expect(page.locator('.note-paper h2')).toBeInViewport();
   await expect(content).toHaveJSProperty('scrollTop', 0);

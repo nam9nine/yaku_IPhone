@@ -1,7 +1,7 @@
 export const appNames = {
   music: '음악',
   taxi: '택시',
-  cooking: '드래곤 카레',
+  cooking: '나팔꽃키친',
   settings: '설정',
   safari: 'Safari',
   contacts: '연락처',

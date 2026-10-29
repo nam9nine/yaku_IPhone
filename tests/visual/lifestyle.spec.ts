@@ -27,10 +27,10 @@ async function openScene(page: Page, scene: (typeof scenes)[number]) {
   } else if (scene.startsWith('taxi')) {
     await launchHomeApp(page, 'taxi');
     if (scene === 'taxi-route') {
-      await page.getByRole('button', { name: /동네 마트/ }).tap();
-      await expect(page.getByLabel('나팔꽃에서 동네 마트까지')).toBeVisible();
+      await page.getByRole('button', { name: /류큐 거리/ }).tap();
+      await expect(page.getByLabel('선택한 목적지 류큐 거리')).toBeVisible();
     } else {
-      await expect(page.getByRole('button', { name: /바닷가/ })).toBeVisible();
+      await expect(page.getByRole('button', { name: /카무로쵸/ })).toBeVisible();
     }
   } else {
     await launchHomeApp(page, 'cooking');

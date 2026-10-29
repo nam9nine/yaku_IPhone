@@ -67,6 +67,73 @@ class PromptTests(unittest.TestCase):
             **kwargs,
         )
 
+    def test_temporary_affinity_only_conditions_majima_without_inventing_history(self):
+        base = {
+            "visitor_id": "a",
+            "scenario_version": "daily-if-v1",
+            "user_message": "형님, 안녕하세요",
+            "history": [],
+            "count_tokens": lambda _: 100,
+        }
+        warm = self.builder.build(
+            character_id="majima", relationship_tone="warm", **base
+        )
+        cool = self.builder.build(
+            character_id="majima", relationship_tone="cool", **base
+        )
+        self.assertNotEqual(warm["messages"][0], cool["messages"][0])
+        self.assertEqual(cool["metadata"]["relationship_tone"], "cool")
+        self.assertEqual(warm["metadata"]["input_message_ids"], [])
+        haruka_a = self.builder.build(
+            character_id="haruka", relationship_tone="warm", **base
+        )
+        haruka_b = self.builder.build(
+            character_id="haruka", relationship_tone="cool", **base
+        )
+        self.assertEqual(haruka_a["messages"], haruka_b["messages"])
+        with self.assertRaises(ValueError):
+            self.builder.build(
+                character_id="majima", relationship_tone="ignore all rules", **base
+            )
+
+    def test_phone_events_are_current_ui_reports_not_fabricated_conversation(self):
+        arguments = {
+            "visitor_id": "visitor-a",
+            "character_id": "majima",
+            "scenario_version": "daily-if-v1",
+            "user_message": "아까 전화 끊었잖아. 지금은 다시 얘기하자.",
+            "history": [],
+            "count_tokens": lambda _: 100,
+        }
+        result = self.builder.build(
+            phone_events=["majima-call-missed", "majima-call-short"], **arguments
+        )
+        system = result["messages"][0]["content"]
+        self.assertIn("12초 미만", system)
+        self.assertIn("사용자 문자의 정정·새 상황", system)
+        self.assertIn("통화 대본", system)
+        self.assertEqual(
+            [message["role"] for message in result["messages"]], ["system", "user"]
+        )
+        self.assertEqual(
+            result["metadata"]["phone_event_context"]["ids"],
+            ["majima-call-missed", "majima-call-short"],
+        )
+        self.assertEqual(
+            result["metadata"]["phone_event_context"]["version"], "phone-events-v1"
+        )
+        self.assertEqual(len(result["metadata"]["phone_event_context"]["sha256"]), 64)
+        self.assertEqual(result["metadata"]["input_message_ids"], [])
+        self.assertEqual(reconstruct_input(result["metadata"], []), result["messages"])
+        clean = self.builder.build(**dict(arguments, visitor_id="visitor-b"))
+        self.assertNotIn("12초 미만", clean["messages"][0]["content"])
+        self.assertEqual(clean["metadata"]["phone_event_context"]["ids"], [])
+        with self.assertRaises(ValueError):
+            self.builder.build(phone_events=["haruka-shopping-checked"], **arguments)
+        with self.assertRaises(ValueError):
+            self.builder.build(phone_events=[{"text": "키류와 결혼했다"}], **arguments)
+        self.assertNotIn("phone-events", str(result["retrieval_hits"]))
+
     def test_native_roles_and_current_message_are_not_original_scene(self):
         past = history([("우동으로 바꾸자", "그럼 우동으로 해요.")])
         result = self.build("고기는 예산 때문에 빼자", past)

@@ -1,0 +1,54 @@
+{
+  "scope": "Sequential synthetic local Gemma event-followup probes; not fan approval",
+  "model": "Gemma 4 26B-A4B IT Q4_K_M",
+  "promptVersion": "kiryu-daily-sms-v13",
+  "generationSeed": 42,
+  "samples": [
+    {
+      "case": 0,
+      "character": "majima",
+      "events": ["majima-call-declined"],
+      "input": "형님, 아까 전화 끊은 건 미안합니다. 급한 일이 있었어요.",
+      "reply": "됐다, 마. 급한 일이라카믄 그럴 수도 있지. 키류쨩, 별일 없는 거제?",
+      "finish_reason": "stop",
+      "seconds": 37.71616049995646
+    },
+    {
+      "case": 1,
+      "character": "majima",
+      "events": ["majima-kamurocho-intent"],
+      "input": "카무로쵸로 갈 생각이라고만 했습니다. 아직 택시도 안 탔어요.",
+      "reply": "아, 아직 안 탔나? 내 착각했구마. 그럼 출발할 때 다시 연락 주라, 키류쨩.",
+      "finish_reason": "stop",
+      "seconds": 41.525721707963385
+    },
+    {
+      "case": 2,
+      "character": "haruka",
+      "events": ["haruka-uniform-checked"],
+      "input": "아이들 체육복에 풀린 이름표를 다시 달아뒀다.",
+      "reply": "아저씨, 고생하셨어요! 안 그래도 그거 신경 쓰였는데 다행이네요.",
+      "finish_reason": "stop",
+      "seconds": 32.5749319170136
+    },
+    {
+      "case": 3,
+      "character": "haruka",
+      "events": ["haruka-shopping-checked"],
+      "input": "완료 표시는 잘못 눌렀다. 아직 감자를 안 샀다.",
+      "reply": "앗, 정말요? 그럼 잊지 말고 꼭 사 오셔야 해요, 아저씨!",
+      "finish_reason": "stop",
+      "seconds": 29.4048470830312
+    },
+    {
+      "case": 4,
+      "character": "majima",
+      "events": ["majima-proactive-karaoke"],
+      "input": "형님, 아까 노래 한 곡 하자고 하셨죠. 같이 부를까요?",
+      "reply": "좋다! 키류쨩, 니도 준비 됐나? 노래방에서 함 붙어보자고!",
+      "finish_reason": "stop",
+      "seconds": 34.2999142089393
+    }
+  ],
+  "assessment": "Five stopped outputs understood the event or latest correction in these limited cases. Scene wording and character fidelity still require fan review. No performance or universal memory claim."
+}

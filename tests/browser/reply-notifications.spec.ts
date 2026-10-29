@@ -4,7 +4,7 @@ import { unlockPhone } from '../helpers/unlock';
 import { launchHomeApp } from '../helpers/home';
 import { typingDelay } from '../../src/ai/presentation';
 
-test('빠른 답장은 랜덤 대기 뒤 타이핑을 보이고 홈에서는 배너·읽지 않은 표시로 도착한다', async ({
+test('빠른 답장은 랜덤 대기 뒤 읽음이 되고 홈에서는 배너·읽지 않은 표시로 도착한다', async ({
   page,
 }) => {
   let requestId = '';
@@ -23,7 +23,7 @@ test('빠른 답장은 랜덤 대기 뒤 타이핑을 보이고 홈에서는 배
     } else if (url.pathname.startsWith('/v1/jobs/'))
       result = {
         job_id: requestId,
-        character: 'haruka',
+        character: 'majima',
         status: 'complete',
         request: { id: requestId, message, time: '2026-10-26T00:00:00Z' },
       };
@@ -47,6 +47,7 @@ test('빠른 답장은 랜덤 대기 뒤 타이핑을 보이고 홈에서는 배
                 job_id: requestId,
                 time: '2026-10-26T00:00:01Z',
                 status: 'complete',
+                request_id: requestId,
               },
             ]
           : [],
@@ -66,7 +67,7 @@ test('빠른 답장은 랜덤 대기 뒤 타이핑을 보이고 홈에서는 배
   await page.goto('./');
   await unlockPhone(page);
   await launchHomeApp(page, 'messages');
-  await page.locator('[data-conversation=haruka]').tap();
+  await page.locator('[data-conversation=majima]').tap();
   const send = page.getByRole('button', { name: '메시지 보내기', exact: true });
   await expect(page.getByText('대화를 불러오는 중…', { exact: true })).toHaveCount(0);
   await page.locator('.message-ai-input textarea').fill('저녁은 우동이 좋아.');
@@ -79,11 +80,12 @@ test('빠른 답장은 랜덤 대기 뒤 타이핑을 보이고 홈에서는 배
   await expect.poll(() => requestId).not.toBe('');
   await expect(page.locator('.message-time').last()).toContainText('09:00');
   await expect(page.getByText('오늘은 우동으로 할게요.', { exact: true })).toHaveCount(0);
-  await expect(page.getByRole('status', { name: '하루카 답장 작성 중' })).toHaveCount(0);
+  await expect(page.getByRole('status', { name: '마지마 답장 작성 중' })).toHaveCount(0);
   await page.clock.runFor(typingDelay(requestId) - 1);
-  await expect(page.getByRole('status', { name: '하루카 답장 작성 중' })).toHaveCount(0);
+  await expect(page.getByRole('status', { name: '마지마 답장 작성 중' })).toHaveCount(0);
   await page.clock.runFor(1);
-  await expect(page.getByRole('status', { name: '하루카 답장 작성 중' })).toBeVisible();
+  await expect(page.locator('.message-typing')).toHaveCount(0);
+  await expect(page.locator('.message-time').last()).toContainText('읽음');
   await page.screenshot({ path: 'test-results/reply84-typing.png', animations: 'disabled' });
   await page.keyboard.press('Alt+Home');
   await expect(page.locator('.app-host:not([hidden])')).toHaveCount(0);
@@ -94,7 +96,7 @@ test('빠른 답장은 랜덤 대기 뒤 타이핑을 보이고 홈에서는 배
   await expect(banner).toBeVisible();
   await expect(banner).toContainText('오늘은 우동으로 할게요.');
   await page.screenshot({ path: 'test-results/reply84-banner.png', animations: 'disabled' });
-  await banner.getByRole('button', { name: '하루카의 새 메시지 알림 열기' }).click();
+  await banner.getByRole('button', { name: '마지마의 새 메시지 알림 열기' }).click();
   await page.clock.runFor(500);
   await expect(page.locator('.message-bubble').getByText('오늘은 우동으로 할게요.')).toBeVisible();
   await expect(banner).toHaveCount(0);

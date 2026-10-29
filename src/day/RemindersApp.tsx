@@ -36,7 +36,7 @@ export function RemindersApp({
           <span>오늘</span>
         </div>
         <div className="day-reminder-heading">
-          <h2>나팔꽃</h2>
+          <h2>할 일</h2>
           <strong>{remaining}</strong>
         </div>
         <ul className="day-reminder-list">
@@ -58,11 +58,15 @@ export function RemindersApp({
                     <small>{item.detail}</small>
                   </span>
                 </label>
-                {item.id === 'shopping' && (
+                {['shopping', 'uniform', 'parcel'].includes(item.id) && (
                   <button
                     className="day-reminder-detail"
-                    aria-label="저녁 장보기 메모 열기"
-                    onClick={() => onOpenNote('curry')}
+                    aria-label={`${item.title} 메모 열기`}
+                    onClick={() =>
+                      onOpenNote(
+                        item.id === 'shopping' ? 'curry' : item.id === 'uniform' ? 'gym' : 'parcel',
+                      )
+                    }
                   >
                     ⓘ
                   </button>
@@ -72,7 +76,7 @@ export function RemindersApp({
           })}
         </ul>
         <p className="day-reminder-count" role="status">
-          {3 - remaining}개 완료
+          {reminders.length - remaining}개 완료
         </p>
       </div>
     </section>

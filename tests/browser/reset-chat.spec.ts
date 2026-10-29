@@ -74,12 +74,14 @@ async function openThread(page: Page, character: Character) {
     .getByRole('button', { name: character === 'haruka' ? /사와무라 하루카/ : /마지마 고로/ })
     .first()
     .tap();
-  await expect(
-    page.getByRole('textbox', {
-      name: character === 'haruka' ? '하루카에게 메시지 입력' : '마지마에게 메시지 입력',
-      exact: true,
-    }),
-  ).toBeEnabled();
+  if (character === 'majima')
+    await expect(
+      page.getByRole('textbox', { name: '마지마에게 메시지 입력', exact: true }),
+    ).toBeEnabled();
+  else
+    await expect(
+      page.getByRole('textbox', { name: '하루카에게 메시지 입력', exact: true }),
+    ).toHaveCount(0);
   await expect(page.getByText('대화를 불러오는 중…', { exact: true })).toHaveCount(0);
 }
 async function resetDialog(page: Page) {
@@ -151,7 +153,10 @@ test('열린 다른 탭에서도 초기화된 세션을 사용한다', async ({ 
   await expect(third.getByText('초기화 이전 하루카 기록', { exact: true })).toHaveCount(0);
   await expect(
     third.getByRole('textbox', { name: '하루카에게 메시지 입력', exact: true }),
-  ).toBeEnabled();
+  ).toHaveCount(0);
+  await expect(
+    third.getByText('메모의 장보기 목록부터 확인해 보세요.', { exact: true }),
+  ).toBeVisible();
   expect(service.sessions()).toBe(1);
 });
 

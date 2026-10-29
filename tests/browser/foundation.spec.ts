@@ -103,13 +103,13 @@ test('실제 시각의 자정과 날짜 변경은 가상 시각·할 일·알림
   await page.goto('./');
   await expect(page.locator('.lock-date')).toHaveAttribute('datetime', '2026-10-24');
   await expect(page.getByRole('img', { name: '16시 40분' })).toBeVisible();
-  await expect(page.getByRole('button', { name: '남은 할 일 3개' })).toBeVisible();
+  await expect(page.getByRole('button', { name: '남은 할 일 5개' })).toBeVisible();
   const notification = page.locator('.day-notification');
   const before = await notification.innerText();
   await page.clock.fastForward(86_401_000);
   await expect(page.locator('.lock-date')).toHaveAttribute('datetime', '2026-10-24');
   await expect(page.getByRole('img', { name: '16시 40분' })).toBeVisible();
-  await expect(page.getByRole('button', { name: '남은 할 일 3개' })).toBeVisible();
+  await expect(page.getByRole('button', { name: '남은 할 일 5개' })).toBeVisible();
   await expect(notification).toHaveText(before, { useInnerText: true });
 });
 

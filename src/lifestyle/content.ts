@@ -1,8 +1,7 @@
 /** Original everyday-life content for Kiryu's phone. */
 export const destinations = [
-  { id: 'market', name: '동네 마트', detail: '저녁 카레 재료 사러 가기', symbol: '▧' },
-  { id: 'beach', name: '바닷가', detail: '아이들과 약속한 곳', symbol: '☀' },
-  { id: 'town', name: '상점가', detail: '체육복 이름표와 실', symbol: '⌂' },
+  { id: 'ryukyu', name: '류큐 거리', detail: '오키나와', symbol: '⌂' },
+  { id: 'kamurocho', name: '카무로쵸', detail: '도쿄', symbol: '▧' },
 ] as const;
 
 export const recipes = [

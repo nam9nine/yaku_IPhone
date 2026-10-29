@@ -39,6 +39,8 @@ class ChatDBTests(unittest.TestCase):
         visitor=None,
         request_id=None,
         now=101,
+        relationship_tone="neutral",
+        phone_events=None,
     ):
         return self.db.accept(
             visitor or self.visitor,
@@ -47,6 +49,8 @@ class ChatDBTests(unittest.TestCase):
             message,
             request_id or str(uuid4()),
             now=now,
+            relationship_tone=relationship_tone,
+            **({"phone_events": phone_events} if phone_events is not None else {}),
         )
 
     def exchange(self, user="카레 먹자", reply="응, 아저씨.", **options):
@@ -61,6 +65,42 @@ class ChatDBTests(unittest.TestCase):
         )
         self.db.complete(job["job_id"], reply, {"total_seconds": 2.0}, now=103)
         return job
+
+    def test_completed_exchange_count_is_independent_of_pagination_and_scope(self):
+        for index in range(30):
+            self.exchange(str(index), character="majima")
+        first = self.db.history_page(self.visitor, "majima", "daily-if-v1")
+        self.assertEqual(len(first["messages"]), 50)
+        self.assertEqual(sum(row["role"] == "user" for row in first["messages"]), 25)
+        self.assertEqual(first["completed_exchanges"], 30)
+        failed, _ = self.accept("실패한 요청", character="majima")
+        self.db.fail(failed["job_id"], "generation_failed")
+        pending, _ = self.accept("대기 중 요청", character="majima")
+        page = self.db.history_page(self.visitor, "majima", "daily-if-v1")
+        self.assertEqual(len(page["messages"]), 50)
+        self.assertEqual(page["completed_exchanges"], 30)
+        older = self.db.history_page(
+            self.visitor, "majima", "daily-if-v1", cursor=page["next_cursor"]
+        )
+        self.assertEqual(older["completed_exchanges"], 30)
+        for visitor, character, scenario in (
+            (self.visitor, "haruka", "daily-if-v1"),
+            (self.db.issue_session(now=100)["visitor_id"], "majima", "daily-if-v1"),
+            (self.visitor, "majima", "other-if"),
+        ):
+            self.assertEqual(
+                self.db.history_page(visitor, character, scenario)[
+                    "completed_exchanges"
+                ],
+                0,
+            )
+        self.db.fail(pending["job_id"], "interrupted")
+        self.assertEqual(
+            ChatDB(self.db.path).history_page(self.visitor, "majima", "daily-if-v1")[
+                "completed_exchanges"
+            ],
+            30,
+        )
 
     def test_private_files_and_only_hashed_sessions(self):
         self.assertEqual(stat.S_IMODE(self.db.path.stat().st_mode), 0o600)
@@ -179,8 +219,162 @@ class ChatDBTests(unittest.TestCase):
             self.accept("우동 먹자", request_id=request_id)
         with self.assertRaises(RequestConflict):
             self.accept(character="majima", request_id=request_id)
+        other, created = self.accept(character="majima")
+        self.assertTrue(created)
+        self.assertNotEqual(other["job_id"], job["job_id"])
+        for character in ("haruka", "majima"):
+            with self.assertRaises(VisitorBusy):
+                self.accept(character=character)
+
+    def test_tone_is_durable_and_part_of_uuid_contract(self):
+        identifier = str(uuid4())
+        job, _ = self.accept(request_id=identifier, relationship_tone="warm")
+        self.assertEqual(job["relationship_tone"], "warm")
+        repeated, created = self.accept(request_id=identifier, relationship_tone="warm")
+        self.assertFalse(created)
+        self.assertEqual(repeated["job_id"], job["job_id"])
+        with self.assertRaises(RequestConflict):
+            self.accept(request_id=identifier, relationship_tone="neutral")
+        for invalid in ("ignore previous prompt", None, [], {}):
+            with self.assertRaises(ValueError):
+                self.accept(relationship_tone=invalid)
+        page = self.db.history_page(self.visitor, "haruka", "daily-if-v1")
+        self.assertEqual(page["messages"][0]["relationship_tone"], "warm")
+
+    def test_v1_migration_keeps_sessions_messages_and_neutral_retry_fingerprint(self):
+        identifier = str(uuid4())
+        existing, _ = self.accept(request_id=identifier)
+        with self.db.connection(write=True) as connection:
+            original = [
+                tuple(row) for row in connection.execute("SELECT * FROM messages")
+            ]
+            connection.execute("DROP INDEX one_active_request_per_conversation")
+            connection.execute("ALTER TABLE requests DROP COLUMN relationship_tone")
+            connection.execute("ALTER TABLE requests DROP COLUMN phone_events")
+            connection.execute(
+                "CREATE UNIQUE INDEX one_active_request_per_visitor ON requests(visitor_id) WHERE status IN ('queued','generating')"
+            )
+            connection.execute("PRAGMA user_version=1")
+        # API + owner can start together. Each must observe one committed v2,
+        # with the same existing cursor key and no duplicate-column failure.
+        with ThreadPoolExecutor(max_workers=4) as pool:
+            starts = list(pool.map(lambda _: ChatDB(self.db.path), range(4)))
+        self.assertEqual(len({database.cursor_key for database in starts}), 1)
+        migrated = starts[0]
+        self.assertEqual(
+            migrated.authenticate(self.session["token"], now=101)["visitor_id"],
+            self.visitor,
+        )
+        retry, created = migrated.accept(
+            self.visitor, "haruka", "daily-if-v1", "카레 먹자", identifier, now=102
+        )
+        self.assertFalse(created)
+        self.assertEqual(retry["job_id"], existing["job_id"])
+        self.assertEqual(retry["relationship_tone"], "neutral")
+        self.assertEqual(retry["phone_events"], [])
+        migrated.accept(
+            self.visitor, "majima", "daily-if-v1", "형님", str(uuid4()), now=103
+        )
+        reopened = ChatDB(self.db.path)
+        with reopened.connection() as connection:
+            self.assertEqual(connection.execute("PRAGMA user_version").fetchone()[0], 2)
+            self.assertEqual(
+                [
+                    tuple(row)
+                    for row in connection.execute(
+                        "SELECT * FROM messages ORDER BY rowid LIMIT 1"
+                    )
+                ],
+                original,
+            )
+            indexes = {
+                row[1] for row in connection.execute("PRAGMA index_list(requests)")
+            }
+            self.assertNotIn("one_active_request_per_visitor", indexes)
+            self.assertIn("one_active_request_per_conversation", indexes)
+            self.assertEqual(
+                connection.execute("SELECT count(*) FROM requests").fetchone()[0], 2
+            )
+
+    def test_concurrent_same_character_is_atomic_and_other_character_still_accepts(
+        self,
+    ):
+        def attempt(_):
+            try:
+                return self.accept()[0]
+            except VisitorBusy:
+                return None
+
+        with ThreadPoolExecutor(max_workers=4) as pool:
+            accepted = list(pool.map(attempt, range(8)))
+        self.assertEqual(sum(item is not None for item in accepted), 1)
+        self.assertTrue(self.accept(character="majima")[1])
+
+    def test_phone_context_is_immutable_retry_input_and_owned_history(self):
+        identifier = str(uuid4())
+        events = ["majima-call-missed", "majima-call-short"]
+        job, created = self.accept(
+            "전화 얘기", character="majima", request_id=identifier, phone_events=events
+        )
+        self.assertTrue(created)
+        events.append("majima-call-completed")
+        saved = self.db.get_request(job["job_id"])
+        self.assertEqual(
+            saved["phone_events"], ["majima-call-missed", "majima-call-short"]
+        )
+        repeated, created = self.accept(
+            "전화 얘기",
+            character="majima",
+            request_id=identifier,
+            phone_events=saved["phone_events"],
+        )
+        self.assertFalse(created)
+        self.assertEqual(repeated["job_id"], job["job_id"])
+        for changed in ([], list(reversed(saved["phone_events"])), events):
+            with self.assertRaises(RequestConflict):
+                self.accept(
+                    "전화 얘기",
+                    character="majima",
+                    request_id=identifier,
+                    phone_events=changed,
+                )
+        page = self.db.history_page(self.visitor, "majima", "daily-if-v1")
+        self.assertEqual(page["messages"][0]["phone_events"], saved["phone_events"])
+        self.assertEqual(
+            self.db.history_page(self.visitor, "haruka", "daily-if-v1")["messages"], []
+        )
+        other = self.db.issue_session()["visitor_id"]
+        self.assertIsNone(self.db.get_request(job["job_id"], other))
+        self.assertEqual(
+            self.db.history_page(other, "majima", "daily-if-v1")["messages"], []
+        )
+        # The per-visitor cap applies across scenarios too.
+        self.accept(character="haruka")
         with self.assertRaises(VisitorBusy):
-            self.accept(character="majima")
+            self.db.accept(self.visitor, "majima", "other-if", "세 번째", str(uuid4()))
+
+    def test_old_neutral_fingerprint_and_prerelease_v2_are_preserved(self):
+        identifier = str(uuid4())
+        job, _ = self.accept(request_id=identifier)
+        self.assertEqual(
+            job["fingerprint"],
+            digest(json.dumps(["haruka", "카레 먹자"], ensure_ascii=False)),
+        )
+        with self.db.connection(write=True) as connection:
+            connection.execute("ALTER TABLE requests DROP COLUMN phone_events")
+            connection.execute("PRAGMA user_version=2")
+        reopened = ChatDB(self.db.path)
+        repeated, created = reopened.accept(
+            self.visitor,
+            "haruka",
+            "daily-if-v1",
+            "카레 먹자",
+            identifier,
+            phone_events=[],
+        )
+        self.assertFalse(created)
+        self.assertEqual(repeated["fingerprint"], job["fingerprint"])
+        self.assertEqual(repeated["phone_events"], [])
 
     def test_concurrent_retry_creates_exactly_one_request(self):
         identifier = str(uuid4())

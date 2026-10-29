@@ -244,6 +244,38 @@
 .message-story-reply:disabled {
   color: var(--app-secondary);
 }
+.message-choice-list {
+  order: -1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: min(24dvh, 176px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.message-choice-list .message-story-reply {
+  flex: 0 0 auto;
+  width: 100%;
+  margin: 0;
+  background: var(--phone-button, var(--app-background));
+  border: 1px solid var(--app-separator);
+  line-height: 1.4;
+}
+.message-bond {
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 3px 16px 0;
+  background: var(--phone-canvas, var(--app-surface));
+  color: #b64b80;
+  font-size: 0.6875rem;
+  text-align: center;
+}
+.mobile-shell[data-theme='dark'] .message-bond {
+  color: #f1a6c7;
+}
+.social-app img[src$='/yuki.png'] {
+  object-position: center top;
+}
 .message-ai-notice {
   display: flex;
   flex-wrap: wrap;

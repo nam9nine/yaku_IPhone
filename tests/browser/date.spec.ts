@@ -6,11 +6,12 @@ for (const width of [360, 390, 430]) {
   test(`다테 연락처에서 메시지 답장과 재접속 상태가 이어진다 ${width}`, async ({ page }) => {
     await page.setViewportSize({ width, height: width === 360 ? 800 : width === 390 ? 844 : 932 });
     await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.clock.install();
     await page.goto('./');
     await unlockPhone(page);
     await expect(page.getByLabel('읽지 않은 대화 8개')).toBeVisible();
     await launchHomeApp(page, 'contacts');
-    await page.getByRole('searchbox', { name: '연락처 검색' }).fill('다테 형사');
+    await page.getByRole('searchbox', { name: '연락처 검색' }).fill('다테 씨');
     await page.locator('[data-contact=date]').tap();
     const portrait = page.getByRole('img', { name: '다테 마코토 프로필' });
     await expect(portrait).toBeVisible();
@@ -20,11 +21,15 @@ for (const width of [360, 390, 430]) {
       .toBe(900);
     await page.getByRole('button', { name: '다테 마코토에게 메시지 보내기' }).tap();
     const thread = page.getByRole('log', { name: '다테 마코토와의 대화' });
-    await expect(thread).toContainText('키류, 아이들은 잘 지내나?');
-    const reply = '다들 잘 지냅니다. 다음에 오시면 같이 식사하시죠.';
+    await expect(thread).toContainText('키류, 자네한테 확인할 게 있네.');
+    const reply = '다테 씨, 무슨 일입니까?';
     await page.getByRole('button', { name: `${reply} 보내기`, exact: true }).tap();
     await expect(thread.getByText(reply, { exact: true })).toHaveCount(1);
-    await expect(thread).toContainText('좋지. 하루카한테도 안부 전해 줘.');
+    await expect(thread).not.toContainText('큰일은 아니네.');
+    await page.clock.runFor(12_000);
+    await expect(thread).toContainText(
+      '큰일은 아니네. 자네가 또 혼자 나선 건 아닌지 물으려던 참이야.',
+    );
     await page.reload();
     await unlockPhone(page);
     await expect(page.getByLabel('읽지 않은 대화 7개')).toBeVisible();
@@ -37,7 +42,7 @@ for (const width of [360, 390, 430]) {
   });
 }
 
-test('기존 다섯 대화를 읽은 저장 상태에서 다테와 두 친구를 새 대화로 표시한다', async ({
+test('기존 다섯 대화를 읽은 저장 상태에서 다테·아키야마·유키를 새 대화로 표시한다', async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
@@ -58,7 +63,7 @@ test('기존 다섯 대화를 읽은 저장 상태에서 다테와 두 친구를
     ),
   );
   await page.reload();
-  await expect(page.getByRole('button', { name: '남은 할 일 2개', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: '남은 할 일 4개', exact: true })).toBeVisible();
   await unlockPhone(page);
   await expect(page.getByLabel('읽지 않은 대화 3개')).toBeVisible();
   await launchHomeApp(page, 'messages');

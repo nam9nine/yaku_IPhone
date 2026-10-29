@@ -32,6 +32,7 @@ import { CalendarApp } from './day/CalendarApp';
 import { MusicApp, TaxiApp, CookingApp } from './lifestyle/LifestyleApps';
 import { DayCall } from './components/DayCall';
 import { DayNotification } from './components/DayNotification';
+import { StoryReplyNotifications, StoryNotificationList } from './day/StoryReplyNotifications';
 import { resetStoryStorage } from './story/useStoredState';
 import { consumeNotificationLink, disablePush, registerPushWorker } from './ai/push';
 import { resetAiConnection } from './ai/connection';
@@ -70,14 +71,24 @@ function PhoneSession() {
     origin: LaunchRect | null;
   } | null>(notificationEntry ? { app: 'messages', origin: null } : null);
   const { preferences, setPreferences, storageUnavailable } = useDevicePreferences();
+  const callCharacter =
+    day.state.call?.phase === 'connected' && isAiCharacter(day.state.call.caller)
+      ? day.state.call.caller
+      : null;
   const ai = useAiMessenger(
     isOnline(preferences),
-    isAiCharacter(conversation ?? undefined) ? (conversation as 'haruka' | 'majima') : null,
-    !state.locked && state.activeApp === 'messages' && !state.panel,
+    callCharacter ??
+      (isAiCharacter(conversation ?? undefined) ? (conversation as 'haruka' | 'majima') : null),
+    !!callCharacter ||
+      (!state.locked && state.activeApp === 'messages' && !state.panel && !day.state.call),
   );
   const inConversation =
-    !state.locked && state.activeApp === 'messages' && !!conversation && !state.panel;
-  usePushPresence(ai.connection, inConversation, ai.arrival);
+    !state.locked &&
+    state.activeApp === 'messages' &&
+    !!conversation &&
+    !state.panel &&
+    !day.state.call;
+  usePushPresence(ai.connection, inConversation || !!callCharacter, ai.arrival);
   const appearance = useAppearance(preferences);
   const viewport = useViewport();
   const [topPull, setTopPull] = useState<TopPanel | null>(null);
@@ -287,7 +298,7 @@ function PhoneSession() {
           ) : app === 'messages' ? (
             <MessagesApp
               ai={ai}
-              active={!state.locked && state.activeApp === app && !state.panel}
+              active={!state.locked && state.activeApp === app && !state.panel && !day.state.call}
               selected={conversation}
               requestedLatest={messageEntry}
               onSelect={setConversation}
@@ -369,6 +380,7 @@ function PhoneSession() {
           notifications={
             <>
               <AiReplyNotifications replies={ai.unreadReplies} onOpen={openConversation} />
+              <StoryNotificationList onOpen={openConversation} />
               <DayNotification onOpen={openHaruka} onCall={openPhone} />
             </>
           }
@@ -376,7 +388,7 @@ function PhoneSession() {
       )}
       <AiReplySound
         arrival={ai.arrival}
-        silent={controls.silent}
+        silent={controls.silent || !!callCharacter}
         volume={controls.volume}
         activeCharacter={
           !state.locked && state.activeApp === 'messages' && !state.panel ? conversation : null
@@ -386,19 +398,39 @@ function PhoneSession() {
         notification={ai.notification}
         onOpen={openConversation}
         onDismiss={ai.messenger.dismissNotification}
-        inConversation={inConversation}
+        inConversation={inConversation || !!callCharacter}
         obscured={!!unlockRequest || state.panel === 'notifications'}
       />
+      <StoryReplyNotifications
+        key={`story-replies-${epoch}`}
+        onOpen={openConversation}
+        inConversation={inConversation || !!callCharacter}
+        activeCharacter={inConversation ? conversation : null}
+        obscured={
+          !!unlockRequest ||
+          state.panel === 'notifications' ||
+          !!ai.notification ||
+          !!day.state.call
+        }
+        silent={controls.silent}
+        volume={controls.volume}
+      />
       <DayCall
+        ai={ai}
         silent={controls.silent}
         volume={controls.volume}
         preferences={preferences}
         key={epoch}
         locked={state.locked}
-        onMessage={() => {
-          setConversation('majima');
-          openApp('messages');
-        }}
+        active={
+          !state.locked &&
+          !unlockRequest &&
+          !Object.values(ai.threads).some(
+            (thread) =>
+              thread.deliveryPending || (!!thread.pending && thread.pending.phase !== 'failed'),
+          )
+        }
+        onMessage={openConversation}
       />
       {unlockRequest && (
         <PasscodeScreen
