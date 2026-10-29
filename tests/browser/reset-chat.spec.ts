@@ -156,7 +156,7 @@ test('열린 다른 탭에서도 초기화된 세션을 사용한다', async ({ 
   ).toHaveCount(0);
   await expect(
     third.getByText('메모의 장보기 목록부터 확인해 보세요.', { exact: true }),
-  ).toBeVisible();
+  ).toHaveCount(0);
   expect(service.sessions()).toBe(1);
 });
 

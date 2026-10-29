@@ -1,3 +1,4 @@
+import { messageThread } from './messageThread';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { AiMessenger } from './messenger';
 import { AI_ENDPOINT } from './config';
@@ -102,6 +103,7 @@ function mockService() {
           id: `${jobId}-assistant`,
           role: 'assistant',
           content: '실제 응답 자리',
+          phone_events: user.phone_events,
           time: '2026-10-26T00:00:01Z',
           status: 'complete',
         });
@@ -865,4 +867,47 @@ it('완료 누적 수는 최신 25교환과 과거 페이지·새 인스턴스�
   await flush();
   expect(restored.getSnapshot().threads.majima.completedCount).toBe(31);
   expect(restored.getSnapshot().threads.haruka.completedCount).toBe(0);
+});
+
+it('통화 요청은 종료 후에도 문자 이력·배너·소리·미확인 수에 들어가지 않는다', async () => {
+  const { state } = mockService();
+  state.hold = true;
+  const value = store();
+  await value.activate('majima');
+  value.send('majima', '통화에서만 한 말', true, true, { phoneEvents: ['majima-call-live'] });
+  await flush();
+  expect(messageThread(value.getSnapshot().threads.majima).pending).toBeNull();
+  await value.activate(null);
+  state.hold = false;
+  await vi.advanceTimersByTimeAsync(60_000);
+  const snapshot = value.getSnapshot();
+  expect(snapshot.threads.majima.displayedMessages).toHaveLength(2);
+  expect(snapshot.threads.majima.completedCount).toBe(0);
+  expect(messageThread(snapshot.threads.majima).displayedMessages).toEqual([]);
+  expect(snapshot.arrival).toBeNull();
+  expect(snapshot.notification).toBeNull();
+  expect(snapshot.unreadReplies).toEqual([]);
+  expect(snapshot.threads.majima.unread).toBe(false);
+  value.stop();
+  const restored = store();
+  await restored.activate('majima');
+  expect(messageThread(restored.getSnapshot().threads.majima).messages).toEqual([]);
+  expect(restored.getSnapshot().threads.majima.messages).toHaveLength(2);
+  restored.send('majima', '이것은 문자', true, true);
+  await flush();
+  await vi.advanceTimersByTimeAsync(60_000);
+  expect(messageThread(restored.getSnapshot().threads.majima).displayedMessages).toHaveLength(2);
+  expect(restored.getSnapshot().arrival).not.toBeNull();
+});
+it('거부된 통화 원문은 문자 재작성 화면에 나타나지 않는다', async () => {
+  const { state } = mockService();
+  state.reject = 400;
+  state.rejectCode = 'invalid_input';
+  const value = store();
+  await value.activate('majima');
+  value.send('majima', '통화 실패 원문', true, true, { phoneEvents: ['majima-call-live'] });
+  await flush();
+  expect(value.getSnapshot().threads.majima.failedMessage?.message).toBe('통화 실패 원문');
+  expect(messageThread(value.getSnapshot().threads.majima).failedMessage).toBeNull();
+  expect(messageThread(value.getSnapshot().threads.majima).error).toBeNull();
 });

@@ -1,0 +1,40 @@
+{
+  "issue": 109,
+  "scope": "Remove instructional phone/message UI copy without changing interaction logic",
+  "local_checks": {
+    "typecheck": "pass",
+    "build": "pass",
+    "call_message_browser": {
+      "passed": 42,
+      "earlier_failure": "2 stale wording expectations corrected before rerun"
+    },
+    "related_browser": {
+      "passed": 18
+    }
+  },
+  "independent_review": {
+    "reviewer": "phone107_independent_review",
+    "result": "pass",
+    "scope": "final 10-file diff and two direct screenshots; no P1/P2"
+  },
+  "ci": "skipped at explicit user request",
+  "full_visual_and_baselines": "not run or updated; Haruka thread visual baseline follow-up remains",
+  "physical_iphone": "not tested",
+  "passcode_followup": {
+    "change": "Removed Christmas hint; wrong-passcode error remains",
+    "typecheck": "pass",
+    "build": "pass",
+    "personal_phone_browser_passed": 16,
+    "screenshot": "passcode-no-hint.png",
+    "deployment": "pending explicit approval for temporary required-check change"
+  },
+  "call_separation": {
+    "scope": "Hide live call input and replies from SMS timeline, counts, badges, banners and push; preserve DB and model context",
+    "check": "pass: 468 tests plus type/lint/format/build/harness",
+    "browser": "44 passed Chromium/WebKit; strengthened retry recovery assertion 2 passed",
+    "python": "376 tests OK, 3 skipped; initial unrelated OCR timeout passed on rerun",
+    "review": "phone107_independent_review: failed-call recovery P2 fixed, no remaining P1/P2; screenshots directly reviewed",
+    "physical_iphone": "not tested",
+    "deployment": "not deployed: required merge-gate remains enforced"
+  }
+}

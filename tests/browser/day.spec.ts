@@ -25,7 +25,7 @@ async function openCurryFromNotification(page: Page) {
   ).toHaveCount(0);
   await expect(
     page.getByText('메모의 장보기 목록부터 확인해 보세요.', { exact: true }),
-  ).toBeVisible();
+  ).toHaveCount(0);
   await page.getByRole('button', { name: '오늘 저녁 카레 열기', exact: true }).tap();
   await expect(page.locator('.note-paper h2')).toHaveText('오늘 저녁 카레');
 }

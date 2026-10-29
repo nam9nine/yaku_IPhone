@@ -1,6 +1,7 @@
 import { installAiClock } from './ai-clock';
 import { expect, type Page } from '@playwright/test';
 import { AI_ENDPOINT } from '../../src/ai/config';
+import { isCallEvents, type PhoneEventId } from '../../src/ai/client';
 
 /** Deterministic HTTP fixture for legacy phone/story flows; never calls the local model. */
 export async function mockStoryAi(
@@ -17,6 +18,7 @@ export async function mockStoryAi(
     status: 'complete';
     job_id: string;
     request_id?: string;
+    phone_events?: PhoneEventId[];
   };
   const histories: Record<Character, Message[]> = {
     haruka: [],
@@ -53,7 +55,10 @@ export async function mockStoryAi(
       result = {
         messages: histories[url.searchParams.get('character') as Character],
         completed_exchanges: histories[url.searchParams.get('character') as Character].filter(
-          (message) => message.role === 'user' && message.status === 'complete',
+          (message) =>
+            message.role === 'user' &&
+            message.status === 'complete' &&
+            !isCallEvents(message.phone_events),
         ).length,
         pending_job: null,
         next_cursor: null,
@@ -71,6 +76,7 @@ export async function mockStoryAi(
             time: '2026-10-26T00:00:00Z',
             request_id: id,
             job_id: id,
+            phone_events: body.phone_events ?? [],
             status: 'complete',
           },
           {
@@ -80,6 +86,7 @@ export async function mockStoryAi(
             time: '2026-10-26T00:00:01Z',
             request_id: id,
             job_id: id,
+            phone_events: body.phone_events ?? [],
             status: 'complete',
           },
         );

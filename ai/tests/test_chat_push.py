@@ -75,7 +75,13 @@ class PushTests(unittest.TestCase):
         self.directory.cleanup()
 
     def complete(
-        self, visitor=None, character="haruka", *, accepted=None, completed=None
+        self,
+        visitor=None,
+        character="haruka",
+        *,
+        accepted=None,
+        completed=None,
+        phone_events=None,
     ):
         accepted = self.now + 1 if accepted is None else accepted
         completed = accepted + 5 if completed is None else completed
@@ -87,10 +93,43 @@ class PushTests(unittest.TestCase):
             "synthetic input",
             request_id,
             now=accepted,
+            phone_events=phone_events or [],
         )
         self.db.begin_run(job["job_id"], [], {}, now=accepted + 0.1)
         self.db.complete(job["job_id"], "합성 답장입니다.", now=completed)
         return job["job_id"], request_id, accepted, completed
+
+    def test_calls_remain_in_db_but_never_enqueue_sms_push_or_increment_sms_count(self):
+        self.complete(phone_events=["haruka-call-live"])
+        self.now += 40
+        self.assertFalse(self.push.tick())
+        self.assertEqual(self.sent, [])
+        self.assertEqual(self.rows("outbox"), [])
+        history = self.db.history_page(self.a, "haruka", "daily-if-v1")
+        self.assertEqual(len(history["messages"]), 2)
+        self.assertEqual(history["completed_exchanges"], 0)
+        sms, _, _, _ = self.complete()
+        self.now += 40
+        self.assertTrue(self.push.tick())
+        self.assertEqual(self.sent[0][1]["job_id"], sms)
+        self.assertEqual(
+            self.db.history_page(self.a, "haruka", "daily-if-v1")[
+                "completed_exchanges"
+            ],
+            1,
+        )
+
+    def test_previously_queued_call_push_is_rejected_at_delivery(self):
+        call, _, _, _ = self.complete(phone_events=["haruka-call-live"])
+        self.now += 40
+        with self.push.connection() as connection:
+            connection.execute(
+                "INSERT INTO outbox VALUES (?,?,?,?, 'pending',0,?,NULL)",
+                (self.sid, call, self.now - 1, self.now + 100, self.now - 1),
+            )
+        self.assertFalse(self.push.tick())
+        self.assertEqual(self.sent, [])
+        self.assertEqual(self.rows("outbox")[0]["state"], "failed")
 
     def rows(self, table):
         with self.push.connection() as connection:

@@ -103,18 +103,18 @@ export function CallConversation({
     input.current?.blur();
   }
   const status = !online
-    ? '연결이 끊겼습니다. 인터넷 설정을 확인해 주세요.'
+    ? '연결 끊김'
     : !ready
       ? ai.status === 'error'
-        ? '연결을 다시 시도해 주세요.'
-        : '대화를 연결하는 중…'
+        ? '연결 실패'
+        : '연결 중…'
       : busy
-        ? '답장을 기다리는 중입니다. 통화를 끝내도 문자에서 이어볼 수 있어요.'
+        ? '답장 대기 중'
         : speechState === 'listening'
-          ? '듣고 있어요. 끝나면 인식된 말을 확인해 주세요.'
+          ? '듣는 중…'
           : recording
-            ? '음성 인식을 준비하거나 마무리하는 중…'
-            : '말한 내용을 확인해 보내면 글로 답합니다.';
+            ? '음성 인식 중…'
+            : '';
   return (
     <section className="call-live" aria-label="음성으로 대화">
       {(recentMessages.length > 0 || pendingText) && (
@@ -142,11 +142,7 @@ export function CallConversation({
           {speechError ?? thread.error ?? ai.error}
         </p>
       )}
-      {!supported && (
-        <p className="call-live-hint">
-          이 브라우저에서는 음성 인식을 사용할 수 없습니다. 글로 입력해 주세요.
-        </p>
-      )}
+      {!supported && <p className="call-live-hint">음성 인식 미지원</p>}
       {editing && (
         <div className="call-live-editor">
           <textarea
@@ -157,7 +153,7 @@ export function CallConversation({
             rows={2}
             readOnly={recording}
             onChange={(event) => setDraft(event.target.value)}
-            placeholder="인식된 말을 확인하거나 직접 입력"
+            placeholder="메시지"
           />
           <button
             disabled={
@@ -218,10 +214,6 @@ export function CallConversation({
           보낸 말 수정
         </button>
       )}
-      <p className="call-live-hint">
-        브라우저의 음성 인식 서비스를 사용합니다. 기기에 따라 음성이 Apple·Google 서버에서 처리될 수
-        있습니다.
-      </p>
     </section>
   );
 }

@@ -11,6 +11,7 @@ import {
   messageWithinLimits,
   isRelationshipTone,
   isPhoneEvents,
+  isCallEvents,
   postChat,
   type AiCharacter,
   type AiMessage,
@@ -49,6 +50,7 @@ export interface AiThread {
     time: string | null;
     historyId?: string;
     reason: 'input' | 'reply';
+    phoneEvents?: PhoneEventId[];
   } | null;
   loaded: boolean;
   loading: boolean;
@@ -116,7 +118,9 @@ function mergeMessages(previous: AiMessage[], incoming: AiMessage[]): AiMessage[
 function knownCompletedCount(messages: AiMessage[]): number {
   return messages.filter(
     (message) =>
-      message.role === 'user' && (message.status === undefined || message.status === 'complete'),
+      message.role === 'user' &&
+      !isCallEvents(message.phone_events) &&
+      (message.status === undefined || message.status === 'complete'),
   ).length;
 }
 
@@ -181,13 +185,19 @@ export class AiMessenger {
     let arrival = this.snapshot.arrival;
     let delivered = false;
     for (const receipt of this.presentation.receipts) {
+      const callReply = this.snapshot.threads[receipt.character].messages.find(
+        (m) => m.id === receipt.replyId,
+      );
+      if (isCallEvents(callReply?.phone_events)) receipt.read = true;
       if (receipt.delivered || !receipt.replyId || now < receipt.deliverAt) continue;
       receipt.delivered = true;
-      receipt.read = this.visible && this.activeCharacter === receipt.character;
+      receipt.read =
+        isCallEvents(callReply?.phone_events) ||
+        (this.visible && this.activeCharacter === receipt.character);
       const reply = this.snapshot.threads[receipt.character].messages.find(
         (m) => m.id === receipt.replyId,
       );
-      if (reply) {
+      if (reply && !isCallEvents(reply.phone_events)) {
         arrival = {
           id: reply.id,
           character: receipt.character,
@@ -580,6 +590,7 @@ export class AiMessenger {
                 time: accepted.time,
                 historyId: accepted.id,
                 reason: 'reply' as const,
+                phoneEvents: [...(accepted?.phone_events ?? pending?.phoneEvents ?? [])],
               },
               error: generationError(),
             }
@@ -722,7 +733,12 @@ export class AiMessenger {
         this.presentation.cancel(pending.requestId);
         this.thread(character, {
           pending: null,
-          failedMessage: { message: pending.message, time: pending.time, reason: 'input' },
+          failedMessage: {
+            message: pending.message,
+            time: pending.time,
+            reason: 'input',
+            phoneEvents: [...pending.phoneEvents],
+          },
           error: errorText(error),
         });
       } else {
@@ -800,6 +816,7 @@ export class AiMessenger {
                   time: accepted?.time ?? job.request?.time ?? pending?.time ?? null,
                   historyId: accepted?.id,
                   reason: 'reply' as const,
+                  phoneEvents: [...(accepted?.phone_events ?? pending?.phoneEvents ?? [])],
                 },
               }
             : {}),
