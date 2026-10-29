@@ -1,15 +1,9 @@
 const asset = (path: string) => `${import.meta.env.BASE_URL}story/${path}`;
 export const contacts = [
   {
-    id: 'nishiki',
-    name: '니시키야마 아키라',
-    shortName: '니시키',
-    portrait: `${import.meta.env.BASE_URL}story/nishiki.jpg`,
-  },
-  {
     id: 'date',
     name: '다테 마코토',
-    shortName: '다테 형사',
+    shortName: '다테 씨',
     portrait: `${import.meta.env.BASE_URL}story/date.jpg`,
   },
   {
@@ -41,6 +35,12 @@ export const contacts = [
     name: '아키야마 슌',
     shortName: '아키야마',
     portrait: `${import.meta.env.BASE_URL}story/akiyama.jpg`,
+  },
+  {
+    id: 'yuki',
+    name: '유키',
+    shortName: '유키',
+    portrait: asset('yuki.png'),
   },
   {
     id: 'haruka',

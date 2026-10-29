@@ -50,6 +50,7 @@ export async function mockStoryAi(page: Page) {
             role: 'assistant',
             content: `검증용 ${body.character === 'haruka' ? '하루카' : '마지마'} 답장`,
             time: '2026-10-26T00:00:01Z',
+            request_id: id,
             job_id: id,
             status: 'complete',
           },

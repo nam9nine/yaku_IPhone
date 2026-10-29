@@ -2,6 +2,9 @@ import { validToken, type AiConnection } from './connection';
 
 export const aiCharacters = ['haruka', 'majima'] as const;
 export type AiCharacter = (typeof aiCharacters)[number];
+export type RelationshipTone = 'warm' | 'neutral' | 'cool';
+export const isRelationshipTone = (value: unknown): value is RelationshipTone =>
+  value === 'warm' || value === 'neutral' || value === 'cool';
 export const AI_MAX_MESSAGE_LENGTH = 1000;
 export const AI_MAX_MESSAGE_BYTES = 4096;
 export function messageWithinLimits(message: string): boolean {
@@ -22,6 +25,7 @@ export interface AiMessage {
   status?: 'queued' | 'generating' | 'complete' | 'error' | 'interrupted';
   request_id?: string | null;
   job_id?: string | null;
+  relationship_tone?: RelationshipTone;
 }
 export interface AiHistory {
   messages: AiMessage[];
@@ -35,7 +39,12 @@ export interface AiJob {
   reply?: string;
   error?: { code: string; message: string };
   messages?: AiMessage[];
-  request?: { id: string; message: string; time: string | null };
+  request?: {
+    id: string;
+    message: string;
+    time: string | null;
+    relationship_tone?: RelationshipTone;
+  };
 }
 export type HealthStatus = 'ready' | 'loading' | 'error';
 
@@ -51,7 +60,8 @@ function messages(value: unknown): value is AiMessage[] {
         typeof message.id === 'string' &&
         (message.role === 'user' || message.role === 'assistant') &&
         typeof message.content === 'string' &&
-        (message.time === null || typeof message.time === 'string'),
+        (message.time === null || typeof message.time === 'string') &&
+        (message.relationship_tone === undefined || isRelationshipTone(message.relationship_tone)),
     )
   );
 }
@@ -65,7 +75,12 @@ export class AiRequestError extends Error {
   }
 }
 
-function serverError(status: number): AiRequestError {
+const BLOCKED_CONTENT_MESSAGE =
+  '이 대화에서는 노골적인 성적 내용은 주고받지 않습니다. 다른 이야기로 보내 주세요.';
+
+function serverError(status: number, code?: string): AiRequestError {
+  if (status === 400 && code === 'content_blocked')
+    return new AiRequestError(BLOCKED_CONTENT_MESSAGE, 'content_blocked');
   if (status === 400 || status === 422)
     return new AiRequestError(
       '메시지를 보낼 수 없습니다. 내용을 수정해 다시 보내 주세요.',
@@ -88,6 +103,7 @@ function serverError(status: number): AiRequestError {
 }
 
 export function generationError(code?: string): string {
+  if (code === 'content_blocked') return BLOCKED_CONTENT_MESSAGE;
   if (code === 'context_limit')
     return '메시지를 조금 짧게 나누어 보내 주세요. 기존 대화는 보관됩니다.';
   if (code === 'output_limit' || code === 'response_truncated')
@@ -126,7 +142,15 @@ export async function aiRequest(
       cache: 'no-store',
       referrerPolicy: 'no-referrer',
     });
-    if (!response.ok) throw serverError(response.status);
+    if (!response.ok) {
+      // Only known codes may select fixed UI text. Never render server exception text.
+      const body: unknown = await response.json().catch(() => null);
+      const code =
+        record(body) && record(body.error) && typeof body.error.code === 'string'
+          ? body.error.code
+          : undefined;
+      throw serverError(response.status, code);
+    }
     return await response.json();
   } catch (error) {
     if (error instanceof AiRequestError) throw error;
@@ -192,10 +216,13 @@ export async function postChat(
   message: string,
   requestId: string,
   signal?: AbortSignal,
+  relationshipTone: RelationshipTone = 'neutral',
 ): Promise<string> {
+  if (!isRelationshipTone(relationshipTone))
+    throw new AiRequestError('올바른 인연 상태가 필요합니다.', 'invalid_input');
   const value = await aiRequest(connection.endpoint, '/v1/chat', {
     token: connection.token,
-    body: { character, message, request_id: requestId },
+    body: { character, message, request_id: requestId, relationship_tone: relationshipTone },
     signal,
   });
   if (!record(value) || typeof value.job_id !== 'string' || !value.job_id) {
@@ -224,7 +251,9 @@ export async function getJob(
       (!record(value.request) ||
         typeof value.request.id !== 'string' ||
         typeof value.request.message !== 'string' ||
-        (value.request.time !== null && typeof value.request.time !== 'string')))
+        (value.request.time !== null && typeof value.request.time !== 'string') ||
+        (value.request.relationship_tone !== undefined &&
+          !isRelationshipTone(value.request.relationship_tone))))
   ) {
     throw new AiRequestError('답장 상태를 확인할 수 없습니다.');
   }

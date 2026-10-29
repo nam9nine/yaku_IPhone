@@ -36,7 +36,7 @@ export function RemindersApp({
           <span>오늘</span>
         </div>
         <div className="day-reminder-heading">
-          <h2>나팔꽃</h2>
+          <h2>할 일</h2>
           <strong>{remaining}</strong>
         </div>
         <ul className="day-reminder-list">
@@ -72,7 +72,7 @@ export function RemindersApp({
           })}
         </ul>
         <p className="day-reminder-count" role="status">
-          {3 - remaining}개 완료
+          {reminders.length - remaining}개 완료
         </p>
       </div>
     </section>

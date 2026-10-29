@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 import { launchHomeApp } from '../helpers/home';
 for (const friend of [
   { id: 'akiyama', name: '아키야마 슌' },
-  { id: 'nishiki', name: '니시키야마 아키라' },
+  { id: 'yuki', name: '유키' },
 ]) {
   for (const scene of ['contact', 'thread'] as const) {
     test(`${friend.name} ${scene} 390`, async ({ page }) => {

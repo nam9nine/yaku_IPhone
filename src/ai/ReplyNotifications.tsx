@@ -70,6 +70,8 @@ export function AiReplySound({
   const audio = useRef<ReplySoundPlayer | null>(null);
   audio.current ??= new ReplySoundPlayer();
   const pendingSounds = useRef(new Set<AbortController>());
+  const arrivalsSeen = useRef(new Set<string>());
+  const soundQueue = useRef(Promise.resolve());
   const soundSettings = useEffectEvent(() => ({ silent, volume }));
   const cancelSounds = useEffectEvent(() => {
     for (const controller of pendingSounds.current) controller.abort();
@@ -195,49 +197,78 @@ export function AiReplySound({
   }, []);
   useEffect(() => {
     if (!arrival) {
-      audio.current?.interrupt();
+      cancelSounds();
       return;
     }
-    let current = true;
     const player = audio.current!;
-    const soundId = arrival.jobId ?? arrival.id;
-    const owner = `app:${crypto.randomUUID()}`;
-    if (!arrival.playSound || silent || volume <= 0 || document.hidden) {
-      player.interrupt();
-      // Consume in this page without replaying on return, unmute, or audio unlock.
-      player.play(arrival.id, true, volume, false);
-      return;
-    }
-    const controller = new AbortController();
-    const onVisibility = () => {
-      if (document.hidden) controller.abort();
-    };
-    document.addEventListener('visibilitychange', onVisibility);
-    void player.ready(controller.signal, arrival.sound).then(async (ready) => {
-      if (!ready || !current || document.hidden) {
-        player.play(arrival.id, true, volume, false);
-        return;
+    for (const event of arrival.deliveries ?? [arrival]) {
+      if (arrivalsSeen.current.has(event.id)) continue;
+      arrivalsSeen.current.add(event.id);
+      if (arrivalsSeen.current.size > 200)
+        arrivalsSeen.current.delete(arrivalsSeen.current.values().next().value!);
+      const settings = soundSettings();
+      if (!event.playSound || settings.silent || settings.volume <= 0 || document.hidden) {
+        player.play(event.id, true, 0, false);
+        continue;
       }
-      const claimed = await claimReplySound(soundId, owner);
-      if (!claimed) {
-        player.play(arrival.id, true, volume, false);
-        return;
-      }
-      const played =
-        current &&
+      const controller = new AbortController();
+      pendingSounds.current.add(controller);
+      const hide = () => {
+        if (document.hidden) controller.abort();
+      };
+      document.addEventListener('visibilitychange', hide);
+      const deadline = (event.deliveredAt ?? Date.now()) + 2500;
+      const soundId = event.jobId ?? event.id;
+      const owner = `app:${crypto.randomUUID()}`;
+      const allowed = () =>
+        event.playSound &&
         !controller.signal.aborted &&
-        player.play(arrival.id, silent, volume, !document.hidden, arrival.sound);
-      if (!played) {
-        player.play(arrival.id, true, volume, false);
-        void releaseReplySound(soundId, owner);
-      }
-    });
-    return () => {
-      current = false;
-      controller.abort();
-      document.removeEventListener('visibilitychange', onVisibility);
-    };
-  }, [arrival, silent, volume]);
+        !document.hidden &&
+        !soundSettings().silent &&
+        soundSettings().volume > 0 &&
+        Date.now() < deadline;
+      // Separate arrivals may share one React render. Queue each fresh event once;
+      // hidden/muted/reset events are consumed, never replayed by a later tap.
+      soundQueue.current = soundQueue.current
+        .then(async () => {
+          try {
+            if (!allowed() || !(await player.ready(controller.signal, event.sound)) || !allowed()) {
+              player.play(event.id, true, 0, false);
+              return;
+            }
+            if (!(await claimReplySound(soundId, owner))) {
+              player.play(event.id, true, 0, false);
+              return;
+            }
+            if (
+              !allowed() ||
+              !player.play(event.id, false, soundSettings().volume, true, event.sound)
+            ) {
+              player.play(event.id, true, 0, false);
+              await releaseReplySound(soundId, owner);
+              return;
+            }
+            // Keep simultaneous replies audible without layering two identical tones.
+            await new Promise<void>((resolve) => {
+              const finish = () => {
+                clearTimeout(timer);
+                controller.signal.removeEventListener('abort', finish);
+                resolve();
+              };
+              const timer = setTimeout(finish, 1000);
+              controller.signal.addEventListener('abort', finish, { once: true });
+              if (controller.signal.aborted) finish();
+            });
+          } catch {
+            await releaseReplySound(soundId, owner);
+          } finally {
+            pendingSounds.current.delete(controller);
+            document.removeEventListener('visibilitychange', hide);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [arrival]);
   return null;
 }
 

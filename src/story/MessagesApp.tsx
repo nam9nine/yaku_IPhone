@@ -6,7 +6,8 @@ import { useEffect, useEffectEvent, useLayoutEffect, useRef, useState } from 're
 import { useEdgeNavigation } from '../navigation/EdgeNavigation';
 import { contacts } from './data';
 import { useDay } from '../day/DayContext';
-import { replyChoices, type ContactId, type DayMessage } from '../day/content';
+import { dayNotes, type ContactId, type DayMessage } from '../day/content';
+import { affinityTone, getStoryChoices } from '../day/state';
 import './social.css';
 import {
   AI_MAX_MESSAGE_LENGTH,
@@ -72,7 +73,7 @@ export function MessagesApp({
   const title = useRef<HTMLHeadingElement>(null);
   const history = useRef<HTMLDivElement>(null);
   const positions = useRef<Record<string, number>>({});
-  const previousThread = useRef<{ id: string; count: number; typing: boolean } | null>(null);
+  const previousThread = useRef<{ id: string; count: number } | null>(null);
   const olderAnchor = useRef<{ id: string; top: number; height: number } | null>(null);
   const handledLatest = useRef(requestedLatest);
   const focusNext = useRef(false);
@@ -80,7 +81,7 @@ export function MessagesApp({
   const aiEnabled = !!aiCharacter;
   const aiThread = aiCharacter ? ai.threads[aiCharacter] : null;
   function visibleMessages(id: ContactId): VisibleMessage[] {
-    const story = storyThreadMessages(id, state.replies.includes(id));
+    const story = storyThreadMessages(id, state);
     if (!isAiCharacter(id)) return story;
     const remote = ai.threads[id];
     return [
@@ -143,14 +144,26 @@ export function MessagesApp({
   }
   const thread = person ? visibleMessages(person.id) : [];
   const draft = aiCharacter ? drafts[aiCharacter] : '';
-  const aiBusy = aiThread?.typing ?? false;
+  const choices = person ? getStoryChoices(state, person.id) : [];
+  const storyPending = person ? state.storyPending[person.id] : undefined;
+  const aiBusy = !!(aiThread?.pending || aiThread?.deliveryPending);
+  const sentCount =
+    aiThread?.messages.filter((message) => message.role === 'user' && message.status === 'complete')
+      .length ?? 0;
+  // A short choice interlude after three texts makes room for the rest of the phone.
+  // These are pacing defaults, not a claim about the character's canonical behavior.
+  const choiceInterlude =
+    person?.id === 'majima' && sentCount > 0 && sentCount % 3 === 0 && choices.length > 0;
+  const freeText = person?.id === 'majima' && !choiceInterlude;
   const canStartAi =
     active &&
     online &&
     ai.status === 'ready' &&
     !!aiThread?.loaded &&
     !aiThread.loading &&
-    !Object.values(ai.threads).some((remote) => remote.pending || remote.deliveryPending);
+    !aiThread.pending &&
+    !aiThread.deliveryPending &&
+    !storyPending;
   const canSendAi = canStartAi && !!draft.trim() && messageWithinLimits(draft.trim());
   const isUnread = (id: ContactId) =>
     !state.readThreads.includes(id) || (isAiCharacter(id) && ai.threads[id].unread);
@@ -168,24 +181,31 @@ export function MessagesApp({
       dispatch({ type: 'read-thread', id: person.id });
       if (isAiCharacter(person.id)) ai.messenger.markRead(person.id);
     }
-  }, [active, person, dispatch, ai.messenger]);
+  }, [active, person, dispatch, ai.messenger, state.storySequence]);
   useEffect(() => {
     if (!ai.connection) return;
     for (const id of ['haruka', 'majima'] as const) {
-      if (
-        !state.replies.includes(id) &&
-        ai.threads[id].messages.some(
-          (message) => message.role === 'user' && message.content === replyChoices[id].text,
-        )
-      )
-        dispatch({ type: 'reply', id, source: 'ai' });
+      const remote = ai.threads[id];
+      if (remote.pending || remote.deliveryPending) continue;
+      const available = getStoryChoices(state, id);
+      const completed = available.find((choice) =>
+        remote.messages.some(
+          (message, index) =>
+            message.role === 'user' &&
+            message.content === choice.text &&
+            message.status === 'complete' &&
+            !!message.request_id &&
+            remote.messages[index + 1]?.role === 'assistant' &&
+            remote.messages[index + 1]?.request_id === message.request_id,
+        ),
+      );
+      if (completed) dispatch({ type: 'story-choice', id, choiceId: completed.id, source: 'ai' });
     }
-  }, [ai.connection, ai.threads, state.replies, shoppingDone, dispatch]);
+  }, [ai.connection, ai.threads, state, dispatch]);
   useLayoutEffect(() => {
     if (!active || !history.current || !person) return;
     const sameThread = previousThread.current?.id === person.id;
     const changedCount = sameThread && previousThread.current?.count !== thread.length;
-    const startedTyping = aiBusy && (!sameThread || !previousThread.current?.typing);
     const anchor = olderAnchor.current;
     if (handledLatest.current !== requestedLatest) {
       olderAnchor.current = null;
@@ -194,14 +214,13 @@ export function MessagesApp({
       history.current.scrollTop = history.current.scrollHeight - anchor.height + anchor.top;
       olderAnchor.current = null;
     } else if (!anchor) {
-      history.current.scrollTop =
-        changedCount || startedTyping
-          ? history.current.scrollHeight
-          : (positions.current[person.id] ?? history.current.scrollHeight);
+      history.current.scrollTop = changedCount
+        ? history.current.scrollHeight
+        : (positions.current[person.id] ?? history.current.scrollHeight);
     }
-    previousThread.current = { id: person.id, count: thread.length, typing: aiBusy };
+    previousThread.current = { id: person.id, count: thread.length };
     handledLatest.current = requestedLatest;
-  }, [active, person, thread.length, aiBusy, aiThread?.loadingOlder, requestedLatest]);
+  }, [active, person, thread.length, aiThread?.loadingOlder, requestedLatest]);
   useLayoutEffect(() => {
     if (!textarea.current) return;
     textarea.current.style.height = 'auto';
@@ -243,25 +262,42 @@ export function MessagesApp({
     onBack: person || picking ? back : undefined,
   });
   function sendAi() {
-    if (!aiCharacter || !canSendAi) return;
-    if (ai.messenger.send(aiCharacter, draft, active, online)) {
+    if (!aiCharacter || !canSendAi || !freeText) return;
+    if (
+      ai.messenger.send(aiCharacter, draft, active, online, {
+        relationshipTone: affinityTone(state),
+      })
+    ) {
       messageSentSound();
       setDrafts((current) => ({ ...current, [aiCharacter]: '' }));
     }
   }
-  function send() {
-    if (!active || !person || !online) return;
-    if (person.id === 'haruka' && !shoppingDone) return;
+  function sendChoice(choice: (typeof choices)[number]) {
+    if (!active || !person || !online || storyPending) return;
     if (aiEnabled && aiCharacter) {
-      if (ai.messenger.send(aiCharacter, replyChoices[person.id].text, active, online))
+      if (!canStartAi) return;
+      const nextAffinity = Math.max(-5, Math.min(5, state.affinity + (choice.affinityDelta ?? 0)));
+      if (
+        ai.messenger.send(aiCharacter, choice.text, active, online, {
+          relationshipTone: affinityTone({ ...state, affinity: nextAffinity }),
+        })
+      )
         messageSentSound();
       return;
     }
-    dispatch({ type: 'reply', id: person.id });
+    dispatch({ type: 'story-choice', id: person.id, choiceId: choice.id });
     messageSentSound();
   }
   function rewriteFailed() {
     if (!aiCharacter || !active) return;
+    if (aiCharacter === 'haruka') {
+      const failed = aiThread?.failedMessage;
+      if (failed && canStartAi && ai.messenger.send(aiCharacter, failed.message, active, online)) {
+        ai.messenger.takeFailedMessage(aiCharacter, active);
+        messageSentSound();
+      }
+      return;
+    }
     const failed = ai.messenger.takeFailedMessage(aiCharacter, active);
     if (!failed) return;
     setDrafts((current) => ({
@@ -411,12 +447,14 @@ export function MessagesApp({
                     <button
                       className="message-note-link"
                       onClick={() => onOpenNote(message.noteId!)}
-                      aria-label="장보기 목록: 오늘 저녁 카레 메모 열기"
+                      aria-label={`${dayNotes.find((note) => note.id === message.noteId)?.title ?? '메모'} 열기`}
                     >
                       <span aria-hidden="true">▤</span>
                       <span>
-                        <strong>오늘 저녁 카레</strong>
-                        <small>장보기 목록 · 메모</small>
+                        <strong>
+                          {dayNotes.find((note) => note.id === message.noteId)?.title ?? '메모'}
+                        </strong>
+                        <small>메모</small>
                       </span>
                     </button>
                   )}
@@ -432,19 +470,6 @@ export function MessagesApp({
                 )}
               </div>
             ))}
-            {aiEnabled && aiBusy && (
-              <div className="message-line message-line--tail">
-                <div
-                  className="message-bubble message-typing"
-                  role="status"
-                  aria-label={`${person.shortName} 답장 작성 중`}
-                >
-                  <span aria-hidden="true">●</span>
-                  <span aria-hidden="true">●</span>
-                  <span aria-hidden="true">●</span>
-                </div>
-              </div>
-            )}
             {!thread.length && (
               <p className="social-empty">{person.shortName}에게 첫 메시지를 보내보세요.</p>
             )}
@@ -452,6 +477,16 @@ export function MessagesApp({
           {!online && (
             <p className="social-notice" role="status">
               연결 끊김 · 연결 후 보낼 수 있습니다.
+            </p>
+          )}
+          {person.id === 'majima' && (
+            <p className="message-bond" aria-label={`마지마와의 인연 ${state.affinity}`}>
+              <span aria-hidden="true">♡</span>{' '}
+              {state.affinity > 0
+                ? '조금 더 가까워진 사이'
+                : state.affinity < 0
+                  ? '조금 서먹한 사이'
+                  : '익숙한 사이'}
             </p>
           )}
           <div
@@ -477,7 +512,7 @@ export function MessagesApp({
                     <span>{ai.error ?? aiThread.error}</span>
                     {aiThread.failedMessage && !ai.error ? (
                       <button disabled={!active} onClick={rewriteFailed}>
-                        다시 작성
+                        {person.id === 'haruka' ? '다시 보내기' : '다시 작성'}
                       </button>
                     ) : aiThread.pending?.phase === 'failed' && ai.status === 'ready' ? (
                       <button
@@ -499,7 +534,7 @@ export function MessagesApp({
                 {aiThread.failedMessage && !aiThread.error && !ai.error && (
                   <div className="message-ai-notice">
                     <button disabled={!active} onClick={rewriteFailed}>
-                      다시 작성
+                      {person.id === 'haruka' ? '다시 보내기' : '다시 작성'}
                     </button>
                   </div>
                 )}
@@ -528,85 +563,103 @@ export function MessagesApp({
                       </button>
                     </div>
                   )}
-                <form
-                  className="message-input-wrap message-ai-input"
-                  onSubmit={(event) => {
-                    event.preventDefault();
-                    sendAi();
-                  }}
-                >
-                  <textarea
-                    ref={textarea}
-                    rows={1}
-                    aria-label={`${person.shortName}에게 메시지 입력`}
-                    placeholder="메시지"
-                    maxLength={AI_MAX_MESSAGE_LENGTH}
-                    value={draft}
-                    disabled={!active}
-                    onFocus={() => {
-                      if (history.current) history.current.scrollTop = history.current.scrollHeight;
+                {aiBusy && !ai.error && !aiThread.error && (
+                  <p className="message-choice-status" role="status">
+                    답장 대기 중 · 다른 연락처에는 보낼 수 있어요.
+                  </p>
+                )}
+                {choiceInterlude && !aiBusy && (
+                  <p className="message-choice-status">이번에는 짧은 답장을 골라보세요.</p>
+                )}
+                {freeText && (
+                  <form
+                    className="message-input-wrap message-ai-input"
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      sendAi();
                     }}
-                    onChange={(event) =>
-                      setDrafts((current) => ({ ...current, [aiCharacter]: event.target.value }))
-                    }
-                    onKeyDown={(event) => {
-                      if (shouldSendOnEnter(event.nativeEvent)) {
-                        event.preventDefault();
-                        sendAi();
-                      }
-                    }}
-                  />
-                  <button
-                    className="message-send"
-                    type="submit"
-                    aria-label="메시지 보내기"
-                    disabled={!canSendAi}
                   >
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                      <path d="M12 19V5m-6 6 6-6 6 6" />
-                    </svg>
-                  </button>
-                </form>
-                {!state.replies.includes(person.id) &&
-                  !aiThread.messages.some((message) => message.role === 'user') &&
-                  !aiThread.pending &&
-                  !aiThread.failedMessage &&
-                  (person.id !== 'haruka' || shoppingDone) && (
+                    <textarea
+                      ref={textarea}
+                      rows={1}
+                      aria-label={`${person.shortName}에게 메시지 입력`}
+                      placeholder="메시지"
+                      maxLength={AI_MAX_MESSAGE_LENGTH}
+                      value={draft}
+                      disabled={!active}
+                      onFocus={() => {
+                        if (history.current)
+                          history.current.scrollTop = history.current.scrollHeight;
+                      }}
+                      onChange={(event) =>
+                        setDrafts((current) => ({ ...current, [aiCharacter]: event.target.value }))
+                      }
+                      onKeyDown={(event) => {
+                        if (shouldSendOnEnter(event.nativeEvent)) {
+                          event.preventDefault();
+                          sendAi();
+                        }
+                      }}
+                    />
                     <button
-                      className="message-story-reply"
-                      type="button"
-                      onClick={send}
-                      disabled={!canStartAi || (person.id === 'haruka' && !shoppingDone)}
-                      aria-label={`${replyChoices[person.id].text} 보내기`}
+                      className="message-send"
+                      type="submit"
+                      aria-label="메시지 보내기"
+                      disabled={!canSendAi}
                     >
-                      {replyChoices[person.id].text}
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M12 19V5m-6 6 6-6 6 6" />
+                      </svg>
                     </button>
-                  )}
+                  </form>
+                )}
+                {choices.length > 0 && (person.id === 'haruka' || choiceInterlude) && (
+                  <div className="message-choice-list" aria-label="답장 선택">
+                    {choices.map((choice) => (
+                      <button
+                        className="message-story-reply"
+                        key={choice.id}
+                        type="button"
+                        onClick={() => sendChoice(choice)}
+                        disabled={!canStartAi}
+                        aria-label={`${choice.text} 보내기`}
+                      >
+                        {choice.text}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {person.id === 'haruka' && !aiBusy && choices.length === 0 && (
+                  <p className="message-choice-status">
+                    {!shoppingDone
+                      ? '메모의 장보기 목록부터 확인해 보세요.'
+                      : '새로운 할 일이 생기면 짧게 연락해 보세요.'}
+                  </p>
+                )}
               </>
-            ) : state.replies.includes(person.id) ? (
+            ) : storyPending ? (
               <p className="message-choice-status" role="status">
-                답장을 보냈습니다.
+                답장 대기 중 · 다른 연락처에는 보낼 수 있어요.
               </p>
-            ) : (
-              <div className="message-input-wrap message-choice-wrap">
-                <button
-                  type="button"
-                  className="message-choice"
-                  onClick={send}
-                  disabled={!online || (person.id === 'haruka' && !shoppingDone)}
-                  aria-label={`${replyChoices[person.id].text} 보내기`}
-                >
-                  <span>{replyChoices[person.id].text}</span>
-                  <span className="message-send" aria-hidden="true">
-                    <svg viewBox="0 0 24 24">
-                      <path d="M12 19V5m-6 6 6-6 6 6" />
-                    </svg>
-                  </span>
-                </button>
+            ) : choices.length > 0 ? (
+              <div className="message-choice-list" aria-label="답장 선택">
+                {choices.map((choice) => (
+                  <button
+                    type="button"
+                    key={choice.id}
+                    className="message-story-reply"
+                    onClick={() => sendChoice(choice)}
+                    disabled={!active || !online}
+                    aria-label={`${choice.text} 보내기`}
+                  >
+                    {choice.text}
+                  </button>
+                ))}
               </div>
-            )}
-            {!aiEnabled && person.id === 'haruka' && !shoppingDone && !state.replySent && (
-              <p className="message-choice-status">장보기 목록을 모두 체크하면 답장할 수 있어요.</p>
+            ) : (
+              <p className="message-choice-status" role="status">
+                지금은 새로 보낼 답장이 없습니다.
+              </p>
             )}
           </div>
         </>

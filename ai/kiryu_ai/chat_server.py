@@ -28,7 +28,14 @@ from starlette.middleware.cors import CORSMiddleware
 from starlette.responses import JSONResponse
 from starlette.routing import Route
 
-from .chat_db import ChatDB, RequestConflict, VisitorBusy
+from .chat_db import (
+    MAX_ACTIVE_PER_VISITOR,
+    RELATIONSHIP_TONES,
+    ChatDB,
+    RequestConflict,
+    VisitorBusy,
+)
+from .chat_policy import POLICY_MESSAGE, explicit_request, output_allowed
 from .web_server import ApiFailure, PrivacyMiddleware, WindowLimiter, json_body
 
 CHARACTERS = ("haruka", "majima")
@@ -36,6 +43,7 @@ SCENARIO = "daily-if-v1"
 PAGES_ORIGIN = "https://nam9nine.github.io"
 CHAT_ASSETS = Path(__file__).resolve().parents[1] / "chat"
 ERROR_TEXT = {
+    "content_blocked": POLICY_MESSAGE,
     "output_limit": "답장이 끝나지 않았습니다. 다시 보내 주세요.",
     "context_limit": "메시지를 조금 짧게 나누어 보내 주세요. 기존 대화는 보관됩니다.",
     "timeout": "답장 시간이 초과되었습니다. 잠시 후 다시 보내 주세요.",
@@ -159,6 +167,7 @@ def public_job(job):
             "id": job["request_id"],
             "message": job["message"],
             "time": job["accepted_at"],
+            "relationship_tone": job.get("relationship_tone", "neutral"),
         },
     }
     if status == "complete":
@@ -254,26 +263,50 @@ class ChatService:
             raise ApiFailure(429, "rate_limited", "잠시 후 다시 시도해 주세요.")
         return self.db.issue_session()["token"]
 
-    def submit(self, record, character, message, request_id, address):
+    def submit(
+        self,
+        record,
+        character,
+        message,
+        request_id,
+        address,
+        relationship_tone="neutral",
+    ):
         visitor = record["visitor_id"]
+        if relationship_tone not in RELATIONSHIP_TONES:
+            raise ApiFailure(
+                400, "invalid_relationship_tone", "지원하지 않는 인연 상태입니다."
+            )
+        scope = (visitor, character, SCENARIO)
         # Existing UUIDs must remain discoverable even while the queue/model is
         # unavailable. accept() checks the fingerprint again in its transaction.
         previous = self.db.find_request(visitor, SCENARIO, request_id)
         if previous:
-            if previous["character"] != character or previous["message"] != message:
+            if (
+                previous["character"] != character
+                or previous["message"] != message
+                or previous.get("relationship_tone", "neutral") != relationship_tone
+            ):
                 raise ApiFailure(
                     409, "request_id_conflict", "다른 내용에 사용한 요청 ID입니다."
                 )
             return previous
+        if explicit_request(message):
+            raise ApiFailure(400, "content_blocked", POLICY_MESSAGE)
         if self.status != "ready":
             raise ApiFailure(
                 503,
                 "model_unavailable",
                 "지금은 답장을 받을 수 없습니다. 잠시 후 다시 시도해 주세요.",
             )
-        if visitor in self.pending:
+        if (
+            scope in self.pending
+            or sum(key[0] == visitor for key in self.pending) >= MAX_ACTIVE_PER_VISITOR
+        ):
             raise ApiFailure(
-                409, "visitor_busy", "앞서 보낸 문자의 답장을 기다려 주세요."
+                409,
+                "conversation_busy",
+                "이 연락처의 답장을 기다려 주세요. 다른 연락처에는 보낼 수 있습니다.",
             )
         if self.queue.full():
             raise ApiFailure(
@@ -287,7 +320,12 @@ class ChatService:
             raise ApiFailure(429, "rate_limited", "잠시 후 다시 보내 주세요.")
         try:
             job, created = self.db.accept(
-                visitor, character, SCENARIO, message, request_id
+                visitor,
+                character,
+                SCENARIO,
+                message,
+                request_id,
+                relationship_tone=relationship_tone,
             )
         except RequestConflict:
             raise ApiFailure(
@@ -295,10 +333,12 @@ class ChatService:
             ) from None
         except VisitorBusy:
             raise ApiFailure(
-                409, "visitor_busy", "앞서 보낸 문자의 답장을 기다려 주세요."
+                409,
+                "conversation_busy",
+                "이 연락처의 답장을 기다려 주세요. 다른 연락처에는 보낼 수 있습니다.",
             ) from None
         if created:
-            self.pending[visitor] = job["job_id"]
+            self.pending[scope] = job["job_id"]
             self.queue.put_nowait(job)
         return job
 
@@ -399,6 +439,7 @@ class ChatService:
                 character_id=job["character"],
                 scenario_version=SCENARIO,
                 user_message=job["message"],
+                relationship_tone=job.get("relationship_tone", "neutral"),
                 history=history,
                 count_tokens=self.engine.count_tokens,
                 context_limit=CONTEXT_TOKENS,
@@ -421,6 +462,13 @@ class ChatService:
                 not isinstance(result.get("reply"), str) or not result["reply"].strip()
             ):
                 self.db.fail(job["job_id"], "empty_reply", metrics=metrics)
+            elif not output_allowed(result["reply"]):
+                self.db.fail(
+                    job["job_id"],
+                    "content_blocked",
+                    output=result["reply"],
+                    metrics=metrics,
+                )
             else:
                 self.db.complete(job["job_id"], result["reply"], metrics=metrics)
         except GemmaFailure as error:
@@ -453,7 +501,9 @@ class ChatService:
                 self.db.recover_interrupted()
                 return
             finally:
-                self.pending.pop(job["visitor_id"], None)
+                scope = (job["visitor_id"], job["character"], job["scenario_version"])
+                if self.pending.get(scope) == job["job_id"]:
+                    self.pending.pop(scope)
                 self.queue.task_done()
 
     async def backups(self):
@@ -573,19 +623,21 @@ def create_app(data_root, *, allow_origins=(), **options):
             raise ApiFailure(
                 400, "invalid_cursor", "대화 페이지를 다시 불러와 주세요."
             ) from None
-        pending = service.pending.get(record["visitor_id"])
-        if pending and service.db.get_request(pending)["character"] != character:
-            pending = None
+        pending = service.pending.get((record["visitor_id"], character, SCENARIO))
         return JSONResponse({**page, "pending_job": pending})
 
     async def chat(request):
         record = service.authenticate(request)
         body = await json_body(request)
-        if set(body) != {"character", "message", "request_id"}:
-            raise ApiFailure(
-                400, "invalid_body", "문자·상대·요청 ID만 보낼 수 있습니다."
-            )
+        required = {"character", "message", "request_id"}
+        if not required <= set(body) or set(body) - required - {"relationship_tone"}:
+            raise ApiFailure(400, "invalid_body", "지원하지 않는 요청 항목입니다.")
         character, message = body["character"], body["message"]
+        relationship_tone = body.get("relationship_tone", "neutral")
+        if relationship_tone not in RELATIONSHIP_TONES:
+            raise ApiFailure(
+                400, "invalid_relationship_tone", "지원하지 않는 인연 상태입니다."
+            )
         if character not in CHARACTERS:
             raise ApiFailure(400, "invalid_character", "지원하지 않는 대화 상대입니다.")
         if not isinstance(message, str) or not message.strip() or "\x00" in message:
@@ -606,7 +658,12 @@ def create_app(data_root, *, allow_origins=(), **options):
         if CONTROL.search(message):
             raise ApiFailure(400, "invalid_message", "지원하지 않는 제어 구문입니다.")
         job = service.submit(
-            record, character, message, request_id, service.address(request)
+            record,
+            character,
+            message,
+            request_id,
+            service.address(request),
+            relationship_tone=relationship_tone,
         )
         return JSONResponse(
             {"job_id": job["job_id"], "status": public_job(job)["status"]},

@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { AiMessenger } from './messenger';
 import { AI_ENDPOINT } from './config';
-import type { AiCharacter, AiMessage } from './client';
+import type { AiCharacter, AiMessage, RelationshipTone } from './client';
 
 const connection = { endpoint: AI_ENDPOINT, token: 'existing-session' };
 const stores: AiMessenger[] = [];
@@ -10,7 +10,12 @@ const flush = async () => {
 };
 function mockService() {
   const state = {
-    chats: [] as { character: AiCharacter; message: string; request_id: string }[],
+    chats: [] as {
+      character: AiCharacter;
+      message: string;
+      request_id: string;
+      relationship_tone: RelationshipTone;
+    }[],
     history: { haruka: [], majima: [] } as Record<AiCharacter, AiMessage[]>,
     sessions: 0,
     polls: 0,
@@ -18,10 +23,12 @@ function mockService() {
     queued: false,
     losePost: false,
     reject: 0,
+    rejectCode: '',
     fail: '',
     nextCursor: null as string | null,
     old: [] as AiMessage[],
   };
+  let nextJob = 0;
   const fetch = vi.fn(async (url: string, options?: RequestInit): Promise<Response> => {
     if (url.endsWith('/v1/health')) return Response.json({ status: 'ready' });
     if (url.endsWith('/v1/sessions')) {
@@ -43,33 +50,36 @@ function mockService() {
     if (url.endsWith('/v1/chat')) {
       const body = JSON.parse(String(options?.body));
       state.chats.push(body);
-      if (state.reject) return Response.json({}, { status: state.reject });
-      if (
-        !state.history[body.character as AiCharacter].some(
-          (message) => message.request_id === body.request_id,
-        )
-      )
-        state.history[body.character as AiCharacter].push({
-          id: 'job-1-user',
+      if (state.reject)
+        return Response.json({ error: { code: state.rejectCode } }, { status: state.reject });
+      let user = state.history[body.character as AiCharacter].find(
+        (message) => message.request_id === body.request_id,
+      );
+      if (!user) {
+        const jobId = `job-${++nextJob}`;
+        user = {
+          id: `${jobId}-user`,
           role: 'user',
           content: body.message,
           time: '2026-10-26T00:00:00Z',
           status: 'queued',
           request_id: body.request_id,
-          job_id: 'job-1',
-        });
+          job_id: jobId,
+          relationship_tone: body.relationship_tone ?? 'neutral',
+        };
+        state.history[body.character as AiCharacter].push(user);
+      }
       if (state.losePost) {
         state.losePost = false;
         throw new Error('connection lost');
       }
-      return Response.json({ job_id: 'job-1', status: 'queued' });
+      return Response.json({ job_id: user.job_id, status: 'queued' });
     }
-    if (url.endsWith('/v1/jobs/job-1')) {
+    if (url.includes('/v1/jobs/')) {
       state.polls++;
-      const character = state.history.haruka.some((m) => m.job_id === 'job-1')
-        ? 'haruka'
-        : 'majima';
-      const user = state.history[character].find((m) => m.job_id === 'job-1')!;
+      const jobId = url.split('/').at(-1)!;
+      const character = state.history.haruka.some((m) => m.job_id === jobId) ? 'haruka' : 'majima';
+      const user = state.history[character].find((m) => m.job_id === jobId)!;
       const status = state.hold
         ? state.queued
           ? 'queued'
@@ -80,20 +90,25 @@ function mockService() {
       user.status = status;
       if (
         status === 'complete' &&
-        !state.history[character].some((m) => m.id === 'job-1-assistant')
+        !state.history[character].some((m) => m.id === `${jobId}-assistant`)
       )
         state.history[character].push({
-          id: 'job-1-assistant',
+          id: `${jobId}-assistant`,
           role: 'assistant',
           content: '실제 응답 자리',
           time: '2026-10-26T00:00:01Z',
           status: 'complete',
         });
       return Response.json({
-        job_id: 'job-1',
+        job_id: jobId,
         character,
         status,
-        request: { id: user.request_id, message: user.content, time: user.time },
+        request: {
+          id: user.request_id,
+          message: user.content,
+          time: user.time,
+          relationship_tone: user.relationship_tone,
+        },
         ...(state.fail ? { error: { code: state.fail, message: 'private server trace' } } : {}),
       });
     }
@@ -266,7 +281,7 @@ it('만료된 토큰의 401 뒤 자동 발급한 토큰으로 기록을 복구�
   expect(value.getSnapshot().status).toBe('ready');
   expect(value.getSnapshot().connection?.token).toBe('new-session');
 });
-it('연속·다른 인물 동시 전송을 막고 답장은 원래 대화에 넣는다', async () => {
+it('같은 인물 중복은 막고 다른 인물은 기다리지 않고 보내며 각 대화로 복원한다', async () => {
   const { state } = mockService();
   state.hold = true;
   const value = store();
@@ -275,13 +290,18 @@ it('연속·다른 인물 동시 전송을 막고 답장은 원래 대화에 넣
   expect(value.send('haruka', '연속 입력', true, true)).toBe(false);
   await flush();
   await value.activate('majima');
-  expect(value.send('majima', '다른 대화', true, true)).toBe(false);
+  expect(value.send('majima', '다른 대화', true, true, { relationshipTone: 'cool' })).toBe(true);
+  await flush();
+  await value.refresh();
+  expect(value.getSnapshot().threads.haruka.pending?.jobId).toBe('job-1');
+  expect(value.getSnapshot().threads.majima.pending?.jobId).toBe('job-2');
+  expect(value.getSnapshot().threads.majima.pending?.relationshipTone).toBe('cool');
   state.hold = false;
   await vi.advanceTimersByTimeAsync(1000);
   await flush();
   expect(value.getSnapshot().threads.haruka.messages.at(-1)?.content).toBe('실제 응답 자리');
-  expect(value.getSnapshot().threads.majima.messages).toEqual([]);
-  expect(state.chats).toHaveLength(1);
+  expect(value.getSnapshot().threads.majima.messages.at(-1)?.content).toBe('실제 응답 자리');
+  expect(state.chats).toHaveLength(2);
 });
 it('POST 응답 유실 후 같은 UUID로 재시도한다', async () => {
   const { state } = mockService();
@@ -289,13 +309,14 @@ it('POST 응답 유실 후 같은 UUID로 재시도한다', async () => {
   state.hold = true;
   const value = store();
   await value.activate('majima');
-  value.send('majima', '형님', true, true);
+  value.send('majima', '형님', true, true, { relationshipTone: 'warm' });
   await flush();
   expect(value.getSnapshot().threads.majima.pending?.phase).toBe('failed');
   value.retry('majima', true, true);
   await flush();
   expect(state.chats).toHaveLength(2);
   expect(state.chats[1]).toEqual(state.chats[0]);
+  expect(state.chats[1].relationship_tone).toBe('warm');
   expect(state.history.majima).toHaveLength(1);
 });
 it('유실된 접수는 새로고침으로 복구하고 재전송하지 않는다', async () => {
@@ -517,7 +538,7 @@ it('초기화 전에 생성 중이던 답장이 늦게 끝나도 새 이력이�
     setItem: (key: string, value: string) => values.set(key, value),
     removeItem: (key: string) => values.delete(key),
   });
-  let release!: (value: Response) => void;
+  const releases = new Map<string, (value: Response) => void>();
   let oldHistoryCalls = 0;
   vi.stubGlobal(
     'fetch',
@@ -529,10 +550,14 @@ it('초기화 전에 생성 중이던 답장이 늦게 끝나도 새 이력이�
           oldHistoryCalls++;
         return Response.json({ messages: [], pending_job: null, next_cursor: null });
       }
-      if (url.endsWith('/v1/chat')) return Response.json({ job_id: 'old-job', status: 'queued' });
-      if (url.endsWith('/v1/jobs/old-job'))
+      if (url.endsWith('/v1/chat'))
+        return Response.json({
+          job_id: `old-${JSON.parse(String(options?.body)).character}`,
+          status: 'queued',
+        });
+      if (url.includes('/v1/jobs/old-'))
         return new Promise<Response>((resolve) => {
-          release = resolve;
+          releases.set(url.split('/').at(-1)!, resolve);
         });
       throw new Error('Unexpected request');
     }),
@@ -541,22 +566,30 @@ it('초기화 전에 생성 중이던 답장이 늦게 끝나도 새 이력이�
   await value.activate('haruka');
   expect(value.send('haruka', '초기화 전 문자', true, true)).toBe(true);
   await flush();
-  expect(release).toBeDefined();
+  await value.activate('majima');
+  expect(value.send('majima', '두 번째 옛 문자', true, true)).toBe(true);
+  await flush();
+  expect(releases.size).toBe(2);
   values.set(AI_RESET_KEY, 'after-reset');
   value.syncReset();
   await flush();
-  release(
-    Response.json({
-      job_id: 'old-job',
-      character: 'haruka',
-      status: 'complete',
-      reply: '늦은 옛 답장',
-    }),
-  );
+  for (const character of ['haruka', 'majima'] as const)
+    releases.get(`old-${character}`)!(
+      Response.json({
+        job_id: `old-${character}`,
+        character,
+        status: 'complete',
+        reply: '늦은 옛 답장',
+      }),
+    );
   await flush();
-  expect(oldHistoryCalls).toBe(1);
+  expect(oldHistoryCalls).toBe(2);
   expect(value.getSnapshot().threads.haruka.messages).toEqual([]);
   expect(value.getSnapshot().threads.haruka.pending).toBeNull();
+  expect(value.getSnapshot().threads.majima.messages).toEqual([]);
+  expect(value.getSnapshot().threads.majima.pending).toBeNull();
+  expect(value.getSnapshot().arrival).toBeNull();
+  expect(value.getSnapshot().notification).toBeNull();
   expect(value.getSnapshot().connection?.token).toBe('fresh-session');
 });
 
@@ -715,3 +748,39 @@ it.each([false, true])(
     expect(state.chats).toHaveLength(1);
   },
 );
+
+it('두 인물 답장이 같은 렌더 구간에 도착해도 arrival journal과 배너에 모두 남는다', async () => {
+  const { state } = mockService();
+  state.hold = true;
+  const value = store();
+  await value.activate('haruka');
+  value.send('haruka', '하루카 질문', true, true);
+  await flush();
+  await value.activate('majima');
+  value.send('majima', '마지마 질문', true, true);
+  await flush();
+  await value.activate(null);
+  state.hold = false;
+  await vi.advanceTimersByTimeAsync(30_000);
+  await flush();
+  const result = value.getSnapshot();
+  expect(result.arrival?.deliveredJobIds).toEqual(expect.arrayContaining(['job-1', 'job-2']));
+  expect(result.arrival?.deliveries).toHaveLength(2);
+  expect(result.unreadReplies).toHaveLength(2);
+  const first = result.notification!;
+  value.dismissNotification();
+  expect(value.getSnapshot().notification?.character).not.toBe(first.character);
+  value.dismissNotification();
+  expect(value.getSnapshot().notification).toBeNull();
+});
+it('정책 거절은 동일 요청 재시도가 아닌 수정 가능한 초안으로 돌린다', async () => {
+  const { state } = mockService();
+  state.reject = 400;
+  state.rejectCode = 'content_blocked';
+  const value = store();
+  await value.activate('haruka');
+  value.send('haruka', '거절 검사 문구', true, true);
+  await flush();
+  expect(value.getSnapshot().threads.haruka.pending).toBeNull();
+  expect(value.takeFailedMessage('haruka', true)?.reason).toBe('input');
+});

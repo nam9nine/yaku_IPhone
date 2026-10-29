@@ -14,16 +14,19 @@ export function usePushPresence(
 ) {
   const [clientId] = useState(() => crypto.randomUUID());
   const sequence = useRef(0);
-  const pendingReceipts = useRef<{ scope: string; ids: Set<string> } | null>(null);
-  const reportArrival = useRef<((jobId?: string) => void) | null>(null);
+  const pendingReceipts = useRef<{ scope: string; ids: Set<string>; seen: Set<string> } | null>(
+    null,
+  );
+  const reportArrival = useRef<((jobIds: string[]) => void) | null>(null);
   useEffect(() => {
     if (!connection) return;
     let stopped = false;
     let binding: PushBinding | null = null;
     const scope = connection.endpoint + ':' + connection.token;
     if (pendingReceipts.current?.scope !== scope)
-      pendingReceipts.current = { scope, ids: new Set<string>() };
+      pendingReceipts.current = { scope, ids: new Set<string>(), seen: new Set<string>() };
     const receipts = pendingReceipts.current.ids;
+    const seen = pendingReceipts.current.seen;
     const isActive = () => !stopped && inConversation && !document.hidden;
     async function report(inactive = false) {
       const revision = ++sequence.current;
@@ -57,8 +60,14 @@ export function usePushPresence(
     const leave = () => {
       void report(true);
     };
-    reportArrival.current = (jobId) => {
-      if (jobId && isActive()) receipts.add(jobId);
+    reportArrival.current = (jobIds) => {
+      if (isActive())
+        for (const jobId of jobIds) {
+          if (seen.has(jobId)) continue;
+          seen.add(jobId);
+          receipts.add(jobId);
+          if (seen.size > 200) seen.delete(seen.values().next().value!);
+        }
       void report();
     };
     refresh();
@@ -81,6 +90,6 @@ export function usePushPresence(
     };
   }, [connection, inConversation, clientId]);
   useEffect(() => {
-    reportArrival.current?.(arrival?.jobId);
+    reportArrival.current?.(arrival?.deliveredJobIds ?? (arrival?.jobId ? [arrival.jobId] : []));
   }, [arrival, connection, inConversation]);
 }

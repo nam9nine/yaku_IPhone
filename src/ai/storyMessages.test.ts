@@ -15,3 +15,17 @@ it('다른 연락처는 기존 스토리 답장을 유지한다', () => {
   expect(storyThreadMessages('daigo', true).at(-1)?.text).toBe(replyChoices.daigo.response);
   expect(storyThreadMessages('daigo', false)).toEqual(dayMessages.daigo);
 });
+
+it('AI 답변은 서버에서만 오고 별도 퀘스트/전화 문자는 로컬 원문으로 유지한다', async () => {
+  const { initialDay, dayReducer, getStoryChoices } = await import('../day/state');
+  let state = dayReducer(initialDay(), { type: 'reminder', id: 'garden', done: true });
+  const before = storyThreadMessages('haruka', state);
+  expect(before).toHaveLength(dayMessages.haruka.length + 1);
+  state = dayReducer(state, {
+    type: 'story-choice',
+    id: 'haruka',
+    choiceId: getStoryChoices(state, 'haruka')[0].id,
+    source: 'ai',
+  });
+  expect(storyThreadMessages('haruka', state)).toEqual(before);
+});

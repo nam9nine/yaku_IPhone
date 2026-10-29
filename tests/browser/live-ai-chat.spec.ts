@@ -156,6 +156,7 @@ async function mockMac(page: Page) {
             content: replyFor(character, job.request.message),
             time: '2026-10-25T00:00:01Z',
             status: 'complete',
+            request_id: job.request.request_id,
             job_id: job.id,
           });
         }
@@ -187,7 +188,9 @@ async function openThread(page: Page, character: Character) {
   const back = page.getByRole('button', { name: '메시지 목록으로 돌아가기', exact: true });
   if (await back.isVisible()) await back.tap();
   await page.locator(`[data-conversation=${character}]`).tap();
-  await expect(page.locator('.message-ai-input textarea')).toBeVisible();
+  if (character === 'majima')
+    await expect(page.locator('.message-ai-input textarea')).toBeVisible();
+  else await expect(page.locator('.message-ai-input textarea')).toHaveCount(0);
   await expect(page.getByText('대화를 불러오는 중…', { exact: true })).toHaveCount(0);
 }
 async function home(page: Page) {
@@ -235,18 +238,18 @@ test('기존 주소와 오래된 초대 주소 모두 설정 없이 열며 AI �
 test('새로고침 후 같은 토큰과 기록을 복원하며 초안은 전송하지 않는다', async ({ page }) => {
   const mac = await mockMac(page);
   await start(page);
-  await openThread(page, 'haruka');
+  await openThread(page, 'majima');
   await input(page).fill('남겨둘 대화');
   await send(page).tap();
-  await finishAiReply(page, 'haruka');
-  await expect(bubble(page, replyFor('haruka', '남겨둘 대화'))).toBeVisible();
+  await finishAiReply(page, 'majima');
+  await expect(bubble(page, replyFor('majima', '남겨둘 대화'))).toBeVisible();
   await input(page).fill('보내지 않은 초안');
   await page.reload();
   await unlockPhone(page);
   await launchHomeApp(page, 'messages');
-  await openThread(page, 'haruka');
-  await finishAiReply(page, 'haruka');
-  await expect(bubble(page, replyFor('haruka', '남겨둘 대화'))).toBeVisible();
+  await openThread(page, 'majima');
+  await finishAiReply(page, 'majima');
+  await expect(bubble(page, replyFor('majima', '남겨둘 대화'))).toBeVisible();
   expect(mac.sessions).toBe(1);
   expect(mac.chats).toHaveLength(1);
 });
@@ -274,7 +277,7 @@ test('서버가 꺼져도 연결 설정을 요구하지 않고 재시도로 복�
   const mac = await mockMac(page);
   mac.unavailable = true;
   await start(page);
-  await openThread(page, 'haruka');
+  await openThread(page, 'majima');
   await expect(page.getByRole('button', { name: '다시 시도', exact: true })).toBeVisible();
   await input(page).fill('복구 후 전송할 초안');
   await expect(send(page)).toBeDisabled();
@@ -286,8 +289,8 @@ test('서버가 꺼져도 연결 설정을 요구하지 않고 재시도로 복�
   await page.screenshot({ path: testInfo.outputPath('retry-ready.png'), animations: 'disabled' });
   expect(mac.chats).toEqual([]);
   await send(page).tap();
-  await finishAiReply(page, 'haruka');
-  await expect(bubble(page, replyFor('haruka', '복구 후 전송할 초안'))).toBeVisible();
+  await finishAiReply(page, 'majima');
+  await expect(bubble(page, replyFor('majima', '복구 후 전송할 초안'))).toBeVisible();
 });
 
 test('이전 대화를 추가해도 중복하거나 오래된 null 시간을 새 날짜로 만들지 않는다', async ({
@@ -311,21 +314,22 @@ test('이전 대화를 추가해도 중복하거나 오래된 null 시간을 새
   await expect(page.getByRole('button', { name: '이전 대화 더 보기', exact: true })).toHaveCount(0);
 });
 
-test('두 인물의 자유 입력과 한글 조합·줄바꿈을 처리하고 연속 전송을 한 번만 보낸다', async ({
+test('마지마의 자유 입력과 한글 조합·줄바꿈을 처리하고 연속 전송을 한 번만 보낸다', async ({
   page,
 }) => {
   const mac = await mockMac(page);
   await start(page);
-  for (const character of ['haruka', 'majima'] as const) {
+  for (let index = 0; index < 2; index++) {
+    const character = 'majima' as const;
     await openThread(page, character);
-    await input(page).fill(`${character}에게 인사`);
+    await input(page).fill(`${character}에게 인사 ${index + 1}`);
     await input(page).dispatchEvent('keydown', {
       key: 'Enter',
       keyCode: 229,
       isComposing: true,
       bubbles: true,
     });
-    expect(mac.chats).toHaveLength(character === 'haruka' ? 0 : 1);
+    expect(mac.chats).toHaveLength(index);
     await input(page).press('End');
     await input(page).press('Shift+Enter');
     await input(page).pressSequentially('다음 줄');
@@ -340,31 +344,32 @@ test('두 인물의 자유 입력과 한글 조합·줄바꿈을 처리하고 �
     await expect(bubble(page, text)).toHaveCount(1);
     await expect(input(page)).toHaveValue('');
   }
-  expect(mac.chats.map(({ character }) => character)).toEqual(['haruka', 'majima']);
+  expect(mac.chats.map(({ character }) => character)).toEqual(['majima', 'majima']);
   expect(new Set(mac.chats.map(({ request_id }) => request_id)).size).toBe(2);
 });
 
 test('답장 대기 중 홈과 다른 대화로 이동해도 원래 대화에만 답장이 들어온다', async ({ page }) => {
   const mac = await mockMac(page);
-  mac.hold.add('haruka');
+  mac.hold.add('majima');
   await start(page);
-  await openThread(page, 'haruka');
+  await openThread(page, 'majima');
   await input(page).fill('집에 돌아가고 있어');
   await send(page).tap();
-  await expect(page.getByRole('status', { name: '하루카 답장 작성 중' })).toHaveCount(0);
-  await showAiTyping(page, 'haruka');
-  await expect(page.getByRole('status', { name: '하루카 답장 작성 중' })).toBeVisible();
+  await expect(page.getByRole('status', { name: '마지마 답장 작성 중' })).toHaveCount(0);
+  await showAiTyping(page, 'majima');
+  await expect(page.locator('.message-typing')).toHaveCount(0);
+  await expect(page.locator('.message-time').last()).toContainText('읽음');
   await home(page);
   await launchHomeApp(page, 'messages');
-  await openThread(page, 'majima');
-  mac.hold.delete('haruka');
+  await openThread(page, 'haruka');
+  mac.hold.delete('majima');
   await settleAiRequests(page);
   await page.clock.fastForward(1000);
-  await expect.poll(() => mac.history.haruka.length).toBe(2);
-  await expect(bubble(page, replyFor('haruka', '집에 돌아가고 있어'))).toHaveCount(0);
-  await openThread(page, 'haruka');
-  await finishAiReply(page, 'haruka');
-  await expect(bubble(page, replyFor('haruka', '집에 돌아가고 있어'))).toBeVisible();
+  await expect.poll(() => mac.history.majima.length).toBe(2);
+  await expect(bubble(page, replyFor('majima', '집에 돌아가고 있어'))).toHaveCount(0);
+  await openThread(page, 'majima');
+  await finishAiReply(page, 'majima');
+  await expect(bubble(page, replyFor('majima', '집에 돌아가고 있어'))).toBeVisible();
   await expect(bubble(page, '집에 돌아가고 있어')).toHaveCount(1);
   expect(mac.chats).toHaveLength(1);
 });
@@ -399,7 +404,7 @@ test('영구 입력 오류와 답변 길이 오류는 원문을 다시 작성해
   const mac = await mockMac(page);
   mac.rejectOnce = 422;
   await start(page);
-  await openThread(page, 'haruka');
+  await openThread(page, 'majima');
   await expect(input(page)).toHaveAttribute('maxlength', '1000');
   await input(page).fill('원래 질문');
   await send(page).tap();
@@ -419,8 +424,8 @@ test('영구 입력 오류와 답변 길이 오류는 원문을 다시 작성해
   await expect(input(page)).toHaveValue('수정한 질문');
   await input(page).fill('짧은 질문');
   await send(page).tap();
-  await finishAiReply(page, 'haruka');
-  await expect(bubble(page, replyFor('haruka', '짧은 질문'))).toBeVisible();
+  await finishAiReply(page, 'majima');
+  await expect(bubble(page, replyFor('majima', '짧은 질문'))).toBeVisible();
   expect(new Set(mac.chats.map(({ request_id }) => request_id)).size).toBe(3);
 });
 
@@ -439,7 +444,7 @@ test('장보기와 마지마 스토리 답장도 모델에 전송하고 오류�
   await start(page);
   await openThread(page, 'haruka');
   mac.rejectOnce = 503;
-  await page.locator('.message-story-reply').tap();
+  await page.locator('.message-story-reply').first().tap();
   await expect(
     page.getByText('지금은 답장을 받을 수 없습니다. 잠시 후 다시 시도해 주세요.', { exact: true }),
   ).toBeVisible();
@@ -466,7 +471,7 @@ test('장보기와 마지마 스토리 답장도 모델에 전송하고 오류�
     .toBe(true);
   await page.getByRole('button', { name: '메시지 목록으로 돌아가기', exact: true }).tap();
   await openThread(page, 'majima');
-  await page.locator('.message-story-reply').tap();
+  await page.locator('.message-story-reply').first().tap();
   await finishAiReply(page, 'majima');
   await expect(bubble(page, replyFor('majima', replyChoices.majima.text))).toBeVisible();
   await expect(bubble(page, replyChoices.majima.response)).toHaveCount(0);
@@ -612,21 +617,21 @@ for (const [width, height] of [
   [390, 420],
   [430, 932],
 ]) {
-  test(`긴 대화에서 전송과 작성 말풍선 시작은 하단 전체를 노출한다 ${width}x${height}`, async ({
+  test(`긴 대화에서 전송·읽음·수신 시점의 하단과 대기 상태를 확인한다 ${width}x${height}`, async ({
     page,
   }) => {
     await page.setViewportSize({ width, height });
     const mac = await mockMac(page);
-    mac.history.haruka = Array.from({ length: 30 }, (_, index) => ({
+    mac.history.majima = Array.from({ length: 32 }, (_, index) => ({
       id: `scroll-history-${index}`,
       role: index % 2 ? 'assistant' : 'user',
       content: `지난 대화 ${index + 1}. 저녁 준비 이야기를 이어갑니다.`,
       time: '2026-10-25T00:00:00Z',
       status: 'complete',
     }));
-    mac.hold.add('haruka');
+    mac.hold.add('majima');
     await start(page);
-    await openThread(page, 'haruka');
+    await openThread(page, 'majima');
     const log = page.locator('.message-history');
     const bottomGap = () => log.evaluate((el) => el.scrollHeight - el.clientHeight - el.scrollTop);
     expect(await log.evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(true);
@@ -642,38 +647,39 @@ for (const [width, height] of [
       el.scrollTop = Math.max(0, el.scrollHeight - el.clientHeight - 80);
       el.dispatchEvent(new Event('scroll'));
     });
-    await showAiTyping(page, 'haruka');
-    await expect(page.locator('.message-typing')).toBeVisible();
+    await showAiTyping(page, 'majima');
+    await expect(page.locator('.message-typing')).toHaveCount(0);
+    await expect(page.locator('.message-time').last()).toContainText('읽음');
+    await expect(
+      page.getByText('답장 대기 중 · 다른 연락처에는 보낼 수 있어요.', { exact: true }),
+    ).toBeVisible();
+    mac.hold.delete('majima');
+    await finishAiReply(page, 'majima');
     await expect.poll(bottomGap).toBeLessThanOrEqual(1);
-    const visible = await page.locator('.message-typing').evaluate((el) => {
-      const bubble = el.getBoundingClientRect();
+    const latest = bubble(page, replyFor('majima', '저녁 준비를 마쳤다.'));
+    await expect(latest).toBeInViewport();
+    const visible = await latest.evaluate((el) => {
+      const rect = el.getBoundingClientRect();
       const viewport = el.closest('.message-history')!.getBoundingClientRect();
-      return bubble.top >= viewport.top && bubble.bottom <= viewport.bottom;
+      return rect.top >= viewport.top && rect.bottom <= viewport.bottom;
     });
     expect(visible).toBe(true);
-    if (width === 390 && height === 420)
-      await page.screenshot({
-        path: `harness/evidence/issue-99/typing-scroll-${test.info().project.name}.png`,
-      });
-    mac.hold.delete('haruka');
-    await finishAiReply(page, 'haruka');
-    await expect.poll(bottomGap).toBeLessThanOrEqual(1);
   });
 }
 
 test('밖에서 받은 상단 알림은 저장된 과거 위치보다 최신 답장 하단으로 연다', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 620 });
   const mac = await mockMac(page);
-  mac.history.haruka = Array.from({ length: 30 }, (_, index) => ({
+  mac.history.majima = Array.from({ length: 32 }, (_, index) => ({
     id: `notify-history-${index}`,
     role: index % 2 ? 'assistant' : 'user',
     content: `지난 대화 ${index + 1}`,
     time: null,
     status: 'complete',
   }));
-  mac.hold.add('haruka');
+  mac.hold.add('majima');
   await start(page);
-  await openThread(page, 'haruka');
+  await openThread(page, 'majima');
   await input(page).fill('알림에서 이 답장으로 돌아온다.');
   await send(page).tap();
   const log = page.locator('.message-history');
@@ -683,8 +689,8 @@ test('밖에서 받은 상단 알림은 저장된 과거 위치보다 최신 답
     el.dispatchEvent(new Event('scroll'));
   });
   await home(page);
-  mac.hold.delete('haruka');
-  await finishAiReply(page, 'haruka');
+  mac.hold.delete('majima');
+  await finishAiReply(page, 'majima');
   const banner = page.locator('.ai-reply-banner');
   await expect(banner).toBeVisible();
   await banner.locator('.day-notification').tap();
@@ -692,7 +698,7 @@ test('밖에서 받은 상단 알림은 저장된 과거 위치보다 최신 답
   await expect
     .poll(() => log.evaluate((el) => el.scrollHeight - el.clientHeight - el.scrollTop))
     .toBeLessThanOrEqual(1);
-  await expect(bubble(page, replyFor('haruka', '알림에서 이 답장으로 돌아온다.'))).toBeInViewport();
+  await expect(bubble(page, replyFor('majima', '알림에서 이 답장으로 돌아온다.'))).toBeInViewport();
   await page.screenshot({
     path: `harness/evidence/issue-99/notification-open-${test.info().project.name}.png`,
   });
@@ -705,7 +711,7 @@ for (const theme of ['dark', 'light'] as const) {
     await page.emulateMedia({ colorScheme: theme });
     await mockMac(page);
     await start(page);
-    await openThread(page, 'haruka');
+    await openThread(page, 'majima');
     await input(page).fill('오늘 저녁에는 뭘 먹을까?');
     // Model a keyboard's visual viewport shrink; this is not a physical iOS keyboard.
     await page.evaluate(() => {
@@ -745,7 +751,7 @@ for (const mode of ['before-resize', 'resized-layout', 'standalone-offset'] as c
       });
     await mockMac(page);
     await start(page);
-    await openThread(page, 'haruka');
+    await openThread(page, 'majima');
     // Keep a real home-indicator safe area even where keyboard height detection fails.
     await page
       .locator('.mobile-shell')
@@ -803,17 +809,17 @@ test('다른 채팅방을 보고 있을 때는 상단 배너를 띄우지 않고
   page,
 }) => {
   const mac = await mockMac(page);
-  mac.hold.add('haruka');
+  mac.hold.add('majima');
   await start(page);
-  await openThread(page, 'haruka');
+  await openThread(page, 'majima');
   await input(page).fill('다른 방에서 답장을 기다린다.');
   await send(page).tap();
-  await openThread(page, 'majima');
-  mac.hold.delete('haruka');
-  await finishAiReply(page, 'haruka');
+  await openThread(page, 'haruka');
+  mac.hold.delete('majima');
+  await finishAiReply(page, 'majima');
   await expect(page.locator('.ai-reply-banner')).toHaveCount(0);
   await page.getByRole('button', { name: '메시지 목록으로 돌아가기', exact: true }).tap();
-  await expect(page.locator('[data-conversation=haruka] .message-unread')).toHaveAttribute(
+  await expect(page.locator('[data-conversation=majima] .message-unread')).toHaveAttribute(
     'data-unread',
     'true',
   );

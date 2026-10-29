@@ -32,6 +32,7 @@ import { CalendarApp } from './day/CalendarApp';
 import { MusicApp, TaxiApp, CookingApp } from './lifestyle/LifestyleApps';
 import { DayCall } from './components/DayCall';
 import { DayNotification } from './components/DayNotification';
+import { StoryReplyNotifications, StoryNotificationList } from './day/StoryReplyNotifications';
 import { resetStoryStorage } from './story/useStoredState';
 import { consumeNotificationLink, disablePush, registerPushWorker } from './ai/push';
 import { resetAiConnection } from './ai/connection';
@@ -73,10 +74,14 @@ function PhoneSession() {
   const ai = useAiMessenger(
     isOnline(preferences),
     isAiCharacter(conversation ?? undefined) ? (conversation as 'haruka' | 'majima') : null,
-    !state.locked && state.activeApp === 'messages' && !state.panel,
+    !state.locked && state.activeApp === 'messages' && !state.panel && !day.state.call,
   );
   const inConversation =
-    !state.locked && state.activeApp === 'messages' && !!conversation && !state.panel;
+    !state.locked &&
+    state.activeApp === 'messages' &&
+    !!conversation &&
+    !state.panel &&
+    !day.state.call;
   usePushPresence(ai.connection, inConversation, ai.arrival);
   const appearance = useAppearance(preferences);
   const viewport = useViewport();
@@ -287,7 +292,7 @@ function PhoneSession() {
           ) : app === 'messages' ? (
             <MessagesApp
               ai={ai}
-              active={!state.locked && state.activeApp === app && !state.panel}
+              active={!state.locked && state.activeApp === app && !state.panel && !day.state.call}
               selected={conversation}
               requestedLatest={messageEntry}
               onSelect={setConversation}
@@ -369,6 +374,7 @@ function PhoneSession() {
           notifications={
             <>
               <AiReplyNotifications replies={ai.unreadReplies} onOpen={openConversation} />
+              <StoryNotificationList onOpen={openConversation} />
               <DayNotification onOpen={openHaruka} onCall={openPhone} />
             </>
           }
@@ -389,16 +395,28 @@ function PhoneSession() {
         inConversation={inConversation}
         obscured={!!unlockRequest || state.panel === 'notifications'}
       />
+      <StoryReplyNotifications
+        key={`story-replies-${epoch}`}
+        onOpen={openConversation}
+        inConversation={inConversation}
+        activeCharacter={inConversation ? conversation : null}
+        obscured={
+          !!unlockRequest ||
+          state.panel === 'notifications' ||
+          !!ai.notification ||
+          !!day.state.call
+        }
+        silent={controls.silent}
+        volume={controls.volume}
+      />
       <DayCall
         silent={controls.silent}
         volume={controls.volume}
         preferences={preferences}
         key={epoch}
         locked={state.locked}
-        onMessage={() => {
-          setConversation('majima');
-          openApp('messages');
-        }}
+        active={!state.locked && !unlockRequest}
+        onMessage={openConversation}
       />
       {unlockRequest && (
         <PasscodeScreen

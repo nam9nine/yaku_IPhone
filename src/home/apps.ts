@@ -46,7 +46,7 @@ export const homePages: readonly (readonly HomeApp[])[] = [
     { id: 'contacts', name: '연락처' },
     { id: 'music', name: '음악' },
     { id: 'taxi', name: '택시' },
-    { id: 'cooking', name: '드래곤 카레' },
+    { id: 'cooking', name: '나팔꽃키친' },
     { id: 'karaoke', name: '가라오케관' },
   ],
 ];

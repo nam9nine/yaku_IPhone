@@ -6,77 +6,76 @@ import { PhoneIcon } from '../story/PhoneIcon';
 import { contacts } from '../story/data';
 import { useDisplayDate } from '../display/useDisplayDate';
 import { useRingtone } from './useRingtone';
+import type { ContactId } from '../day/content';
 import './day-call.css';
-const caller = contacts.find((person) => person.id === 'majima')!;
+import '../story/phone.css';
 export function DayCall({
   locked,
+  active = !locked,
   onMessage,
   preferences,
   silent,
   volume,
 }: {
   locked: boolean;
-  onMessage: () => void;
+  active?: boolean;
+  onMessage: (id: ContactId) => void;
   preferences: DevicePreferences;
   silent: boolean;
   volume: number;
 }) {
-  const { state, dispatch } = useDay();
-  const ringing = state.callStatus === 'ringing';
+  const { state, dispatch, setCallActivity } = useDay();
+  const call = state.call;
+  const caller = contacts.find((person) => person.id === call?.caller);
+  const name = caller?.id === 'majima' ? '마지마 형님' : caller?.shortName;
+  const ringing = call?.phase === 'ringing';
+  const connected = call?.phase === 'connected';
+  const outgoing = call?.direction === 'outgoing';
+  const seconds = Math.floor((call?.elapsedMs ?? 0) / 1000);
+  useEffect(() => {
+    setCallActivity(active);
+    return () => setCallActivity(false);
+  }, [active, setCallActivity]);
   const date = useDisplayDate();
-  useRingtone(ringing, silent, volume);
-  const [connected, setConnected] = useState(false);
-  const [seconds, setSeconds] = useState(0);
+  useRingtone(ringing && !outgoing, silent, volume, caller?.id === 'majima' ? 'majima' : 'other');
   const [muted, setMuted] = useState(false);
   const [speaker, setSpeaker] = useState(false);
-  const [expanded, setExpanded] = useState(false);
+  const [expandedCall, setExpandedCall] = useState<string | null>(null);
+  const expanded = expandedCall === call?.id;
   const dialog = useRef<HTMLDialogElement>(null);
   const slider = useRef<{ id: number; x: number } | null>(null);
   const [slide, setSlide] = useState(0);
-  const full = connected || (ringing && (locked || expanded));
-  useEffect(() => {
-    if (!ringing) return;
-    const timer = setTimeout(() => dispatch({ type: 'miss-call' }), 15000);
-    return () => clearTimeout(timer);
-  }, [ringing, dispatch]);
-  useEffect(() => {
-    if (!connected) return;
-    const timer = setInterval(() => setSeconds((value) => value + 1), 1000);
-    return () => clearInterval(timer);
-  }, [connected]);
+  const full = connected || (ringing && (locked || expanded || outgoing));
   useLayoutEffect(() => {
     if (full) dialog.current?.showModal();
     else dialog.current?.close();
   }, [full]);
   function answer() {
     if (!ringing) return;
-    setConnected(true);
-    setSeconds(0);
     dispatch({ type: 'answer-call' });
   }
   function decline() {
-    dispatch({ type: 'miss-call' });
-    setConnected(false);
-    setExpanded(false);
+    dispatch({ type: 'end-call' });
+    setExpandedCall(null);
   }
-  if (!ringing && !connected) return null;
+  if (!call || !caller || (!ringing && !connected)) return null;
   return (
     <>
       {!full && (
         <aside
           className="incoming-call-banner day-call"
-          aria-label="마지마 형님 전화 수신"
+          aria-label={`${name} 전화 수신`}
           role="region"
         >
           <button
             className="incoming-caller"
-            onClick={() => setExpanded(true)}
+            onClick={() => setExpandedCall(call.id)}
             aria-label="수신 전화 전체 화면"
           >
             <img src={caller.portrait} alt="" />
             <span>
               <small>iPhone · 전화</small>
-              <strong>마지마형님</strong>
+              <strong>{name}</strong>
             </span>
           </button>
           <button className="call-action call-decline" aria-label="전화 거절" onClick={decline}>
@@ -101,7 +100,7 @@ export function DayCall({
           const index = buttons.indexOf(document.activeElement as HTMLButtonElement);
           buttons[(index + (event.shiftKey ? -1 : 1) + buttons.length) % buttons.length].focus();
         }}
-        aria-label={connected ? '마지마 형님과 통화' : '마지마 형님 전화 수신'}
+        aria-label={connected ? `${name} 통화` : `${name} 전화 ${outgoing ? '발신' : '수신'}`}
         onCancel={(event) => {
           event.preventDefault();
           decline();
@@ -117,11 +116,16 @@ export function DayCall({
                 ? `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`
                 : date.clock}
             </p>
-            <h1>마지마형님</h1>
-            {!connected && <p className="call-kind">휴대전화</p>}
+            <h1>{name}</h1>
+            {!connected && <p className="call-kind">{outgoing ? '연결 중…' : '휴대전화'}</p>}
           </div>
           {connected ? (
             <>
+              <div className="call-transcript" role="log" aria-live="polite" aria-label="통화 내용">
+                {call.lines.slice(0, Math.floor(call.elapsedMs / 5000) + 1).map((line, index) => (
+                  <p key={`${call.id}-${index}`}>{line}</p>
+                ))}
+              </div>
               <div className="call-tools">
                 <button aria-pressed={muted} onClick={() => setMuted(!muted)}>
                   <span>
@@ -136,18 +140,26 @@ export function DayCall({
               <button
                 className="call-action call-decline call-end"
                 aria-label="통화 종료"
-                onClick={() => setConnected(false)}
+                onClick={decline}
               >
                 <PhoneIcon name="call" />
               </button>
             </>
+          ) : outgoing ? (
+            <button
+              className="call-action call-decline call-end outgoing-cancel"
+              aria-label="발신 취소"
+              onClick={decline}
+            >
+              <PhoneIcon name="call" />
+            </button>
           ) : (
             <>
               <div className="call-secondary">
                 <button
                   onClick={() => {
                     decline();
-                    onMessage();
+                    onMessage(call.caller);
                   }}
                 >
                   <span>▤</span>메시지

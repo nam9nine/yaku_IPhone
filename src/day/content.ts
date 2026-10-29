@@ -18,6 +18,8 @@ export const reminders = [
   { id: 'shopping', title: '저녁 장보기', detail: '17:00 · 저녁 카레 재료' },
   { id: 'garden', title: '텃밭 물 주기', detail: '해가 기울면' },
   { id: 'mame', title: '마메 밥 주기', detail: '저녁 먹기 전에' },
+  { id: 'uniform', title: '체육복 이름표 달기', detail: '풀린 실 다시 꿰매기' },
+  { id: 'parcel', title: '택배 수령하기', detail: '다테 씨가 보낸 봉투 확인' },
 ] as const;
 export type ReminderId = (typeof reminders)[number]['id'];
 export const contactIds = [
@@ -28,7 +30,7 @@ export const contactIds = [
   'mine',
   'date',
   'akiyama',
-  'nishiki',
+  'yuki',
 ] as const;
 export type ContactId = (typeof contactIds)[number];
 export interface DayMessage {
@@ -37,32 +39,16 @@ export interface DayMessage {
   outgoing: boolean;
   time: string;
   noteId?: string;
+  sequence?: number;
+}
+export interface StoryChoice {
+  id: string;
+  text: string;
+  response: string;
+  affinityDelta?: number;
+  quest?: ReminderId;
 }
 export const dayMessages: Record<ContactId, DayMessage[]> = {
-  akiyama: [
-    {
-      id: 'akiyama1',
-      text: '키류 씨, 다음에 갈 때 아이들 간식 좀 사 갈게요. 몇 명 몫이면 될까요?',
-      outgoing: false,
-      time: '14:30',
-    },
-  ],
-  nishiki: [
-    {
-      id: 'nishiki1',
-      text: '키류, 오늘도 카레냐? 네 몫도 넉넉히 해 둬. 애들 챙기다 다 식겠다.',
-      outgoing: false,
-      time: '14:10',
-    },
-  ],
-  date: [
-    {
-      id: 'date1',
-      text: '키류, 아이들은 잘 지내나? 너도 끼니 거르지 말고.',
-      outgoing: false,
-      time: '15:45',
-    },
-  ],
   haruka: [
     { id: 'h1', text: '아저씨, 오늘 저녁은 카레 어때요?', outgoing: false, time: '16:25' },
     { id: 'h2', text: '좋다. 장은 내가 봐 오겠다.', outgoing: true, time: '16:28' },
@@ -75,17 +61,25 @@ export const dayMessages: Record<ContactId, DayMessage[]> = {
     },
   ],
   majima: [
+    { id: 'm1', text: '키류쨩! 폰은 들고 다니는 기 맞나?', outgoing: false, time: '어제' },
     {
-      id: 'm1',
-      text: '키류 짱! 오늘 저녁 뭐 묵노? 애들한테 안부 전해라!',
+      id: 'm2',
+      text: '전화도 안 받고. 혼자 재밌는 거라도 찾았나 보네.',
       outgoing: false,
-      time: '15:10',
+      time: '어제',
     },
+    {
+      id: 'm3',
+      text: '못 봤다고 또 그러지 마라. 여기 남겨놓는다.',
+      outgoing: false,
+      time: '11:10',
+    },
+    { id: 'm4', text: '오늘은 한 판 받아줄 시간이 있겠제?', outgoing: false, time: '15:10' },
   ],
   daigo: [
     {
       id: 'd1',
-      text: '키류 씨, 아이들은 잘 지내나요? 오키나와의 바다가 생각납니다.',
+      text: '키류 씨, 잠시 의견을 여쭙고 싶습니다. 제가 직접 확인해야 할 일 같아서요.',
       outgoing: false,
       time: '어제',
     },
@@ -93,7 +87,7 @@ export const dayMessages: Record<ContactId, DayMessage[]> = {
   saejima: [
     {
       id: 's1',
-      text: '잘 지내나. 애들 챙기느라 네 밥 거르지 마라.',
+      text: '키류, 시간 있으면 한 바퀴 걷자. 오래 앉아 있었더니 몸이 굳었다.',
       outgoing: false,
       time: '어제',
     },
@@ -101,39 +95,367 @@ export const dayMessages: Record<ContactId, DayMessage[]> = {
   mine: [
     {
       id: 'n1',
-      text: '아이들이 쓸 공책이 더 필요하면 말씀해 주십시오.',
+      text: '키류 씨. 도지마 씨께 전할 서류를 맡아 두었습니다. 전달할 시간이 정해지면 알려주십시오.',
       outgoing: false,
       time: '어제',
     },
   ],
+  date: [
+    {
+      id: 'date1',
+      text: '키류, 자네한테 확인할 게 있네. 문자 봤으면 연락 좀 주게.',
+      outgoing: false,
+      time: '15:45',
+    },
+  ],
+  akiyama: [
+    {
+      id: 'akiyama1',
+      text: '키류 씨, 커피 한 잔 하시죠. 이번에는 제가 늦지 않겠습니다. 아마도요.',
+      outgoing: false,
+      time: '14:30',
+    },
+  ],
+  yuki: [
+    {
+      id: 'yuki1',
+      text: '점장님, 오늘은 언제 들르세요? 손님 오시기 전에 잠깐 봐주셨으면 해서요.',
+      outgoing: false,
+      time: '14:10',
+    },
+  ],
 };
-export const replyChoices: Record<ContactId, { text: string; response: string }> = {
-  akiyama: {
-    text: '고맙다. 하루카에게 물어보고 알려 주겠다. 네 몫도 챙겨라.',
-    response: '하하, 제 몫까지요? 알겠습니다. 연락 기다릴게요.',
+/** Authored IF choices. Three short exchanges, not fabricated model output. */
+export const storyRounds: Record<ContactId, StoryChoice[][]> = {
+  daigo: [
+    [
+      {
+        id: 'daigo-1a',
+        text: '네가 직접 보고 판단해라. 이야기는 듣겠다.',
+        response: '네. 먼저 제가 확인하겠습니다. 그 뒤에 말씀드리겠습니다.',
+      },
+      {
+        id: 'daigo-1b',
+        text: '지금 급한 일인가?',
+        response: '당장 결론 낼 일은 아닙니다. 시간을 내 주실 때 말씀드리겠습니다.',
+      },
+    ],
+    [
+      {
+        id: 'daigo-2a',
+        text: '혼자 모든 걸 떠안을 필요는 없다.',
+        response: '알고 있습니다. 맡길 일과 제가 해야 할 일을 나눠 보겠습니다.',
+      },
+      {
+        id: 'daigo-2b',
+        text: '확인하고 나서 다시 연락해라.',
+        response: '네. 추측만으로 말씀드리지 않겠습니다.',
+      },
+    ],
+    [
+      {
+        id: 'daigo-3a',
+        text: '그래. 기다리마.',
+        response: '감사합니다, 키류 씨. 정리되면 연락드리겠습니다.',
+      },
+      { id: 'daigo-3b', text: '무리하지 마라.', response: '키류 씨도요. 이따 뵙겠습니다.' },
+    ],
+  ],
+  saejima: [
+    [
+      {
+        id: 'saejima-1a',
+        text: '좋다. 조금 걸을까.',
+        response: '그래. 서두를 것 없으니 천천히 나오너라.',
+      },
+      {
+        id: 'saejima-1b',
+        text: '지금은 할 일이 있다. 나중에 보자.',
+        response: '볼일부터 봐라. 시간 나면 말하고.',
+      },
+    ],
+    [
+      {
+        id: 'saejima-2a',
+        text: '어디로 가고 싶나?',
+        response: '사람 적은 길이면 된다. 바람이나 좀 쐬자.',
+      },
+      {
+        id: 'saejima-2b',
+        text: '걷고 나서 뭐라도 먹자.',
+        response: '좋지. 배고프면 아무리 걸어도 성이 안 찬다.',
+      },
+    ],
+    [
+      { id: 'saejima-3a', text: '준비되면 연락하겠다.', response: '알았다. 기다리마.' },
+      { id: 'saejima-3b', text: '다음에 내가 먼저 부르마.', response: '그래. 빈말로만 하지 말고.' },
+    ],
+  ],
+  mine: [
+    [
+      {
+        id: 'mine-1a',
+        text: '고맙다. 다이고에게도 말해 두겠다.',
+        response: '네. 서류는 제가 가지고 있겠습니다.',
+      },
+      {
+        id: 'mine-1b',
+        text: '다이고와 직접 시간을 맞춰 줘라.',
+        response: '알겠습니다. 도지마 씨의 일정에 맞추겠습니다.',
+      },
+    ],
+    [
+      {
+        id: 'mine-2a',
+        text: '빠진 것은 없나?',
+        response: '확인했습니다. 추가할 것이 생기면 별도로 말씀드리겠습니다.',
+      },
+      {
+        id: 'mine-2b',
+        text: '급하게 서두를 필요는 없다.',
+        response: '네. 다만 전달이 늦어지지 않도록 준비해 두겠습니다.',
+      },
+    ],
+    [
+      { id: 'mine-3a', text: '알았다. 수고했다.', response: '필요하신 일이 있으면 연락주십시오.' },
+      { id: 'mine-3b', text: '다이고를 잘 부탁한다.', response: '그럴 생각입니다, 키류 씨.' },
+    ],
+  ],
+  date: [
+    [
+      {
+        id: 'date-1a',
+        text: '다테 씨, 무슨 일입니까?',
+        response: '큰일은 아니네. 자네가 또 혼자 나선 건 아닌지 물으려던 참이야.',
+      },
+      {
+        id: 'date-1b',
+        text: '문자 봤습니다. 지금 말씀하시죠.',
+        response: '이번에는 빨리 봤군. 별일 없는 거지?',
+      },
+    ],
+    [
+      {
+        id: 'date-2a',
+        text: '별일 없습니다. 걱정하지 마십시오.',
+        response: '그 말이 제일 걱정된다니까. 무슨 일 있으면 먼저 말하게.',
+      },
+      {
+        id: 'date-2b',
+        text: '일이 생기면 먼저 연락드리겠습니다.',
+        response: '좋아. 혼자 다 끝내 놓고 연락하지 말고.',
+      },
+    ],
+    [
+      { id: 'date-3a', text: '알겠습니다, 다테 씨.', response: '그래. 나도 다시 연락하겠네.' },
+      {
+        id: 'date-3b',
+        text: '다음에 식사라도 하시죠.',
+        response: '그거 좋지. 날짜 잡히면 알려주게.',
+      },
+    ],
+  ],
+  akiyama: [
+    [
+      {
+        id: 'akiyama-1a',
+        text: '이번에는 늦지 마라.',
+        response: '하하, 벌써 못 믿으시는 겁니까? 알겠습니다.',
+      },
+      {
+        id: 'akiyama-1b',
+        text: '좋다. 편한 때 연락해라.',
+        response: '네. 일 마무리하고 연락드릴게요.',
+      },
+    ],
+    [
+      {
+        id: 'akiyama-2a',
+        text: '일은 잘 되어가나?',
+        response: '쉽지는 않죠. 그래도 제가 벌인 일이니까 해봐야죠.',
+      },
+      {
+        id: 'akiyama-2b',
+        text: '커피는 내가 사마.',
+        response: '그럼 다음 잔은 제가 사겠습니다. 한 잔으로 끝날지는 모르겠네요.',
+      },
+    ],
+    [
+      { id: 'akiyama-3a', text: '그럼 나중에 보자.', response: '네, 키류 씨. 연락드리겠습니다.' },
+      {
+        id: 'akiyama-3b',
+        text: '알았다. 지각하면 먼저 마시고 있겠다.',
+        response: '너무 오래 기다리게 하지는 않을게요.',
+      },
+    ],
+  ],
+  yuki: [
+    [
+      {
+        id: 'yuki-1a',
+        text: '조금 있다 들르겠다. 무슨 일이지?',
+        response: '자리 배치를 조금 바꿨거든요. 한 번만 봐주세요!',
+      },
+      {
+        id: 'yuki-1b',
+        text: '오늘은 늦을 것 같다. 먼저 준비해 줘.',
+        response: '네. 급한 일은 아니니까 천천히 오세요.',
+      },
+    ],
+    [
+      {
+        id: 'yuki-2a',
+        text: '불편한 곳이 있으면 말해라.',
+        response: '입구 쪽이 조금 좁아 보여요. 제가 옮겨보고 말씀드릴게요.',
+      },
+      {
+        id: 'yuki-2b',
+        text: '네가 편한 쪽으로 해도 된다.',
+        response: '정말요? 그럼 제가 해볼게요. 나중에 꼭 봐주세요.',
+      },
+    ],
+    [
+      { id: 'yuki-3a', text: '수고했다. 도착하면 보마.', response: '네, 점장님. 기다릴게요!' },
+      {
+        id: 'yuki-3b',
+        text: '무리해서 혼자 옮기지 마라.',
+        response: '알겠어요. 무거운 건 남겨둘게요.',
+      },
+    ],
+  ],
+  haruka: [
+    [
+      {
+        id: 'haruka-shopping',
+        text: '메모에 적힌 카레 재료는 다 샀다.',
+        response: '고마워요. 돌아오시면 같이 정리해요.',
+        quest: 'shopping',
+      },
+    ],
+    [
+      {
+        id: 'haruka-garden',
+        text: '오늘 할 일에 적힌 텃밭 물 주기는 끝냈다.',
+        response: '고마워요! 잎도 한 번 봐주세요. 저는 저녁 준비할게요.',
+        quest: 'garden',
+      },
+    ],
+    [
+      {
+        id: 'haruka-mame',
+        text: '오늘 할 일에 적힌 마메 밥 주기도 끝냈다.',
+        response: '마메가 신났겠네요. 이제 아저씨도 잠깐 쉬세요.',
+        quest: 'mame',
+      },
+    ],
+    [
+      {
+        id: 'haruka-uniform',
+        text: '아이들 체육복에 풀린 이름표를 다시 달아뒀다.',
+        response: '고마워요. 내일 헷갈리지 않게 각자 챙겨둘게요.',
+        quest: 'uniform',
+      },
+    ],
+  ],
+  majima: [
+    [
+      {
+        id: 'majima-1a',
+        text: '형님, 시간 되면 한 판 하시죠.',
+        response: '이제야 말이 통하네! 그 말, 잊어버렸다 카지 마라.',
+        affinityDelta: 1,
+      },
+      {
+        id: 'majima-1b',
+        text: '오늘은 다른 볼일이 있습니다. 나중에 뵙죠.',
+        response: '또 볼일이가. 좋다, 나중에는 니가 먼저 불러라.',
+        affinityDelta: -1,
+      },
+    ],
+    [
+      {
+        id: 'majima-2a',
+        text: '약속은 기억하고 있습니다.',
+        response: '말로만 하지 말고. 기다리는 것도 한두 번이제.',
+        affinityDelta: 1,
+      },
+      {
+        id: 'majima-2b',
+        text: '형님과는 만나고 싶지 않습니다.',
+        response: '그 정도로 싫다 이거제. 알았다. 더 안 붙잡는다.',
+        affinityDelta: -2,
+      },
+    ],
+    [
+      {
+        id: 'majima-3a',
+        text: '연락 주셔서 고맙습니다, 형님.',
+        response: '됐고, 시간 나면 연락이나 해라.',
+        affinityDelta: 1,
+      },
+      {
+        id: 'majima-3b',
+        text: '이야기는 나중에 하시죠.',
+        response: '그래. 니 볼일부터 봐라.',
+        affinityDelta: -1,
+      },
+    ],
+  ],
+};
+/** Compatibility for the one-choice story saved by earlier versions. */
+export const replyChoices = Object.fromEntries(
+  contactIds.map((id) => [id, storyRounds[id][0][0]]),
+) as Record<ContactId, StoryChoice>;
+export const questFollowups: Record<ReminderId, { character: ContactId; text: string }> = {
+  shopping: {
+    character: 'haruka',
+    text: '목록 다 확인했어요? 빠진 게 없는지 한 번만 더 봐주세요.',
   },
-  nishiki: {
-    text: '알았다. 너도 와라. 같이 먹으면 된다.',
-    response: '좋지. 설거지는 같이 해 줄 테니까 남겨 둬.',
+  garden: { character: 'haruka', text: '텃밭 물 준 표시 봤어요. 저녁 전에 해주셔서 고마워요!' },
+  mame: { character: 'haruka', text: '마메 밥 챙겨주셨네요. 물그릇도 제가 확인할게요.' },
+  uniform: {
+    character: 'haruka',
+    text: '이름표 달아주신 거 봤어요. 이번에는 실이 잘 안 풀리겠네요!',
   },
-  date: {
-    text: '다들 잘 지냅니다. 다음에 오시면 같이 식사하시죠.',
-    response: '좋지. 하루카한테도 안부 전해 줘.',
-  },
-  haruka: { text: '다 샀다.', response: '고마워요. 밥은 해둘게요.' },
-  majima: {
-    text: '오늘은 카레입니다. 아이들은 잘 지냅니다.',
-    response: '카레 좋제! 다음에는 내 것도 남겨 놔라!',
-  },
-  daigo: {
-    text: '다들 잘 지낸다. 너도 밥 잘 챙겨 먹어라.',
-    response: '네. 키류 씨도 편안한 주말 보내십시오.',
-  },
-  saejima: { text: '알았다. 같이 먹으니 걱정 마라.', response: '그래. 그거면 됐다.' },
-  mine: {
-    text: '고맙다. 필요한 것이 있으면 연락하겠다.',
-    response: '알겠습니다. 좋은 저녁 보내십시오.',
-  },
+  parcel: { character: 'date', text: '택배 받았다고 들었네. 안에 넣어 둔 봉투도 확인해 주게.' },
+};
+export const callScripts: Record<ContactId, string[]> = {
+  majima: [
+    '키류쨩!!!!!',
+    '문자는 봤나? 니 얼굴 좀 보자고 전화했다.',
+    '시간 나면 니가 먼저 연락해라. 내가 또 찾으러 가기 전에.',
+  ],
+  haruka: [
+    '아저씨, 저예요.',
+    '아까 적어둔 할 일은 천천히 하셔도 돼요. 어려운 건 같이 해요.',
+    '끝나면 문자 주세요. 저도 제 할 일 하고 있을게요.',
+  ],
+  daigo: [
+    '키류 씨, 잠깐 괜찮으십니까?',
+    '말씀해 주신 건 제가 먼저 확인하겠습니다.',
+    '정리가 되면 다시 연락드리겠습니다.',
+  ],
+  saejima: ['키류, 나다.', '별일은 없고, 시간 나면 좀 걷자고.', '서두르지 마라. 준비되면 말해라.'],
+  mine: [
+    '키류 씨, 미네입니다.',
+    '서류 전달 전에 일정만 확인하려고 연락드렸습니다.',
+    '확인되면 문자 부탁드립니다.',
+  ],
+  date: [
+    '키류, 전화는 받는군.',
+    '별일 없는지 확인하려고 했네. 무슨 일 생기면 먼저 연락하게.',
+    '그래. 나중에 또 보세.',
+  ],
+  akiyama: [
+    '키류 씨, 아키야마입니다.',
+    '아까 커피 얘기요. 잊으신 건 아니죠?',
+    '알겠습니다. 시간 맞춰서 연락드릴게요.',
+  ],
+  yuki: [
+    '점장님, 유키예요!',
+    '자리 배치 바꿔 놓은 것만 잠깐 봐주셨으면 해서요.',
+    '네, 그럼 오실 때 문자 주세요!',
+  ],
 };
 export interface DayNote {
   id: string;
@@ -154,7 +476,7 @@ export const dayNotes: DayNote[] = [
   {
     id: 'gym',
     title: '체육복',
-    body: '이름표 다시 달기.\n실이 쉽게 풀리지 않게 할 것.',
+    body: '아이들 체육복 이름표 다시 달기.\n실이 쉽게 풀리지 않게 할 것.',
     checklist: [],
     updatedAt: '2026-10-24T10:12:00+09:00',
   },

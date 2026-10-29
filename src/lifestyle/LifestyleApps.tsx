@@ -142,14 +142,14 @@ export function TaxiApp({ active }: { active: boolean }) {
   const destination = destinations.find((item) => item.id === selected);
   return (
     <Screen
-      title={destination ? '이동 경로' : '택시'}
+      title={destination ? '목적지 확인' : '택시'}
       active={active}
       back={destination ? () => setSelected(null) : undefined}
       tone="taxi-app"
     >
       <div
         className="taxi-route"
-        aria-label={destination ? `나팔꽃에서 ${destination.name}까지` : '출발지 나팔꽃'}
+        aria-label={destination ? `선택한 목적지 ${destination.name}` : '목적지 선택'}
       >
         <div className="taxi-route-line" aria-hidden="true">
           <i />
@@ -158,11 +158,14 @@ export function TaxiApp({ active }: { active: boolean }) {
         </div>
         <div>
           <small>출발</small>
-          <strong>나팔꽃</strong>
+          <strong>현재 위치</strong>
           <small>도착</small>
           <strong>{destination?.name ?? '어디로 갈까요?'}</strong>
         </div>
       </div>
+      <p className="lifestyle-secondary taxi-preview-note">
+        목적지만 고르는 가상 화면입니다. 실제 위치 조회나 택시 호출은 하지 않습니다.
+      </p>
       {destination ? (
         <>
           <h2>{destination.name}</h2>
@@ -210,7 +213,7 @@ export function CookingApp({
   };
   return (
     <Screen
-      title={recipe ? recipe.title : '드래곤 카레'}
+      title={recipe ? recipe.title : '나팔꽃키친'}
       active={active}
       back={recipe ? back : undefined}
       view={`${selected ?? 'recipes'}:${step ?? 'ingredients'}`}

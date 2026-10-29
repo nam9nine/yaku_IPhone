@@ -122,7 +122,7 @@ for (const size of viewports) {
       '연락처',
       '음악',
       '택시',
-      '드래곤 카레',
+      '나팔꽃키친',
       '가라오케관',
     ]);
     expect(

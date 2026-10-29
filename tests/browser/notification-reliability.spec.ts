@@ -143,7 +143,7 @@ async function setup(page: Page, push = true, hold = false) {
       state.polls++;
       data = {
         job_id: state.requestId,
-        character: 'haruka',
+        character: 'majima',
         status: state.hold ? 'generating' : 'complete',
         request: { id: state.requestId, message: state.message, time: '2026-10-26T00:00:00Z' },
       };
@@ -165,6 +165,7 @@ async function setup(page: Page, push = true, hold = false) {
                 role: 'assistant',
                 content: '우동 재료는 제가 챙길게요.',
                 job_id: state.requestId,
+                request_id: state.requestId,
                 time: '2026-10-26T00:00:01Z',
                 status: 'complete',
               },
@@ -189,7 +190,7 @@ async function setup(page: Page, push = true, hold = false) {
   await page.goto('./');
   await unlockPhone(page);
   await launchHomeApp(page, 'messages');
-  await page.locator('[data-conversation=haruka]').tap();
+  await page.locator('[data-conversation=majima]').tap();
   await expect(page.getByText('대화를 불러오는 중…', { exact: true })).toHaveCount(0);
   if (push) {
     await page.getByRole('button', { name: '답장 알림 설정' }).tap();
@@ -198,7 +199,7 @@ async function setup(page: Page, push = true, hold = false) {
     await page.getByRole('button', { name: '닫기', exact: true }).tap();
   }
   await page.clock.pauseAt(new Date('2026-10-26T00:01:00Z'));
-  await page.getByRole('textbox', { name: '하루카에게 메시지 입력' }).fill('저녁은 우동으로 하자.');
+  await page.getByRole('textbox', { name: '마지마에게 메시지 입력' }).fill('저녁은 우동으로 하자.');
   await page.getByRole('button', { name: '메시지 보내기', exact: true }).click();
   await expect.poll(() => state.requestId).not.toBe('');
   await expect
@@ -330,7 +331,7 @@ test('현재 대화의 답장은 배너 없이 수신음으로 알리고 새로�
   await page.reload();
   await unlockPhone(page);
   await launchHomeApp(page, 'messages');
-  await page.locator('[data-conversation=haruka]').tap();
+  await page.locator('[data-conversation=majima]').tap();
   await expect(page.getByText('우동 재료는 제가 챙길게요.', { exact: true })).toBeVisible();
   expect(await soundCount(page)).toBe(0);
 });
@@ -667,12 +668,15 @@ for (const cancel of ['hidden', 'reset', 'mute', 'deadline'] as const) {
   });
 }
 
-test('답장 작성 말풍선이 나타날 때 보낸 문자를 읽음으로 표시한다', async ({ page }) => {
+test('답장 작성 말풍선 없이 지연 뒤 읽음으로 바뀌고 실제 수신 때만 울린다', async ({ page }) => {
   const state = await setup(page, false);
   await expect(page.locator('.message-time').last()).toContainText('전송됨');
   await expect(page.locator('.message-typing')).toHaveCount(0);
   await page.clock.runFor(typingDelay(state.requestId) + 1);
-  await expect(page.locator('.message-typing')).toBeVisible();
+  await expect(page.locator('.message-typing')).toHaveCount(0);
+  await expect(
+    page.getByText('답장 대기 중 · 다른 연락처에는 보낼 수 있어요.', { exact: true }),
+  ).toBeVisible();
   await expect(page.locator('.message-time').last()).toContainText('읽음');
   expect(await soundCount(page)).toBe(0);
   await page.screenshot({ path: `harness/evidence/issue-99/read-${test.info().project.name}.png` });
@@ -710,7 +714,7 @@ test('홈 화면 앱 전경은 Push보다 먼저 준비된 대화음을 재생�
     Object.assign(event, {
       data: {
         type: 'chat.sound',
-        character: 'haruka',
+        character: 'majima',
         soundId: jobId,
         subscription_id: binding.id,
         deadline: Date.now() + 1100,

@@ -1,5 +1,13 @@
 import { afterEach, expect, it, vi } from 'vitest';
-import { aiRequest, createSession, getHistory, getJob, shouldSendOnEnter } from './client';
+import {
+  aiRequest,
+  createSession,
+  getHistory,
+  getJob,
+  shouldSendOnEnter,
+  postChat,
+  generationError,
+} from './client';
 
 afterEach(() => {
   vi.useRealTimers();
@@ -68,4 +76,31 @@ it('한글 IME 조합과 Shift Enter는 메시지를 전송하지 않는다', ()
   expect(shouldSendOnEnter({ ...enter, keyCode: 229 })).toBe(false);
   expect(shouldSendOnEnter({ ...enter, shiftKey: true })).toBe(false);
   expect(shouldSendOnEnter({ ...enter, key: 'a' })).toBe(false);
+});
+
+it('인연 상태는 고정 enum만 보내며 기본값은 neutral이다', async () => {
+  const fetch = vi.fn().mockImplementation(async () => Response.json({ job_id: 'job-1' }));
+  vi.stubGlobal('fetch', fetch);
+  const connection = { endpoint: 'https://mac.example.test', token: 'secret' };
+  await postChat(connection, 'majima', '형님', 'request-1', undefined, 'warm');
+  expect(JSON.parse(fetch.mock.calls[0][1].body).relationship_tone).toBe('warm');
+  await postChat(connection, 'haruka', '안녕', 'request-2');
+  expect(JSON.parse(fetch.mock.calls[1][1].body).relationship_tone).toBe('neutral');
+});
+it('정책 오류 코드만 고정 안내로 바꾸며 서버의 원문 오류는 노출하지 않는다', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi
+      .fn()
+      .mockResolvedValue(
+        Response.json(
+          { error: { code: 'content_blocked', message: 'PRIVATE_TRACE' } },
+          { status: 400 },
+        ),
+      ),
+  );
+  await expect(aiRequest('https://mac.example.test', '/v1/chat')).rejects.toMatchObject({
+    code: 'content_blocked',
+    message: generationError('content_blocked'),
+  });
 });

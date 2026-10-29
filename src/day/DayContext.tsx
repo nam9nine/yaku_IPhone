@@ -4,6 +4,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useRef,
   useState,
   type Dispatch,
@@ -29,6 +30,7 @@ interface DayValue {
   shoppingDone: boolean;
   storageUnavailable: boolean;
   reset: () => void;
+  setCallActivity: (active: boolean) => void;
 }
 const DayContext = createContext<DayValue | null>(null);
 export function DayProvider({ children }: { children: ReactNode }) {
@@ -47,6 +49,10 @@ export function DayProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState(loaded.state);
   const [storageUnavailable, setStorageUnavailable] = useState(loaded.unavailable);
   const latest = useRef(state);
+  const callsActive = useRef(false);
+  const setCallActivity = useCallback((active: boolean) => {
+    callsActive.current = active;
+  }, []);
   const dispatch = useCallback<Dispatch<DayAction>>((action) => {
     const next = dayReducer(latest.current, action);
     if (next === latest.current) return;
@@ -59,6 +65,13 @@ export function DayProvider({ children }: { children: ReactNode }) {
       setStorageUnavailable(true);
     }
   }, []);
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === 'visible')
+        dispatch({ type: 'tick', elapsedMs: 1000, allowCalls: callsActive.current });
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [dispatch]);
   const reset = useCallback(() => {
     dispatch({ type: 'reset' });
     setExtraContacts([]);
@@ -70,6 +83,7 @@ export function DayProvider({ children }: { children: ReactNode }) {
         extraContacts,
         setExtraContacts,
         dispatch,
+        setCallActivity,
         remaining: remainingReminders(state),
         shoppingDone: shoppingComplete(state),
         storageUnavailable: storageUnavailable || contactsUnavailable,

@@ -197,7 +197,7 @@ def import_job(connection, db, job, history_pairs):
     ) != (conversation, fingerprint, request_id, status):
         raise ValueError("Legacy request ID conflicts with existing request")
     connection.execute(
-        "INSERT OR IGNORE INTO requests VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "INSERT OR IGNORE INTO requests (job_id,conversation_id,visitor_id,character_id,scenario_version,client_request_id,fingerprint,status,accepted_at,updated_at,error_code) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         (
             job_id,
             conversation,

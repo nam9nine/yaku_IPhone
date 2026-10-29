@@ -37,7 +37,7 @@ test('로컬 벨소리 미디어는 수신 중 재생되고 응답 즉시 정지
     page.evaluate(() => {
       const audio = (
         window as typeof window & { __ringtoneAudio: HTMLAudioElement[] }
-      ).__ringtoneAudio.at(-1)!;
+      ).__ringtoneAudio.find((item) => item.src.includes('majima-ringtone.m4a'))!;
       return {
         paused: audio.paused,
         muted: audio.muted,
@@ -137,7 +137,7 @@ test('통화 시간 바로 아래에 마지마형님 이름을 표시한다', as
   const call = page.getByRole('dialog', { name: '마지마 형님 전화 수신' });
   await expect(call.locator('.call-identity')).toContainText('16:40');
   const clock = (await call.locator('.call-identity .call-time').boundingBox())!;
-  const name = (await call.getByRole('heading', { name: '마지마형님' }).boundingBox())!;
+  const name = (await call.getByRole('heading', { name: '마지마 형님' }).boundingBox())!;
   expect(name.y).toBeGreaterThanOrEqual(clock.y + clock.height);
   expect(name.y - clock.y - clock.height).toBeLessThan(25);
   await call.getByRole('button', { name: '전화 응답' }).tap();

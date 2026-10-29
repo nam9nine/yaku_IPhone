@@ -1,0 +1,28 @@
+{
+  "sourceId": "yuki-sega-online-profile",
+  "source": "https://ryu.sega-online.jp/special/character/c51fa43e/",
+  "assetUrl": "https://ryu.sega-online.jp/special/character/img/upload/card_c51fa43e.png",
+  "publisher": "SEGA Corporation",
+  "checkedAt": "2026-10-29",
+  "character": "ユキ / 유키 — 포샤인 오너",
+  "localPath": "public/story/yuki.png",
+  "sha256": "e1d47316e50cc06a6045ee2bb7a0762e0a22719b73eecd4770c15ea87d5527f8",
+  "bytes": 396763,
+  "originalDimensions": {
+    "width": 418,
+    "height": 541
+  },
+  "usage": "User-requested Yuki contact portrait; preserve the official original file and frame the face using UI image styling. Not a user-supplied gallery photo.",
+  "license": "©SEGA. Official character artwork; no open license claimed. This record documents provenance, not a separate reuse permission.",
+  "identityEvidence": [
+    {
+      "url": "https://ryu.sega-online.jp/special/character/c51fa43e/",
+      "description": "The page labels the card ユキ(2/14) and identifies her as the current owner of Four Shine, formerly a legendary Sotenbori hostess."
+    },
+    {
+      "url": "https://ryu-ga-gotoku.com/kiwami2/kr/",
+      "description": "The Korean Kiwami 2 adventure section identifies Yuki as the owner of Sotenbori cabaret Four Shine whom Kiryu helps in the Cabaret Club Grand Prix."
+    }
+  ],
+  "selectionNotes": "Kiwami 2 official adventure screenshots were inspected. Koyuki is a different character; her unobstructed face was not substituted for Yuki. The selected SEGA ONLINE asset depicts Yuki in her purple jacket and glasses. No AI-generated or edited face is used."
+}
