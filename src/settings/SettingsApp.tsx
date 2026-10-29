@@ -285,7 +285,6 @@ export function SettingsApp({
                 </div>
               </Group>
             )}
-            <p className="settings-footnote">에어플레인 모드에서도 Wi-Fi를 켤 수 있습니다.</p>
           </>
         )}
         {page === 'bluetooth' && (
@@ -310,11 +309,6 @@ export function SettingsApp({
               />
             </Group>
             <p className="settings-footnote">라라라 모바일</p>
-            <p className="settings-footnote">
-              {preferences.airplane
-                ? '에어플레인 모드를 끄면 이전 셀룰러 설정이 다시 적용됩니다.'
-                : 'Wi-Fi가 꺼져 있을 때 셀룰러 데이터를 사용합니다.'}
-            </p>
           </>
         )}
 

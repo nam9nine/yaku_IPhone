@@ -21,6 +21,28 @@ type ProbeWindow = Window & { __callSpeech: SpeechProbe };
 /** Synthetic browser API only: these tests never request microphone access. */
 async function installSpeech(page: Page, mode: 'standard' | 'webkit' | 'unsupported' = 'standard') {
   await page.addInitScript((mode) => {
+    Object.defineProperty(navigator, 'mediaDevices', {
+      configurable: true,
+      value: {
+        getUserMedia: async () => ({ getTracks: () => [{ stop: () => undefined }] }),
+      },
+    });
+    class Recorder {
+      static isTypeSupported() {
+        return true;
+      }
+      state = 'inactive';
+      ondataavailable: ((event: { data: Blob }) => void) | null = null;
+      onstop: (() => void) | null = null;
+      start() {
+        this.state = 'recording';
+      }
+      stop() {
+        this.state = 'inactive';
+        this.onstop?.();
+      }
+    }
+    Object.defineProperty(window, 'MediaRecorder', { configurable: true, value: Recorder });
     const probe: SpeechProbe = { engines: [], speaks: 0, lateResult: null };
     Object.defineProperty(window, '__callSpeech', { value: probe });
     class Recognition implements ProbeEngine {

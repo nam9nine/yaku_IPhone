@@ -165,9 +165,7 @@ export function TaxiApp({ active }: { active: boolean }) {
           <strong>{destination?.name ?? '어디로 갈까요?'}</strong>
         </div>
       </div>
-      <p className="lifestyle-secondary taxi-preview-note">
-        목적지만 고르는 가상 화면입니다. 실제 위치 조회나 택시 호출은 하지 않습니다.
-      </p>
+
       {destination ? (
         <>
           <h2>{destination.name}</h2>

@@ -620,6 +620,11 @@ def create_app(data_root, *, allow_origins=(), **options):
             raise ApiFailure(400, "invalid_body", "지원하지 않는 요청 항목입니다.")
         return JSONResponse({"token": service.issue_token(service.address(request))})
 
+    async def recording(request):
+        from .call_recordings import save_recording
+
+        return await save_recording(request, service)
+
     async def history(request):
         record = service.authenticate(request)
         character = request.query_params.get("character")
@@ -754,6 +759,9 @@ def create_app(data_root, *, allow_origins=(), **options):
             Route("/v1/health", health),
             Route("/v1/sessions", sessions, methods=["POST"]),
             Route("/v1/history", history),
+            Route(
+                "/v1/recordings/{character}/{recording_id}", recording, methods=["POST"]
+            ),
             Route("/v1/chat", chat, methods=["POST"]),
             Route("/v1/jobs/{job_id}", job_status),
             Route("/v1/push/key", push_key),

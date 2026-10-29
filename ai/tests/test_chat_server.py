@@ -107,6 +107,51 @@ class ChatServerTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         return {"Authorization": "Bearer " + response.json()["token"]}
 
+    def test_private_recordings_do_not_become_messages(self):
+        client = self.client()
+        auth = self.token(client)
+        route = "/v1/recordings/majima/" + str(uuid4())
+        data = b"\x1aE\xdf\xa3synthetic-test-only"
+        self.assertEqual(
+            client.post(
+                route, content=data, headers={"Content-Type": "audio/webm"}
+            ).status_code,
+            401,
+        )
+        headers = {**auth, "Content-Type": "audio/webm"}
+        self.assertEqual(
+            client.post(route, content=data, headers=headers).status_code, 201
+        )
+        self.assertEqual(
+            client.post(route, content=data, headers=headers).status_code, 201
+        )
+        files = list((self.root / "recordings").rglob("*.webm"))
+        self.assertEqual(len(files), 1)
+        self.assertEqual(files[0].read_bytes(), data)
+        self.assertEqual(files[0].stat().st_mode & 0o777, 0o600)
+        self.assertEqual(
+            client.get("/v1/history?character=majima", headers=auth).json()["messages"],
+            [],
+        )
+        self.assertEqual(client.get(route, headers=auth).status_code, 405)
+        self.assertEqual(
+            client.post(route, content=b"not-audio", headers=headers).status_code, 400
+        )
+        self.assertEqual(
+            client.post(route, content=data + b"x", headers=headers).status_code, 409
+        )
+        self.assertEqual(
+            client.post(route, content=data * 100000, headers=headers).status_code, 413
+        )
+        other = self.token(client)
+        self.assertEqual(
+            client.post(
+                route, content=data, headers={**other, "Content-Type": "audio/webm"}
+            ).status_code,
+            201,
+        )
+        self.assertEqual(len(list((self.root / "recordings").rglob("*.webm"))), 2)
+
     def send(
         self, client, auth, message="카레 계획", character="haruka", request_id=None
     ):
