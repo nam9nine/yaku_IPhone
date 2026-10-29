@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { AiMessenger } from './messenger';
 import { AI_ENDPOINT } from './config';
-import type { AiCharacter, AiMessage, RelationshipTone } from './client';
+import type { AiCharacter, AiMessage, RelationshipTone, PhoneEventId } from './client';
 
 const connection = { endpoint: AI_ENDPOINT, token: 'existing-session' };
 const stores: AiMessenger[] = [];
@@ -15,6 +15,7 @@ function mockService() {
       message: string;
       request_id: string;
       relationship_tone: RelationshipTone;
+      phone_events: PhoneEventId[];
     }[],
     history: { haruka: [], majima: [] } as Record<AiCharacter, AiMessage[]>,
     sessions: 0,
@@ -25,6 +26,7 @@ function mockService() {
     reject: 0,
     rejectCode: '',
     fail: '',
+    completedCounts: {} as Partial<Record<AiCharacter, number>>,
     nextCursor: null as string | null,
     old: [] as AiMessage[],
   };
@@ -43,6 +45,9 @@ function mockService() {
       );
       return Response.json({
         messages: query.has('cursor') ? state.old : state.history[character],
+        ...(state.completedCounts[character] === undefined
+          ? {}
+          : { completed_exchanges: state.completedCounts[character] }),
         pending_job: pending?.job_id ?? null,
         next_cursor: query.has('cursor') ? null : state.nextCursor,
       });
@@ -66,6 +71,7 @@ function mockService() {
           request_id: body.request_id,
           job_id: jobId,
           relationship_tone: body.relationship_tone ?? 'neutral',
+          phone_events: [...(body.phone_events ?? [])],
         };
         state.history[body.character as AiCharacter].push(user);
       }
@@ -108,6 +114,7 @@ function mockService() {
           message: user.content,
           time: user.time,
           relationship_tone: user.relationship_tone,
+          phone_events: user.phone_events,
         },
         ...(state.fail ? { error: { code: state.fail, message: 'private server trace' } } : {}),
       });
@@ -309,7 +316,9 @@ it('POST 응답 유실 후 같은 UUID로 재시도한다', async () => {
   state.hold = true;
   const value = store();
   await value.activate('majima');
-  value.send('majima', '형님', true, true, { relationshipTone: 'warm' });
+  const events: PhoneEventId[] = ['majima-call-short'];
+  value.send('majima', '형님', true, true, { relationshipTone: 'warm', phoneEvents: events });
+  events.push('majima-call-completed');
   await flush();
   expect(value.getSnapshot().threads.majima.pending?.phase).toBe('failed');
   value.retry('majima', true, true);
@@ -317,6 +326,7 @@ it('POST 응답 유실 후 같은 UUID로 재시도한다', async () => {
   expect(state.chats).toHaveLength(2);
   expect(state.chats[1]).toEqual(state.chats[0]);
   expect(state.chats[1].relationship_tone).toBe('warm');
+  expect(state.chats[1].phone_events).toEqual(['majima-call-short']);
   expect(state.history.majima).toHaveLength(1);
 });
 it('유실된 접수는 새로고침으로 복구하고 재전송하지 않는다', async () => {
@@ -325,11 +335,14 @@ it('유실된 접수는 새로고침으로 복구하고 재전송하지 않는�
   state.hold = true;
   const value = store();
   await value.activate('haruka');
-  value.send('haruka', '보존할 문자', true, true);
+  value.send('haruka', '보존할 문자', true, true, { phoneEvents: ['haruka-shopping-checked'] });
   await flush();
   await value.refresh();
   await flush();
   expect(value.getSnapshot().threads.haruka.pending?.jobId).toBe('job-1');
+  expect(value.getSnapshot().threads.haruka.pending?.phoneEvents).toEqual([
+    'haruka-shopping-checked',
+  ]);
   expect(state.chats).toHaveLength(1);
 });
 it('오래된 이관 메시지의 null job_id가 미접수 문자를 지우지 않는다', async () => {
@@ -783,4 +796,73 @@ it('정책 거절은 동일 요청 재시도가 아닌 수정 가능한 초안�
   await flush();
   expect(value.getSnapshot().threads.haruka.pending).toBeNull();
   expect(value.takeFailedMessage('haruka', true)?.reason).toBe('input');
+});
+
+it('새 인스턴스는 대기 요청의 고정 이벤트를 복원하고 다른 연락처에 전달하지 않는다', async () => {
+  const { state } = mockService();
+  state.hold = true;
+  state.losePost = true;
+  const original = store();
+  await original.activate('majima');
+  expect(
+    original.send('majima', '아까 전화', true, true, { phoneEvents: ['majima-call-declined'] }),
+  ).toBe(true);
+  await flush();
+  original.stop();
+  const restored = store();
+  await restored.activate('majima');
+  await flush();
+  expect(restored.getSnapshot().threads.majima.pending?.phoneEvents).toEqual([
+    'majima-call-declined',
+  ]);
+  expect(state.chats).toHaveLength(1);
+  await restored.activate('haruka');
+  expect(
+    restored.send('haruka', '할 일을 마쳤어', true, true, {
+      phoneEvents: ['majima-call-declined'],
+    }),
+  ).toBe(false);
+  expect(
+    restored.send('haruka', '할 일을 마쳤어', true, true, {
+      phoneEvents: ['haruka-shopping-checked', 'haruka-shopping-checked'],
+    }),
+  ).toBe(false);
+  expect(restored.send('haruka', '안녕', true, true)).toBe(true);
+  await flush();
+  expect(state.chats[1].phone_events).toEqual([]);
+  expect(restored.getSnapshot().threads.majima.pending?.phoneEvents).toEqual([
+    'majima-call-declined',
+  ]);
+  expect(restored.getSnapshot().threads.haruka.pending?.phoneEvents).toEqual([]);
+});
+
+it('완료 누적 수는 최신 25교환과 과거 페이지·새 인스턴스에 영향받지 않는다', async () => {
+  const { state } = mockService();
+  const pair = (index: number): AiMessage[] => [
+    { id: `u-${index}`, role: 'user', content: '질문', time: null, status: 'complete' },
+    { id: `a-${index}`, role: 'assistant', content: '답장', time: null, status: 'complete' },
+  ];
+  state.history.majima = Array.from({ length: 25 }, (_, index) => pair(index + 5)).flat();
+  state.old = Array.from({ length: 5 }, (_, index) => pair(index)).flat();
+  state.nextCursor = 'older';
+  state.completedCounts.majima = 30;
+  state.completedCounts.haruka = 0;
+  const value = store();
+  await value.activate('majima');
+  expect(value.getSnapshot().threads.majima.messages).toHaveLength(50);
+  expect(value.getSnapshot().threads.majima.completedCount).toBe(30);
+  await value.loadOlder('majima');
+  expect(value.getSnapshot().threads.majima.messages).toHaveLength(60);
+  expect(value.getSnapshot().threads.majima.completedCount).toBe(30);
+  await value.activate('haruka');
+  expect(value.getSnapshot().threads.haruka.completedCount).toBe(0);
+  value.stop();
+  const restored = store();
+  await restored.activate('majima');
+  expect(restored.getSnapshot().threads.majima.completedCount).toBe(30);
+  expect(restored.send('majima', '새 질문', true, true)).toBe(true);
+  state.completedCounts.majima = 31;
+  await flush();
+  expect(restored.getSnapshot().threads.majima.completedCount).toBe(31);
+  expect(restored.getSnapshot().threads.haruka.completedCount).toBe(0);
 });

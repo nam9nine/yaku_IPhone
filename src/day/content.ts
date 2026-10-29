@@ -40,6 +40,8 @@ export interface DayMessage {
   time: string;
   noteId?: string;
   sequence?: number;
+  /** Actual client event time; absent on the initial story and legacy rows. */
+  createdAt?: number;
 }
 export interface StoryChoice {
   id: string;
@@ -52,6 +54,19 @@ export const dayMessages: Record<ContactId, DayMessage[]> = {
   haruka: [
     { id: 'h1', text: '아저씨, 오늘 저녁은 카레 어때요?', outgoing: false, time: '16:25' },
     { id: 'h2', text: '좋다. 장은 내가 봐 오겠다.', outgoing: true, time: '16:28' },
+    {
+      id: 'h-uniform',
+      text: '아이들 체육복 이름표가 또 풀렸어요. 아저씨 메모에 적어뒀어요. 제가 정리하는 동안 조금만 도와주실래요?',
+      outgoing: false,
+      time: '16:30',
+      noteId: 'gym',
+    },
+    {
+      id: 'h-evening',
+      text: '텃밭이랑 마메 밥은 미리 알림에 적어뒀어요. 한꺼번에 하지 말고 하나씩 해요.',
+      outgoing: false,
+      time: '16:32',
+    },
     {
       id: 'h3',
       text: '아저씨, 카레 재료 메모에 적어뒀어요.\n당근은 아직 있어요!',
@@ -74,7 +89,13 @@ export const dayMessages: Record<ContactId, DayMessage[]> = {
       outgoing: false,
       time: '11:10',
     },
-    { id: 'm4', text: '오늘은 한 판 받아줄 시간이 있겠제?', outgoing: false, time: '15:10' },
+    {
+      id: 'm4',
+      text: '오늘은 한 판 받아줄 시간이 있겠제? 카무로쵸 올 거면 연락해라.',
+      outgoing: false,
+      time: '15:10',
+      noteId: 'majima-meet',
+    },
   ],
   daigo: [
     {
@@ -106,6 +127,13 @@ export const dayMessages: Record<ContactId, DayMessage[]> = {
       text: '키류, 자네한테 확인할 게 있네. 문자 봤으면 연락 좀 주게.',
       outgoing: false,
       time: '15:45',
+    },
+    {
+      id: 'date-parcel',
+      text: '부탁 하나 하겠네. 예전에 맡아둔 자네 물건을 봉투에 넣어 보냈어. 받으면 내게 알려주게.',
+      outgoing: false,
+      time: '16:10',
+      noteId: 'parcel',
     },
   ],
   akiyama: [
@@ -415,9 +443,12 @@ export const questFollowups: Record<ReminderId, { character: ContactId; text: st
   mame: { character: 'haruka', text: '마메 밥 챙겨주셨네요. 물그릇도 제가 확인할게요.' },
   uniform: {
     character: 'haruka',
-    text: '이름표 달아주신 거 봤어요. 이번에는 실이 잘 안 풀리겠네요!',
+    text: '이름표는 제가 아이들별로 챙겨둘게요. 바늘은 상자에 넣어두셨죠?',
   },
-  parcel: { character: 'date', text: '택배 받았다고 들었네. 안에 넣어 둔 봉투도 확인해 주게.' },
+  parcel: {
+    character: 'date',
+    text: '받았다고 표시했군. 잘 챙겨두게. 자네 물건을 언제까지 내가 맡고 있을 수는 없잖나.',
+  },
 };
 export const callScripts: Record<ContactId, string[]> = {
   majima: [
@@ -466,6 +497,20 @@ export interface DayNote {
   author?: string;
 }
 export const dayNotes: DayNote[] = [
+  {
+    id: 'majima-meet',
+    title: '형님과의 약속',
+    body: '카무로쵸에 갈 때 형님에게 연락.\n택시에서 목적지를 정한 뒤 연락할 것.\n도착하기 전부터 도착했다고 말하지 말 것.',
+    checklist: [],
+    updatedAt: '2026-10-24T15:10:00+09:00',
+  },
+  {
+    id: 'parcel',
+    title: '다테 씨의 봉투',
+    body: '다테 씨가 맡아둔 내 물건을 보내주셨다.\n택배를 받으면 미리 알림에 표시하고 연락드릴 것.\n봉투 내용부터 확인. 다른 사람에게 맡기지 말 것.',
+    checklist: [],
+    updatedAt: '2026-10-24T16:10:00+09:00',
+  },
   {
     id: 'curry',
     title: '오늘 저녁 카레',

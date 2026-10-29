@@ -27,6 +27,16 @@ async function day(page: Page) {
   return page.evaluate(() => JSON.parse(localStorage.getItem('yaku-iphone.day.v1')!));
 }
 
+function phoneEventPosts(page: Page) {
+  const posts: { character: string; events: unknown }[] = [];
+  page.on('request', (request) => {
+    if (request.method() !== 'POST' || new URL(request.url()).pathname !== '/v1/chat') return;
+    const body = request.postDataJSON();
+    posts.push({ character: body.character, events: body.phone_events });
+  });
+  return posts;
+}
+
 test('선택형 문자는 인물별로 기다리고 세 왕복 뒤 끝난다', async ({ page }) => {
   await boot(page);
   await thread(page, 'daigo');
@@ -71,6 +81,7 @@ test('선택형 문자는 인물별로 기다리고 세 왕복 뒤 끝난다', a
 test('하루카는 완료한 할 일 선택으로만 답장하고 다른 연락처 AI 전송을 막지 않는다', async ({
   page,
 }) => {
+  const posts = phoneEventPosts(page);
   await boot(page);
   await launchHomeApp(page, 'reminders');
   await page.getByRole('checkbox', { name: '텃밭 물 주기 완료', exact: true }).check();
@@ -100,6 +111,10 @@ test('하루카는 완료한 할 일 선택으로만 답장하고 다른 연락�
     }),
   ).toHaveCount(0);
   expect((await day(page)).storyChoiceHistory.haruka).toEqual(['haruka-garden']);
+  expect(posts).toEqual([
+    { character: 'haruka', events: ['haruka-garden-checked'] },
+    { character: 'majima', events: [] },
+  ]);
 });
 
 test('마지마 선택의 인연 변화는 AI 완료 후 한 번만 적용되고 재접속에도 유지된다', async ({
@@ -271,4 +286,105 @@ test('비AI 답장은 홈 배너에서 하단으로 열리고 다른 채팅 안�
   await page.reload();
   await unlockPhone(page);
   await expect(banner).toHaveCount(0);
+});
+
+test('AI 대화 뒤 전화 후속 문자는 배너에서 마지막에 보이고 다음 AI 답장은 그 뒤에 이어진다', async ({
+  page,
+}, testInfo) => {
+  const posts = phoneEventPosts(page);
+  await boot(page);
+  await thread(page, 'majima');
+  const first = '형님, 먼저 보내주신 문자는 봤습니다.';
+  const second = '방금 전화는 제가 잘못 눌렀습니다.';
+  const followup = '왜 끊노! 볼일 끝나면 니가 다시 걸어라.';
+  const reply = '검증용 마지마 답장';
+  await page.getByRole('textbox', { name: '마지마에게 메시지 입력', exact: true }).fill(first);
+  await page.getByRole('button', { name: '메시지 보내기', exact: true }).tap();
+  await finishAiReply(page, 'majima');
+  await expect(
+    page.getByRole('log', { name: '마지마 고로와의 대화' }).locator('.message-bubble').last(),
+  ).toHaveText(reply);
+  await home(page);
+  await launchHomeApp(page, 'phone');
+  await page.getByRole('button', { name: '마지마 고로에게 전화', exact: true }).tap();
+  await page.getByRole('button', { name: '발신 취소', exact: true }).tap();
+  const banner = page.getByRole('status', { name: '새 이야기 메시지 도착', exact: true });
+  await banner.getByRole('button', { name: '마지마의 새 메시지 알림 열기', exact: true }).tap();
+  const log = page.getByRole('log', { name: '마지마 고로와의 대화', exact: true });
+  await expect(log.locator('.message-bubble').last()).toHaveText(followup);
+  await expect(log.locator('.message-bubble').last()).toBeInViewport();
+  expect(
+    await log.evaluate(
+      (element) => element.scrollHeight - element.scrollTop - element.clientHeight,
+    ),
+  ).toBeLessThan(3);
+  await page.getByRole('textbox', { name: '마지마에게 메시지 입력', exact: true }).fill(second);
+  await page.getByRole('button', { name: '메시지 보내기', exact: true }).tap();
+  await finishAiReply(page, 'majima');
+  await expect(log.locator('.message-bubble').last()).toHaveText(reply);
+  expect((await log.locator('.message-bubble').allTextContents()).slice(-5)).toEqual([
+    first,
+    reply,
+    followup,
+    second,
+    reply,
+  ]);
+  expect(posts).toEqual([
+    { character: 'majima', events: [] },
+    { character: 'majima', events: ['majima-call-declined'] },
+  ]);
+  await page.screenshot({ path: testInfo.outputPath('mixed-message-order.png') });
+  await page.reload();
+  await unlockPhone(page);
+  await thread(page, 'majima');
+  await expect(log.locator('.message-bubble')).toHaveCount(9);
+  expect((await log.locator('.message-bubble').allTextContents()).slice(-5)).toEqual([
+    first,
+    reply,
+    followup,
+    second,
+    reply,
+  ]);
+});
+
+test('원작 관계를 참고한 만남 이벤트는 목적지 알림→텍스트 전화→문자로 이어지고 한 번만 발생한다', async ({
+  page,
+}) => {
+  await boot(page);
+  await launchHomeApp(page, 'taxi');
+  await page.getByRole('button', { name: /카무로쵸/ }).tap();
+  await page.getByRole('button', { name: '마지마 형님에게 목적지 알리기' }).tap();
+  await expect(page.getByRole('region', { name: '마지마 형님 전화 수신' })).toBeVisible();
+  await page.getByRole('button', { name: '전화 응답', exact: true }).tap();
+  await page.clock.runFor(12_000);
+  await expect(page.getByText('아직 도착한 건 아니제? 볼일 끝내고 연락해라.')).toBeVisible();
+  await page.getByRole('button', { name: '통화 종료', exact: true }).tap();
+  await expect(page.getByRole('button', { name: '형님에게 연락함' })).toBeDisabled();
+  await home(page);
+  await thread(page, 'majima');
+  await expect(
+    page.getByText('형님, 카무로쵸로 갈 생각입니다. 도착하면 연락드리겠습니다.', { exact: true }),
+  ).toBeVisible();
+  expect((await day(page)).phoneEvents.majima).toContain('majima-kamurocho-intent');
+  await page.reload();
+  await unlockPhone(page);
+  await launchHomeApp(page, 'taxi');
+  await page.getByRole('button', { name: /카무로쵸/ }).tap();
+  await expect(page.getByRole('button', { name: '형님에게 연락함' })).toBeDisabled();
+  await expect(page.getByRole('region', { name: '마지마 형님 전화 수신' })).toHaveCount(0);
+});
+
+test('마지마가 먼저 문자하고 다시 접속해도 같은 문자를 재발송하지 않는다', async ({ page }) => {
+  await boot(page);
+  await page.clock.runFor(60_000);
+  await page.getByRole('button', { name: '전화 거절', exact: true }).tap();
+  await page.clock.runFor(60_000);
+  expect((await day(page)).storyMessages.majima.at(-1).text).toBe('키류쨩! 폰은 살아 있나?');
+  await thread(page, 'majima');
+  await expect(page.getByText('키류쨩! 폰은 살아 있나?', { exact: true })).toHaveCount(1);
+  await page.reload();
+  await unlockPhone(page);
+  await thread(page, 'majima');
+  await expect(page.getByText('키류쨩! 폰은 살아 있나?', { exact: true })).toHaveCount(1);
+  expect((await day(page)).majimaCheckInsSent).toBe(1);
 });

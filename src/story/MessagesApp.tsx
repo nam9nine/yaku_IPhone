@@ -8,6 +8,7 @@ import { contacts } from './data';
 import { useDay } from '../day/DayContext';
 import { dayNotes, type ContactId, type DayMessage } from '../day/content';
 import { affinityTone, getStoryChoices } from '../day/state';
+import { recentPhoneEvents } from '../day/phoneEvents';
 import './social.css';
 import {
   AI_MAX_MESSAGE_LENGTH,
@@ -18,8 +19,11 @@ import {
 import type { AiMessengerView } from '../ai/useAiMessenger';
 import { aiDate, aiTime } from '../ai/time';
 import { storyThreadMessages } from '../ai/storyMessages';
+import { conversationRestDeadline } from '../ai/chatPacing';
+import { mergeMessageTimeline } from '../ai/messageOrder';
 
 interface VisibleMessage extends DayMessage {
+  displayedAt?: number;
   delivery?: string;
   day?: string;
 }
@@ -73,6 +77,9 @@ export function MessagesApp({
   const title = useRef<HTMLHeadingElement>(null);
   const history = useRef<HTMLDivElement>(null);
   const positions = useRef<Record<string, number>>({});
+  const [editingFailed, setEditingFailed] = useState(false);
+  const focusFailed = useRef(false);
+  const [pacingNow, setPacingNow] = useState(() => Date.now());
   const previousThread = useRef<{ id: string; count: number } | null>(null);
   const olderAnchor = useRef<{ id: string; top: number; height: number } | null>(null);
   const handledLatest = useRef(requestedLatest);
@@ -84,10 +91,10 @@ export function MessagesApp({
     const story = storyThreadMessages(id, state);
     if (!isAiCharacter(id)) return story;
     const remote = ai.threads[id];
-    return [
-      ...story,
+    return mergeMessageTimeline<VisibleMessage>(story, [
       ...remote.displayedMessages.map((message, index) => ({
         id: `ai-${message.id}`,
+        displayedAt: message.displayedAt,
         text: message.content,
         outgoing: message.role === 'user',
         delivery:
@@ -110,6 +117,9 @@ export function MessagesApp({
         ? [
             {
               id: `ai-failed-${remote.failedMessage.time}`,
+              displayedAt: remote.failedMessage.time
+                ? Date.parse(remote.failedMessage.time)
+                : undefined,
               text: remote.failedMessage.message,
               outgoing: true,
               time: aiTime(remote.failedMessage.time),
@@ -122,6 +132,7 @@ export function MessagesApp({
         ? [
             {
               id: `ai-pending-${remote.pending.requestId}`,
+              displayedAt: remote.pending.time ? Date.parse(remote.pending.time) : undefined,
               text: remote.pending.message,
               outgoing: true,
               time: aiTime(remote.pending.time),
@@ -140,21 +151,38 @@ export function MessagesApp({
             },
           ]
         : []),
-    ];
+    ]);
   }
   const thread = person ? visibleMessages(person.id) : [];
   const draft = aiCharacter ? drafts[aiCharacter] : '';
   const choices = person ? getStoryChoices(state, person.id) : [];
   const storyPending = person ? state.storyPending[person.id] : undefined;
   const aiBusy = !!(aiThread?.pending || aiThread?.deliveryPending);
-  const sentCount =
-    aiThread?.messages.filter((message) => message.role === 'user' && message.status === 'complete')
-      .length ?? 0;
+  const sentCount = aiThread?.completedCount ?? 0;
   // A short choice interlude after three texts makes room for the rest of the phone.
   // These are pacing defaults, not a claim about the character's canonical behavior.
   const choiceInterlude =
     person?.id === 'majima' && sentCount > 0 && sentCount % 3 === 0 && choices.length > 0;
-  const freeText = person?.id === 'majima' && !choiceInterlude;
+  const freeText = person?.id === 'majima' && (!choiceInterlude || editingFailed);
+  const restDeadline =
+    person?.id === 'majima' && !choices.length
+      ? conversationRestDeadline(aiThread?.displayedMessages ?? [], sentCount)
+      : 0;
+  const resting = !editingFailed && restDeadline > pacingNow;
+  useEffect(() => {
+    if (!restDeadline) return;
+    const timer = setTimeout(
+      () => setPacingNow(Date.now()),
+      Math.max(0, restDeadline - Date.now()),
+    );
+    return () => clearTimeout(timer);
+  }, [restDeadline]);
+  useLayoutEffect(() => {
+    if (active && freeText && focusFailed.current && textarea.current) {
+      textarea.current.focus();
+      focusFailed.current = false;
+    }
+  }, [active, freeText, editingFailed]);
   const canStartAi =
     active &&
     online &&
@@ -163,7 +191,8 @@ export function MessagesApp({
     !aiThread.loading &&
     !aiThread.pending &&
     !aiThread.deliveryPending &&
-    !storyPending;
+    !storyPending &&
+    !resting;
   const canSendAi = canStartAi && !!draft.trim() && messageWithinLimits(draft.trim());
   const isUnread = (id: ContactId) =>
     !state.readThreads.includes(id) || (isAiCharacter(id) && ai.threads[id].unread);
@@ -266,10 +295,12 @@ export function MessagesApp({
     if (
       ai.messenger.send(aiCharacter, draft, active, online, {
         relationshipTone: affinityTone(state),
+        phoneEvents: recentPhoneEvents(state, aiCharacter),
       })
     ) {
       messageSentSound();
       setDrafts((current) => ({ ...current, [aiCharacter]: '' }));
+      setEditingFailed(false);
     }
   }
   function sendChoice(choice: (typeof choices)[number]) {
@@ -280,9 +311,14 @@ export function MessagesApp({
       if (
         ai.messenger.send(aiCharacter, choice.text, active, online, {
           relationshipTone: affinityTone({ ...state, affinity: nextAffinity }),
+          phoneEvents: recentPhoneEvents(state, aiCharacter),
         })
-      )
+      ) {
         messageSentSound();
+        setEditingFailed(false);
+        focusFailed.current = false;
+        setDrafts((current) => ({ ...current, [aiCharacter]: '' }));
+      }
       return;
     }
     dispatch({ type: 'story-choice', id: person.id, choiceId: choice.id });
@@ -292,7 +328,13 @@ export function MessagesApp({
     if (!aiCharacter || !active) return;
     if (aiCharacter === 'haruka') {
       const failed = aiThread?.failedMessage;
-      if (failed && canStartAi && ai.messenger.send(aiCharacter, failed.message, active, online)) {
+      if (
+        failed &&
+        canStartAi &&
+        ai.messenger.send(aiCharacter, failed.message, active, online, {
+          phoneEvents: recentPhoneEvents(state, aiCharacter),
+        })
+      ) {
         ai.messenger.takeFailedMessage(aiCharacter, active);
         messageSentSound();
       }
@@ -300,6 +342,8 @@ export function MessagesApp({
     }
     const failed = ai.messenger.takeFailedMessage(aiCharacter, active);
     if (!failed) return;
+    focusFailed.current = true;
+    setEditingFailed(true);
     setDrafts((current) => ({
       ...current,
       [aiCharacter]: current[aiCharacter]
@@ -568,7 +612,12 @@ export function MessagesApp({
                     답장 대기 중 · 다른 연락처에는 보낼 수 있어요.
                   </p>
                 )}
-                {choiceInterlude && !aiBusy && (
+                {resting && !aiBusy && (
+                  <p className="message-choice-status">
+                    잠깐 다른 일을 둘러보세요. 조금 뒤 다시 보낼 수 있어요.
+                  </p>
+                )}
+                {choiceInterlude && !aiBusy && !editingFailed && (
                   <p className="message-choice-status">이번에는 짧은 답장을 골라보세요.</p>
                 )}
                 {freeText && (

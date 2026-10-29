@@ -1,4 +1,5 @@
 import { ReplyPresentation } from './presentation';
+import { displayedMessageTime } from './messageOrder';
 import {
   aiCharacters,
   AiRequestError,
@@ -9,10 +10,12 @@ import {
   generationError,
   messageWithinLimits,
   isRelationshipTone,
+  isPhoneEvents,
   postChat,
   type AiCharacter,
   type AiMessage,
   type RelationshipTone,
+  type PhoneEventId,
 } from './client';
 import {
   configuredEndpoint,
@@ -30,9 +33,11 @@ export interface PendingMessage {
   historyId?: string;
   phase: 'submitting' | 'generating' | 'failed';
   relationshipTone: RelationshipTone;
+  phoneEvents: PhoneEventId[];
 }
 export interface AiThread {
   messages: AiMessage[];
+  completedCount: number;
   displayedMessages: AiMessage[];
   typing: boolean;
   readRequestIds: string[];
@@ -81,6 +86,7 @@ interface AiSnapshot {
 }
 const emptyThread = (): AiThread => ({
   messages: [],
+  completedCount: 0,
   displayedMessages: [],
   typing: false,
   readRequestIds: [],
@@ -105,6 +111,13 @@ function mergeMessages(previous: AiMessage[], incoming: AiMessage[]): AiMessage[
   const merged = new Map(previous.map((message) => [message.id, message]));
   for (const message of incoming) merged.set(message.id, message);
   return [...merged.values()];
+}
+
+function knownCompletedCount(messages: AiMessage[]): number {
+  return messages.filter(
+    (message) =>
+      message.role === 'user' && (message.status === undefined || message.status === 'complete'),
+  ).length;
 }
 
 /** A single Messages instance owns requests. Switching contacts never changes their owner. */
@@ -213,7 +226,20 @@ export class AiMessenger {
       }
       threads[character] = {
         ...thread,
-        displayedMessages: thread.messages.filter((m) => !waiting.some((r) => r.replyId === m.id)),
+        displayedMessages: thread.messages
+          .filter((message) => !waiting.some((receipt) => receipt.replyId === message.id))
+          .map((message) => ({
+            ...message,
+            displayedAt: displayedMessageTime(
+              message,
+              receipts.find((receipt) =>
+                message.role === 'assistant'
+                  ? receipt.replyId === message.id ||
+                    (!!message.request_id && receipt.requestId === message.request_id)
+                  : !!message.request_id && receipt.requestId === message.request_id,
+              ),
+            ),
+          })),
         readRequestIds: receipts
           .filter(
             (r) => now >= r.typingAt && (r.replyId || thread.pending?.requestId === r.requestId),
@@ -523,6 +549,7 @@ export class AiMessenger {
             phase: 'generating' as const,
             relationshipTone:
               accepted?.relationship_tone ?? existing?.relationshipTone ?? 'neutral',
+            phoneEvents: [...(accepted?.phone_events ?? existing?.phoneEvents ?? [])],
           }
         : resolved
           ? null
@@ -537,6 +564,11 @@ export class AiMessenger {
       }
       this.thread(character, {
         messages: mergeMessages(thread.messages, result.messages),
+        completedCount: Math.max(
+          thread.completedCount,
+          result.completed_exchanges ??
+            knownCompletedCount(mergeMessages(thread.messages, result.messages)),
+        ),
         loaded: true,
         loading: false,
         nextCursor: thread.olderLoaded ? thread.nextCursor : result.next_cursor,
@@ -577,6 +609,10 @@ export class AiMessenger {
       if (!this.current(generation)) return;
       this.thread(character, {
         messages: mergeMessages(result.messages, this.snapshot.threads[character].messages),
+        completedCount: Math.max(
+          this.snapshot.threads[character].completedCount,
+          result.completed_exchanges ?? this.snapshot.threads[character].completedCount,
+        ),
         nextCursor: result.next_cursor,
         olderLoaded: true,
         loadingOlder: false,
@@ -593,11 +629,12 @@ export class AiMessenger {
     text: string,
     active: boolean,
     online: boolean,
-    options: { relationshipTone?: RelationshipTone } = {},
+    options: { relationshipTone?: RelationshipTone; phoneEvents?: readonly PhoneEventId[] } = {},
   ): boolean {
     const thread = this.snapshot.threads[character];
     const message = text.trim();
     const relationshipTone = options.relationshipTone ?? 'neutral';
+    const phoneEvents = options.phoneEvents === undefined ? [] : options.phoneEvents;
     if (
       !active ||
       !online ||
@@ -606,6 +643,7 @@ export class AiMessenger {
       !message ||
       !messageWithinLimits(message) ||
       !isRelationshipTone(relationshipTone) ||
+      !isPhoneEvents(character, phoneEvents) ||
       this.snapshot.status !== 'ready' ||
       !thread.loaded ||
       thread.loading ||
@@ -620,6 +658,7 @@ export class AiMessenger {
       jobId: null,
       phase: 'submitting',
       relationshipTone,
+      phoneEvents: [...phoneEvents],
     };
     this.presentation.begin(character, pending.requestId);
     this.thread(character, { pending, error: null });
@@ -669,6 +708,7 @@ export class AiMessenger {
         pending.requestId,
         this.controller.signal,
         pending.relationshipTone,
+        pending.phoneEvents,
       );
       if (!this.current(generation)) return;
       this.thread(character, { pending: { ...pending, jobId, phase: 'generating' } });
@@ -730,6 +770,7 @@ export class AiMessenger {
             message: job.request.message,
             time: job.request.time,
             relationshipTone: job.request.relationship_tone ?? previous.relationshipTone,
+            phoneEvents: [...(job.request.phone_events ?? previous.phoneEvents)],
           },
         });
       if (job.status === 'complete' || job.status === 'error') {
@@ -745,6 +786,11 @@ export class AiMessenger {
         if (job.status === 'error' && pending) this.presentation.cancel(pending.requestId);
         this.thread(character, {
           messages: mergeMessages(thread.messages, result.messages),
+          completedCount: Math.max(
+            thread.completedCount,
+            result.completed_exchanges ??
+              knownCompletedCount(mergeMessages(thread.messages, result.messages)),
+          ),
           pending: null,
           nextCursor: thread.olderLoaded ? thread.nextCursor : result.next_cursor,
           ...(job.status === 'error' && failedText

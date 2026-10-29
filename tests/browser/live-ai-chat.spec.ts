@@ -429,6 +429,87 @@ test('영구 입력 오류와 답변 길이 오류는 원문을 다시 작성해
   expect(new Set(mac.chats.map(({ request_id }) => request_id)).size).toBe(3);
 });
 
+test('강제 선택 답장이 실패해도 다시 작성으로 편집·재전송하고 선택 완료를 중복 소비하지 않는다', async ({
+  page,
+}) => {
+  const mac = await mockMac(page);
+  mac.history.majima = Array.from({ length: 3 }, (_, index): Message[] => [
+    {
+      id: `seed-${index}-user`,
+      role: 'user',
+      content: `이전 질문 ${index}`,
+      time: null,
+      status: 'complete',
+      request_id: `seed-${index}`,
+      job_id: `seed-job-${index}`,
+    },
+    {
+      id: `seed-${index}-assistant`,
+      role: 'assistant',
+      content: `이전 답장 ${index}`,
+      time: null,
+      status: 'complete',
+      request_id: `seed-${index}`,
+      job_id: `seed-job-${index}`,
+    },
+  ]).flat();
+  await start(page);
+  await page.locator('[data-conversation=majima]').tap();
+  const choice = page.getByRole('button', {
+    name: `${replyChoices.majima.text} 보내기`,
+    exact: true,
+  });
+  await expect(choice).toBeEnabled();
+  await expect(input(page)).toHaveCount(0);
+  mac.failJobOnce = 'generation_failed';
+  await choice.click();
+  await expect(
+    page.getByText('답장을 만들지 못했습니다. 잠시 후 다시 보내 주세요.', { exact: true }),
+  ).toBeVisible();
+  const choiceHistory = () =>
+    page.evaluate(
+      (key) => JSON.parse(localStorage.getItem(key) ?? '{}').storyChoiceHistory.majima,
+      DAY_STORAGE_KEY,
+    );
+  expect(await choiceHistory()).toEqual([]);
+  await page.getByRole('button', { name: '다시 작성', exact: true }).click();
+  await expect(input(page)).toBeVisible();
+  await expect(input(page)).toHaveValue(replyChoices.majima.text);
+  await expect(input(page)).toBeFocused();
+  const edited = '형님, 한 판 하기 전에 어디로 가면 될지 알려주세요.';
+  await input(page).fill(edited);
+  await send(page).click();
+  await finishAiReply(page, 'majima');
+  await expect(bubble(page, replyFor('majima', edited))).toBeVisible();
+  expect(mac.chats).toHaveLength(2);
+  expect(mac.chats[0].request_id).not.toBe(mac.chats[1].request_id);
+  expect(await choiceHistory()).toEqual([]);
+  // A rewritten free-text message must not consume the failed choice. Once the
+  // next interlude is reached, a genuinely completed choice consumes it once.
+  for (const message of ['첫 번째 후속 문자', '두 번째 후속 문자']) {
+    await input(page).fill(message);
+    await send(page).click();
+    await finishAiReply(page, 'majima');
+  }
+  await expect(choice).toBeEnabled();
+  await expect(input(page)).toHaveCount(0);
+  await choice.click();
+  await finishAiReply(page, 'majima');
+  await expect.poll(choiceHistory).toEqual(['majima-1a']);
+  await page.reload();
+  await unlockPhone(page);
+  await launchHomeApp(page, 'messages');
+  await openThread(page, 'majima');
+  await expect.poll(choiceHistory).toEqual(['majima-1a']);
+  expect(
+    await page.evaluate(
+      (key) => JSON.parse(localStorage.getItem(key) ?? '{}').affinity,
+      DAY_STORAGE_KEY,
+    ),
+  ).toBe(1);
+  expect(mac.chats).toHaveLength(5);
+});
+
 test('장보기와 마지마 스토리 답장도 모델에 전송하고 오류를 고정 답변으로 대체하지 않는다', async ({
   page,
 }) => {
@@ -441,6 +522,24 @@ test('장보기와 마지마 스토리 답장도 모델에 전송하고 오류�
     state: { ...day, aiReplies: [] },
   });
   const mac = await mockMac(page);
+  mac.history.majima = Array.from({ length: 3 }, (_, index): Message[] => [
+    {
+      id: `story-seed-${index}-user`,
+      role: 'user',
+      content: `이전 질문 ${index}`,
+      time: null,
+      status: 'complete',
+      request_id: `story-seed-${index}`,
+    },
+    {
+      id: `story-seed-${index}-assistant`,
+      role: 'assistant',
+      content: `이전 답장 ${index}`,
+      time: null,
+      status: 'complete',
+      request_id: `story-seed-${index}`,
+    },
+  ]).flat();
   await start(page);
   await openThread(page, 'haruka');
   mac.rejectOnce = 503;
@@ -470,7 +569,8 @@ test('장보기와 마지마 스토리 답장도 모델에 전송하고 오류�
     )
     .toBe(true);
   await page.getByRole('button', { name: '메시지 목록으로 돌아가기', exact: true }).tap();
-  await openThread(page, 'majima');
+  await page.locator('[data-conversation=majima]').tap();
+  await expect(input(page)).toHaveCount(0);
   await page.locator('.message-story-reply').first().tap();
   await finishAiReply(page, 'majima');
   await expect(bubble(page, replyFor('majima', replyChoices.majima.text))).toBeVisible();

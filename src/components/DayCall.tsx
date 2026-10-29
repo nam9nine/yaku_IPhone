@@ -34,8 +34,9 @@ export function DayCall({
   const seconds = Math.floor((call?.elapsedMs ?? 0) / 1000);
   useEffect(() => {
     setCallActivity(active);
+    if (!active) dispatch({ type: 'defer-contact' });
     return () => setCallActivity(false);
-  }, [active, setCallActivity]);
+  }, [active, setCallActivity, dispatch]);
   const date = useDisplayDate();
   useRingtone(ringing && !outgoing, silent, volume, caller?.id === 'majima' ? 'majima' : 'other');
   const [muted, setMuted] = useState(false);

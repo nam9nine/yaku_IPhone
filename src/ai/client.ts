@@ -1,7 +1,22 @@
 import { validToken, type AiConnection } from './connection';
+import phoneCatalog from '../day/phone-events.json' with { type: 'json' };
 
 export const aiCharacters = ['haruka', 'majima'] as const;
 export type AiCharacter = (typeof aiCharacters)[number];
+export type PhoneEventId = keyof typeof phoneCatalog.events;
+export function isPhoneEvents(character: AiCharacter, value: unknown): value is PhoneEventId[] {
+  return (
+    Array.isArray(value) &&
+    value.length <= 4 &&
+    value.every(
+      (id) =>
+        typeof id === 'string' &&
+        Object.hasOwn(phoneCatalog.events, id) &&
+        phoneCatalog.events[id as PhoneEventId].character === character,
+    ) &&
+    new Set(value).size === value.length
+  );
+}
 export type RelationshipTone = 'warm' | 'neutral' | 'cool';
 export const isRelationshipTone = (value: unknown): value is RelationshipTone =>
   value === 'warm' || value === 'neutral' || value === 'cool';
@@ -26,11 +41,16 @@ export interface AiMessage {
   request_id?: string | null;
   job_id?: string | null;
   relationship_tone?: RelationshipTone;
+  phone_events?: PhoneEventId[];
+  /** Client presentation time, derived locally; server history remains unchanged. */
+  displayedAt?: number;
 }
 export interface AiHistory {
   messages: AiMessage[];
   pending_job: string | null;
   next_cursor: string | null;
+  /** Absent only for older servers or fixtures; independent of history pagination. */
+  completed_exchanges?: number;
 }
 export interface AiJob {
   job_id: string;
@@ -44,6 +64,7 @@ export interface AiJob {
     message: string;
     time: string | null;
     relationship_tone?: RelationshipTone;
+    phone_events?: PhoneEventId[];
   };
 }
 export type HealthStatus = 'ready' | 'loading' | 'error';
@@ -51,7 +72,7 @@ export type HealthStatus = 'ready' | 'loading' | 'error';
 function record(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === 'object';
 }
-function messages(value: unknown): value is AiMessage[] {
+function messages(value: unknown, character: AiCharacter): value is AiMessage[] {
   return (
     Array.isArray(value) &&
     value.every(
@@ -61,7 +82,9 @@ function messages(value: unknown): value is AiMessage[] {
         (message.role === 'user' || message.role === 'assistant') &&
         typeof message.content === 'string' &&
         (message.time === null || typeof message.time === 'string') &&
-        (message.relationship_tone === undefined || isRelationshipTone(message.relationship_tone)),
+        (message.relationship_tone === undefined ||
+          isRelationshipTone(message.relationship_tone)) &&
+        (message.phone_events === undefined || isPhoneEvents(character, message.phone_events)),
     )
   );
 }
@@ -197,9 +220,13 @@ export async function getHistory(
   );
   if (
     !record(value) ||
-    !messages(value.messages) ||
+    !messages(value.messages, character) ||
     !(value.pending_job === null || typeof value.pending_job === 'string') ||
-    !(value.next_cursor === null || typeof value.next_cursor === 'string')
+    !(value.next_cursor === null || typeof value.next_cursor === 'string') ||
+    (value.completed_exchanges !== undefined &&
+      (typeof value.completed_exchanges !== 'number' ||
+        !Number.isSafeInteger(value.completed_exchanges) ||
+        value.completed_exchanges < 0))
   ) {
     throw new AiRequestError('대화 기록을 읽을 수 없습니다.');
   }
@@ -207,6 +234,9 @@ export async function getHistory(
     messages: value.messages,
     pending_job: value.pending_job,
     next_cursor: value.next_cursor,
+    ...(value.completed_exchanges === undefined
+      ? {}
+      : { completed_exchanges: value.completed_exchanges as number }),
   };
 }
 
@@ -217,12 +247,21 @@ export async function postChat(
   requestId: string,
   signal?: AbortSignal,
   relationshipTone: RelationshipTone = 'neutral',
+  phoneEvents: readonly PhoneEventId[] = [],
 ): Promise<string> {
   if (!isRelationshipTone(relationshipTone))
     throw new AiRequestError('올바른 인연 상태가 필요합니다.', 'invalid_input');
+  if (!isPhoneEvents(character, phoneEvents))
+    throw new AiRequestError('올바른 전화·할 일 상태가 필요합니다.', 'invalid_input');
   const value = await aiRequest(connection.endpoint, '/v1/chat', {
     token: connection.token,
-    body: { character, message, request_id: requestId, relationship_tone: relationshipTone },
+    body: {
+      character,
+      message,
+      request_id: requestId,
+      relationship_tone: relationshipTone,
+      phone_events: phoneEvents,
+    },
     signal,
   });
   if (!record(value) || typeof value.job_id !== 'string' || !value.job_id) {
@@ -246,14 +285,16 @@ export async function getJob(
     value.job_id !== jobId ||
     value.character !== character ||
     !['queued', 'generating', 'complete', 'error'].includes(String(value.status)) ||
-    (value.messages !== undefined && !messages(value.messages)) ||
+    (value.messages !== undefined && !messages(value.messages, character)) ||
     (value.request !== undefined &&
       (!record(value.request) ||
         typeof value.request.id !== 'string' ||
         typeof value.request.message !== 'string' ||
         (value.request.time !== null && typeof value.request.time !== 'string') ||
         (value.request.relationship_tone !== undefined &&
-          !isRelationshipTone(value.request.relationship_tone))))
+          !isRelationshipTone(value.request.relationship_tone)) ||
+        (value.request.phone_events !== undefined &&
+          !isPhoneEvents(character, value.request.phone_events))))
   ) {
     throw new AiRequestError('답장 상태를 확인할 수 없습니다.');
   }

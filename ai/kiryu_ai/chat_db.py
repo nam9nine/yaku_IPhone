@@ -20,6 +20,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 from uuid import UUID, uuid4
 
+from .phone_events import NO_PHONE_EVENTS, validate_phone_events
+
 SCHEMA_VERSION = 2
 RELATIONSHIP_TONES = ("warm", "neutral", "cool")
 MAX_ACTIVE_PER_VISITOR = 2
@@ -98,6 +100,7 @@ CREATE TABLE IF NOT EXISTS requests (
     accepted_at TEXT NOT NULL, updated_at TEXT NOT NULL, error_code TEXT,
     relationship_tone TEXT NOT NULL DEFAULT 'neutral'
         CHECK(relationship_tone IN ('warm','neutral','cool')),
+    phone_events TEXT NOT NULL DEFAULT '[]' CHECK(json_valid(phone_events) AND json_type(phone_events)='array'),
     UNIQUE(visitor_id, scenario_version, client_request_id)
 );
 CREATE UNIQUE INDEX IF NOT EXISTS one_active_request_per_conversation ON requests(conversation_id)
@@ -166,6 +169,18 @@ class ChatDB:
                     connection.execute(
                         "DROP INDEX IF EXISTS one_active_request_per_visitor"
                     )
+                if version in (1, 2):
+                    columns = {
+                        row[1]
+                        for row in connection.execute("PRAGMA table_info(requests)")
+                    }
+                    if "phone_events" not in columns:
+                        # v2 is not deployed yet; preserve local pre-release v2
+                        # QA databases as well as the public v1 migration.
+                        connection.execute(
+                            "ALTER TABLE requests ADD COLUMN phone_events TEXT NOT NULL DEFAULT '[]' "
+                            "CHECK(json_valid(phone_events) AND json_type(phone_events)='array')"
+                        )
                 # executescript implicitly commits; execute complete statements
                 # individually to keep DDL, version and cursor-key creation atomic.
                 statement = ""
@@ -319,16 +334,22 @@ class ChatDB:
         request_id,
         *,
         relationship_tone="neutral",
+        phone_events=NO_PHONE_EVENTS,
         now=None,
     ):
         if relationship_tone not in RELATIONSHIP_TONES:
             raise ValueError("Invalid relationship tone")
+        phone_events = validate_phone_events(
+            character, [] if phone_events is NO_PHONE_EVENTS else phone_events
+        )
         request_id = str(UUID(request_id))
         # Keep legacy neutral retries byte-compatible. Any tone change still
         # changes the fingerprint, and the persisted enum is the source of truth.
         fingerprint_parts = [character, message]
         if relationship_tone != "neutral":
             fingerprint_parts.append(relationship_tone)
+        if phone_events:
+            fingerprint_parts.append({"phone_events": phone_events})
         fingerprint = digest(json.dumps(fingerprint_parts, ensure_ascii=False))
         identity = hashlib.sha256(
             (visitor + ":" + scenario + ":" + request_id).encode()
@@ -359,8 +380,8 @@ class ChatDB:
                 connection, visitor, character, scenario, accepted_at
             )
             connection.execute(
-                "INSERT INTO requests (job_id,conversation_id,visitor_id,character_id,scenario_version,client_request_id,fingerprint,status,accepted_at,updated_at,error_code,relationship_tone) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, 'queued', ?, ?, NULL, ?)",
+                "INSERT INTO requests (job_id,conversation_id,visitor_id,character_id,scenario_version,client_request_id,fingerprint,status,accepted_at,updated_at,error_code,relationship_tone,phone_events) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, 'queued', ?, ?, NULL, ?, ?)",
                 (
                     job_id,
                     conversation,
@@ -372,6 +393,7 @@ class ChatDB:
                     accepted_at,
                     accepted_at,
                     relationship_tone,
+                    json_text(phone_events),
                 ),
             )
             self._append(connection, conversation, job_id, "user", message, accepted_at)
@@ -390,6 +412,7 @@ class ChatDB:
             return None
         result = dict(row)
         result["character"] = result.pop("character_id")
+        result["phone_events"] = json.loads(result["phone_events"])
         result["request_id"] = result.pop("client_request_id")
         if result["status"] == "interrupted":
             result["status"] = "error"
@@ -582,6 +605,7 @@ class ChatDB:
             result["request_id"] = row["client_request_id"]
             result["job_id"] = row["job_id"]
             result["relationship_tone"] = row["relationship_tone"] or "neutral"
+            result["phone_events"] = json.loads(row["phone_events"] or "[]")
         return result
 
     def history(self, visitor, character, scenario):
@@ -643,13 +667,18 @@ class ChatDB:
         )
         with self.connection() as connection:
             rows = connection.execute(
-                "SELECT m.*,r.status,r.client_request_id,r.relationship_tone FROM messages m LEFT JOIN requests r ON r.job_id=m.job_id "
+                "SELECT m.*,r.status,r.client_request_id,r.relationship_tone,r.phone_events FROM messages m LEFT JOIN requests r ON r.job_id=m.job_id "
                 "WHERE m.conversation_id=? AND m.sequence<? AND (? OR m.model_eligible=1) ORDER BY m.sequence DESC LIMIT ?",
                 (conversation, before, include_failed, limit + 1),
             ).fetchall()
+            completed_exchanges = connection.execute(
+                "SELECT COUNT(*) FROM messages WHERE conversation_id=? AND role='user' AND model_eligible=1",
+                (conversation,),
+            ).fetchone()[0]
         more = len(rows) > limit
         rows = rows[:limit]
         return {
+            "completed_exchanges": completed_exchanges,
             "messages": [
                 self._message(row, state=include_failed) for row in reversed(rows)
             ],
@@ -686,7 +715,7 @@ class ChatDB:
             job["messages"] = [
                 self._message(row, state=True)
                 for row in connection.execute(
-                    "SELECT m.*,r.status,r.client_request_id,r.relationship_tone FROM messages m LEFT JOIN requests r ON r.job_id=m.job_id WHERE m.conversation_id=? ORDER BY m.sequence",
+                    "SELECT m.*,r.status,r.client_request_id,r.relationship_tone,r.phone_events FROM messages m LEFT JOIN requests r ON r.job_id=m.job_id WHERE m.conversation_id=? ORDER BY m.sequence",
                     (job["conversation_id"],),
                 )
             ]

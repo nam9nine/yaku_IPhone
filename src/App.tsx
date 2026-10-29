@@ -415,7 +415,14 @@ function PhoneSession() {
         preferences={preferences}
         key={epoch}
         locked={state.locked}
-        active={!state.locked && !unlockRequest}
+        active={
+          !state.locked &&
+          !unlockRequest &&
+          !Object.values(ai.threads).some(
+            (thread) =>
+              thread.deliveryPending || (!!thread.pending && thread.pending.phase !== 'failed'),
+          )
+        }
         onMessage={openConversation}
       />
       {unlockRequest && (

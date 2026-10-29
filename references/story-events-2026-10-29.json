@@ -1,0 +1,25 @@
+{
+  "retrievedOn": "2026-10-29",
+  "purpose": "Character motivations for original everyday phone events; no copied dialogue",
+  "sources": [
+    {
+      "url": "https://manual.sega.jp/ryu-kiwami3/en/",
+      "use": "Haruka and Kiryu household roles; housework/cooking/bonding activities"
+    },
+    {
+      "url": "https://manual.sega.jp/switch/ryu-kiwami/en/index.html",
+      "use": "Majima challenges Kiryu in various city places"
+    },
+    {
+      "url": "https://ryu.sega-online.jp/special/character/ce43b1ea/",
+      "use": "Date as veteran detective sharing incidents with Kiryu"
+    }
+  ],
+  "originalIF": [
+    "curry errand SMS",
+    "uniform name-tag repair SMS",
+    "Date parcel",
+    "Kamurocho destination notice and text call"
+  ],
+  "canonClaim": false
+}

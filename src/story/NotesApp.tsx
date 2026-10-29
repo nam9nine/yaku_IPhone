@@ -84,7 +84,26 @@ export function NotesApp({
     dayNotes.filter((note) => note.id !== 'curry'),
     validNotes,
   );
-  const notes = useMemo(() => [dayNotes[0], ...savedNotes], [savedNotes]);
+  const [eventsAdded, setEventsAdded] = useStoredState(
+    'phone-events-notes',
+    false,
+    (v) => typeof v === 'boolean',
+  );
+  useEffect(() => {
+    if (eventsAdded) return;
+    setNotes((old) => [
+      ...old,
+      ...dayNotes.filter(
+        (note) =>
+          ['majima-meet', 'parcel'].includes(note.id) && !old.some((item) => item.id === note.id),
+      ),
+    ]);
+    setEventsAdded(true);
+  }, [eventsAdded, setEventsAdded, setNotes]);
+  const notes = useMemo(
+    () => [...dayNotes.filter((note) => note.id === 'curry'), ...savedNotes],
+    [savedNotes],
+  );
   const [query, setQuery] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
   const currentDate = new Date(demoDay.timestamp);

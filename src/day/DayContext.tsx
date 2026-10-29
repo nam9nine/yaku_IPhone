@@ -41,7 +41,7 @@ export function DayProvider({ children }: { children: ReactNode }) {
   );
   const [loaded] = useState(() => {
     try {
-      return loadDay(window.localStorage);
+      return loadDay(window.localStorage, Date.now());
     } catch {
       return { state: initialDay(), unavailable: true };
     }
@@ -54,7 +54,7 @@ export function DayProvider({ children }: { children: ReactNode }) {
     callsActive.current = active;
   }, []);
   const dispatch = useCallback<Dispatch<DayAction>>((action) => {
-    const next = dayReducer(latest.current, action);
+    const next = dayReducer(latest.current, action, Date.now());
     if (next === latest.current) return;
     latest.current = next;
     setState(next);

@@ -1,3 +1,10 @@
+import { majimaCheckIns } from './proactive';
+import {
+  appendPhoneEvent,
+  validPhoneEventLog,
+  type PhoneEventLog,
+  type PhoneEventId,
+} from './phoneEvents';
 import {
   callScripts,
   contactIds,
@@ -38,15 +45,18 @@ export interface DayState {
   reminders: Record<Exclude<ReminderId, 'shopping'>, boolean>;
   readThreads: ContactId[];
   replies: ContactId[];
+  legacyReplies: ContactId[];
   aiReplies: ContactId[];
   replySent: boolean;
   missedCall: boolean;
   missedCallRead: boolean;
   callStatus: null | 'ringing' | 'missed' | 'answered';
   storyMessages: Record<ContactId, DayMessage[]>;
+  phoneEvents: PhoneEventLog;
   storyChoiceHistory: Record<ContactId, string[]>;
   storyPending: Partial<Record<ContactId, StoryPending>>;
   completedQuests: ReminderId[];
+  kamurochoNotified: boolean;
   storySequence: number;
   elapsedMs: number;
   affinity: number;
@@ -55,6 +65,8 @@ export interface DayState {
   callSerial: number;
   scheduledCalls: number;
   nextCallInMs: number;
+  nextMajimaTextInMs: number;
+  majimaCheckInsSent: number;
 }
 export type DayAction =
   | { type: 'read-thread'; id: string }
@@ -63,11 +75,13 @@ export type DayAction =
   | { type: 'reply'; id: string; source?: 'ai' }
   | { type: 'story-choice'; id: string; choiceId: string; source?: 'ai' }
   | { type: 'tick'; elapsedMs: number; allowCalls: boolean }
+  | { type: 'defer-contact' }
   | { type: 'start-call'; id: string }
   | { type: 'read-call' }
   | { type: 'answer-call' }
   | { type: 'miss-call'; reason?: 'declined' | 'missed' }
   | { type: 'end-call' }
+  | { type: 'notify-kamurocho' }
   | { type: 'reset' };
 export const DAY_STORAGE_KEY = 'yaku-iphone.day.v1';
 const contactRecord = <T>(factory: () => T) =>
@@ -78,15 +92,18 @@ export function initialDay(): DayState {
     reminders: { garden: false, mame: false, uniform: false, parcel: false },
     readThreads: [],
     replies: [],
+    legacyReplies: [],
     aiReplies: [],
     replySent: false,
     missedCall: false,
     missedCallRead: false,
     callStatus: null,
     storyMessages: contactRecord(() => []),
+    phoneEvents: { haruka: [], majima: [] },
     storyChoiceHistory: contactRecord(() => []),
     storyPending: {},
     completedQuests: [],
+    kamurochoNotified: false,
     storySequence: 0,
     elapsedMs: 0,
     affinity: 0,
@@ -95,6 +112,8 @@ export function initialDay(): DayState {
     callSerial: 0,
     scheduledCalls: 0,
     nextCallInMs: 60_000,
+    nextMajimaTextInMs: 90_000,
+    majimaCheckInsSent: 0,
   };
 }
 export function shoppingComplete(state: DayState): boolean {
@@ -141,7 +160,13 @@ function eventTime(state: DayState) {
   const minutes = 16 * 60 + 40 + Math.floor(state.elapsedMs / 60_000);
   return `${String(Math.floor(minutes / 60) % 24).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
 }
-function appendMessage(state: DayState, id: ContactId, text: string, outgoing = false): DayState {
+function appendMessage(
+  state: DayState,
+  id: ContactId,
+  text: string,
+  outgoing = false,
+  now?: number,
+): DayState {
   const sequence = state.storySequence + 1;
   return {
     ...state,
@@ -150,7 +175,14 @@ function appendMessage(state: DayState, id: ContactId, text: string, outgoing = 
       ...state.storyMessages,
       [id]: [
         ...state.storyMessages[id],
-        { id: `story-${sequence}`, sequence, text, outgoing, time: eventTime(state) },
+        {
+          id: `story-${sequence}`,
+          sequence,
+          text,
+          outgoing,
+          time: eventTime(state),
+          ...(Number.isSafeInteger(now) && Number(now) >= 0 ? { createdAt: now } : {}),
+        },
       ].slice(-200),
     },
     readThreads: outgoing
@@ -187,7 +219,7 @@ function beginCall(
     },
   };
 }
-function finishCall(state: DayState, result: StoryCallRecord['result']): DayState {
+function finishCall(state: DayState, result: StoryCallRecord['result'], now?: number): DayState {
   const call = state.call;
   if (!call) return state;
   const read = result === 'completed' || call.direction === 'outgoing';
@@ -221,8 +253,20 @@ function finishCall(state: DayState, result: StoryCallRecord['result']): DayStat
       },
       ...state.callLog,
     ].slice(0, 40),
-    nextCallInMs: 180_000 + ((state.callSerial * 79_019) % 180_001),
+    nextCallInMs: 120_000 + ((state.callSerial * 79_019) % 120_001),
+    nextMajimaTextInMs: Math.max(60_000, state.nextMajimaTextInMs),
   };
+  if (call.caller === 'majima') {
+    const event: PhoneEventId =
+      result === 'missed'
+        ? 'majima-call-missed'
+        : result === 'declined'
+          ? 'majima-call-declined'
+          : call.elapsedMs < 12_000
+            ? 'majima-call-short'
+            : 'majima-call-completed';
+    next = { ...next, phoneEvents: appendPhoneEvent(next.phoneEvents, event) };
+  }
   if (call.caller === 'majima' && (result !== 'completed' || call.elapsedMs < 12_000)) {
     const cold = affinityTone(state) === 'cool';
     next = appendMessage(
@@ -233,17 +277,32 @@ function finishCall(state: DayState, result: StoryCallRecord['result']): DayStat
         : result === 'missed'
           ? '또 못 받았나. 폰 보이면 연락해라.'
           : '왜 끊노! 볼일 끝나면 니가 다시 걸어라.',
+      false,
+      now,
     );
   }
   return next;
 }
-function completeQuest(state: DayState, id: ReminderId): DayState {
-  if (!questComplete(state, id) || state.completedQuests.includes(id)) return state;
+const questPhoneEvents: Partial<Record<ReminderId, PhoneEventId>> = {
+  shopping: 'haruka-shopping-checked',
+  garden: 'haruka-garden-checked',
+  mame: 'haruka-mame-checked',
+  uniform: 'haruka-uniform-checked',
+};
+function completeQuest(state: DayState, id: ReminderId, now?: number): DayState {
+  if (!questComplete(state, id)) return state;
+  const event = questPhoneEvents[id];
+  const withEvent = event
+    ? { ...state, phoneEvents: appendPhoneEvent(state.phoneEvents, event) }
+    : state;
+  if (state.completedQuests.includes(id)) return withEvent;
   const followup = questFollowups[id];
   let next = appendMessage(
-    { ...state, completedQuests: [...state.completedQuests, id] },
+    { ...withEvent, completedQuests: [...state.completedQuests, id] },
     followup.character,
     followup.text,
+    false,
+    now,
   );
   if (id === 'shopping') next = beginCall(next, 'majima', 'incoming', 'quest');
   return next;
@@ -253,17 +312,29 @@ const schedule: ContactId[] = [
   'daigo',
   'majima',
   'saejima',
+  'majima',
   'date',
   'majima',
   'yuki',
+  'majima',
   'mine',
+  'majima',
   'akiyama',
+  'majima',
   'haruka',
 ];
-export function dayReducer(state: DayState, action: DayAction): DayState {
+
+export function dayReducer(state: DayState, action: DayAction, now?: number): DayState {
   switch (action.type) {
     case 'reset':
       return initialDay();
+    case 'defer-contact':
+      if (state.nextCallInMs >= 30_000 && state.nextMajimaTextInMs >= 30_000) return state;
+      return {
+        ...state,
+        nextCallInMs: Math.max(30_000, state.nextCallInMs),
+        nextMajimaTextInMs: Math.max(30_000, state.nextMajimaTextInMs),
+      };
     case 'read-thread':
       return !isContact(action.id) || state.readThreads.includes(action.id)
         ? state
@@ -277,6 +348,7 @@ export function dayReducer(state: DayState, action: DayAction): DayState {
       return completeQuest(
         { ...state, ingredients: { ...state.ingredients, [action.id]: action.done } },
         'shopping',
+        now,
       );
     }
     case 'reminder': {
@@ -290,11 +362,13 @@ export function dayReducer(state: DayState, action: DayAction): DayState {
             ) as DayState['ingredients'],
           },
           'shopping',
+          now,
         );
       if (state.reminders[action.id] === action.done) return state;
       return completeQuest(
         { ...state, reminders: { ...state.reminders, [action.id]: action.done } },
         action.id,
+        now,
       );
     }
     case 'reply': {
@@ -307,6 +381,10 @@ export function dayReducer(state: DayState, action: DayAction): DayState {
       return {
         ...state,
         replies: [...state.replies, action.id],
+        legacyReplies:
+          action.source === 'ai'
+            ? state.legacyReplies
+            : [...new Set([...state.legacyReplies, action.id])],
         aiReplies: action.source === 'ai' ? [...state.aiReplies, action.id] : state.aiReplies,
         replySent: state.replySent || action.id === 'haruka',
         readThreads: [...new Set([...state.readThreads, action.id])],
@@ -336,7 +414,7 @@ export function dayReducer(state: DayState, action: DayAction): DayState {
         readThreads: [...new Set([...state.readThreads, id])],
       };
       if (action.source === 'ai') return next;
-      next = appendMessage(next, id, choice.text, true);
+      next = appendMessage(next, id, choice.text, true, now);
       return {
         ...next,
         storyPending: {
@@ -371,6 +449,8 @@ export function dayReducer(state: DayState, action: DayAction): DayState {
             id === 'majima' && affinityTone(next) === 'cool'
               ? '알았다. 더 할 말 없으면 이만하자.'
               : choice.response,
+            false,
+            now,
           );
       }
       if (next.call) {
@@ -384,11 +464,15 @@ export function dayReducer(state: DayState, action: DayAction): DayState {
             call: { ...call, phase: 'connected', elapsedMs: 0 },
           };
         if (call.phase === 'ringing' && call.direction === 'incoming' && call.elapsedMs >= 20_000)
-          return finishCall(next, 'missed');
+          return finishCall(next, 'missed', now);
         return next;
       }
-      if (!action.allowCalls) return next;
-      next = { ...next, nextCallInMs: Math.max(0, next.nextCallInMs - delta) };
+      if (!action.allowCalls || Object.keys(next.storyPending).length) return next;
+      next = {
+        ...next,
+        nextCallInMs: Math.max(0, next.nextCallInMs - delta),
+        nextMajimaTextInMs: Math.max(0, next.nextMajimaTextInMs - delta),
+      };
       if (next.nextCallInMs === 0) {
         const caller = schedule[next.scheduledCalls % schedule.length];
         next = beginCall(
@@ -397,8 +481,55 @@ export function dayReducer(state: DayState, action: DayAction): DayState {
           'incoming',
           'scheduled',
         );
+      } else if (
+        next.nextMajimaTextInMs === 0 &&
+        next.majimaCheckInsSent < majimaCheckIns.length &&
+        affinityTone(next) !== 'cool'
+      ) {
+        const checkIn = majimaCheckIns[next.majimaCheckInsSent];
+        next = appendMessage(
+          {
+            ...next,
+            majimaCheckInsSent: next.majimaCheckInsSent + 1,
+            nextMajimaTextInMs: 90_000 + ((next.majimaCheckInsSent * 53_023) % 90_001),
+            nextCallInMs: Math.max(45_000, next.nextCallInMs),
+            phoneEvents: appendPhoneEvent(next.phoneEvents, checkIn.id),
+          },
+          'majima',
+          checkIn.text,
+          false,
+          now,
+        );
       }
       return next;
+    }
+    case 'notify-kamurocho': {
+      if (state.kamurochoNotified || state.call) return state;
+      let next = appendMessage(
+        {
+          ...state,
+          kamurochoNotified: true,
+          phoneEvents: appendPhoneEvent(state.phoneEvents, 'majima-kamurocho-intent'),
+        },
+        'majima',
+        '형님, 카무로쵸로 갈 생각입니다. 도착하면 연락드리겠습니다.',
+        true,
+        now,
+      );
+      next = beginCall(next, 'majima', 'incoming', 'quest');
+      return {
+        ...next,
+        call: next.call
+          ? {
+              ...next.call,
+              lines: [
+                '오, 이제 좀 말이 통하네!',
+                '아직 도착한 건 아니제? 볼일 끝내고 연락해라.',
+                '기다린 만큼 제대로 상대해 줘야 한다, 키류쨩.',
+              ],
+            }
+          : null,
+      };
     }
     case 'start-call':
       return isContact(action.id) ? beginCall(state, action.id, 'outgoing', 'user') : state;
@@ -413,11 +544,11 @@ export function dayReducer(state: DayState, action: DayAction): DayState {
         : state;
     case 'miss-call':
       return state.call?.phase === 'ringing'
-        ? finishCall(state, action.reason ?? 'declined')
+        ? finishCall(state, action.reason ?? 'declined', now)
         : state;
     case 'end-call':
       return state.call
-        ? finishCall(state, state.call.phase === 'connected' ? 'completed' : 'declined')
+        ? finishCall(state, state.call.phase === 'connected' ? 'completed' : 'declined', now)
         : state;
     case 'read-call':
       return state.missedCall && (!state.missedCallRead || state.callLog.some((item) => !item.read))
@@ -459,6 +590,7 @@ export function validDay(value: unknown): value is DayState {
   if (
     !contactsArray(value.readThreads) ||
     !contactsArray(value.replies) ||
+    !contactsArray(value.legacyReplies) ||
     !contactsArray(value.aiReplies) ||
     typeof value.replySent !== 'boolean' ||
     typeof value.missedCall !== 'boolean' ||
@@ -482,6 +614,7 @@ export function validDay(value: unknown): value is DayState {
   )
     return false;
   if (
+    !validPhoneEventLog(value.phoneEvents) ||
     !record(value.storyMessages) ||
     !record(value.storyChoiceHistory) ||
     !record(value.storyPending) ||
@@ -504,14 +637,15 @@ export function validDay(value: unknown): value is DayState {
           row.text.length <= 2000 &&
           typeof row.outgoing === 'boolean' &&
           typeof row.time === 'string' &&
-          nonnegative(row.sequence),
+          nonnegative(row.sequence) &&
+          (row.createdAt === undefined || nonnegative(row.createdAt)),
       )
     )
       return false;
     const allowed = storyRounds[id].flat().map((item) => item.id);
     if (
       !Array.isArray(chosen) ||
-      chosen.length > 3 ||
+      chosen.length > storyRounds[id].length ||
       new Set(chosen).size !== chosen.length ||
       !chosen.every((choice) => allowed.includes(choice))
     )
@@ -533,6 +667,7 @@ export function validDay(value: unknown): value is DayState {
   )
     return false;
   if (
+    typeof value.kamurochoNotified !== 'boolean' ||
     !nonnegative(value.storySequence) ||
     !nonnegative(value.elapsedMs) ||
     !Number.isInteger(value.affinity) ||
@@ -540,6 +675,10 @@ export function validDay(value: unknown): value is DayState {
     Number(value.affinity) > 5 ||
     !nonnegative(value.callSerial) ||
     !nonnegative(value.scheduledCalls) ||
+    !nonnegative(value.nextMajimaTextInMs) ||
+    value.nextMajimaTextInMs > 180_000 ||
+    !nonnegative(value.majimaCheckInsSent) ||
+    value.majimaCheckInsSent > majimaCheckIns.length ||
     !nonnegative(value.nextCallInMs) ||
     value.nextCallInMs > 360_000
   )
@@ -581,7 +720,10 @@ export function validDay(value: unknown): value is DayState {
     value.missedCall
   );
 }
-export function loadDay(storage: Pick<Storage, 'getItem'>): {
+export function loadDay(
+  storage: Pick<Storage, 'getItem'>,
+  now?: number,
+): {
   state: DayState;
   unavailable: boolean;
 } {
@@ -600,6 +742,11 @@ export function loadDay(storage: Pick<Storage, 'getItem'>): {
           !('parcel' in value.reminders)
         )
           value.reminders = { ...value.reminders, uniform: false, parcel: false };
+        if (!('legacyReplies' in value))
+          value.legacyReplies =
+            !('storyChoiceHistory' in value) && Array.isArray(value.replies)
+              ? [...value.replies]
+              : [];
         const defaults = initialDay();
         if (!('completedQuests' in value) && record(value.reminders))
           value.completedQuests = reminders
@@ -611,9 +758,11 @@ export function loadDay(storage: Pick<Storage, 'getItem'>): {
             .map(({ id }) => id);
         for (const key of [
           'storyMessages',
+          'phoneEvents',
           'storyChoiceHistory',
           'storyPending',
           'completedQuests',
+          'kamurochoNotified',
           'storySequence',
           'elapsedMs',
           'affinity',
@@ -622,12 +771,16 @@ export function loadDay(storage: Pick<Storage, 'getItem'>): {
           'callSerial',
           'scheduledCalls',
           'nextCallInMs',
+          'nextMajimaTextInMs',
+          'majimaCheckInsSent',
         ] as const)
           if (!(key in value)) value[key] = defaults[key];
+        // Legacy story rows have only a display clock, not an event date. Preserve their
+        // order without inventing createdAt or turning old arrivals into new notifications.
         if (validDay(value)) {
           // A reload never restarts a ringing/connected call or immediately rings again.
           const saved = value.call
-            ? finishCall(value, value.call.phase === 'connected' ? 'completed' : 'missed')
+            ? finishCall(value, value.call.phase === 'connected' ? 'completed' : 'missed', now)
             : value;
           return {
             state: {
@@ -635,6 +788,7 @@ export function loadDay(storage: Pick<Storage, 'getItem'>): {
               call: null,
               callStatus: saved.callStatus === 'ringing' ? 'missed' : saved.callStatus,
               nextCallInMs: Math.max(45_000, saved.nextCallInMs),
+              nextMajimaTextInMs: Math.max(45_000, saved.nextMajimaTextInMs),
             },
             unavailable: false,
           };

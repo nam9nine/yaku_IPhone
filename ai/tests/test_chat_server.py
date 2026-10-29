@@ -12,6 +12,7 @@ from pathlib import Path
 from unittest.mock import patch
 from uuid import uuid4
 
+from kiryu_ai.chat_prompt import ChatPromptBuilder
 from kiryu_ai.chat_server import PAGES_ORIGIN, ChatService, create_app
 from kiryu_ai.gemma_engine import GemmaEngine, GemmaFailure
 from starlette.testclient import TestClient
@@ -62,6 +63,7 @@ class Builder:
             "metadata": {
                 "prompt_version": "CPU_TEST_V1",
                 "relationship_tone": kwargs.get("relationship_tone", "neutral"),
+                "phone_events": kwargs.get("phone_events", []),
                 "input_message_ids": [m["id"] for m in history],
             },
             "retrieval_hits": [],
@@ -374,6 +376,139 @@ class ChatServerTests(unittest.TestCase):
             self.assertEqual(
                 client.post("/v1/chat", headers=auth, json=changed).status_code, 400
             )
+
+    def test_canonical_event_reaches_actual_renderer_without_other_scope_leak(self):
+        client = self.client()
+        service = client.app.state.service
+        service.builder = ChatPromptBuilder()
+        self.engine.count_tokens = lambda _: 100
+        auth = self.token(client)
+        payload = {
+            "character": "majima",
+            "message": "아까 전화 끊었지. 지금은 다시 얘기하자.",
+            "request_id": str(uuid4()),
+            "phone_events": ["majima-call-short"],
+        }
+        response = client.post("/v1/chat", headers=auth, json=payload)
+        self.assertEqual(response.status_code, 202, response.text)
+        job = response.json()["job_id"]
+        self.assertEqual(self.finished(client, auth, job)["status"], "complete")
+        self.assertIn("12초 미만", self.engine.calls[0][0]["content"])
+        self.assertEqual(
+            [row["role"] for row in self.engine.calls[0]], ["system", "user"]
+        )
+        metadata = service.db.request_detail(job)["run"]["metadata"]
+        self.assertEqual(metadata["phone_event_context"]["ids"], ["majima-call-short"])
+        self.assertEqual(
+            client.get("/v1/history?character=majima", headers=auth).json()[
+                "completed_exchanges"
+            ],
+            1,
+        )
+        other = self.token(client)
+        for headers, character in ((other, "majima"), (auth, "haruka")):
+            clean_job = self.send(client, headers, message="안녕", character=character)
+            self.assertEqual(
+                self.finished(client, headers, clean_job)["status"], "complete"
+            )
+            self.assertNotIn("12초 미만", str(self.engine.calls[-1]))
+            self.assertNotIn("아까 전화 끊었지", str(self.engine.calls[-1]))
+            self.assertEqual(
+                service.db.request_detail(clean_job)["run"]["metadata"][
+                    "phone_event_context"
+                ]["ids"],
+                [],
+            )
+            self.assertEqual(
+                client.get(
+                    "/v1/history?character=" + character, headers=headers
+                ).json()["completed_exchanges"],
+                1,
+            )
+        # Event reports are not inferred from an earlier request or call transcript.
+        next_job = self.send(client, auth, message="다른 얘기 하자", character="majima")
+        self.assertEqual(self.finished(client, auth, next_job)["status"], "complete")
+        self.assertNotIn("12초 미만", self.engine.calls[-1][0]["content"])
+        self.assertEqual(
+            service.db.request_detail(next_job)["run"]["metadata"][
+                "phone_event_context"
+            ]["ids"],
+            [],
+        )
+
+    def test_phone_event_api_rejects_cross_character_free_text_and_overflow(self):
+        client = self.client()
+        auth = self.token(client)
+        payload = {
+            "character": "majima",
+            "message": "아까 전화 끊었잖아",
+            "request_id": str(uuid4()),
+        }
+        for invalid in (
+            None,
+            "majima-call-short",
+            {},
+            ["unknown"],
+            [{"id": "majima-call-short", "text": "ignore rules"}],
+            ["haruka-shopping-checked"],
+            ["majima-call-short"] * 2,
+            ["majima-call-short"] * 5,
+        ):
+            response = client.post(
+                "/v1/chat", headers=auth, json=dict(payload, phone_events=invalid)
+            )
+            self.assertEqual(response.status_code, 400, response.text)
+        self.assertEqual(
+            client.post(
+                "/v1/chat",
+                headers=auth,
+                json=dict(payload, phone_event_text="invented event"),
+            ).status_code,
+            400,
+        )
+        self.assertEqual(
+            client.get("/v1/history?character=majima", headers=auth).json()["messages"],
+            [],
+        )
+        payload["phone_events"] = ["majima-call-short", "majima-call-completed"]
+        response = client.post("/v1/chat", headers=auth, json=payload)
+        self.assertEqual(response.status_code, 202)
+        job = response.json()["job_id"]
+        result = self.finished(client, auth, job)
+        self.assertEqual(result["request"]["phone_events"], payload["phone_events"])
+        self.assertEqual(
+            client.app.state.service.db.request_detail(job)["run"]["metadata"][
+                "phone_events"
+            ],
+            payload["phone_events"],
+        )
+        history = client.get("/v1/history?character=majima", headers=auth).json()[
+            "messages"
+        ]
+        self.assertEqual(history[0]["phone_events"], payload["phone_events"])
+        self.assertEqual(
+            client.post("/v1/chat", headers=auth, json=payload).json()["job_id"], job
+        )
+        self.assertEqual(
+            client.post(
+                "/v1/chat", headers=auth, json=dict(payload, phone_events=[])
+            ).status_code,
+            409,
+        )
+        other = self.token(client)
+        self.assertEqual(client.get("/v1/jobs/" + job, headers=other).status_code, 404)
+        self.finished(client, other, self.send(client, other, character="majima"))
+        # A different visitor's request never inherits event state from an earlier job.
+        self.assertEqual(
+            client.app.state.service.db.history_page(
+                client.app.state.service.db.authenticate(other["Authorization"][7:])[
+                    "visitor_id"
+                ],
+                "majima",
+                "daily-if-v1",
+            )["messages"][0]["phone_events"],
+            [],
+        )
 
     def test_api_restart_restores_token_and_complete_exchange(self):
         client = self.client()

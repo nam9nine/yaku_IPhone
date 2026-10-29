@@ -36,6 +36,7 @@ from .chat_db import (
     VisitorBusy,
 )
 from .chat_policy import POLICY_MESSAGE, explicit_request, output_allowed
+from .phone_events import NO_PHONE_EVENTS, validate_phone_events
 from .web_server import ApiFailure, PrivacyMiddleware, WindowLimiter, json_body
 
 CHARACTERS = ("haruka", "majima")
@@ -168,6 +169,7 @@ def public_job(job):
             "message": job["message"],
             "time": job["accepted_at"],
             "relationship_tone": job.get("relationship_tone", "neutral"),
+            "phone_events": job.get("phone_events", []),
         },
     }
     if status == "complete":
@@ -271,12 +273,21 @@ class ChatService:
         request_id,
         address,
         relationship_tone="neutral",
+        phone_events=NO_PHONE_EVENTS,
     ):
         visitor = record["visitor_id"]
         if relationship_tone not in RELATIONSHIP_TONES:
             raise ApiFailure(
                 400, "invalid_relationship_tone", "지원하지 않는 인연 상태입니다."
             )
+        try:
+            phone_events = validate_phone_events(
+                character, [] if phone_events is NO_PHONE_EVENTS else phone_events
+            )
+        except ValueError:
+            raise ApiFailure(
+                400, "invalid_phone_events", "올바른 전화·할 일 상태가 필요합니다."
+            ) from None
         scope = (visitor, character, SCENARIO)
         # Existing UUIDs must remain discoverable even while the queue/model is
         # unavailable. accept() checks the fingerprint again in its transaction.
@@ -286,6 +297,7 @@ class ChatService:
                 previous["character"] != character
                 or previous["message"] != message
                 or previous.get("relationship_tone", "neutral") != relationship_tone
+                or previous.get("phone_events", []) != phone_events
             ):
                 raise ApiFailure(
                     409, "request_id_conflict", "다른 내용에 사용한 요청 ID입니다."
@@ -326,6 +338,7 @@ class ChatService:
                 message,
                 request_id,
                 relationship_tone=relationship_tone,
+                phone_events=phone_events,
             )
         except RequestConflict:
             raise ApiFailure(
@@ -440,6 +453,7 @@ class ChatService:
                 scenario_version=SCENARIO,
                 user_message=job["message"],
                 relationship_tone=job.get("relationship_tone", "neutral"),
+                phone_events=job.get("phone_events", []),
                 history=history,
                 count_tokens=self.engine.count_tokens,
                 context_limit=CONTEXT_TOKENS,
@@ -630,7 +644,10 @@ def create_app(data_root, *, allow_origins=(), **options):
         record = service.authenticate(request)
         body = await json_body(request)
         required = {"character", "message", "request_id"}
-        if not required <= set(body) or set(body) - required - {"relationship_tone"}:
+        if not required <= set(body) or set(body) - required - {
+            "relationship_tone",
+            "phone_events",
+        }:
             raise ApiFailure(400, "invalid_body", "지원하지 않는 요청 항목입니다.")
         character, message = body["character"], body["message"]
         relationship_tone = body.get("relationship_tone", "neutral")
@@ -664,6 +681,7 @@ def create_app(data_root, *, allow_origins=(), **options):
             request_id,
             service.address(request),
             relationship_tone=relationship_tone,
+            phone_events=body.get("phone_events", []),
         )
         return JSONResponse(
             {"job_id": job["job_id"], "status": public_job(job)["status"]},

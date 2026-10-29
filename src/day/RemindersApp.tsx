@@ -58,11 +58,15 @@ export function RemindersApp({
                     <small>{item.detail}</small>
                   </span>
                 </label>
-                {item.id === 'shopping' && (
+                {['shopping', 'uniform', 'parcel'].includes(item.id) && (
                   <button
                     className="day-reminder-detail"
-                    aria-label="저녁 장보기 메모 열기"
-                    onClick={() => onOpenNote('curry')}
+                    aria-label={`${item.title} 메모 열기`}
+                    onClick={() =>
+                      onOpenNote(
+                        item.id === 'shopping' ? 'curry' : item.id === 'uniform' ? 'gym' : 'parcel',
+                      )
+                    }
                   >
                     ⓘ
                   </button>
