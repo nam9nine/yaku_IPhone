@@ -71,10 +71,16 @@ function PhoneSession() {
     origin: LaunchRect | null;
   } | null>(notificationEntry ? { app: 'messages', origin: null } : null);
   const { preferences, setPreferences, storageUnavailable } = useDevicePreferences();
+  const callCharacter =
+    day.state.call?.phase === 'connected' && isAiCharacter(day.state.call.caller)
+      ? day.state.call.caller
+      : null;
   const ai = useAiMessenger(
     isOnline(preferences),
-    isAiCharacter(conversation ?? undefined) ? (conversation as 'haruka' | 'majima') : null,
-    !state.locked && state.activeApp === 'messages' && !state.panel && !day.state.call,
+    callCharacter ??
+      (isAiCharacter(conversation ?? undefined) ? (conversation as 'haruka' | 'majima') : null),
+    !!callCharacter ||
+      (!state.locked && state.activeApp === 'messages' && !state.panel && !day.state.call),
   );
   const inConversation =
     !state.locked &&
@@ -82,7 +88,7 @@ function PhoneSession() {
     !!conversation &&
     !state.panel &&
     !day.state.call;
-  usePushPresence(ai.connection, inConversation, ai.arrival);
+  usePushPresence(ai.connection, inConversation || !!callCharacter, ai.arrival);
   const appearance = useAppearance(preferences);
   const viewport = useViewport();
   const [topPull, setTopPull] = useState<TopPanel | null>(null);
@@ -382,7 +388,7 @@ function PhoneSession() {
       )}
       <AiReplySound
         arrival={ai.arrival}
-        silent={controls.silent}
+        silent={controls.silent || !!callCharacter}
         volume={controls.volume}
         activeCharacter={
           !state.locked && state.activeApp === 'messages' && !state.panel ? conversation : null
@@ -392,13 +398,13 @@ function PhoneSession() {
         notification={ai.notification}
         onOpen={openConversation}
         onDismiss={ai.messenger.dismissNotification}
-        inConversation={inConversation}
+        inConversation={inConversation || !!callCharacter}
         obscured={!!unlockRequest || state.panel === 'notifications'}
       />
       <StoryReplyNotifications
         key={`story-replies-${epoch}`}
         onOpen={openConversation}
-        inConversation={inConversation}
+        inConversation={inConversation || !!callCharacter}
         activeCharacter={inConversation ? conversation : null}
         obscured={
           !!unlockRequest ||
@@ -410,6 +416,7 @@ function PhoneSession() {
         volume={controls.volume}
       />
       <DayCall
+        ai={ai}
         silent={controls.silent}
         volume={controls.volume}
         preferences={preferences}

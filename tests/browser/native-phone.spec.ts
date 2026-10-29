@@ -76,11 +76,8 @@ test('전화 응답은 통화 화면으로 이어지고 종료하면 기존 메�
   await page.getByRole('button', { name: '전화 응답', exact: true }).tap();
   const call = page.getByRole('dialog', { name: '마지마 형님 통화' });
   await expect(call).toBeVisible();
-  await call.getByRole('button', { name: '소리 끔', exact: true }).tap();
-  await expect(call.getByRole('button', { name: '소리 끔', exact: true })).toHaveAttribute(
-    'aria-pressed',
-    'true',
-  );
+  await call.getByRole('button', { name: '글로 입력', exact: true }).tap();
+  await expect(call.getByRole('textbox', { name: '통화에서 보낼 말', exact: true })).toBeFocused();
   await call.getByRole('button', { name: '통화 종료' }).tap();
   await expect(call).not.toBeVisible();
   await expect(page.locator('.note-paper h2')).toHaveText('오늘 저녁 카레');

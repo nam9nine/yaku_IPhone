@@ -1,0 +1,22 @@
+{
+  "supported": true,
+  "events": [
+    "start",
+    "result",
+    "result",
+    "result",
+    "result",
+    "result",
+    "result",
+    "result",
+    "result",
+    "result",
+    "result",
+    "result",
+    "end"
+  ],
+  "text": "형님 오늘 어디에서 만날까요",
+  "final": true,
+  "done": true,
+  "environment": "macOS installed Google Chrome; synthetic Yuna ko-KR WAV; explicit AudioContext MediaStreamTrack, not a physical microphone or iPhone test"
+}

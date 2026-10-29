@@ -1,0 +1,7 @@
+{
+  "supported": true,
+  "events": ["start", "end"],
+  "error": "no-speech",
+  "done": true,
+  "environment": "macOS installed Google Chrome; synthetic Yuna ko-KR WAV; fake capture, not a physical microphone or iPhone test"
+}

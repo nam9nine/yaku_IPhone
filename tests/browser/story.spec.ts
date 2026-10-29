@@ -5,7 +5,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { launchHomeApp } from '../helpers/home';
 
 test.beforeEach(async ({ page }) => {
-  await mockStoryAi(page);
+  await mockStoryAi(page, { majimaCompletedExchanges: 3 });
 });
 
 async function start(page: Page) {
@@ -139,13 +139,18 @@ for (const size of [
 
 test('연결이 끊기면 선택형 답장을 막고 복구 후 한 번 보낸다', async ({ page }) => {
   await start(page);
+  await launchHomeApp(page, 'messages');
+  await page.locator('[data-conversation=majima]').tap();
+  const choices = page.locator('.message-story-reply');
+  await expect(choices).toHaveCount(2);
+  await expect(choices.first()).toBeEnabled();
+  await home(page);
   await launchHomeApp(page, 'settings');
   await page.getByRole('switch', { name: '에어플레인 모드', exact: true }).check();
   await home(page);
   await launchHomeApp(page, 'messages');
-  await page.locator('[data-conversation=majima]').tap();
-  for (const choice of await page.locator('.message-story-reply').all())
-    await expect(choice).toBeDisabled();
+  await expect(choices).toHaveCount(2);
+  for (const choice of await choices.all()) await expect(choice).toBeDisabled();
   await home(page);
   await launchHomeApp(page, 'settings');
   await page.getByRole('switch', { name: '에어플레인 모드', exact: true }).uncheck();

@@ -1,0 +1,23 @@
+{
+  "checkedAt": "2026-10-29",
+  "sources": [
+    {
+      "url": "https://developer.mozilla.org/en-US/docs/Web/API/SpeechRecognition",
+      "purpose": "Limited browser support and service-based recognition; do not claim on-device processing."
+    },
+    {
+      "url": "https://developer.mozilla.org/en-US/docs/Web/API/SpeechRecognition/start",
+      "purpose": "Explicit user-started microphone recognition."
+    },
+    {
+      "url": "https://developer.mozilla.org/en-US/docs/Web/API/SpeechRecognitionErrorEvent/error",
+      "purpose": "Permission, no-speech and network failures."
+    },
+    {
+      "url": "https://webkit.org/blog/11648/new-webkit-features-in-safari-14-1/",
+      "purpose": "Safari recognition uses Siri speech engine; enablement and availability depend on the device."
+    }
+  ],
+  "copiedCode": false,
+  "implementation": "Browser native recognition, explicit confirmation before text submission; no synthesized character voice."
+}

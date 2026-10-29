@@ -1,3 +1,7 @@
+import { CallConversation } from './CallConversation';
+import { isAiCharacter } from '../ai/client';
+import type { AiMessengerView } from '../ai/useAiMessenger';
+import { isOnline } from '../settings/preferences';
 import { StatusBar } from './StatusBar';
 import type { DevicePreferences } from '../settings/preferences';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
@@ -16,7 +20,9 @@ export function DayCall({
   preferences,
   silent,
   volume,
+  ai,
 }: {
+  ai: AiMessengerView;
   locked: boolean;
   active?: boolean;
   onMessage: (id: ContactId) => void;
@@ -39,8 +45,6 @@ export function DayCall({
   }, [active, setCallActivity, dispatch]);
   const date = useDisplayDate();
   useRingtone(ringing && !outgoing, silent, volume, caller?.id === 'majima' ? 'majima' : 'other');
-  const [muted, setMuted] = useState(false);
-  const [speaker, setSpeaker] = useState(false);
   const [expandedCall, setExpandedCall] = useState<string | null>(null);
   const expanded = expandedCall === call?.id;
   const dialog = useRef<HTMLDialogElement>(null);
@@ -93,8 +97,12 @@ export function DayCall({
         onKeyDown={(event) => {
           if (event.key !== 'Tab') return;
           const buttons = [
-            ...event.currentTarget.querySelectorAll<HTMLButtonElement>('button'),
-          ].filter((button) => !button.disabled && button.getClientRects().length > 0);
+            ...event.currentTarget.querySelectorAll<HTMLElement>(
+              'button, textarea, input, [tabindex="0"]',
+            ),
+          ].filter(
+            (button) => !button.hasAttribute('disabled') && button.getClientRects().length > 0,
+          );
           if (!buttons.length) return;
           event.preventDefault();
           event.stopPropagation();
@@ -109,7 +117,7 @@ export function DayCall({
         style={{ '--caller-photo': `url("${caller.portrait}")` } as React.CSSProperties}
       >
         <StatusBar preferences={preferences} appVisible={false} />
-        <div className="call-screen-content">
+        <div className="call-screen-content" data-live={connected && isAiCharacter(call.caller)}>
           <div className="call-identity">
             <img src={caller.portrait} alt="" />
             <p className="call-time" aria-label={connected ? '통화 시간' : '현재 시각'}>
@@ -127,17 +135,16 @@ export function DayCall({
                   <p key={`${call.id}-${index}`}>{line}</p>
                 ))}
               </div>
-              <div className="call-tools">
-                <button aria-pressed={muted} onClick={() => setMuted(!muted)}>
-                  <span>
-                    <PhoneIcon name="microphone" />
-                  </span>
-                  소리 끔
-                </button>
-                <button aria-pressed={speaker} onClick={() => setSpeaker(!speaker)}>
-                  <span>◖))</span>스피커
-                </button>
-              </div>
+              {isAiCharacter(call.caller) ? (
+                <CallConversation
+                  key={call.id}
+                  character={call.caller}
+                  ai={ai}
+                  online={isOnline(preferences)}
+                />
+              ) : (
+                <p className="call-live-hint">이 연락처의 통화는 화면 대사로 진행됩니다.</p>
+              )}
               <button
                 className="call-action call-decline call-end"
                 aria-label="통화 종료"
