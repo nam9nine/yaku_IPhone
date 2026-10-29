@@ -750,9 +750,7 @@ for (const [width, height] of [
     await showAiTyping(page, 'majima');
     await expect(page.locator('.message-typing')).toHaveCount(0);
     await expect(page.locator('.message-time').last()).toContainText('읽음');
-    await expect(
-      page.getByText('답장 대기 중 · 다른 연락처에는 보낼 수 있어요.', { exact: true }),
-    ).toBeVisible();
+    await expect(page.getByText('답장 대기 중', { exact: true })).toBeVisible();
     mac.hold.delete('majima');
     await finishAiReply(page, 'majima');
     await expect.poll(bottomGap).toBeLessThanOrEqual(1);

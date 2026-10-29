@@ -1,0 +1,23 @@
+{
+  "issue": 109,
+  "scope": "Remove instructional phone/message UI copy without changing interaction logic",
+  "local_checks": {
+    "typecheck": "pass",
+    "build": "pass",
+    "call_message_browser": {
+      "passed": 42,
+      "earlier_failure": "2 stale wording expectations corrected before rerun"
+    },
+    "related_browser": {
+      "passed": 18
+    }
+  },
+  "independent_review": {
+    "reviewer": "phone107_independent_review",
+    "result": "pass",
+    "scope": "final 10-file diff and two direct screenshots; no P1/P2"
+  },
+  "ci": "skipped at explicit user request",
+  "full_visual_and_baselines": "not run or updated; Haruka thread visual baseline follow-up remains",
+  "physical_iphone": "not tested"
+}

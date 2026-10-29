@@ -674,9 +674,7 @@ test('답장 작성 말풍선 없이 지연 뒤 읽음으로 바뀌고 실제 �
   await expect(page.locator('.message-typing')).toHaveCount(0);
   await page.clock.runFor(typingDelay(state.requestId) + 1);
   await expect(page.locator('.message-typing')).toHaveCount(0);
-  await expect(
-    page.getByText('답장 대기 중 · 다른 연락처에는 보낼 수 있어요.', { exact: true }),
-  ).toBeVisible();
+  await expect(page.getByText('답장 대기 중', { exact: true })).toBeVisible();
   await expect(page.locator('.message-time').last()).toContainText('읽음');
   expect(await soundCount(page)).toBe(0);
   await page.screenshot({ path: `harness/evidence/issue-99/read-${test.info().project.name}.png` });

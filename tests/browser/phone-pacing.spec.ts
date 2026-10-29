@@ -122,7 +122,7 @@ test('선택 소진 후 12번째 성공 대화는 45초만 쉬며 다른 연락�
   await expect(page.getByText('대화를 불러오는 중…', { exact: true })).toHaveCount(0);
   const input = page.getByRole('textbox', { name: '마지마에게 메시지 입력', exact: true });
   const send = page.getByRole('button', { name: '메시지 보내기', exact: true });
-  const rest = page.getByText('잠깐 다른 일을 둘러보세요. 조금 뒤 다시 보낼 수 있어요.', {
+  const rest = page.getByText('잠시 대기 중', {
     exact: true,
   });
   await input.fill('휴식 후 보낼 문자');

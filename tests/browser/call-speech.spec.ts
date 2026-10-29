@@ -136,8 +136,7 @@ async function outgoing(page: Page, character: 'majima' | 'haruka' = 'majima', w
     exact: true,
   });
   await expect(call).toBeVisible();
-  if (waitReady)
-    await expect(call.getByRole('status')).toHaveText('말한 내용을 확인해 보내면 글로 답합니다.');
+  if (waitReady) await expect(call.getByRole('status')).toHaveText('');
   return call;
 }
 
@@ -239,9 +238,7 @@ test('미지원 브라우저에서도 통화의 직접 입력과 전송을 사�
   await boot(page);
   const call = await outgoing(page);
   await expect(call.getByRole('button', { name: '말하기', exact: true })).toBeDisabled();
-  await expect(
-    call.getByText('이 브라우저에서는 음성 인식을 사용할 수 없습니다. 글로 입력해 주세요.'),
-  ).toBeVisible();
+  await expect(call.getByText('음성 인식 미지원')).toBeVisible();
   await call.getByRole('button', { name: '글로 입력', exact: true }).tap();
   await call
     .getByRole('textbox', { name: '통화에서 보낼 말', exact: true })
@@ -302,12 +299,10 @@ test('문자에서 보낸 답장을 기다리며 통화로 옮겨도 같은 답�
     .fill('형님, 문자 보셨습니까?');
   await page.getByRole('button', { name: '메시지 보내기', exact: true }).tap();
   await expect.poll(() => posts.length).toBe(1);
-  await expect(
-    page.getByText('답장 대기 중 · 다른 연락처에는 보낼 수 있어요.', { exact: true }),
-  ).toBeVisible();
+  await expect(page.getByText('답장 대기 중', { exact: true })).toBeVisible();
   await page.keyboard.press('Alt+Home');
   const call = await outgoing(page, 'majima', false);
-  await expect(call.getByRole('status')).toContainText('답장을 기다리는 중');
+  await expect(call.getByRole('status')).toContainText('답장 대기 중');
   await expect(call.getByRole('log', { name: '실시간 통화 대화' })).toContainText(
     '형님, 문자 보셨습니까?',
   );

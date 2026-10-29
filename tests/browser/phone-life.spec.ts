@@ -43,9 +43,7 @@ test('선택형 문자는 인물별로 기다리고 세 왕복 뒤 끝난다', a
   await page
     .getByRole('button', { name: '네가 직접 보고 판단해라. 이야기는 듣겠다. 보내기', exact: true })
     .tap();
-  await expect(
-    page.getByText('답장 대기 중 · 다른 연락처에는 보낼 수 있어요.', { exact: true }),
-  ).toBeVisible();
+  await expect(page.getByText('답장 대기 중', { exact: true })).toBeVisible();
   await expect(
     page.getByText('네. 먼저 제가 확인하겠습니다. 그 뒤에 말씀드리겠습니다.', { exact: true }),
   ).toHaveCount(0);

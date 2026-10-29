@@ -63,7 +63,7 @@ export function MessagesApp({
   online: boolean;
   onOpenNote: (id: string) => void;
 }) {
-  const { state, dispatch, shoppingDone, storageUnavailable } = useDay();
+  const { state, dispatch, storageUnavailable } = useDay();
   const [query, setQuery] = useState('');
   const [unreadOnly, setUnreadOnly] = useState(false);
   const [editMenu, setEditMenu] = useState(false);
@@ -609,17 +609,10 @@ export function MessagesApp({
                   )}
                 {aiBusy && !ai.error && !aiThread.error && (
                   <p className="message-choice-status" role="status">
-                    답장 대기 중 · 다른 연락처에는 보낼 수 있어요.
+                    답장 대기 중
                   </p>
                 )}
-                {resting && !aiBusy && (
-                  <p className="message-choice-status">
-                    잠깐 다른 일을 둘러보세요. 조금 뒤 다시 보낼 수 있어요.
-                  </p>
-                )}
-                {choiceInterlude && !aiBusy && !editingFailed && (
-                  <p className="message-choice-status">이번에는 짧은 답장을 골라보세요.</p>
-                )}
+                {resting && !aiBusy && <p className="message-choice-status">잠시 대기 중</p>}
                 {freeText && (
                   <form
                     className="message-input-wrap message-ai-input"
@@ -678,17 +671,10 @@ export function MessagesApp({
                     ))}
                   </div>
                 )}
-                {person.id === 'haruka' && !aiBusy && choices.length === 0 && (
-                  <p className="message-choice-status">
-                    {!shoppingDone
-                      ? '메모의 장보기 목록부터 확인해 보세요.'
-                      : '새로운 할 일이 생기면 짧게 연락해 보세요.'}
-                  </p>
-                )}
               </>
             ) : storyPending ? (
               <p className="message-choice-status" role="status">
-                답장 대기 중 · 다른 연락처에는 보낼 수 있어요.
+                답장 대기 중
               </p>
             ) : choices.length > 0 ? (
               <div className="message-choice-list" aria-label="답장 선택">

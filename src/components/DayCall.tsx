@@ -142,9 +142,7 @@ export function DayCall({
                   ai={ai}
                   online={isOnline(preferences)}
                 />
-              ) : (
-                <p className="call-live-hint">이 연락처의 통화는 화면 대사로 진행됩니다.</p>
-              )}
+              ) : null}
               <button
                 className="call-action call-decline call-end"
                 aria-label="통화 종료"
