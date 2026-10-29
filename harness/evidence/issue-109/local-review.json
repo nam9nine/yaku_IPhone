@@ -27,5 +27,14 @@
     "personal_phone_browser_passed": 16,
     "screenshot": "passcode-no-hint.png",
     "deployment": "pending explicit approval for temporary required-check change"
+  },
+  "call_separation": {
+    "scope": "Hide live call input and replies from SMS timeline, counts, badges, banners and push; preserve DB and model context",
+    "check": "pass: 468 tests plus type/lint/format/build/harness",
+    "browser": "44 passed Chromium/WebKit; strengthened retry recovery assertion 2 passed",
+    "python": "376 tests OK, 3 skipped; initial unrelated OCR timeout passed on rerun",
+    "review": "phone107_independent_review: failed-call recovery P2 fixed, no remaining P1/P2; screenshots directly reviewed",
+    "physical_iphone": "not tested",
+    "deployment": "not deployed: required merge-gate remains enforced"
   }
 }

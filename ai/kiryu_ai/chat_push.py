@@ -29,6 +29,7 @@ from pywebpush import WebPushException
 from requests.exceptions import RequestException
 
 from .chat_db import SESSION_LIFETIME, private_file, timestamp
+from .phone_events import is_call_events
 
 PUSH_TTL = 3600
 MAX_ATTEMPTS = 3
@@ -426,7 +427,7 @@ class ChatPush:
                 continue
             with self.chat_db.connection() as connection:
                 jobs = connection.execute(
-                    "SELECT job_id,client_request_id,accepted_at,updated_at FROM requests "
+                    "SELECT job_id,client_request_id,accepted_at,updated_at,phone_events FROM requests "
                     "WHERE visitor_id=? AND scenario_version='daily-if-v1' AND status='complete' "
                     "AND (updated_at>? OR (updated_at=? AND job_id>?)) "
                     "ORDER BY updated_at,job_id LIMIT 64",
@@ -439,6 +440,8 @@ class ChatPush:
                 ).fetchone():
                     continue
                 for job in jobs:
+                    if is_call_events(json.loads(job["phone_events"])):
+                        continue
                     accepted = datetime.fromisoformat(job["accepted_at"]).timestamp()
                     completed = datetime.fromisoformat(job["updated_at"]).timestamp()
                     if completed >= sub["created_at"] and completed + PUSH_TTL > now:
@@ -500,6 +503,7 @@ class ChatPush:
             or job["status"] != "complete"
             or job["character"] not in TITLES
             or not job.get("reply")
+            or is_call_events(job.get("phone_events", []))
         ):
             self._finish(item, "failed", "ineligible")
             return False

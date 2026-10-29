@@ -32,6 +32,9 @@ export function isAiCharacter(value: string | undefined): value is AiCharacter {
   return value === 'haruka' || value === 'majima';
 }
 
+export const isCallEvents = (events: readonly string[] | undefined): boolean =>
+  !!events?.some((id) => id === 'majima-call-live' || id === 'haruka-call-live');
+
 export interface AiMessage {
   id: string;
   role: 'user' | 'assistant';

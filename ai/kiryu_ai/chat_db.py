@@ -672,7 +672,10 @@ class ChatDB:
                 (conversation, before, include_failed, limit + 1),
             ).fetchall()
             completed_exchanges = connection.execute(
-                "SELECT COUNT(*) FROM messages WHERE conversation_id=? AND role='user' AND model_eligible=1",
+                "SELECT COUNT(*) FROM messages m LEFT JOIN requests r ON r.job_id=m.job_id "
+                "WHERE m.conversation_id=? AND m.role='user' AND m.model_eligible=1 "
+                "AND NOT EXISTS (SELECT 1 FROM json_each(COALESCE(r.phone_events, '[]')) "
+                "WHERE value IN ('majima-call-live', 'haruka-call-live'))",
                 (conversation,),
             ).fetchone()[0]
         more = len(rows) > limit

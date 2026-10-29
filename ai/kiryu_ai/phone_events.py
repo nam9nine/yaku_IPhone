@@ -82,3 +82,7 @@ def resolve_phone_events(character, value):
             "applied_to": "renderer-system",
         },
     }
+
+
+def is_call_events(events):
+    return any(event in ("majima-call-live", "haruka-call-live") for event in events)

@@ -207,6 +207,27 @@ for (const character of ['majima', 'haruka'] as const) {
     expect((await speechState(page)).speaks).toBe(0);
     await expect(call.locator('audio, video')).toHaveCount(0);
     await page.screenshot({ path: testInfo.outputPath(`call-${character}-reply.png`) });
+    await call.getByRole('button', { name: '통화 종료', exact: true }).tap();
+    await page.keyboard.press('Alt+Home');
+    await launchHomeApp(page, 'messages');
+    await page.locator(`[data-conversation=${character}]`).tap();
+    await expect(page.locator('.message-history')).not.toContainText(message);
+    await expect(page.locator('.message-history')).not.toContainText(
+      `검증용 ${character === 'majima' ? '마지마' : '하루카'} 답장`,
+    );
+    await expect(page.locator('.ai-reply-banner')).toHaveCount(0);
+    await page.reload();
+    await unlockPhone(page);
+    await launchHomeApp(page, 'messages');
+    await page.locator(`[data-conversation=${character}]`).tap();
+    await settleAiRequests(page);
+    await page.screenshot({
+      path: testInfo.outputPath(`call-hidden-in-messages-${character}.png`),
+    });
+    await expect(page.locator('.message-history')).not.toContainText(message);
+    await expect(page.locator('.message-history')).not.toContainText(
+      `검증용 ${character === 'majima' ? '마지마' : '하루카'} 답장`,
+    );
   });
 }
 
@@ -371,4 +392,47 @@ test('짧은 통화 화면에서도 인식 편집·전송·종료 버튼에 접�
   await page.screenshot({ path: testInfo.outputPath('call-editor-360x400.png') });
   await end.tap();
   await expect(call).toHaveCount(0);
+});
+
+test('통화 전송 실패 후 문자에서는 원문 없이 재시도하고 통화 답장을 숨긴다', async ({ page }) => {
+  await installSpeech(page);
+  const posts = requests(page);
+  await boot(page);
+  let first = true;
+  await page.route(`${AI_ENDPOINT}/v1/chat`, async (route) => {
+    if (route.request().method() === 'POST' && first) {
+      first = false;
+      await route.fulfill({
+        status: 503,
+        json: { error: { code: 'unavailable', message: '잠시 연결할 수 없습니다.' } },
+      });
+    } else await route.fallback();
+  });
+  const call = await outgoing(page);
+  await call.getByRole('button', { name: '글로 입력', exact: true }).tap();
+  await call
+    .getByRole('textbox', { name: '통화에서 보낼 말' })
+    .fill('문자에 옮기지 않을 통화 원문');
+  await call.getByRole('button', { name: '말 보내기', exact: true }).tap();
+  await expect(call.getByRole('button', { name: '보낸 말 다시 시도' })).toBeVisible();
+  await call.getByRole('button', { name: '통화 종료', exact: true }).tap();
+  await page.keyboard.press('Alt+Home');
+  await launchHomeApp(page, 'messages');
+  await page.locator('[data-conversation=majima]').tap();
+  await expect(page.locator('.message-history')).not.toContainText('문자에 옮기지 않을 통화 원문');
+  await page.getByRole('button', { name: '통화 전송 다시 시도' }).tap();
+  await finishAiReply(page, 'majima');
+  await expect(
+    page.getByRole('textbox', { name: '마지마에게 메시지 입력', exact: true }),
+  ).toBeEnabled();
+  await expect(page.locator('.message-history')).not.toContainText('문자에 옮기지 않을 통화 원문');
+  await expect(page.locator('.message-history')).not.toContainText('검증용 마지마 답장');
+  await expect(page.locator('.ai-reply-banner')).toHaveCount(0);
+  await page
+    .getByRole('textbox', { name: '마지마에게 메시지 입력', exact: true })
+    .fill('이제 보낼 문자');
+  await expect(page.getByRole('button', { name: '메시지 보내기', exact: true })).toBeEnabled();
+  expect(posts).toHaveLength(2);
+  expect(posts[1].request_id).toBe(posts[0].request_id);
+  expect(posts[1].phone_events).toEqual(posts[0].phone_events);
 });
