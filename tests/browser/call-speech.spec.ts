@@ -47,6 +47,7 @@ async function installSpeech(page: Page, mode: 'standard' | 'webkit' | 'unsuppor
       }
       stop() {
         this.state = 'inactive';
+        this.ondataavailable?.({ data: new Blob(['synthetic-test-audio']) });
         this.onstop?.();
       }
     }
@@ -152,6 +153,9 @@ function requests(page: Page) {
 }
 async function boot(page: Page) {
   await mockStoryAi(page);
+  await page.route(`${AI_ENDPOINT}/v1/recordings/**`, (route) =>
+    route.fulfill({ status: 201, contentType: 'application/json', body: '{}' }),
+  );
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('./');
   await unlockPhone(page);
@@ -190,6 +194,8 @@ test('수신 전화에 응답해도 마이크를 누르기 전에는 마이크�
   const call = page.getByRole('dialog', { name: '마지마 형님 통화', exact: true });
   await expect(call.getByRole('button', { name: '마이크', exact: true })).toBeEnabled();
   expect((await speechState(page)).instances).toBe(0);
+  expect((await speechState(page)).mediaRequests).toBe(0);
+  expect((await speechState(page)).captures).toBe(0);
   expect(posts).toEqual([]);
   await call.getByRole('button', { name: '통화 종료', exact: true }).tap();
 });
@@ -211,6 +217,11 @@ for (const character of ['majima', 'haruka'] as const) {
     await expect(call.getByText(/녹음|서버에 저장/)).toHaveCount(0);
     await page.screenshot({ path: testInfo.outputPath(`call-${character}-microphone.png`) });
     await call.getByRole('button', { name: '마이크', exact: true }).tap();
+    await expect(call.getByRole('button', { name: '마이크 끄기', exact: true })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await page.screenshot({ path: testInfo.outputPath(`call-${character}-microphone-on.png`) });
     const input = call.getByRole('textbox', { name: '통화에서 보낼 말', exact: true });
     expect((await speechState(page)).settings).toEqual([
       { lang: 'ko-KR', continuous: false, interimResults: true },
@@ -220,10 +231,15 @@ for (const character of ['majima', 'haruka'] as const) {
     await expect(input).toHaveAttribute('readonly', '');
     await expect(call.getByRole('button', { name: '말 보내기', exact: true })).toBeDisabled();
     expect(posts).toEqual([]);
-    await call.getByRole('button', { name: '음성 인식 마치기', exact: true }).tap();
+    await call.getByRole('button', { name: '마이크 끄기', exact: true }).tap();
     await recognize(page, '지금 가겠습니다', true);
     await recognize(page, '지금 가겠습니다', true);
     await finishRecognition(page);
+    await expect(call.getByRole('button', { name: '마이크', exact: true })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    );
+    await expect.poll(() => uploads.length).toBe(1);
     await expect(input).toHaveValue('지금 가겠습니다');
     await expect(input).toBeEditable();
     expect(posts).toEqual([]);
@@ -250,9 +266,9 @@ for (const character of ['majima', 'haruka'] as const) {
     await settleAiRequests(page);
     expect(posts).toHaveLength(1);
     expect((await speechState(page)).speaks).toBe(0);
-    expect((await speechState(page)).mediaRequests).toBe(0);
-    expect((await speechState(page)).captures).toBe(0);
-    expect(uploads).toEqual([]);
+    expect((await speechState(page)).mediaRequests).toBe(1);
+    expect((await speechState(page)).captures).toBe(1);
+    expect(uploads).toHaveLength(1);
     await expect(call.locator('audio, video')).toHaveCount(0);
     await page.screenshot({ path: testInfo.outputPath(`call-${character}-reply.png`) });
     await call.getByRole('button', { name: '통화 종료', exact: true }).tap();

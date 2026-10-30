@@ -73,8 +73,6 @@ export default {
       });
     }
     if (!expected.includes(request.method)) return error(405, 'method_denied', origin);
-    // Retired upload route: reject old clients without reading or forwarding audio.
-    if (recording) return error(410, 'recording_disabled', origin);
     const allowedQuery = url.pathname === '/v1/history' ? ['character', 'cursor'] : [];
     if ([...url.searchParams.keys()].some((key) => !allowedQuery.includes(key)))
       return error(400, 'invalid_query', origin);
@@ -82,8 +80,9 @@ export default {
     const forwarding = new Headers();
     if (origin) forwarding.set('Origin', origin);
     const authorization = request.headers.get('Authorization');
+    if (recording && !authorization) return error(401, 'unauthorized', origin);
     if (authorization) {
-      if (authorization.length > 256 || !authorization.startsWith('Bearer '))
+      if (authorization.length >= 256 || !/^Bearer [^\s]+$/.test(authorization))
         return error(401, 'unauthorized', origin);
       forwarding.set('Authorization', authorization);
     }
@@ -92,10 +91,11 @@ export default {
     let body;
     if (request.method === 'POST' || request.method === 'DELETE') {
       const contentType = request.headers.get('Content-Type') ?? '';
-      if (contentType.split(';')[0].trim() !== 'application/json')
+      const mime = contentType.split(';')[0].trim();
+      if (recording ? !['audio/mp4', 'audio/webm'].includes(mime) : mime !== 'application/json')
         return error(415, 'content_type', origin);
       try {
-        body = await limitedBody(request);
+        body = await limitedBody(request, recording ? 2 * 1024 * 1024 : LIMIT);
       } catch {
         return error(413, 'body_too_large', origin);
       }
