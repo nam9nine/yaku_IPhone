@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import ts from 'typescript';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from '../helpers/browser-test';
 import { AI_ENDPOINT } from '../../src/ai/config';
 import { typingDelay } from '../../src/ai/presentation';
 import { launchHomeApp } from '../helpers/home';

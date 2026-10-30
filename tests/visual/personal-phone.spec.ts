@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../helpers/browser-test';
 
 for (const width of [360, 390, 430]) {
   test(`암호 숫자판 ${width}`, async ({ page }) => {

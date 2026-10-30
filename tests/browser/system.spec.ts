@@ -1,5 +1,5 @@
 import { unlockPhone } from '../helpers/unlock';
-import { expect, test, type Page, type Locator } from '@playwright/test';
+import { expect, test, type Page, type Locator } from '../helpers/browser-test';
 import { releaseFastSwipe } from '../helpers/gestureClock';
 async function ready(page: Page) {
   await page.emulateMedia({ reducedMotion: 'reduce' });

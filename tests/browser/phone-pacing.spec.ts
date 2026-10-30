@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../helpers/browser-test';
 import { AI_ENDPOINT } from '../../src/ai/config';
 import { AI_PRESENTATION_KEY } from '../../src/ai/presentation';
 import { CONVERSATION_REST_MS } from '../../src/ai/chatPacing';
@@ -45,6 +45,8 @@ test('선택 소진 후 12번째 성공 대화는 45초만 쉬며 다른 연락�
     let data: unknown;
     if (req.method() === 'OPTIONS') data = {};
     else if (url.pathname === '/v1/health') data = { status: 'ready' };
+    else if (url.pathname === '/v1/episodes/majima' && req.method() === 'GET')
+      data = { protocol: 1, enabled: false, episode: null, action: null };
     else if (url.pathname === '/v1/sessions') data = { token: 'pacing-session' };
     else if (url.pathname === '/v1/history') {
       const character = url.searchParams.get('character') as Character;

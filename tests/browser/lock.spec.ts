@@ -1,5 +1,5 @@
 import { enterPasscode, unlockPhone } from '../helpers/unlock';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from '../helpers/browser-test';
 
 async function drag(page: Page, x: number, y: number, endX: number, endY: number) {
   await page.mouse.move(x, y);

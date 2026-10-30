@@ -25,6 +25,14 @@
 
 이 캡처와 브라우저 검사는 합성 API 응답을 사용한다. 실제 Gemma 내용 평가는 Issue 122 증거이며, 실제 iPhone Safari·팬 검토·OS 알림 수신을 수행했다고 표시하지 않는다.
 
+## 전체 회귀에서 드러난 테스트 의존성
+
+첫 전체 실행은 656개 중 639개 통과·17개 실패였다. 새 사건 GET을 처리하지 않는 개별 fixture 14건, capability 조회가 추가되어 기존 health 호출 수 단정과 어긋난 2건, 실제 Worker의 CORS 거부를 받은 WebKit 홈 검사 1건이었다. 독립 검토자가 trace를 확인했으며 기존 통화 전송과 홈 레이아웃의 핵심 조건은 통과한 상태였다. 실패 결과는 `.tooling/majima-episode/ui-full-v1-results`와 실행 로그에 보존했다.
+
+새 `tests/helpers/browser-test.ts`는 정확한 health GET만 기본 OFF로 처리하여 UI 검사에서 운영 Mac으로 접속하지 않게 한다. [Playwright 자동 fixture](https://playwright.dev/docs/test-fixtures#automatic-fixtures)와 [context route](https://playwright.dev/docs/api/class-browsercontext#browser-context-route) 방식이며, 나중 등록된 명시적 ON·loading·오류 응답은 우선한다. 예상 못한 chat POST를 통과시키는 포괄 fallback이나 오류 필터는 추가하지 않았다. 개별 서버 mock의 새 GET 처리와 재연결 readiness 제어를 보완했고, 기존 메시지 내용·건수·초기화 검사는 유지했다.
+
+수정 후 관련 98개, 전체 Chromium·WebKit **656개**, macOS 시각 **224개**가 통과했다. 제품 코드와 기준 이미지는 변경하지 않았다. DB PR의 별도 Linux 실행에서 발견한 `clock.pauseAt`의 과거 시각 경쟁도 명시적인 시계 원점과 전송 전 10초 여유로 보완한다. 답장 지연의 `−1ms / +1ms` 및 후속 전달 검사는 그대로 유지한다. 최종 SHA의 반복 검사·독립 검토·Linux CI 결과는 PR 증거로 연결한다.
+
 ## 공개 반영 완료 조건
 
 필수 CI와 독립 리뷰 후 병합하고, 운영 DB 백업 → Mac API의 기능 OFF 반영 → Worker → Pages → 인증된 신규 클라이언트 protocol 확인 → 기능 ON 순서로 진행한다. 원래 공개 주소에서 새 방문자의 실제 90초·120~180초 연락 흐름과 기존 방문자의 실제 Gemma 답장을 확인한다. 모델 식별자·메시지 역할·중복 발신은 해당 합성 방문자 범위의 읽기 전용 DB 감사로 대조한다.

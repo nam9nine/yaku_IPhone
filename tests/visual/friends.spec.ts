@@ -1,5 +1,5 @@
 import { unlockPhone } from '../helpers/unlock';
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../helpers/browser-test';
 import { launchHomeApp } from '../helpers/home';
 for (const friend of [
   { id: 'akiyama', name: '아키야마 슌' },

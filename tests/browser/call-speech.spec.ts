@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from '../helpers/browser-test';
 import type { SpeechRecognitionEngine, SpeechResultEvent } from '../../src/speech/recognition';
 import { AI_ENDPOINT } from '../../src/ai/config';
 import { mockStoryAi } from '../helpers/mock-story-ai';
@@ -411,12 +411,13 @@ test('모델 준비 중 통화에서도 다시 연결한 뒤 작성한 말을 �
   const posts = requests(page);
   await boot(page);
   let healthCalls = 0;
+  let ready = false;
   await page.route(`${AI_ENDPOINT}/v1/health`, async (route) => {
     healthCalls++;
     await route.fulfill({
       contentType: 'application/json',
       headers: { 'Access-Control-Allow-Origin': '*' },
-      body: JSON.stringify({ status: healthCalls === 1 ? 'loading' : 'ready' }),
+      body: JSON.stringify({ status: ready ? 'ready' : 'loading' }),
     });
   });
   const call = await outgoing(page, 'majima', false);
@@ -428,12 +429,14 @@ test('모델 준비 중 통화에서도 다시 연결한 뒤 작성한 말을 �
     .fill('연결을 기다렸다가 보냅니다.');
   const send = call.getByRole('button', { name: '말 보내기', exact: true });
   await expect(send).toBeDisabled();
+  const beforeRetry = healthCalls;
+  ready = true;
   await retry.tap();
   await expect(send).toBeEnabled();
   await send.tap();
   await expect.poll(() => posts.length).toBe(1);
   expect(posts[0].message).toBe('연결을 기다렸다가 보냅니다.');
-  expect(healthCalls).toBe(2);
+  expect(healthCalls).toBeGreaterThan(beforeRetry);
 });
 
 test('짧은 통화 화면에서도 인식 편집·전송·종료 버튼에 접근하고 페이지는 밀리지 않는다', async ({

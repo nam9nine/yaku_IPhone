@@ -1,5 +1,5 @@
 import { enterPasscode, unlockPhone } from '../helpers/unlock';
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../helpers/browser-test';
 import { mockStoryAi, openStoryAi } from '../helpers/mock-story-ai';
 
 test.beforeEach(async ({ page }) => {

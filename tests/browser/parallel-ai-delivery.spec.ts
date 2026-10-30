@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from '../helpers/browser-test';
 import { AI_ENDPOINT } from '../../src/ai/config';
 import { AI_PRESENTATION_KEY, typingDelay } from '../../src/ai/presentation';
 import { unlockPhone } from '../helpers/unlock';
@@ -91,6 +91,8 @@ test('다른 인물에게 즉시 전송하고 같은 순간 도착한 두 답장
     let result: unknown;
     if (request.method() === 'OPTIONS') result = {};
     else if (url.pathname === '/v1/health') result = { status: 'ready' };
+    else if (url.pathname === '/v1/episodes/majima' && request.method() === 'GET')
+      result = { protocol: 1, enabled: false, episode: null, action: null };
     else if (url.pathname === '/v1/sessions') result = { token: 'parallel-delivery-session' };
     else if (url.pathname === '/v1/push/key') result = { public_key: 'BAAAAAAA' };
     else if (url.pathname === '/v1/push/subscriptions') {

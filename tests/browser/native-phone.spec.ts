@@ -1,5 +1,5 @@
 import { unlockPhone } from '../helpers/unlock';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from '../helpers/browser-test';
 import { launchHomeApp } from '../helpers/home';
 async function boot(page: Page) {
   await page.emulateMedia({ reducedMotion: 'reduce', colorScheme: 'dark' });

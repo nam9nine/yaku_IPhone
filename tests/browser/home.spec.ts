@@ -1,5 +1,5 @@
 import { unlockPhone } from '../helpers/unlock';
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '../helpers/browser-test';
 import { attachFailedInput, recordInput } from '../helpers/input-diagnostics';
 import { dragTouchWithoutFling } from '../helpers/touch';
 

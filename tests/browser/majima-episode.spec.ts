@@ -1,4 +1,4 @@
-import { expect, test, type Page, type Route } from '@playwright/test';
+import { expect, test, type Page, type Route } from '../helpers/browser-test';
 import { AI_ENDPOINT } from '../../src/ai/config';
 import type { AiMessage } from '../../src/ai/client';
 import { installAiClock, finishAiReply, settleAiRequests } from '../helpers/ai-clock';

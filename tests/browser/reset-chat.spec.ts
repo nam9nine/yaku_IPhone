@@ -1,4 +1,4 @@
-import { expect, test, type BrowserContext, type Page } from '@playwright/test';
+import { expect, test, type BrowserContext, type Page } from '../helpers/browser-test';
 import { AI_ENDPOINT } from '../../src/ai/config';
 import { AI_CONNECTION_KEY, AI_RESET_KEY } from '../../src/ai/connection';
 import { unlockPhone } from '../helpers/unlock';
@@ -43,6 +43,8 @@ async function scopedService(context: BrowserContext) {
           pending_job: null,
           next_cursor: null,
         };
+      else if (url.pathname === '/v1/episodes/majima' && request.method() === 'GET')
+        result = { protocol: 1, enabled: false, episode: null, action: null };
       else throw new Error('Reset must not post or replay a message');
     }
     await route.fulfill({

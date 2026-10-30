@@ -1,5 +1,5 @@
 import { installAiClock, finishAiReply, showAiTyping, settleAiRequests } from '../helpers/ai-clock';
-import { expect, test, type Page, type Route } from '@playwright/test';
+import { expect, test, type Page, type Route } from '../helpers/browser-test';
 import { AI_ENDPOINT } from '../../src/ai/config';
 import { replyChoices } from '../../src/day/content';
 import { DAY_STORAGE_KEY, dayReducer, initialDay } from '../../src/day/state';
