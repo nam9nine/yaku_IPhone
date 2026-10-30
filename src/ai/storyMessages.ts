@@ -1,4 +1,10 @@
-import { dayMessages, replyChoices, type ContactId, type DayMessage } from '../day/content';
+import {
+  dayMessages,
+  historyOnlyContacts,
+  replyChoices,
+  type ContactId,
+  type DayMessage,
+} from '../day/content';
 import type { DayState } from '../day/state';
 import { isAiCharacter } from './client';
 
@@ -26,6 +32,7 @@ export const legacyChoices: Partial<Record<ContactId, { text: string; response: 
 /** Remote AI replies never get fabricated local substitutes. Authored event messages remain local. */
 export function storyThreadMessages(id: ContactId, state: DayState | boolean): DayMessage[] {
   const initial = dayMessages[id];
+  if ((historyOnlyContacts as readonly string[]).includes(id)) return [...initial];
   const replied = typeof state === 'boolean' ? state : state.legacyReplies.includes(id);
   const legacy =
     isAiCharacter(id) || !replied

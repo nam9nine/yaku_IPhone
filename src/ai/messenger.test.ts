@@ -608,7 +608,7 @@ it('초기화 전에 생성 중이던 답장이 늦게 끝나도 새 이력이�
   expect(value.getSnapshot().connection?.token).toBe('fresh-session');
 });
 
-it('빠른 생성도 즉시 답장/타이핑을 노출하지 않고 10~20초 뒤 타이핑과 완성 답장을 순서대로 보인다', async () => {
+it('빠른 생성도 즉시 답장/타이핑을 노출하지 않고 15~30초 뒤 타이핑과 완성 답장을 순서대로 보인다', async () => {
   const { state } = mockService();
   const value = store();
   await value.activate('haruka');
@@ -623,8 +623,8 @@ it('빠른 생성도 즉시 답장/타이핑을 노출하지 않고 10~20초 뒤
   expect(value.send('haruka', '또 보낸다', true, true)).toBe(false);
   await vi.advanceTimersByTimeAsync(9_999);
   expect(thread().typing).toBe(false);
-  await vi.advanceTimersByTimeAsync(10_001);
-  // Its deterministic typing delay can end earlier than 20 seconds.
+  await vi.advanceTimersByTimeAsync(20_001);
+  // Its deterministic typing delay can end earlier than 30 seconds.
   if (thread().deliveryPending) expect(thread().typing).toBe(true);
   await vi.advanceTimersByTimeAsync(1_500);
   expect(thread().typing).toBe(false);
@@ -656,7 +656,7 @@ it('늦은 생성은 타이핑을 유지하고 다른 앱으로 이동한 뒤 �
   await value.activate('majima');
   value.send('majima', '어디야?', true, true);
   await flush();
-  await vi.advanceTimersByTimeAsync(20_000);
+  await vi.advanceTimersByTimeAsync(30_000);
   expect(value.getSnapshot().threads.majima.typing).toBe(true);
   expect(value.getSnapshot().threads.majima.displayedMessages).toHaveLength(0);
   await value.activate(null);

@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { ingredients, reminders, type ContactId } from './content';
+import { ingredients, reminders, historyOnlyContacts, type ContactId } from './content';
 import {
   DAY_STORAGE_KEY,
   dayReducer,
   getStoryChoices,
   affinityTone,
+  peerHangupDelay,
   initialDay,
   loadDay,
   remainingReminders,
@@ -203,27 +204,26 @@ describe('인물별 선택형 문자와 퀘스트', () => {
     });
     expect(duplicate).toBe(state);
     expect(getStoryChoices(state, 'daigo')).toEqual([]);
-    state = choose(state, 'yuki');
-    expect(Object.keys(state.storyPending)).toEqual(['daigo', 'yuki']);
+    state = choose(state, 'majima');
+    expect(Object.keys(state.storyPending)).toEqual(['daigo', 'majima']);
     expect(state.storyMessages.daigo).toHaveLength(1);
-    state = advance(state, 12);
+    state = advance(state, 14);
+    expect(state.storyMessages.daigo).toHaveLength(1);
+    state = advance(state, 16);
     expect(state.storyMessages.daigo).toHaveLength(2);
-    expect(state.storyMessages.yuki).toHaveLength(2);
+    expect(state.storyMessages.majima).toHaveLength(2);
     expect(state.storyMessages.daigo[1].outgoing).toBe(false);
     expect(getStoryChoices(state, 'daigo')[0].id).toBe('daigo-2a');
     expect(advance(state, 30).storyMessages.daigo).toHaveLength(2);
     expect(validDay(state)).toBe(true);
   });
-  it.each(['daigo', 'saejima', 'mine', 'date', 'akiyama', 'yuki'] as const)(
-    '%s는 실제 세 왕복 후 선택이 끝난다',
-    (id) => {
-      let state = initialDay();
-      for (let round = 0; round < 3; round++) state = advance(choose(state, id, round % 2), 12);
-      expect(state.storyMessages[id]).toHaveLength(6);
-      expect(getStoryChoices(state, id)).toEqual([]);
-      expect(validDay(state)).toBe(true);
-    },
-  );
+  it.each(['daigo'] as const)('%s는 실제 세 왕복 후 선택이 끝난다', (id) => {
+    let state = initialDay();
+    for (let round = 0; round < 3; round++) state = advance(choose(state, id, round % 2), 30);
+    expect(state.storyMessages[id]).toHaveLength(6);
+    expect(getStoryChoices(state, id)).toEqual([]);
+    expect(validDay(state)).toBe(true);
+  });
   it('하루카는 실제 완료된 퀘스트만 보고하고 AI 완료 선택은 로컬 답장을 중복하지 않는다', () => {
     let state = initialDay();
     expect(getStoryChoices(state, 'haruka')).toEqual([]);
@@ -283,8 +283,9 @@ describe('사용 시간 기반 전화', () => {
     const next = state.nextCallInMs;
     state = advance(state, 10, false);
     expect(state.nextCallInMs).toBe(next);
-    state = advance(state, Math.ceil(next / 1000), true);
-    expect(state.call?.caller).toBe('daigo');
+    // A proactive text can postpone ringing to avoid overlapping arrivals.
+    for (let second = 0; second < 180 && !state.call; second++) state = advance(state, 1, true);
+    expect(state.call?.caller).toBe('majima');
   });
   it('발신 취소와 응답 뒤 종료를 구분하고 종료 입력이 반복되어도 후속 문자는 한 번이다', () => {
     let state = dayReducer(initialDay(), { type: 'start-call', id: 'majima' });
@@ -330,11 +331,119 @@ it('옛 니시키 저장만 제거하고 다른 인물, 퀘스트, 전화 진행
   expect(state.reminders.uniform).toBe(false);
   expect(state.completedQuests).toEqual(['shopping', 'garden']);
   expect(getStoryChoices(state, 'daigo')[0].id).toBe('daigo-2a');
-  state = advance(choose(state, 'daigo'), 12);
+  state = advance(choose(state, 'daigo'), 30);
   expect(getStoryChoices(state, 'daigo')[0].id).toBe('daigo-3a');
   state = dayReducer(state, { type: 'ingredient', id: 'potato', done: false });
   state = dayReducer(state, { type: 'ingredient', id: 'potato', done: true });
   expect(state.call).toBeNull();
   expect(state.callSerial).toBe(0);
   expect(validDay(state)).toBe(true);
+});
+
+describe('통화 상대의 종료와 자연스러운 간격', () => {
+  it('상대가 마친 통화는 호감도나 비난 문자를 만들지 않고 오래된 종료도 무시한다', () => {
+    let state = dayReducer({ ...initialDay(), affinity: 3 }, { type: 'start-call', id: 'majima' });
+    state = advance(state, 3);
+    const id = state.call!.id;
+    expect(dayReducer(state, { type: 'peer-end-call', callId: id })).toBe(state);
+    state = advance(state, Math.ceil(peerHangupDelay(state.call!) / 1000));
+    const affinity = state.affinity;
+    const count = state.storyMessages.majima.length;
+    state = dayReducer(state, { type: 'peer-end-call', callId: id });
+    expect(state.call).toBeNull();
+    expect(state.affinity).toBe(affinity);
+    expect(state.storyMessages.majima).toHaveLength(count);
+    expect(state.callLog[0]).toMatchObject({ result: 'completed', endedBy: 'peer' });
+    expect(state.phoneEvents.majima).toContain('majima-call-peer-ended');
+    state = dayReducer(state, { type: 'start-call', id: 'majima' });
+    expect(dayReducer(state, { type: 'peer-end-call', callId: id })).toBe(state);
+    expect(validDay(state)).toBe(true);
+  });
+  it('사용자가 연속으로 끊어도 같은 후속 문자를 바로 반복하지 않고 cooldown을 지킨다', () => {
+    let state = initialDay();
+    const messages: string[] = [];
+    for (let index = 0; index < 7; index++) {
+      state = dayReducer(state, { type: 'start-call', id: 'majima' });
+      state = dayReducer(state, { type: 'end-call' });
+      messages.push(state.storyMessages.majima.at(-1)!.text);
+      expect(state.nextCallInMs).toBeGreaterThanOrEqual(60_000);
+      expect(state.nextCallInMs).toBeLessThanOrEqual(120_000);
+    }
+    expect(messages.every((message, index) => index === 0 || message !== messages[index - 1])).toBe(
+      true,
+    );
+    expect(state.callLog).toHaveLength(7);
+  });
+  it('친밀한 수신 통화에도 발신 방향을 지어내지 않는다', () => {
+    const state = advance({ ...initialDay(), affinity: 3 }, 60, true);
+    expect(state.call?.direction).toBe('incoming');
+    expect(state.call?.lines.join(' ')).not.toContain('니가 먼저 걸어');
+  });
+  it('현재 통화 중에는 아무리 기다려도 다음 전화나 문자가 끼어들지 않는다', () => {
+    let state = dayReducer(
+      { ...initialDay(), nextCallInMs: 0, nextMajimaTextInMs: 0 },
+      { type: 'start-call', id: 'majima' },
+    );
+    state = advance(state, 180, true);
+    expect(state.call?.id).toBe('call-1');
+    expect(state.callLog).toEqual([]);
+    expect(state.storyMessages.majima).toEqual([]);
+    expect(state.scheduledCalls).toBe(0);
+  });
+  it('가상 목적지를 골라도 사용자 문장과 만남 의사를 대신 보내지 않는다', () => {
+    const before = { ...initialDay(), affinity: -3 };
+    const next = dayReducer(before, { type: 'notify-kamurocho' });
+    expect(next.kamurochoNotified).toBe(true);
+    expect(next.storyMessages).toEqual(before.storyMessages);
+    expect(next.phoneEvents).toEqual(before.phoneEvents);
+    expect(next.call).toBeNull();
+  });
+});
+
+it.each(historyOnlyContacts)(
+  '%s는 기존 내역만 읽으며 새로운 선택형 답장을 생성하지 않는다',
+  (id) => {
+    const state = initialDay();
+    expect(getStoryChoices(state, id)).toEqual([]);
+    expect(dayReducer(state, { type: 'story-choice', id, choiceId: id + '-1a' })).toBe(state);
+  },
+);
+
+it('유키 기록은 이치반의 발언으로 바꾸지 않고 다른 인물과 진행 상태는 유지한다', () => {
+  const saved = JSON.parse(JSON.stringify(initialDay()));
+  saved.affinity = 3;
+  saved.storySequence = 4;
+  saved.reminders.garden = true;
+  saved.storyMessages.majima = [
+    { id: 'keep', text: '보존할 문자', sequence: 3, outgoing: false, time: '12:00' },
+  ];
+  saved.storyMessages.yuki = [
+    { id: 'drop', text: '유키 옛 문자', sequence: 4, outgoing: false, time: '12:01' },
+  ];
+  delete saved.storyMessages.ichiban;
+  saved.storyChoiceHistory.yuki = ['yuki-1a'];
+  delete saved.storyChoiceHistory.ichiban;
+  saved.storyPending.yuki = { choiceId: 'yuki-1a', deliverAt: 12345 };
+  saved.readThreads = ['yuki', 'majima'];
+  saved.replies = ['yuki'];
+  saved.legacyReplies = ['yuki'];
+  saved.callLog = [
+    {
+      id: 'call-1',
+      caller: 'yuki',
+      direction: 'outgoing',
+      result: 'completed',
+      time: '12:00',
+      read: true,
+    },
+  ];
+  const loaded = loadDay({ getItem: () => JSON.stringify(saved) }).state;
+  expect(loaded.affinity).toBe(3);
+  expect(loaded.reminders.garden).toBe(true);
+  expect(loaded.storyMessages.majima[0].text).toBe('보존할 문자');
+  expect(loaded.storyMessages.ichiban).toEqual([]);
+  expect(loaded.storyPending).toEqual({});
+  expect(loaded.callLog).toEqual([]);
+  expect(loaded.replies).toEqual([]);
+  expect(validDay(loaded)).toBe(true);
 });

@@ -16,10 +16,12 @@ export function CallConversation({
   character,
   ai,
   online,
+  onBusyChange,
 }: {
   character: AiCharacter;
   ai: AiMessengerView;
   online: boolean;
+  onBusyChange: (busy: boolean) => void;
 }) {
   const { state } = useDay();
   const [draft, setDraft] = useState('');
@@ -34,9 +36,13 @@ export function CallConversation({
   const input = useRef<HTMLTextAreaElement>(null);
   const log = useRef<HTMLDivElement>(null);
   const thread = ai.threads[character];
-  const recentMessages = thread.displayedMessages.slice(-8);
+  const [requestIds, setRequestIds] = useState<Set<string>>(() => new Set());
+  const recentMessages = thread.displayedMessages
+    .filter((message) => !!message.request_id && requestIds.has(message.request_id))
+    .slice(-8);
   const pendingText =
     thread.pending &&
+    requestIds.has(thread.pending.requestId) &&
     !recentMessages.some(
       (message) => message.role === 'user' && message.request_id === thread.pending?.requestId,
     )
@@ -45,6 +51,10 @@ export function CallConversation({
   const busy = !!thread.pending || thread.deliveryPending;
   const recording = speechState !== 'idle';
   const supported = supportsSpeechRecognition();
+  useEffect(() => {
+    onBusyChange(busy || recording || audioStarting || !!draft.trim());
+    return () => onBusyChange(false);
+  }, [busy, recording, audioStarting, draft, onBusyChange]);
   const ready = online && ai.status === 'ready' && thread.loaded && !thread.loading;
   useEffect(() => {
     mounted.current = true;
@@ -137,6 +147,8 @@ export function CallConversation({
       ],
     });
     if (!accepted) return;
+    const pending = ai.messenger.getSnapshot().threads[character].pending;
+    if (pending) setRequestIds((ids) => new Set([...ids, pending.requestId]));
     setDraft('');
     setSpeechError(null);
     setEditing(false);

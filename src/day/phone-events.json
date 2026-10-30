@@ -1,5 +1,5 @@
 {
-  "version": "phone-events-v1",
+  "version": "phone-events-v2",
   "events": {
     "majima-call-missed": {
       "character": "majima",
@@ -35,7 +35,7 @@
     },
     "majima-kamurocho-intent": {
       "character": "majima",
-      "text": "브라우저의 가상 택시에서 카무로쵸를 고른 키류가 마지마에게 갈 생각이며 도착하면 연락하겠다고 알리는 버튼을 눌렀다. 마지마의 전화 대본은 아직 도착 전임을 확인하고 볼일을 마친 뒤 연락하라는 내용이다. 실제 이동·도착·싸움 완료는 아니다."
+      "text": "과거 버전에서 가상 택시의 카무로쵸 목적지 버튼을 누른 기록이다. 키류가 문자로 약속하거나 실제 이동·도착했다고 해석하지 않는다. 현재 대화에서 거절·정정한 의사를 우선한다."
     },
     "majima-proactive-check-phone": {
       "character": "majima",
@@ -43,7 +43,7 @@
     },
     "majima-proactive-challenge": {
       "character": "majima",
-      "text": "브라우저의 IF 이벤트로 마지마가 먼저 보낸 문자: “오늘은 내가 먼저 찾았다! 볼일 끝나면 연락해라.” 키류의 수락·일정 확정·실제 만남이나 행동 완료는 보고되지 않았다."
+      "text": "브라우저의 IF 이벤트로 마지마가 먼저 보낸 문자: “오늘은 무슨 핑계로 니 불러낼까 고민 중이다. 볼일 끝나면 연락해라!” 키류의 수락·일정 확정·실제 만남이나 행동 완료는 보고되지 않았다."
     },
     "majima-proactive-karaoke": {
       "character": "majima",
@@ -76,6 +76,22 @@
     "haruka-call-live": {
       "character": "haruka",
       "text": "이번 입력은 진행 중인 가상 통화 화면에서 사용자가 확인해 보낸 말이다. 음성 인식 또는 직접 입력을 사용했다. 상대의 말에 짧은 한국어 글로 답한다. 소리로 말했다거나 실제 마이크를 들었다고 주장하지 않는다."
+    },
+    "majima-call-peer-ended": {
+      "character": "majima",
+      "text": "브라우저의 가상 전화에서 마지마 쪽이 연결된 통화를 마쳤다고 보고됐다. 키류가 거절하거나 먼저 끊었다는 뜻이 아니다. 새 약속이나 구체적 통화 내용은 보고되지 않았다."
+    },
+    "majima-proactive-bowling": {
+      "character": "majima",
+      "text": "브라우저의 IF 이벤트로 마지마가 먼저 보낸 문자: “싸우는 건 싫다 카면 볼링은 어떻노? 니랑 승부할 건 얼마든지 있다!” 키류의 수락·일정 확정·실제 만남이나 행동 완료는 보고되지 않았다."
+    },
+    "majima-proactive-darts": {
+      "character": "majima",
+      "text": "브라우저의 IF 이벤트로 마지마가 먼저 보낸 문자: “키류쨩, 다트 한 판 하자. 이번엔 내가 니보다 먼저 맞힌다!” 키류의 수락·일정 확정·실제 만남이나 행동 완료는 보고되지 않았다."
+    },
+    "majima-proactive-pocket": {
+      "character": "majima",
+      "text": "브라우저의 IF 이벤트로 마지마가 먼저 보낸 문자: “포켓 서킷 얘기만 나오면 눈빛 달라지더라. 내하고도 한 번 달려 볼래?” 키류의 수락·일정 확정·실제 만남이나 행동 완료는 보고되지 않았다."
     }
   }
 }

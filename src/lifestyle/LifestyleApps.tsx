@@ -3,7 +3,6 @@ import { useEdgeNavigation } from '../navigation/EdgeNavigation';
 import songs from './music.json';
 import { destinations, recipes } from './content';
 import './lifestyle.css';
-import { useDay } from '../day/DayContext';
 
 function Screen({
   title,
@@ -139,7 +138,6 @@ export function MusicApp({ active }: { active: boolean }) {
 }
 
 export function TaxiApp({ active }: { active: boolean }) {
-  const { state, dispatch } = useDay();
   const [selected, setSelected] = useState<string | null>(null);
   const destination = destinations.find((item) => item.id === selected);
   return (
@@ -170,18 +168,6 @@ export function TaxiApp({ active }: { active: boolean }) {
         <>
           <h2>{destination.name}</h2>
           <p className="lifestyle-secondary">{destination.detail}</p>
-          {destination.id === 'kamurocho' && (
-            <button
-              className="lifestyle-action"
-              disabled={!active || state.kamurochoNotified || !!state.call}
-              onClick={() => dispatch({ type: 'notify-kamurocho' })}
-            >
-              {state.kamurochoNotified ? '형님에게 연락함' : '마지마 형님에게 목적지 알리기'}
-            </button>
-          )}
-          {destination.id === 'kamurocho' && !!state.call && !state.kamurochoNotified && (
-            <p role="status">지금 통화를 마친 뒤 연락할 수 있습니다.</p>
-          )}
           <button className="lifestyle-action" onClick={() => setSelected(null)}>
             다른 목적지 선택
           </button>

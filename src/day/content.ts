@@ -30,9 +30,17 @@ export const contactIds = [
   'mine',
   'date',
   'akiyama',
-  'yuki',
+  'ichiban',
 ] as const;
 export type ContactId = (typeof contactIds)[number];
+/** These contacts show an authored past conversation, with no new canned replies. */
+export const historyOnlyContacts: readonly ContactId[] = [
+  'date',
+  'mine',
+  'akiyama',
+  'saejima',
+  'ichiban',
+];
 export interface DayMessage {
   id: string;
   text: string;
@@ -104,11 +112,21 @@ export const dayMessages: Record<ContactId, DayMessage[]> = {
       outgoing: false,
       time: '어제',
     },
+    { id: 'd2', text: '네가 결정할 일이다. 다만 이야기는 듣겠다.', outgoing: true, time: '어제' },
+    { id: 'd3', text: '네. …일이 없어도 연락드려도 되겠습니까?', outgoing: false, time: '어제' },
   ],
   saejima: [
     {
       id: 's1',
-      text: '키류, 시간 있으면 한 바퀴 걷자. 오래 앉아 있었더니 몸이 굳었다.',
+      text: '키류, 마지마가 또 니 찾더라. 이번엔 무슨 꿍꿍이인지 말을 안 하네.',
+      outgoing: false,
+      time: '어제',
+    },
+    { id: 's2', text: '형님답군. 사에지마, 너는 별일 없나?', outgoing: true, time: '어제' },
+    { id: 's3', text: '나는 괜찮다. 니한테는 괜히 숨길 것도 없고.', outgoing: false, time: '어제' },
+    {
+      id: 's4',
+      text: '…방금 말은 됐다. 마지마 만나면 연락이나 해라.',
       outgoing: false,
       time: '어제',
     },
@@ -116,7 +134,25 @@ export const dayMessages: Record<ContactId, DayMessage[]> = {
   mine: [
     {
       id: 'n1',
-      text: '키류 씨. 도지마 씨께 전할 서류를 맡아 두었습니다. 전달할 시간이 정해지면 알려주십시오.',
+      text: '키류 씨. 왜 다이고 씨가 당신을 그토록 신뢰하는지, 저는 아직 모르겠습니다.',
+      outgoing: false,
+      time: '어제',
+    },
+    {
+      id: 'n2',
+      text: '이해해 달라고 할 생각은 없다. 다이고의 뜻은 존중해 줘라.',
+      outgoing: true,
+      time: '어제',
+    },
+    {
+      id: 'n3',
+      text: '다이고 씨의 뜻이라면 따릅니다. 당신에게 동의했다는 뜻은 아닙니다.',
+      outgoing: false,
+      time: '어제',
+    },
+    {
+      id: 'n4',
+      text: '…다음에는 직접 이야기하시죠. 문자로 끝낼 이야기는 아닌 것 같군요.',
       outgoing: false,
       time: '어제',
     },
@@ -124,13 +160,25 @@ export const dayMessages: Record<ContactId, DayMessage[]> = {
   date: [
     {
       id: 'date1',
-      text: '키류, 자네한테 확인할 게 있네. 문자 봤으면 연락 좀 주게.',
+      text: '키류, 문자 봤으면 연락 좀 해. 또 혼자 무슨 일 벌이는 건 아니지?',
       outgoing: false,
       time: '15:45',
     },
     {
+      id: 'date2',
+      text: '별일 없습니다, 다테 씨. 걱정 끼쳐서 죄송합니다.',
+      outgoing: true,
+      time: '15:48',
+    },
+    {
+      id: 'date3',
+      text: '그 말이 제일 걱정된다니까. …아무 일 없어도 가끔 얼굴은 비춰.',
+      outgoing: false,
+      time: '15:50',
+    },
+    {
       id: 'date-parcel',
-      text: '부탁 하나 하겠네. 예전에 맡아둔 자네 물건을 봉투에 넣어 보냈어. 받으면 내게 알려주게.',
+      text: '맡아뒀던 네 물건, 봉투에 넣어 보냈다. 받으면 연락해.',
       outgoing: false,
       time: '16:10',
       noteId: 'parcel',
@@ -139,17 +187,43 @@ export const dayMessages: Record<ContactId, DayMessage[]> = {
   akiyama: [
     {
       id: 'akiyama1',
-      text: '키류 씨, 커피 한 잔 하시죠. 이번에는 제가 늦지 않겠습니다. 아마도요.',
+      text: '키류 씨, 커피 한 잔 하시죠. 일 얘기는 안 하셔도 됩니다.',
       outgoing: false,
       time: '14:30',
     },
-  ],
-  yuki: [
+    { id: 'akiyama2', text: '무슨 부탁이라도 있나?', outgoing: true, time: '14:32' },
     {
-      id: 'yuki1',
-      text: '점장님, 오늘은 언제 들르세요? 손님 오시기 전에 잠깐 봐주셨으면 해서요.',
+      id: 'akiyama3',
+      text: '너무하시네. 그냥 키류 씨가 보고 싶을 수도 있잖아요.',
+      outgoing: false,
+      time: '14:33',
+    },
+    {
+      id: 'akiyama4',
+      text: '…직접 쓰니까 좀 쑥스럽군요. 커피는 제가 살게요.',
+      outgoing: false,
+      time: '14:34',
+    },
+  ],
+  ichiban: [
+    {
+      id: 'ichiban1',
+      text: '키류 씨! 이치반입니다. 번호 제대로 저장한 거 맞죠?',
       outgoing: false,
       time: '14:10',
+    },
+    { id: 'ichiban2', text: '그래, 카스가. 무슨 일이지?', outgoing: true, time: '14:12' },
+    {
+      id: 'ichiban3',
+      text: '아뇨, 큰일은 없고요! 다음에 같이 밥이라도 먹으면 좋겠다 싶어서요.',
+      outgoing: false,
+      time: '14:13',
+    },
+    {
+      id: 'ichiban4',
+      text: '답장 한 통 왔다고 이렇게 좋아하는 건 좀 티 나네요. 하하… 아무튼, 제가 살게요!',
+      outgoing: false,
+      time: '14:14',
     },
   ],
 };
@@ -193,8 +267,8 @@ export const storyRounds: Record<ContactId, StoryChoice[][]> = {
     [
       {
         id: 'saejima-1a',
-        text: '좋다. 조금 걸을까.',
-        response: '그래. 서두를 것 없으니 천천히 나오너라.',
+        text: '마지마 형님이 또 뭘 꾸미시는 거지?',
+        response: '나한테도 비밀이라더라. 니 만나면 다 티 날 기다.',
       },
       {
         id: 'saejima-1b',
@@ -206,12 +280,12 @@ export const storyRounds: Record<ContactId, StoryChoice[][]> = {
       {
         id: 'saejima-2a',
         text: '어디로 가고 싶나?',
-        response: '사람 적은 길이면 된다. 바람이나 좀 쐬자.',
+        response: '마지마부터 찾아야지. 혼자 또 일을 벌이는 건 아닌가 모르겠다.',
       },
       {
         id: 'saejima-2b',
-        text: '걷고 나서 뭐라도 먹자.',
-        response: '좋지. 배고프면 아무리 걸어도 성이 안 찬다.',
+        text: '일 마치고 뭐라도 먹자.',
+        response: '좋지. 니가 부르면 시간은 낼 수 있다.',
       },
     ],
     [
@@ -229,7 +303,7 @@ export const storyRounds: Record<ContactId, StoryChoice[][]> = {
       {
         id: 'mine-1b',
         text: '다이고와 직접 시간을 맞춰 줘라.',
-        response: '알겠습니다. 도지마 씨의 일정에 맞추겠습니다.',
+        response: '알겠습니다. 다이고 씨의 일정에 맞추겠습니다.',
       },
     ],
     [
@@ -245,7 +319,7 @@ export const storyRounds: Record<ContactId, StoryChoice[][]> = {
       },
     ],
     [
-      { id: 'mine-3a', text: '알았다. 수고했다.', response: '필요하신 일이 있으면 연락주십시오.' },
+      { id: 'mine-3a', text: '알았다. 수고했다.', response: '당신을 위해서 한 일은 아닙니다.' },
       { id: 'mine-3b', text: '다이고를 잘 부탁한다.', response: '그럴 생각입니다, 키류 씨.' },
     ],
   ],
@@ -254,7 +328,7 @@ export const storyRounds: Record<ContactId, StoryChoice[][]> = {
       {
         id: 'date-1a',
         text: '다테 씨, 무슨 일입니까?',
-        response: '큰일은 아니네. 자네가 또 혼자 나선 건 아닌지 물으려던 참이야.',
+        response: '큰일은 아니야. 네가 또 혼자 나선 건 아닌지 물어보려고.',
       },
       {
         id: 'date-1b',
@@ -266,7 +340,7 @@ export const storyRounds: Record<ContactId, StoryChoice[][]> = {
       {
         id: 'date-2a',
         text: '별일 없습니다. 걱정하지 마십시오.',
-        response: '그 말이 제일 걱정된다니까. 무슨 일 있으면 먼저 말하게.',
+        response: '그 말이 제일 걱정된다니까. 무슨 일 있으면 먼저 말해.',
       },
       {
         id: 'date-2b',
@@ -275,11 +349,11 @@ export const storyRounds: Record<ContactId, StoryChoice[][]> = {
       },
     ],
     [
-      { id: 'date-3a', text: '알겠습니다, 다테 씨.', response: '그래. 나도 다시 연락하겠네.' },
+      { id: 'date-3a', text: '알겠습니다, 다테 씨.', response: '그래. 나도 다시 연락할게.' },
       {
         id: 'date-3b',
         text: '다음에 식사라도 하시죠.',
-        response: '그거 좋지. 날짜 잡히면 알려주게.',
+        response: '그거 좋지. 날짜 잡히면 알려줘.',
       },
     ],
   ],
@@ -317,38 +391,38 @@ export const storyRounds: Record<ContactId, StoryChoice[][]> = {
       },
     ],
   ],
-  yuki: [
+  ichiban: [
     [
       {
-        id: 'yuki-1a',
-        text: '조금 있다 들르겠다. 무슨 일이지?',
-        response: '자리 배치를 조금 바꿨거든요. 한 번만 봐주세요!',
+        id: 'ichiban-1a',
+        text: '카스가, 번호는 맞다.',
+        response: '다행이네요! 인사도 제대로 못 할 뻔했습니다.',
       },
       {
-        id: 'yuki-1b',
-        text: '오늘은 늦을 것 같다. 먼저 준비해 줘.',
-        response: '네. 급한 일은 아니니까 천천히 오세요.',
+        id: 'ichiban-1b',
+        text: '지금은 바쁘다. 나중에 연락하마.',
+        response: '네! 일부터 보세요. 기다리겠습니다.',
       },
     ],
     [
       {
-        id: 'yuki-2a',
-        text: '불편한 곳이 있으면 말해라.',
-        response: '입구 쪽이 조금 좁아 보여요. 제가 옮겨보고 말씀드릴게요.',
+        id: 'ichiban-2a',
+        text: '밥은 챙겨 먹고 있나?',
+        response: '그럼요! 키류 씨도 끼니 거르지 마세요.',
       },
       {
-        id: 'yuki-2b',
-        text: '네가 편한 쪽으로 해도 된다.',
-        response: '정말요? 그럼 제가 해볼게요. 나중에 꼭 봐주세요.',
+        id: 'ichiban-2b',
+        text: '동료들도 잘 지내나?',
+        response: '네. 다들 자기 자리에서 열심히 살고 있습니다.',
       },
     ],
     [
-      { id: 'yuki-3a', text: '수고했다. 도착하면 보마.', response: '네, 점장님. 기다릴게요!' },
       {
-        id: 'yuki-3b',
-        text: '무리해서 혼자 옮기지 마라.',
-        response: '알겠어요. 무거운 건 남겨둘게요.',
+        id: 'ichiban-3a',
+        text: '다음에 밥 한 끼 하지.',
+        response: '정말입니까? 제가 괜찮은 곳 찾아놓겠습니다!',
       },
+      { id: 'ichiban-3b', text: '그래. 나중에 보자.', response: '네, 키류 씨! 연락 기다릴게요.' },
     ],
   ],
   haruka: [
@@ -447,7 +521,7 @@ export const questFollowups: Record<ReminderId, { character: ContactId; text: st
   },
   parcel: {
     character: 'date',
-    text: '받았다고 표시했군. 잘 챙겨두게. 자네 물건을 언제까지 내가 맡고 있을 수는 없잖나.',
+    text: '받았구나. 잘 챙겨 둬. 네 물건을 언제까지 내가 맡고 있을 수는 없잖아.',
   },
 };
 export const callScripts: Record<ContactId, string[]> = {
@@ -466,26 +540,30 @@ export const callScripts: Record<ContactId, string[]> = {
     '말씀해 주신 건 제가 먼저 확인하겠습니다.',
     '정리가 되면 다시 연락드리겠습니다.',
   ],
-  saejima: ['키류, 나다.', '별일은 없고, 시간 나면 좀 걷자고.', '서두르지 마라. 준비되면 말해라.'],
+  saejima: [
+    '키류, 나다.',
+    '마지마가 니한테 연락했나? 아까부터 폰만 보고 있더라.',
+    '그래. 별일 없으면 됐다. 나중에 보자.',
+  ],
   mine: [
     '키류 씨, 미네입니다.',
-    '서류 전달 전에 일정만 확인하려고 연락드렸습니다.',
-    '확인되면 문자 부탁드립니다.',
+    '다이고 씨와 나눈 이야기를 확인하려고 연락했습니다.',
+    '오늘은 이만하죠. 다음에는 직접 이야기하겠습니다.',
   ],
   date: [
     '키류, 전화는 받는군.',
-    '별일 없는지 확인하려고 했네. 무슨 일 생기면 먼저 연락하게.',
-    '그래. 나중에 또 보세.',
+    '별일 없는지 확인하려고. 일 생기면 혼자 나서지 말고 연락해.',
+    '그래. 나중에 또 보자.',
   ],
   akiyama: [
     '키류 씨, 아키야마입니다.',
     '아까 커피 얘기요. 잊으신 건 아니죠?',
     '알겠습니다. 시간 맞춰서 연락드릴게요.',
   ],
-  yuki: [
-    '점장님, 유키예요!',
-    '자리 배치 바꿔 놓은 것만 잠깐 봐주셨으면 해서요.',
-    '네, 그럼 오실 때 문자 주세요!',
+  ichiban: [
+    '키류 씨! 이치반입니다!',
+    '아, 직접 목소리 들으니까 괜히 긴장되네요. 별일 있으신 건 아니죠?',
+    '네! 다음에는 꼭 같이 밥 먹어요. 제가 연락드리겠습니다!',
   ],
 };
 export interface DayNote {

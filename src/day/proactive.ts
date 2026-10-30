@@ -8,7 +8,7 @@ export const majimaCheckIns: { id: PhoneEventId; text: string }[] = [
   },
   {
     id: 'majima-proactive-challenge',
-    text: '오늘은 내가 먼저 찾았다! 볼일 끝나면 연락해라.',
+    text: '오늘은 무슨 핑계로 니 불러낼까 고민 중이다. 볼일 끝나면 연락해라!',
   },
   {
     id: 'majima-proactive-karaoke',
@@ -29,6 +29,18 @@ export const majimaCheckIns: { id: PhoneEventId; text: string }[] = [
   {
     id: 'majima-proactive-quiet',
     text: '조용하다 싶으면 니 생각이 난다. 너무 얌전하게 살지는 마라!',
+  },
+  {
+    id: 'majima-proactive-bowling',
+    text: '싸우는 건 싫다 카면 볼링은 어떻노? 니랑 승부할 건 얼마든지 있다!',
+  },
+  {
+    id: 'majima-proactive-darts',
+    text: '키류쨩, 다트 한 판 하자. 이번엔 내가 니보다 먼저 맞힌다!',
+  },
+  {
+    id: 'majima-proactive-pocket',
+    text: '포켓 서킷 얘기만 나오면 눈빛 달라지더라. 내하고도 한 번 달려 볼래?',
   },
   {
     id: 'majima-proactive-hello',

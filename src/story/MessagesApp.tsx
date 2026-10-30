@@ -7,7 +7,7 @@ import { useEffect, useEffectEvent, useLayoutEffect, useRef, useState } from 're
 import { useEdgeNavigation } from '../navigation/EdgeNavigation';
 import { contacts } from './data';
 import { useDay } from '../day/DayContext';
-import { dayNotes, type ContactId, type DayMessage } from '../day/content';
+import { dayNotes, historyOnlyContacts, type ContactId, type DayMessage } from '../day/content';
 import { affinityTone, getStoryChoices } from '../day/state';
 import { recentPhoneEvents } from '../day/phoneEvents';
 import './social.css';
@@ -72,6 +72,7 @@ export function MessagesApp({
   const [composing, setComposing] = useState(false);
   const [recipientQuery, setRecipientQuery] = useState('');
   const person = contacts.find((contact) => contact.id === selected);
+  const historyOnly = !!person && (historyOnlyContacts as readonly string[]).includes(person.id);
   const aiCharacter = isAiCharacter(person?.id) ? person.id : null;
   const [drafts, setDrafts] = useState({ haruka: '', majima: '' });
   const textarea = useRef<HTMLTextAreaElement>(null);
@@ -164,11 +165,7 @@ export function MessagesApp({
   const callRetry =
     isCallEvents(rawAiThread?.pending?.phoneEvents) && rawAiThread?.pending?.phase === 'failed';
   const sentCount = aiThread?.completedCount ?? 0;
-  // A short choice interlude after three texts makes room for the rest of the phone.
-  // These are pacing defaults, not a claim about the character's canonical behavior.
-  const choiceInterlude =
-    person?.id === 'majima' && sentCount > 0 && sentCount % 3 === 0 && choices.length > 0;
-  const freeText = person?.id === 'majima' && (!choiceInterlude || editingFailed);
+  const freeText = person?.id === 'majima';
   const restDeadline =
     person?.id === 'majima' && !choices.length
       ? conversationRestDeadline(aiThread?.displayedMessages ?? [], sentCount)
@@ -669,7 +666,7 @@ export function MessagesApp({
                     </button>
                   </form>
                 )}
-                {choices.length > 0 && (person.id === 'haruka' || choiceInterlude) && (
+                {choices.length > 0 && person.id === 'haruka' && (
                   <div className="message-choice-list" aria-label="답장 선택">
                     {choices.map((choice) => (
                       <button
@@ -686,7 +683,7 @@ export function MessagesApp({
                   </div>
                 )}
               </>
-            ) : storyPending ? (
+            ) : historyOnly ? null : storyPending ? (
               <p className="message-choice-status" role="status">
                 답장 대기 중
               </p>

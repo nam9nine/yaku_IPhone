@@ -169,15 +169,15 @@ describe('로컬 이야기와 AI 도착 순서', () => {
       now,
     );
     expect(state.storyMessages.daigo[0].createdAt).toBe(now);
-    for (let i = 0; i < 12; i++)
+    for (let i = 0; i < 30; i++)
       state = dayReducer(
         state,
         { type: 'tick', elapsedMs: 1000, allowCalls: false },
         now + (i + 1) * 1000,
       );
     expect(state.storyMessages.daigo[1].createdAt).toBeGreaterThan(now);
-    state = dayReducer(state, { type: 'reminder', id: 'garden', done: true }, now + 13000);
-    expect(state.storyMessages.haruka[0].createdAt).toBe(now + 13000);
+    state = dayReducer(state, { type: 'reminder', id: 'garden', done: true }, now + 31000);
+    expect(state.storyMessages.haruka[0].createdAt).toBe(now + 31000);
     const invalid = JSON.parse(JSON.stringify(state));
     invalid.storyMessages.haruka[0].createdAt = -1;
     expect(validDay(invalid)).toBe(false);

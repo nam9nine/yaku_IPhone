@@ -27,7 +27,7 @@ def _hash(value):
 @lru_cache(maxsize=1)
 def _catalog():
     data = json.loads(CATALOG_PATH.read_text(encoding="utf-8"))
-    if data.get("version") != "phone-events-v1" or not isinstance(
+    if data.get("version") != "phone-events-v2" or not isinstance(
         data.get("events"), dict
     ):
         raise ValueError("Unsupported phone event catalog")

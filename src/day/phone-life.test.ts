@@ -1,3 +1,4 @@
+import { majimaCheckIns } from './proactive';
 import { describe, expect, it } from 'vitest';
 import { dayReducer, initialDay, getStoryChoices, loadDay, validDay } from './state';
 
@@ -41,13 +42,12 @@ it('하루카의 네 퀘스트 답장을 모두 마쳐도 재접속에 진행이
   expect(loadDay({ getItem: () => JSON.stringify(state) }).state).toEqual(state);
 });
 
-it('카무로쵸 연락은 명시적으로 한 번만 보내고 도착·싸움 완료를 만들지 않는다', () => {
+it('이전 목적지 알림 액션은 키류의 말이나 약속·전화를 생성하지 않는다', () => {
   let state = initialDay();
   state = dayReducer(state, { type: 'notify-kamurocho' }, 1000);
-  expect(state.call?.caller).toBe('majima');
-  expect(state.call?.lines.join(' ')).toContain('아직 도착한 건 아니제');
-  expect(state.storyMessages.majima.at(-1)?.text).toContain('갈 생각');
-  expect(state.phoneEvents.majima).toContain('majima-kamurocho-intent');
+  expect(state.call).toBeNull();
+  expect(state.storyMessages.majima).toEqual([]);
+  expect(state.phoneEvents.majima).toEqual([]);
   expect(dayReducer(state, { type: 'notify-kamurocho' }, 1100)).toBe(state);
   state = dayReducer(state, { type: 'end-call' }, 2000);
   state = loadDay({ getItem: () => JSON.stringify(state) }).state;
@@ -85,8 +85,8 @@ it('모든 선제 문자는 한 번씩만 나오고 새로고침·일시 정지�
       1000 * (i + 1),
     );
   const texts = state.storyMessages.majima.map((m) => m.text);
-  expect(texts.length).toBe(8);
-  expect(new Set(texts).size).toBe(8);
+  expect(texts.length).toBe(majimaCheckIns.length);
+  expect(new Set(texts).size).toBe(majimaCheckIns.length);
   expect(validDay(state)).toBe(true);
   state = dayReducer(
     { ...state, nextCallInMs: 0, nextMajimaTextInMs: 0 },
