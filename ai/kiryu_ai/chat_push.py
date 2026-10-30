@@ -428,7 +428,7 @@ class ChatPush:
             with self.chat_db.connection() as connection:
                 jobs = connection.execute(
                     "SELECT job_id,client_request_id,accepted_at,updated_at,phone_events,request_kind FROM requests "
-                    "WHERE visitor_id=? AND scenario_version='daily-if-v1' AND status='complete' "
+                    "WHERE visitor_id=? AND scenario_version='daily-if-v1' AND status='complete' AND request_kind!='proactive_episode' "
                     "AND (updated_at>? OR (updated_at=? AND job_id>?)) "
                     "ORDER BY updated_at,job_id LIMIT 64",
                     (sub["visitor_id"], sub["scan_at"], sub["scan_at"], sub["scan_id"]),
@@ -505,6 +505,7 @@ class ChatPush:
         if (
             not job
             or job["status"] != "complete"
+            or job.get("request_kind") == "proactive_episode"
             or job["character"] not in TITLES
             or not job.get("reply")
             or is_call_events(job.get("phone_events", []))

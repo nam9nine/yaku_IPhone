@@ -280,7 +280,7 @@ class ChatDBTests(unittest.TestCase):
         )
         reopened = ChatDB(self.db.path)
         with reopened.connection() as connection:
-            self.assertEqual(connection.execute("PRAGMA user_version").fetchone()[0], 3)
+            self.assertEqual(connection.execute("PRAGMA user_version").fetchone()[0], 4)
             self.assertEqual(
                 [
                     tuple(row)

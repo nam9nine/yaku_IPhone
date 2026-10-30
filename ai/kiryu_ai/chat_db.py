@@ -20,9 +20,10 @@ from datetime import UTC, datetime
 from pathlib import Path
 from uuid import UUID, uuid4
 
+from .episodes import EPISODE_SCHEMA, EpisodeStore
 from .phone_events import NO_PHONE_EVENTS, validate_phone_events
 
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 RELATIONSHIP_TONES = ("warm", "neutral", "cool")
 MAX_ACTIVE_PER_VISITOR = 2
 SESSION_LIFETIME = 30 * 24 * 60 * 60
@@ -101,7 +102,8 @@ CREATE TABLE IF NOT EXISTS requests (
     relationship_tone TEXT NOT NULL DEFAULT 'neutral'
         CHECK(relationship_tone IN ('warm','neutral','cool')),
     phone_events TEXT NOT NULL DEFAULT '[]' CHECK(json_valid(phone_events) AND json_type(phone_events)='array'),
-    request_kind TEXT NOT NULL DEFAULT 'chat' CHECK(request_kind IN ('chat','call_followup')),
+    request_kind TEXT NOT NULL DEFAULT 'chat' CHECK(request_kind IN ('chat','call_followup','proactive_episode')),
+    episode_ref TEXT CHECK(episode_ref IS NULL OR json_valid(episode_ref)),
     call_id TEXT, call_trigger TEXT CHECK(call_trigger IS NULL OR json_valid(call_trigger)),
     UNIQUE(visitor_id, scenario_version, client_request_id)
 );
@@ -160,10 +162,11 @@ class ChatDB:
             connection.execute("PRAGMA journal_mode=WAL")
             # Both the API and owner process open this DB. Lock before reading
             # its version so concurrent startup cannot run the same ALTER twice.
+            connection.execute("PRAGMA foreign_keys=OFF")
             connection.execute("BEGIN IMMEDIATE")
             try:
                 version = connection.execute("PRAGMA user_version").fetchone()[0]
-                if version not in (0, 1, 2, SCHEMA_VERSION):
+                if version not in (0, 1, 2, 3, SCHEMA_VERSION):
                     raise ValueError("Unsupported chat database schema version")
                 if version == 1:
                     connection.execute(
@@ -193,10 +196,30 @@ class ChatDB:
                     connection.execute(
                         "ALTER TABLE requests ADD COLUMN call_trigger TEXT CHECK(call_trigger IS NULL OR json_valid(call_trigger))"
                     )
+                if version in (1, 2, 3):
+                    # Rebuild only requests with FK enforcement temporarily off.
+                    # Never rename the old table: dependent FK SQL must stay
+                    # REFERENCES requests, and immutable message rows stay intact.
+                    request_sql = SCHEMA.split(
+                        "CREATE TABLE IF NOT EXISTS requests (", 1
+                    )[1].split("\n);", 1)[0]
+                    connection.execute(
+                        "CREATE TABLE requests_v4 (" + request_sql + "\n)"
+                    )
+                    columns = [
+                        row[1]
+                        for row in connection.execute("PRAGMA table_info(requests)")
+                    ]
+                    names = ",".join(columns)
+                    connection.execute(
+                        f"INSERT INTO requests_v4 ({names}) SELECT {names} FROM requests"
+                    )
+                    connection.execute("DROP TABLE requests")
+                    connection.execute("ALTER TABLE requests_v4 RENAME TO requests")
                 # executescript implicitly commits; execute complete statements
                 # individually to keep DDL, version and cursor-key creation atomic.
                 statement = ""
-                for line in SCHEMA.splitlines(keepends=True):
+                for line in (SCHEMA + EPISODE_SCHEMA).splitlines(keepends=True):
                     statement += line
                     if sqlite3.complete_statement(statement):
                         connection.execute(statement)
@@ -213,10 +236,14 @@ class ChatDB:
                         "SELECT value FROM settings WHERE key='cursor_key'"
                     ).fetchone()[0]
                 )
+                if connection.execute("PRAGMA foreign_key_check").fetchall():
+                    raise ValueError("Chat migration broke foreign key integrity")
                 connection.commit()
+                connection.execute("PRAGMA foreign_keys=ON")
             except BaseException:
                 connection.rollback()
                 raise
+        self.episodes = EpisodeStore(self)
 
     @contextmanager
     def connection(self, *, write=False):
@@ -348,15 +375,29 @@ class ChatDB:
         relationship_tone="neutral",
         phone_events=NO_PHONE_EVENTS,
         trigger=None,
+        episode_ref=None,
+        supersede_episode=False,
         now=None,
     ):
         from .call_followups import validate_trigger
 
-        request_kind = "call_followup" if trigger is not None else "chat"
+        request_kind = (
+            "call_followup"
+            if trigger is not None
+            else ("proactive_episode" if episode_ref else "chat")
+        )
         if trigger is not None:
             trigger = validate_trigger(trigger)
             if message is not None:
                 raise ValueError("Followups cannot contain a user message")
+        if episode_ref is not None and (
+            character != "majima"
+            or message is not None
+            or not isinstance(episode_ref, dict)
+            or set(episode_ref) != {"episode_id", "instance_id", "version", "stage"}
+            or episode_ref["stage"] not in {"invite", "followup"}
+        ):
+            raise ValueError("Invalid episode request")
         if relationship_tone not in RELATIONSHIP_TONES:
             raise ValueError("Invalid relationship tone")
         phone_events = validate_phone_events(
@@ -368,6 +409,8 @@ class ChatDB:
         fingerprint_parts = [character, message]
         if trigger is not None:
             fingerprint_parts.extend([request_kind, trigger])
+        if episode_ref is not None:
+            fingerprint_parts.append({"episode_ref": episode_ref})
         if relationship_tone != "neutral":
             fingerprint_parts.append(relationship_tone)
         if phone_events:
@@ -397,20 +440,36 @@ class ChatDB:
                 if prior_call:
                     return self._request(connection, prior_call["job_id"]), False
             active = connection.execute(
-                "SELECT character_id,scenario_version FROM requests WHERE visitor_id=? AND status IN ('queued','generating')",
+                "SELECT job_id,character_id,scenario_version,episode_ref FROM requests WHERE visitor_id=? AND status IN ('queued','generating')",
                 (visitor,),
             ).fetchall()
+            superseded = [
+                row["job_id"]
+                for row in active
+                if supersede_episode
+                and message is not None
+                and row["episode_ref"]
+                and row["character_id"] == character
+                and row["scenario_version"] == scenario
+            ]
+            active = [row for row in active if row["job_id"] not in superseded]
             if len(active) >= MAX_ACTIVE_PER_VISITOR or any(
                 row["character_id"] == character and row["scenario_version"] == scenario
                 for row in active
             ):
                 raise VisitorBusy("Conversation or visitor active limit reached")
+            for old_job in superseded:
+                self._interrupt(connection, old_job, "episode_superseded", accepted_at)
+            if character == "majima" and message is not None:
+                EpisodeStore.hold_for_user(
+                    connection, visitor, scenario, job_id + "-user"
+                )
             conversation = self._conversation(
                 connection, visitor, character, scenario, accepted_at
             )
             connection.execute(
-                "INSERT INTO requests (job_id,conversation_id,visitor_id,character_id,scenario_version,client_request_id,fingerprint,status,accepted_at,updated_at,error_code,relationship_tone,phone_events,request_kind,call_id,call_trigger) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, 'queued', ?, ?, NULL, ?, ?, ?, ?, ?)",
+                "INSERT INTO requests (job_id,conversation_id,visitor_id,character_id,scenario_version,client_request_id,fingerprint,status,accepted_at,updated_at,error_code,relationship_tone,phone_events,request_kind,call_id,call_trigger,episode_ref) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, 'queued', ?, ?, NULL, ?, ?, ?, ?, ?, ?)",
                 (
                     job_id,
                     conversation,
@@ -426,13 +485,20 @@ class ChatDB:
                     request_kind,
                     trigger["call_id"] if trigger else None,
                     json_text(trigger) if trigger else None,
+                    json_text(episode_ref) if episode_ref else None,
                 ),
             )
+            if episode_ref:
+                EpisodeStore.bind_job(
+                    connection, visitor, scenario, job_id, episode_ref
+                )
             if request_kind == "chat":
                 self._append(
                     connection, conversation, job_id, "user", message, accepted_at
                 )
-            return self._request(connection, job_id), True
+            result = self._request(connection, job_id)
+            result["superseded_job_ids"] = superseded
+            return result, True
 
     @staticmethod
     def _request(connection, job_id, visitor=None):
@@ -448,6 +514,9 @@ class ChatDB:
         result = dict(row)
         result["character"] = result.pop("character_id")
         result["phone_events"] = json.loads(result["phone_events"])
+        result["episode_ref"] = (
+            json.loads(result["episode_ref"]) if result["episode_ref"] else None
+        )
         result["request_id"] = result.pop("client_request_id")
         raw_trigger = result.pop("call_trigger")
         result["trigger"] = json.loads(raw_trigger) if raw_trigger else None
@@ -566,6 +635,9 @@ class ChatDB:
             ).fetchone()
             if job is None or job["status"] != "generating":
                 raise InvalidTransition("Only a generating request can complete")
+            if not EpisodeStore.valid_job(connection, job):
+                self._interrupt(connection, job_id, "episode_superseded", completed_at)
+                return False
             self._append(
                 connection,
                 job["conversation_id"],
@@ -587,6 +659,8 @@ class ChatDB:
                 "UPDATE generation_runs SET completed_at=?,metrics_json=?,finish_reason='stop' WHERE job_id=?",
                 (completed_at, json_text(metrics or {}), job_id),
             )
+            EpisodeStore.completed(connection, job)
+            return True
 
     def fail(self, job_id, code, output="", metrics=None, *, status="error", now=None):
         if status not in ("error", "interrupted"):
@@ -615,6 +689,53 @@ class ChatDB:
                 ),
             )
 
+    @staticmethod
+    def _interrupt(connection, job_id, code, at):
+        changed = connection.execute(
+            "UPDATE requests SET status='interrupted',updated_at=?,error_code=? WHERE job_id=? AND status IN ('queued','generating')",
+            (at, code, job_id),
+        ).rowcount
+        if changed:
+            connection.execute(
+                "INSERT OR IGNORE INTO generation_runs(run_id,job_id) VALUES (?, ?)",
+                (uuid4().hex, job_id),
+            )
+            connection.execute(
+                "UPDATE generation_runs SET completed_at=?,error_code=? WHERE job_id=?",
+                (at, code, job_id),
+            )
+        return bool(changed)
+
+    def interrupt_episode(self, job_id, code="episode_superseded"):
+        with self.connection(write=True) as connection:
+            row = connection.execute(
+                "SELECT episode_ref FROM requests WHERE job_id=?", (job_id,)
+            ).fetchone()
+            return bool(
+                row
+                and row[0]
+                and self._interrupt(connection, job_id, code, timestamp())
+            )
+
+    def episode_job_current(self, job_id):
+        with self.connection() as connection:
+            row = connection.execute(
+                "SELECT * FROM requests WHERE job_id=?", (job_id,)
+            ).fetchone()
+            return bool(
+                row
+                and row["status"] in {"queued", "generating"}
+                and EpisodeStore.valid_job(connection, row)
+            )
+
+    def save_discarded_output(self, job_id, output="", metrics=None):
+        with self.connection(write=True) as connection:
+            connection.execute(
+                "UPDATE generation_runs SET output_text=?,metrics_json=? WHERE job_id=? AND EXISTS "
+                "(SELECT 1 FROM requests WHERE job_id=? AND status='interrupted' AND episode_ref IS NOT NULL)",
+                (output, json_text(metrics or {}), job_id, job_id),
+            )
+
     def recover_interrupted(self, *, now=None):
         completed_at = timestamp(now)
         with self.connection(write=True) as connection:
@@ -637,13 +758,15 @@ class ChatDB:
             return len(rows)
 
     @staticmethod
-    def _message(row, *, state=False):
+    def _message(row, *, state=False, sequence=False):
         result = {
             "id": row["message_id"],
             "role": row["role"],
             "content": row["content"],
             "time": row["created_at"],
         }
+        if sequence:
+            result["sequence"] = row["sequence"]
         if "request_kind" in row.keys():  # noqa: SIM118 -- sqlite3.Row membership tests values
             result["request_kind"] = row["request_kind"] or "chat"
         if state:
@@ -655,27 +778,48 @@ class ChatDB:
             result["phone_events"] = json.loads(row["phone_events"] or "[]")
         return result
 
-    def history(self, visitor, character, scenario):
+    def history(self, visitor, character, scenario, *, with_sequence=False):
         with self.connection() as connection:
             return [
-                self._message(row)
+                self._message(row, sequence=with_sequence)
                 for row in connection.execute(
                     "SELECT m.* FROM messages m LEFT JOIN requests r ON r.job_id=m.job_id WHERE m.conversation_id=? AND m.model_eligible=1 AND COALESCE(r.request_kind, 'chat')='chat' ORDER BY m.sequence",
                     (scope_id(visitor, character, scenario),),
                 )
             ]
 
-    def recent_notices(self, visitor, character, scenario, *, limit=6):
+    def recent_notices(self, visitor, character, scenario, *, limit=20):
         if not isinstance(limit, int) or not 1 <= limit <= 20:
             raise ValueError("Invalid followup notice limit")
         with self.connection() as connection:
             rows = connection.execute(
-                "SELECT m.*, r.call_trigger FROM messages m JOIN requests r ON r.job_id=m.job_id WHERE m.conversation_id=? AND m.model_eligible=1 AND m.role='assistant' AND r.request_kind='call_followup' ORDER BY m.sequence DESC LIMIT ?",
+                "SELECT m.*, r.call_trigger, r.request_kind FROM messages m JOIN requests r ON r.job_id=m.job_id WHERE m.conversation_id=? AND m.model_eligible=1 AND m.role='assistant' AND r.request_kind IN ('call_followup','proactive_episode') ORDER BY m.sequence DESC LIMIT ?",
                 (scope_id(visitor, character, scenario), limit),
             ).fetchall()
+            state = (
+                EpisodeStore.load(connection, visitor, scenario)
+                if character == "majima"
+                else None
+            )
+            pinned = state.get("invitation_job_id") if state else None
+            if pinned and not any(row["job_id"] == pinned for row in rows):
+                invitation = connection.execute(
+                    "SELECT m.*,r.call_trigger,r.request_kind FROM messages m JOIN requests r ON r.job_id=m.job_id "
+                    "WHERE m.job_id=? AND m.conversation_id=? AND m.model_eligible=1 AND m.role='assistant'",
+                    (pinned, scope_id(visitor, character, scenario)),
+                ).fetchone()
+                if invitation:
+                    rows = rows[: max(0, limit - 1)] + [invitation]
             return [
-                {**self._message(row), "call_trigger": json.loads(row["call_trigger"])}
-                for row in reversed(rows)
+                {
+                    **self._message(row, sequence=True),
+                    **(
+                        {"call_trigger": json.loads(row["call_trigger"])}
+                        if row["call_trigger"]
+                        else {}
+                    ),
+                }
+                for row in sorted(rows, key=lambda row: row["sequence"])
             ]
 
     def _cursor(self, conversation, before, include_failed):
@@ -716,6 +860,7 @@ class ChatDB:
         cursor=None,
         limit=50,
         include_failed=True,
+        include_episodes=True,
     ):
         if not isinstance(limit, int) or not 1 <= limit <= 100:
             raise ValueError("History page size must be 1–100")
@@ -728,8 +873,9 @@ class ChatDB:
         with self.connection() as connection:
             rows = connection.execute(
                 "SELECT m.*,r.status,r.client_request_id,r.relationship_tone,r.phone_events,r.request_kind FROM messages m LEFT JOIN requests r ON r.job_id=m.job_id "
-                "WHERE m.conversation_id=? AND m.sequence<? AND (? OR m.model_eligible=1) ORDER BY m.sequence DESC LIMIT ?",
-                (conversation, before, include_failed, limit + 1),
+                "WHERE m.conversation_id=? AND m.sequence<? AND (? OR m.model_eligible=1) "
+                "AND (? OR COALESCE(r.request_kind,'chat')!='proactive_episode') ORDER BY m.sequence DESC LIMIT ?",
+                (conversation, before, include_failed, include_episodes, limit + 1),
             ).fetchall()
             completed_exchanges = connection.execute(
                 "SELECT COUNT(*) FROM messages m LEFT JOIN requests r ON r.job_id=m.job_id "

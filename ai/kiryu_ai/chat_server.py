@@ -21,7 +21,7 @@ from contextlib import asynccontextmanager
 from datetime import datetime
 from pathlib import Path
 from urllib.parse import urlsplit
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from starlette.applications import Starlette
 from starlette.middleware.cors import CORSMiddleware
@@ -32,10 +32,13 @@ from .chat_db import (
     MAX_ACTIVE_PER_VISITOR,
     RELATIONSHIP_TONES,
     ChatDB,
+    InvalidTransition,
     RequestConflict,
     VisitorBusy,
 )
 from .chat_policy import POLICY_MESSAGE, explicit_request, output_allowed
+from .chat_queue import CancellableFIFO
+from .episodes import EPISODE_ID, EpisodeStore, validate_command
 from .phone_events import NO_PHONE_EVENTS, validate_phone_events
 from .web_server import ApiFailure, PrivacyMiddleware, WindowLimiter, json_body
 
@@ -176,6 +179,12 @@ def public_job(job):
     if result["request_kind"] == "call_followup":
         result["request"].pop("message")
         result["request"].update(kind="call_followup", trigger=job["trigger"])
+    if result["request_kind"] == "proactive_episode":
+        result["request"].pop("message")
+        result["request"].update(kind="proactive_episode", episode=job["episode_ref"])
+    if job.get("episode_ref"):
+        result["episode"] = job["episode_ref"]
+        result["request"]["episode"] = job["episode_ref"]
     if status == "complete":
         result["reply"] = job.get("reply", "")
     elif result["status"] == "error":
@@ -189,6 +198,10 @@ def public_job(job):
             ),
         }
     return result
+
+
+class EpisodeSuperseded(Exception):
+    """A new actual user input made a queued or in-flight episode obsolete."""
 
 
 class ChatService:
@@ -205,6 +218,7 @@ class ChatService:
         embedding_dir=None,
         gateway_secret=None,
         push_sender=None,
+        episodes_enabled=None,
     ):
         if not 1 <= queue_size <= 8:
             raise ValueError("queue_size must be 1–8")
@@ -222,7 +236,12 @@ class ChatService:
         self.api_key_file = api_key_file
         self.embedding_dir = embedding_dir
         self.gateway_secret = gateway_secret
-        self.queue = asyncio.Queue(maxsize=queue_size)
+        self.queue = CancellableFIFO(maxsize=queue_size)
+        self.episodes_enabled = (
+            os.environ.get("KIRYU_EPISODES_ENABLED") == "1"
+            if episodes_enabled is None
+            else bool(episodes_enabled)
+        )
         self.pending = {}
         self.status = "loading"
         self.limiter = WindowLimiter(capacity=4096)
@@ -279,6 +298,7 @@ class ChatService:
         relationship_tone="neutral",
         phone_events=NO_PHONE_EVENTS,
         trigger=None,
+        episode_ref=None,
     ):
         from .call_followups import validate_trigger
         from .phone_events import is_call_events
@@ -320,6 +340,7 @@ class ChatService:
         if previous:
             if (
                 previous.get("trigger") != trigger
+                or previous.get("episode_ref") != episode_ref
                 or previous["character"] != character
                 or previous["message"] != message
                 or previous.get("relationship_tone", "neutral") != relationship_tone
@@ -343,16 +364,22 @@ class ChatService:
                 "model_unavailable",
                 "지금은 답장을 받을 수 없습니다. 잠시 후 다시 시도해 주세요.",
             )
-        if (
-            scope in self.pending
-            or sum(key[0] == visitor for key in self.pending) >= MAX_ACTIVE_PER_VISITOR
-        ):
+        pending_id = self.pending.get(scope)
+        pending_job = self.db.get_request(pending_id) if pending_id else None
+        replacing = bool(
+            message is not None and pending_job and pending_job.get("episode_ref")
+        )
+        if (scope in self.pending and not replacing) or sum(
+            key[0] == visitor for key in self.pending
+        ) - int(replacing) >= MAX_ACTIVE_PER_VISITOR:
             raise ApiFailure(
                 409,
                 "conversation_busy",
                 "이 연락처의 답장을 기다려 주세요. 다른 연락처에는 보낼 수 있습니다.",
             )
-        if self.queue.full():
+        if self.queue.full() and not (
+            replacing and any(item["job_id"] == pending_id for item in self.queue.items)
+        ):
             raise ApiFailure(
                 503,
                 "queue_full",
@@ -372,6 +399,8 @@ class ChatService:
                 relationship_tone=relationship_tone,
                 phone_events=phone_events,
                 trigger=trigger,
+                episode_ref=episode_ref,
+                supersede_episode=message is not None,
             )
         except RequestConflict:
             raise ApiFailure(
@@ -384,9 +413,106 @@ class ChatService:
                 "이 연락처의 답장을 기다려 주세요. 다른 연락처에는 보낼 수 있습니다.",
             ) from None
         if created:
+            for superseded in job.get("superseded_job_ids", []):
+                self.queue.cancel(superseded)
             self.pending[scope] = job["job_id"]
             self.queue.put_nowait(job)
         return job
+
+    def schedule_episode(self, visitor, *, address="episode", now=None):
+        """Dispatch only eligible foreground work; one model queue remains shared."""
+        if (
+            not self.episodes_enabled
+            or self.status != "ready"
+            or not hasattr(self.builder, "build_episode")
+        ):
+            return
+        state = self.db.episodes.get(visitor, SCENARIO)
+        if not EpisodeStore.is_active(state, now) or state["interpretation_pending"]:
+            return
+        if state["contact_stage"] == "initial" and state["remaining_ms"] == 0:
+            stage, trigger = "invite", None
+        elif state["contact_stage"] == "followup_due":
+            stage = "followup"
+            trigger = {
+                "call_id": state["call_id"],
+                "reason": state["call_outcome"],
+                "direction": "incoming",
+            }
+        else:
+            return
+        # Never fill scarce visitor or queue capacity with unsolicited work while
+        # accepted user work exists. An arriving user may still supersede it.
+        if self.pending or not self.queue.empty():
+            return
+        ref = {
+            "episode_id": EPISODE_ID,
+            "instance_id": state["instance_id"],
+            "version": state["version"],
+            "stage": stage,
+        }
+        try:
+            self.submit(
+                {"visitor_id": visitor},
+                "majima",
+                None,
+                str(uuid4()),
+                address,
+                relationship_tone=state["relationship_tone"],
+                trigger=trigger,
+                episode_ref=ref,
+            )
+        except ApiFailure as error:
+            if error.status not in {409, 429, 503}:
+                raise
+
+    def episode_command(self, record, body, *, address="episode", now=None):
+        command = validate_command(body)
+        visitor = record["visitor_id"]
+        if not self.episodes_enabled:
+            return self.db.episodes.response(
+                visitor, SCENARIO, enabled=False, accepted=False
+            )
+        # A followup or an invitation itself is not user activity and must not
+        # invalidate its own foreground lease.
+        busy = bool(self.pending)
+        existing = self.db.episodes.get(visitor, SCENARIO)
+        previous = (
+            self.db.get_request(existing["job_id"])
+            if existing and existing["job_id"]
+            else None
+        )
+        if (
+            previous
+            and previous.get("episode_ref")
+            and previous.get("error_code") in {"interrupted", "episode_inactive"}
+        ):
+            self.db.episodes.retry_inactive(previous)
+        accepted = self.db.episodes.command(
+            visitor, SCENARIO, command, busy=busy, now=now
+        )
+        if command["kind"] == "presence" and not command["active"]:
+            state = self.db.episodes.get(visitor, SCENARIO)
+            job = (
+                self.db.get_request(state["job_id"])
+                if state and state["job_id"]
+                else None
+            )
+            if (
+                job
+                and job.get("episode_ref")
+                and job["status"] == "queued"
+                and not EpisodeStore.is_active(state, now)
+            ):
+                self.db.interrupt_episode(job["job_id"], "episode_inactive")
+                self.queue.cancel(job["job_id"])
+                scope = (visitor, "majima", SCENARIO)
+                if self.pending.get(scope) == job["job_id"]:
+                    self.pending.pop(scope)
+                self.db.episodes.retry_inactive(job)
+        if command["kind"] in {"presence", "call_result"}:
+            self.schedule_episode(visitor, address=address, now=now)
+        return self.db.episodes.response(visitor, SCENARIO, accepted=accepted)
 
     def _load_engine(self):
         from .chat_prompt import ChatPromptBuilder
@@ -455,6 +581,16 @@ class ChatService:
         from .gemma_engine import CONTEXT_TOKENS, OUTPUT_TOKENS, SAMPLING, GemmaFailure
 
         followup = job.get("request_kind") == "call_followup"
+        proactive = job.get("request_kind") == "proactive_episode"
+        episode_job = bool(job.get("episode_ref"))
+        if episode_job:
+            if not self.db.episode_job_current(job["job_id"]):
+                return
+            state = self.db.episodes.get(job["visitor_id"], SCENARIO)
+            if not self.episodes_enabled or not EpisodeStore.is_active(state):
+                self.db.interrupt_episode(job["job_id"], "episode_inactive")
+                self.db.episodes.retry_inactive(job)
+                return
         engine = (
             getattr(self, "followup_engine", self.engine) if followup else self.engine
         )
@@ -477,6 +613,12 @@ class ChatService:
 
         def record_stage(assembled):
             nonlocal run_started
+            if episode_job and (
+                not self.episodes_enabled
+                or not self.db.episode_job_current(job["job_id"])
+            ):
+                self.db.interrupt_episode(job["job_id"])
+                raise EpisodeSuperseded
             manifest = getattr(engine, "manifest", {})
             metadata = {
                 **assembled["metadata"],
@@ -500,13 +642,40 @@ class ChatService:
             run_started = True
 
         try:
-            history = self.db.history(job["visitor_id"], job["character"], SCENARIO)
-            build = self.builder.build_followup if followup else self.builder.build
+            history = self.db.history(
+                job["visitor_id"], job["character"], SCENARIO, with_sequence=True
+            )
+            build = (
+                self.builder.build_followup
+                if followup
+                else (self.builder.build_episode if proactive else self.builder.build)
+            )
             request_input = (
                 {"trigger": job["trigger"]}
                 if followup
-                else {"user_message": job["message"]}
+                else ({} if proactive else {"user_message": job["message"]})
             )
+            episode_state = (
+                self.db.episodes.get(job["visitor_id"], SCENARIO)
+                if job["character"] == "majima"
+                else None
+            )
+            if (
+                self.episodes_enabled
+                and episode_state
+                and (episode_job or episode_state["phase"] != "not_started")
+            ):
+                request_input["episode_context"] = EpisodeStore.context(episode_state)
+                if not followup and not proactive:
+                    request_input["current_message_id"] = job["job_id"] + "-user"
+                    request_input["on_episode_decision"] = lambda decision: (
+                        self.db.episodes.apply_decision(
+                            job["visitor_id"],
+                            SCENARIO,
+                            decision,
+                            job["job_id"] + "-user",
+                        )
+                    )
             assembled = build(
                 visitor_id=job["visitor_id"],
                 character_id=job["character"],
@@ -526,40 +695,69 @@ class ChatService:
             record_stage(assembled)
             result = engine.reply(assembled["messages"], max_tokens=output_budget)
             metrics = timings(result)
+            if episode_job and (
+                not self.episodes_enabled
+                or not self.db.episode_job_current(job["job_id"])
+            ):
+                self.db.interrupt_episode(job["job_id"])
+                self.db.save_discarded_output(
+                    job["job_id"], result.get("reply", ""), metrics
+                )
+                return
             if result.get("finish_reason") not in {"stop", "eos"}:
                 code = (
                     "output_limit"
                     if result.get("finish_reason") == "length"
                     else "generation_failed"
                 )
-                self.db.fail(
-                    job["job_id"], code, output=result.get("reply", ""), metrics=metrics
+                self._fail_job(
+                    job, code, output=result.get("reply", ""), metrics=metrics
                 )
             elif (
                 not isinstance(result.get("reply"), str) or not result["reply"].strip()
             ):
-                self.db.fail(job["job_id"], "empty_reply", metrics=metrics)
+                self._fail_job(job, "empty_reply", metrics=metrics)
             elif not output_allowed(result["reply"]):
-                self.db.fail(
-                    job["job_id"],
+                self._fail_job(
+                    job,
                     "content_blocked",
                     output=result["reply"],
                     metrics=metrics,
                 )
             else:
-                self.db.complete(job["job_id"], result["reply"], metrics=metrics)
+                completed = self.db.complete(
+                    job["job_id"], result["reply"], metrics=metrics
+                )
+                if not completed:
+                    self.db.save_discarded_output(
+                        job["job_id"], result["reply"], metrics
+                    )
+        except EpisodeSuperseded:
+            return
+        except InvalidTransition:
+            if episode_job and not self.db.episode_job_current(job["job_id"]):
+                return
+            raise
         except GemmaFailure as error:
             partial = getattr(error, "result", {}) or {}
-            self.db.fail(
-                job["job_id"],
+            self._fail_job(
+                job,
                 error.code,
                 output=partial.get("reply", ""),
                 metrics=timings(partial),
             )
         except InputBudgetError:
-            self.db.fail(job["job_id"], "context_limit", metrics=timings())
+            self._fail_job(job, "context_limit", metrics=timings())
         except Exception:  # noqa: BLE001 -- never log private prompts or provider errors
-            self.db.fail(job["job_id"], "generation_failed", metrics=timings())
+            self._fail_job(job, "generation_failed", metrics=timings())
+
+    def _fail_job(self, job, code, output="", metrics=None):
+        try:
+            self.db.fail(job["job_id"], code, output=output, metrics=metrics)
+        except InvalidTransition:
+            if not job.get("episode_ref") or self.db.episode_job_current(job["job_id"]):
+                raise
+            self.db.save_discarded_output(job["job_id"], output, metrics)
 
     async def run(self):
         loop = asyncio.get_running_loop()
@@ -700,12 +898,20 @@ def create_app(data_root, *, allow_origins=(), **options):
                 SCENARIO,
                 cursor=request.query_params.get("cursor"),
                 limit=50,
+                include_episodes=request.query_params.get("episodes") == "1",
             )
         except ValueError:
             raise ApiFailure(
                 400, "invalid_cursor", "대화 페이지를 다시 불러와 주세요."
             ) from None
         pending = service.pending.get((record["visitor_id"], character, SCENARIO))
+        if pending and request.query_params.get("episodes") != "1":
+            pending_record = service.db.get_request(pending)
+            if (
+                pending_record
+                and pending_record.get("request_kind") == "proactive_episode"
+            ):
+                pending = None
         return JSONResponse({**page, "pending_job": pending})
 
     async def chat(request):
@@ -773,6 +979,23 @@ def create_app(data_root, *, allow_origins=(), **options):
             raise ApiFailure(
                 400, "invalid_request", "올바른 요청 UUID가 필요합니다."
             ) from None
+        episode_state = (
+            service.db.episodes.get(record["visitor_id"], SCENARIO)
+            if body["character"] == "majima"
+            else None
+        )
+        if episode_state and body["call_id"] == episode_state["call_id"]:
+            prior = service.db.find_followup(
+                record["visitor_id"], "majima", SCENARIO, body["call_id"]
+            )
+            if prior:
+                return JSONResponse(
+                    {"job_id": prior["job_id"], "status": public_job(prior)["status"]},
+                    status_code=202,
+                )
+            raise ApiFailure(
+                409, "episode_managed", "이 통화의 후속 연락을 처리하고 있습니다."
+            )
         job = service.submit(
             record,
             body["character"],
@@ -797,7 +1020,34 @@ def create_app(data_root, *, allow_origins=(), **options):
         job = service.db.get_request(job_id, visitor=record["visitor_id"])
         if not job or job["scenario_version"] != SCENARIO:
             raise ApiFailure(404, "job_not_found", "요청을 찾을 수 없습니다.")
+        if (
+            job.get("request_kind") == "proactive_episode"
+            and request.query_params.get("episodes") != "1"
+        ):
+            raise ApiFailure(404, "job_not_found", "요청을 찾을 수 없습니다.")
         return JSONResponse(public_job(job))
+
+    async def episode(request):
+        record = service.authenticate(request)
+        if not service.limiter.allow("episode:" + record["visitor_id"], 90, 60):
+            raise ApiFailure(429, "rate_limited", "잠시 후 다시 시도해 주세요.")
+        if request.method == "GET":
+            if request.query_params.get("protocol") != "1":
+                raise ApiFailure(400, "invalid_protocol", "지원하지 않는 요청입니다.")
+            return JSONResponse(
+                service.db.episodes.response(
+                    record["visitor_id"], SCENARIO, enabled=service.episodes_enabled
+                )
+            )
+        try:
+            result = service.episode_command(
+                record, await json_body(request), address=service.address(request)
+            )
+        except (ValueError, TypeError, KeyError):
+            raise ApiFailure(
+                400, "invalid_episode", "지원하지 않는 요청입니다."
+            ) from None
+        return JSONResponse(result)
 
     def push_access(request, *, foreground=False):
         record = service.authenticate(request)
@@ -854,6 +1104,7 @@ def create_app(data_root, *, allow_origins=(), **options):
             Route("/v1/health", health),
             Route("/v1/sessions", sessions, methods=["POST"]),
             Route("/v1/history", history),
+            Route("/v1/episodes/majima", episode, methods=["GET", "POST"]),
             Route(
                 "/v1/recordings/{character}/{recording_id}", recording, methods=["POST"]
             ),
