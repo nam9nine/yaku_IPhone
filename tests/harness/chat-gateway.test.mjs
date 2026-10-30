@@ -2,6 +2,42 @@ import { describe, it, expect } from 'vitest';
 import worker from '../../infra/cloudflare/worker.mjs';
 const origin = 'https://nam9nine.github.io';
 const request = (path, options = {}) => new Request(`https://api.example.test${path}`, options);
+it('rejects retired audio uploads without reading the body or calling the Mac', async () => {
+  const path = '/v1/recordings/majima/00000000-0000-4000-8000-000000000001';
+  let calls = 0;
+  const env = {
+    GATEWAY_SECRET: 'proof',
+    CHAT_API: {
+      fetch: async () => {
+        calls++;
+        return Response.json({});
+      },
+    },
+  };
+  const upload = request(path, {
+    method: 'POST',
+    headers: { Origin: origin, 'Content-Type': 'audio/webm' },
+  });
+  Object.defineProperty(upload, 'body', {
+    get() {
+      throw new Error('Audio body must not be read');
+    },
+  });
+  const response = await worker.fetch(upload, env);
+  expect(response.status).toBe(410);
+  expect((await response.json()).error.code).toBe('recording_disabled');
+  expect(response.headers.get('Access-Control-Allow-Origin')).toBe(origin);
+  expect(calls).toBe(0);
+  expect((await worker.fetch(request(path), env)).status).toBe(405);
+  const preflight = await worker.fetch(
+    request(path, {
+      method: 'OPTIONS',
+      headers: { Origin: origin, 'Access-Control-Request-Method': 'POST' },
+    }),
+    env,
+  );
+  expect(preflight.status).toBe(204);
+});
 describe('fixed chat gateway', () => {
   it('never routes owner/model/arbitrary paths or origins', async () => {
     for (const path of ['/admin', '/v1/chat/../admin', '/completion', '/v1/slots'])

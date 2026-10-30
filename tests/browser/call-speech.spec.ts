@@ -14,6 +14,8 @@ interface ProbeEngine extends SpeechRecognitionEngine {
 interface SpeechProbe {
   engines: ProbeEngine[];
   speaks: number;
+  mediaRequests: number;
+  captures: number;
   lateResult: SpeechRecognitionEngine['onresult'];
 }
 type ProbeWindow = Window & { __callSpeech: SpeechProbe };
@@ -24,10 +26,16 @@ async function installSpeech(page: Page, mode: 'standard' | 'webkit' | 'unsuppor
     Object.defineProperty(navigator, 'mediaDevices', {
       configurable: true,
       value: {
-        getUserMedia: async () => ({ getTracks: () => [{ stop: () => undefined }] }),
+        getUserMedia: async () => {
+          probe.mediaRequests++;
+          return { getTracks: () => [{ stop: () => undefined }] };
+        },
       },
     });
     class Recorder {
+      constructor() {
+        probe.captures++;
+      }
       static isTypeSupported() {
         return true;
       }
@@ -43,7 +51,13 @@ async function installSpeech(page: Page, mode: 'standard' | 'webkit' | 'unsuppor
       }
     }
     Object.defineProperty(window, 'MediaRecorder', { configurable: true, value: Recorder });
-    const probe: SpeechProbe = { engines: [], speaks: 0, lateResult: null };
+    const probe: SpeechProbe = {
+      engines: [],
+      speaks: 0,
+      mediaRequests: 0,
+      captures: 0,
+      lateResult: null,
+    };
     Object.defineProperty(window, '__callSpeech', { value: probe });
     class Recognition implements ProbeEngine {
       lang = '';
@@ -94,6 +108,8 @@ async function speechState(page: Page) {
       stops: probe.engines.reduce((total, item) => total + item.stops, 0),
       aborts: probe.engines.reduce((total, item) => total + item.aborts, 0),
       speaks: probe.speaks,
+      mediaRequests: probe.mediaRequests,
+      captures: probe.captures,
       settings: probe.engines.map(({ lang, continuous, interimResults }) => ({
         lang,
         continuous,
@@ -162,7 +178,7 @@ async function outgoing(page: Page, character: 'majima' | 'haruka' = 'majima', w
   return call;
 }
 
-test('수신 전화에 응답해도 말하기를 누르기 전에는 마이크를 시작하지 않는다', async ({ page }) => {
+test('수신 전화에 응답해도 마이크를 누르기 전에는 마이크를 시작하지 않는다', async ({ page }) => {
   await installSpeech(page);
   const posts = requests(page);
   await boot(page);
@@ -172,7 +188,7 @@ test('수신 전화에 응답해도 말하기를 누르기 전에는 마이크�
     await page.getByRole('checkbox', { name: `${item} 완료`, exact: true }).check();
   await page.getByRole('button', { name: '전화 응답', exact: true }).tap();
   const call = page.getByRole('dialog', { name: '마지마 형님 통화', exact: true });
-  await expect(call.getByRole('button', { name: '말하기', exact: true })).toBeEnabled();
+  await expect(call.getByRole('button', { name: '마이크', exact: true })).toBeEnabled();
   expect((await speechState(page)).instances).toBe(0);
   expect(posts).toEqual([]);
   await call.getByRole('button', { name: '통화 종료', exact: true }).tap();
@@ -183,11 +199,18 @@ for (const character of ['majima', 'haruka'] as const) {
     page,
   }, testInfo) => {
     await installSpeech(page, character === 'haruka' ? 'webkit' : 'standard');
+    const uploads: string[] = [];
+    page.on('request', (request) => {
+      if (new URL(request.url()).pathname.startsWith('/v1/recordings/'))
+        uploads.push(request.url());
+    });
     const posts = requests(page);
     await boot(page);
     const call = await outgoing(page, character);
     expect((await speechState(page)).instances).toBe(0);
-    await call.getByRole('button', { name: '말하기', exact: true }).tap();
+    await expect(call.getByText(/녹음|서버에 저장/)).toHaveCount(0);
+    await page.screenshot({ path: testInfo.outputPath(`call-${character}-microphone.png`) });
+    await call.getByRole('button', { name: '마이크', exact: true }).tap();
     const input = call.getByRole('textbox', { name: '통화에서 보낼 말', exact: true });
     expect((await speechState(page)).settings).toEqual([
       { lang: 'ko-KR', continuous: false, interimResults: true },
@@ -227,6 +250,9 @@ for (const character of ['majima', 'haruka'] as const) {
     await settleAiRequests(page);
     expect(posts).toHaveLength(1);
     expect((await speechState(page)).speaks).toBe(0);
+    expect((await speechState(page)).mediaRequests).toBe(0);
+    expect((await speechState(page)).captures).toBe(0);
+    expect(uploads).toEqual([]);
     await expect(call.locator('audio, video')).toHaveCount(0);
     await page.screenshot({ path: testInfo.outputPath(`call-${character}-reply.png`) });
     await call.getByRole('button', { name: '통화 종료', exact: true }).tap();
@@ -262,7 +288,7 @@ test('마이크 권한 거절 뒤에는 인식 결과를 보내지 않고 글로
   const posts = requests(page);
   await boot(page);
   const call = await outgoing(page);
-  await call.getByRole('button', { name: '말하기', exact: true }).tap();
+  await call.getByRole('button', { name: '마이크', exact: true }).tap();
   await page.evaluate(() =>
     (window as unknown as ProbeWindow).__callSpeech.engines
       .at(-1)
@@ -284,7 +310,7 @@ test('미지원 브라우저에서도 통화의 직접 입력과 전송을 사�
   const posts = requests(page);
   await boot(page);
   const call = await outgoing(page);
-  await expect(call.getByRole('button', { name: '말하기', exact: true })).toBeDisabled();
+  await expect(call.getByRole('button', { name: '마이크', exact: true })).toBeDisabled();
   await expect(call.getByText('음성 인식 미지원')).toBeVisible();
   await call.getByRole('button', { name: '글로 입력', exact: true }).tap();
   await call
@@ -301,7 +327,7 @@ for (const reason of ['end-call', 'hidden', 'pagehide'] as const) {
     const posts = requests(page);
     await boot(page);
     const call = await outgoing(page);
-    await call.getByRole('button', { name: '말하기', exact: true }).tap();
+    await call.getByRole('button', { name: '마이크', exact: true }).tap();
     await recognize(page, '지금 인식한 말');
     if (reason === 'end-call') {
       await call.getByRole('button', { name: '통화 종료', exact: true }).tap();
@@ -313,7 +339,7 @@ for (const reason of ['end-call', 'hidden', 'pagehide'] as const) {
           document.dispatchEvent(new Event('visibilitychange'));
         } else window.dispatchEvent(new Event('pagehide'));
       }, reason);
-      await expect(call.getByRole('button', { name: '말하기', exact: true })).toBeEnabled();
+      await expect(call.getByRole('button', { name: '마이크', exact: true })).toBeEnabled();
     }
     expect((await speechState(page)).aborts).toBe(1);
     await recognize(page, '취소 뒤 늦게 도착한 말', true, true);

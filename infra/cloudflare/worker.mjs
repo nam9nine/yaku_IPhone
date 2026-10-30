@@ -73,6 +73,8 @@ export default {
       });
     }
     if (!expected.includes(request.method)) return error(405, 'method_denied', origin);
+    // Retired upload route: reject old clients without reading or forwarding audio.
+    if (recording) return error(410, 'recording_disabled', origin);
     const allowedQuery = url.pathname === '/v1/history' ? ['character', 'cursor'] : [];
     if ([...url.searchParams.keys()].some((key) => !allowedQuery.includes(key)))
       return error(400, 'invalid_query', origin);
@@ -90,14 +92,10 @@ export default {
     let body;
     if (request.method === 'POST' || request.method === 'DELETE') {
       const contentType = request.headers.get('Content-Type') ?? '';
-      if (
-        !(recording
-          ? ['audio/mp4', 'audio/webm'].includes(contentType.split(';')[0].trim())
-          : contentType.split(';')[0].trim() === 'application/json')
-      )
+      if (contentType.split(';')[0].trim() !== 'application/json')
         return error(415, 'content_type', origin);
       try {
-        body = await limitedBody(request, recording ? 2 * 1024 * 1024 : LIMIT);
+        body = await limitedBody(request);
       } catch {
         return error(413, 'body_too_large', origin);
       }

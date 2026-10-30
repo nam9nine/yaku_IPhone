@@ -107,50 +107,55 @@ class ChatServerTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         return {"Authorization": "Bearer " + response.json()["token"]}
 
-    def test_private_recordings_do_not_become_messages(self):
+    def test_retired_recording_upload_rejects_without_reading_or_writing_audio(self):
         client = self.client()
         auth = self.token(client)
         route = "/v1/recordings/majima/" + str(uuid4())
         data = b"\x1aE\xdf\xa3synthetic-test-only"
-        self.assertEqual(
-            client.post(
-                route, content=data, headers={"Content-Type": "audio/webm"}
-            ).status_code,
-            401,
-        )
-        headers = {**auth, "Content-Type": "audio/webm"}
-        self.assertEqual(
-            client.post(route, content=data, headers=headers).status_code, 201
-        )
-        self.assertEqual(
-            client.post(route, content=data, headers=headers).status_code, 201
-        )
-        files = list((self.root / "recordings").rglob("*.webm"))
-        self.assertEqual(len(files), 1)
-        self.assertEqual(files[0].read_bytes(), data)
-        self.assertEqual(files[0].stat().st_mode & 0o777, 0o600)
+        recordings = self.root / "recordings"
+        with patch(
+            "starlette.requests.Request.stream",
+            side_effect=AssertionError("Audio body must not be read"),
+        ):
+            self.assertEqual(
+                client.post(
+                    route, content=data, headers={"Content-Type": "audio/webm"}
+                ).status_code,
+                401,
+            )
+            headers = {**auth, "Content-Type": "audio/webm"}
+            for payload in (data, b"not-audio"):
+                response = client.post(route, content=payload, headers=headers)
+                self.assertEqual(response.status_code, 410)
+                self.assertEqual(response.json()["error"]["code"], "recording_disabled")
+        self.assertFalse(recordings.exists())
         self.assertEqual(
             client.get("/v1/history?character=majima", headers=auth).json()["messages"],
             [],
         )
         self.assertEqual(client.get(route, headers=auth).status_code, 405)
-        self.assertEqual(
-            client.post(route, content=b"not-audio", headers=headers).status_code, 400
+        self.assertEqual(self.engine.calls, [])
+
+    def test_retired_recording_upload_preserves_existing_private_files(self):
+        client = self.client()
+        auth = self.token(client)
+        recordings = self.root / "recordings"
+        existing = recordings / "legacy-visitor" / "majima" / "old.webm"
+        existing.parent.mkdir(parents=True)
+        existing.write_bytes(b"existing-private-audio")
+        existing.chmod(0o600)
+        before = existing.stat()
+        response = client.post(
+            "/v1/recordings/majima/" + str(uuid4()),
+            content=b"new-audio",
+            headers={**auth, "Content-Type": "audio/webm"},
         )
-        self.assertEqual(
-            client.post(route, content=data + b"x", headers=headers).status_code, 409
-        )
-        self.assertEqual(
-            client.post(route, content=data * 100000, headers=headers).status_code, 413
-        )
-        other = self.token(client)
-        self.assertEqual(
-            client.post(
-                route, content=data, headers={**other, "Content-Type": "audio/webm"}
-            ).status_code,
-            201,
-        )
-        self.assertEqual(len(list((self.root / "recordings").rglob("*.webm"))), 2)
+        self.assertEqual(response.status_code, 410)
+        self.assertEqual(response.json()["error"]["code"], "recording_disabled")
+        self.assertEqual(list(recordings.rglob("*.webm")), [existing])
+        self.assertEqual(existing.read_bytes(), b"existing-private-audio")
+        self.assertEqual(existing.stat().st_mtime_ns, before.st_mtime_ns)
+        self.assertEqual(existing.stat().st_mode & 0o777, 0o600)
 
     def send(
         self, client, auth, message="카레 계획", character="haruka", request_id=None
