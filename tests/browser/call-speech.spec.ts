@@ -499,19 +499,28 @@ test('통화 전송 실패 후 문자에서는 원문 없이 재시도하고 통
   expect(posts[1].phone_events).toEqual(posts[0].phone_events);
 });
 
-test('통화 시작 전 시각을 숨기고 작성 중에는 상대 종료를 미룬다', async ({ page }, info) => {
+test('통화 시각을 숨기고 실제 입력마다 60초를 다시 세지만 방치한 초안은 통화를 붙잡지 않는다', async ({
+  page,
+}, info) => {
   await installSpeech(page);
   await boot(page);
   const call = await outgoing(page);
   await expect(call.getByLabel('현재 시각', { exact: true })).toHaveCount(0);
   await expect(call.getByLabel('통화 시간', { exact: true })).toHaveText('00:00');
   await call.getByRole('button', { name: '글로 입력', exact: true }).tap();
+  await page.clock.runFor(49_000);
   await call.getByRole('textbox', { name: '통화에서 보낼 말' }).fill('아직 작성 중');
-  await page.clock.runFor(95_000);
+  await page.clock.runFor(49_000);
   await expect(call).toBeVisible();
-  await call.getByRole('textbox', { name: '통화에서 보낼 말' }).fill('');
+  await expect(call.getByText('내가 또 연락하께. 끊는다, 키류쨩.', { exact: true })).toHaveCount(0);
+  await call.getByRole('textbox', { name: '통화에서 보낼 말' }).fill('아직 작성 중입니다');
+  await page.clock.runFor(59_000);
+  await expect(call.getByText('내가 또 연락하께. 끊는다, 키류쨩.', { exact: true })).toHaveCount(0);
   await page.clock.runFor(1000);
   await expect(call.getByText('내가 또 연락하께. 끊는다, 키류쨩.', { exact: true })).toBeVisible();
+  await expect(call.getByRole('textbox', { name: '통화에서 보낼 말' })).toHaveValue(
+    '아직 작성 중입니다',
+  );
   await page.screenshot({ path: info.outputPath('peer-ending.png') });
   await page.clock.runFor(6000);
   await expect(call).toHaveCount(0);
@@ -519,4 +528,68 @@ test('통화 시작 전 시각을 숨기고 작성 중에는 상대 종료를 �
   expect(saved.callLog[0].endedBy).toBe('peer');
   expect(saved.affinity).toBeGreaterThanOrEqual(0);
   expect(saved.storyMessages.majima).toEqual([]);
+});
+
+test('통화 답변 생성과 전달 대기는 60초를 넘겨도 종료하지 않고 답변 후 다시 센다', async ({
+  page,
+}) => {
+  await installSpeech(page);
+  await boot(page);
+  let complete = false;
+  await page.route(`${AI_ENDPOINT}/v1/jobs/**`, async (route) => {
+    if (complete) return route.fallback();
+    await route.fulfill({
+      json: {
+        job_id: new URL(route.request().url()).pathname.split('/').at(-1),
+        character: 'majima',
+        status: 'generating',
+      },
+    });
+  });
+  const call = await outgoing(page);
+  await call.getByRole('button', { name: '글로 입력', exact: true }).tap();
+  await call.getByRole('textbox', { name: '통화에서 보낼 말' }).fill('형님, 답을 기다리겠습니다.');
+  await call.getByRole('button', { name: '말 보내기', exact: true }).tap();
+  await expect(call.getByRole('status')).toContainText('답장 대기 중');
+  await page.clock.runFor(95_000);
+  await expect(call).toBeVisible();
+  await expect(call.getByText('내가 또 연락하께. 끊는다, 키류쨩.', { exact: true })).toHaveCount(0);
+  await settleAiRequests(page);
+  complete = true;
+  await page.clock.runFor(5000);
+  await finishAiReply(page, 'majima');
+  await expect(call.getByText('검증용 마지마 답장', { exact: true })).toBeVisible();
+  const idleMs = await page.evaluate(
+    () => JSON.parse(localStorage.getItem('yaku-iphone.day.v1')!).call.idleMs as number,
+  );
+  expect(idleMs).toBeLessThan(6000);
+  await page.clock.runFor(59_000 - idleMs);
+  await expect(call.getByText('내가 또 연락하께. 끊는다, 키류쨩.', { exact: true })).toHaveCount(0);
+  await page.clock.runFor(1000);
+  await expect(call.getByText('내가 또 연락하께. 끊는다, 키류쨩.', { exact: true })).toBeVisible();
+  await page.clock.runFor(6000);
+  await expect(call).toHaveCount(0);
+});
+
+test('전송 실패는 재시도를 제공하지만 무응답 통화를 영구 유지하지 않는다', async ({ page }) => {
+  await installSpeech(page);
+  await boot(page);
+  await page.route(`${AI_ENDPOINT}/v1/chat`, (route) =>
+    route.fulfill({
+      status: 503,
+      json: { error: { code: 'unavailable', message: '잠시 연결할 수 없습니다.' } },
+    }),
+  );
+  const call = await outgoing(page);
+  await call.getByRole('button', { name: '글로 입력', exact: true }).tap();
+  await call.getByRole('textbox', { name: '통화에서 보낼 말' }).fill('형님, 들리십니까?');
+  await call.getByRole('button', { name: '말 보내기', exact: true }).tap();
+  await expect(call.getByRole('button', { name: '보낸 말 다시 시도' })).toBeVisible();
+  await expect(call.getByRole('button', { name: '글로 입력', exact: true })).toBeDisabled();
+  await page.clock.runFor(59_000);
+  await expect(call.getByText('내가 또 연락하께. 끊는다, 키류쨩.', { exact: true })).toHaveCount(0);
+  await page.clock.runFor(1000);
+  await expect(call.getByText('내가 또 연락하께. 끊는다, 키류쨩.', { exact: true })).toBeVisible();
+  await page.clock.runFor(6000);
+  await expect(call).toHaveCount(0);
 });

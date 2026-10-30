@@ -119,6 +119,30 @@ class PushTests(unittest.TestCase):
             1,
         )
 
+    def test_generated_call_followup_push_has_no_random_or_reading_delay(self):
+        job, _ = self.db.accept(
+            self.a,
+            "majima",
+            "daily-if-v1",
+            None,
+            str(uuid4()),
+            trigger={
+                "call_id": "fast-call",
+                "reason": "missed",
+                "direction": "incoming",
+            },
+            now=self.now + 1,
+        )
+        self.db.begin_run(job["job_id"], [], {}, now=self.now + 1)
+        self.db.complete(job["job_id"], "검사용 짧은 후속 문자", now=self.now + 2)
+        self.now += 2
+        self.assertTrue(self.push.tick())
+        self.assertEqual(self.sent[0][1]["job_id"], job["job_id"])
+        self.assertEqual(self.rows("outbox")[0]["not_before"], self.now)
+        # Original completion still produces only one notification on scans.
+        self.assertFalse(self.push.tick())
+        self.assertEqual(len(self.sent), 1)
+
     def test_previously_queued_call_push_is_rejected_at_delivery(self):
         call, _, _, _ = self.complete(phone_events=["haruka-call-live"])
         self.now += 40

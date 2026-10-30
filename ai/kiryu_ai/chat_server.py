@@ -172,6 +172,10 @@ def public_job(job):
             "phone_events": job.get("phone_events", []),
         },
     }
+    result["request_kind"] = job.get("request_kind", "chat")
+    if result["request_kind"] == "call_followup":
+        result["request"].pop("message")
+        result["request"].update(kind="call_followup", trigger=job["trigger"])
     if status == "complete":
         result["reply"] = job.get("reply", "")
     elif result["status"] == "error":
@@ -274,8 +278,25 @@ class ChatService:
         address,
         relationship_tone="neutral",
         phone_events=NO_PHONE_EVENTS,
+        trigger=None,
     ):
+        from .call_followups import validate_trigger
+        from .phone_events import is_call_events
+
         visitor = record["visitor_id"]
+        if trigger is not None:
+            try:
+                trigger = validate_trigger(trigger)
+            except ValueError:
+                raise ApiFailure(
+                    400, "invalid_trigger", "올바른 통화 상태가 필요합니다."
+                ) from None
+            if message is not None:
+                raise ApiFailure(
+                    400,
+                    "invalid_trigger",
+                    "통화 후속 요청에는 문자를 넣을 수 없습니다.",
+                )
         if relationship_tone not in RELATIONSHIP_TONES:
             raise ApiFailure(
                 400, "invalid_relationship_tone", "지원하지 않는 인연 상태입니다."
@@ -288,13 +309,18 @@ class ChatService:
             raise ApiFailure(
                 400, "invalid_phone_events", "올바른 전화·할 일 상태가 필요합니다."
             ) from None
+        if trigger is not None and is_call_events(phone_events):
+            raise ApiFailure(
+                400, "invalid_phone_events", "종료된 통화 상태가 필요합니다."
+            )
         scope = (visitor, character, SCENARIO)
         # Existing UUIDs must remain discoverable even while the queue/model is
         # unavailable. accept() checks the fingerprint again in its transaction.
         previous = self.db.find_request(visitor, SCENARIO, request_id)
         if previous:
             if (
-                previous["character"] != character
+                previous.get("trigger") != trigger
+                or previous["character"] != character
                 or previous["message"] != message
                 or previous.get("relationship_tone", "neutral") != relationship_tone
                 or previous.get("phone_events", []) != phone_events
@@ -303,7 +329,13 @@ class ChatService:
                     409, "request_id_conflict", "다른 내용에 사용한 요청 ID입니다."
                 )
             return previous
-        if explicit_request(message):
+        if trigger is not None:
+            prior_call = self.db.find_followup(
+                visitor, character, SCENARIO, trigger["call_id"]
+            )
+            if prior_call:
+                return prior_call
+        if message is not None and explicit_request(message):
             raise ApiFailure(400, "content_blocked", POLICY_MESSAGE)
         if self.status != "ready":
             raise ApiFailure(
@@ -339,6 +371,7 @@ class ChatService:
                 request_id,
                 relationship_tone=relationship_tone,
                 phone_events=phone_events,
+                trigger=trigger,
             )
         except RequestConflict:
             raise ApiFailure(
@@ -373,6 +406,16 @@ class ChatService:
             if self.engine.manifest != manifest:
                 raise ValueError("Runtime manifest changed while connecting")
             verify_native_server(self.engine, manifest, directory)
+        self.followup_engine = (
+            self.engine
+            if self.engine_factory
+            else GemmaEngine(
+                base_url=self.model_url,
+                manifest_path=self.manifest_path,
+                api_key_file=self.api_key_file,
+                thinking=False,
+            )
+        )
         if self.builder is None:
             from .chat_reader import EvidenceReader
             from .chat_retrieval import E5Onnx, HybridRetriever
@@ -407,9 +450,15 @@ class ChatService:
         )
 
     def _generate(self, job):
+        from .call_followups import FOLLOWUP_TOKENS
         from .chat_prompt import InputBudgetError
         from .gemma_engine import CONTEXT_TOKENS, OUTPUT_TOKENS, SAMPLING, GemmaFailure
 
+        followup = job.get("request_kind") == "call_followup"
+        engine = (
+            getattr(self, "followup_engine", self.engine) if followup else self.engine
+        )
+        output_budget = FOLLOWUP_TOKENS if followup else OUTPUT_TOKENS
         started = time.monotonic()
         queue_seconds = max(
             0, time.time() - datetime.fromisoformat(job["accepted_at"]).timestamp()
@@ -428,13 +477,18 @@ class ChatService:
 
         def record_stage(assembled):
             nonlocal run_started
-            manifest = getattr(self.engine, "manifest", {})
+            manifest = getattr(engine, "manifest", {})
             metadata = {
                 **assembled["metadata"],
                 "model": manifest.get("model_file", "test-engine"),
                 "model_manifest": manifest,
                 "sampling": SAMPLING,
                 "seed": None,
+                "request_kind": job.get("request_kind", "chat"),
+                "generation_options": {
+                    "thinking": getattr(engine, "thinking", not followup),
+                    "max_tokens": output_budget,
+                },
             }
             record = self.db.record_run_input if run_started else self.db.begin_run
             record(
@@ -447,21 +501,30 @@ class ChatService:
 
         try:
             history = self.db.history(job["visitor_id"], job["character"], SCENARIO)
-            assembled = self.builder.build(
+            build = self.builder.build_followup if followup else self.builder.build
+            request_input = (
+                {"trigger": job["trigger"]}
+                if followup
+                else {"user_message": job["message"]}
+            )
+            assembled = build(
                 visitor_id=job["visitor_id"],
                 character_id=job["character"],
                 scenario_version=SCENARIO,
-                user_message=job["message"],
+                **request_input,
+                notices=self.db.recent_notices(
+                    job["visitor_id"], job["character"], SCENARIO
+                ),
                 relationship_tone=job.get("relationship_tone", "neutral"),
                 phone_events=job.get("phone_events", []),
                 history=history,
-                count_tokens=self.engine.count_tokens,
+                count_tokens=engine.count_tokens,
                 context_limit=CONTEXT_TOKENS,
-                max_tokens=OUTPUT_TOKENS,
+                max_tokens=output_budget,
                 on_stage=record_stage,
             )
             record_stage(assembled)
-            result = self.engine.reply(assembled["messages"], max_tokens=OUTPUT_TOKENS)
+            result = engine.reply(assembled["messages"], max_tokens=output_budget)
             metrics = timings(result)
             if result.get("finish_reason") not in {"stop", "eos"}:
                 code = (
@@ -693,6 +756,38 @@ def create_app(data_root, *, allow_origins=(), **options):
             status_code=202,
         )
 
+    async def call_followup(request):
+        record = service.authenticate(request)
+        body = await json_body(request)
+        required = {"character", "request_id", "call_id", "reason", "direction"}
+        if not required <= set(body) or set(body) - required - {
+            "relationship_tone",
+            "phone_events",
+        }:
+            raise ApiFailure(400, "invalid_body", "지원하지 않는 요청 항목입니다.")
+        if body["character"] not in CHARACTERS:
+            raise ApiFailure(400, "invalid_character", "지원하지 않는 대화 상대입니다.")
+        try:
+            request_id = str(UUID(body["request_id"]))
+        except (ValueError, TypeError, AttributeError):
+            raise ApiFailure(
+                400, "invalid_request", "올바른 요청 UUID가 필요합니다."
+            ) from None
+        job = service.submit(
+            record,
+            body["character"],
+            None,
+            request_id,
+            service.address(request),
+            relationship_tone=body.get("relationship_tone", "neutral"),
+            phone_events=body.get("phone_events", []),
+            trigger={key: body[key] for key in ("call_id", "reason", "direction")},
+        )
+        return JSONResponse(
+            {"job_id": job["job_id"], "status": public_job(job)["status"]},
+            status_code=202,
+        )
+
     async def job_status(request):
         record = service.authenticate(request)
         try:
@@ -763,6 +858,7 @@ def create_app(data_root, *, allow_origins=(), **options):
                 "/v1/recordings/{character}/{recording_id}", recording, methods=["POST"]
             ),
             Route("/v1/chat", chat, methods=["POST"]),
+            Route("/v1/call-followups", call_followup, methods=["POST"]),
             Route("/v1/jobs/{job_id}", job_status),
             Route("/v1/push/key", push_key),
             Route(

@@ -6,6 +6,8 @@ import {
   getStoryChoices,
   affinityTone,
   peerHangupDelay,
+  peerHangupDue,
+  AI_CALL_IDLE_MS,
   initialDay,
   loadDay,
   remainingReminders,
@@ -346,7 +348,8 @@ describe('통화 상대의 종료와 자연스러운 간격', () => {
     state = advance(state, 3);
     const id = state.call!.id;
     expect(dayReducer(state, { type: 'peer-end-call', callId: id })).toBe(state);
-    state = advance(state, Math.ceil(peerHangupDelay(state.call!) / 1000));
+    state = dayReducer(state, { type: 'call-activity', callId: id, busy: false, active: true });
+    state = advance(state, Math.ceil(peerHangupDelay(state.call!) / 1000), true);
     const affinity = state.affinity;
     const count = state.storyMessages.majima.length;
     state = dayReducer(state, { type: 'peer-end-call', callId: id });
@@ -446,4 +449,210 @@ it('유키 기록은 이치반의 발언으로 바꾸지 않고 다른 인물과
   expect(loaded.callLog).toEqual([]);
   expect(loaded.replies).toEqual([]);
   expect(validDay(loaded)).toBe(true);
+});
+
+describe('연속 무응답과 내구성 있는 AI 통화 후속 요청', () => {
+  const requestId = '00000000-0000-4000-8000-000000000119';
+  function connected(character: 'haruka' | 'majima' = 'majima') {
+    let state = dayReducer(
+      initialDay(),
+      { type: 'start-call', id: character },
+      100,
+      () => requestId,
+    );
+    state = advance(state, 3);
+    return dayReducer(state, {
+      type: 'call-activity',
+      callId: state.call!.id,
+      busy: false,
+      active: true,
+    });
+  }
+  it('총 통화 길이가 아니라 busy가 끝난 뒤의 연속 60초만 센다', () => {
+    let state = connected();
+    const callId = state.call!.id;
+    state = advance(state, 59, true);
+    expect(state.call?.idleMs).toBe(59_000);
+    expect(peerHangupDue(state.call!)).toBe(false);
+    state = dayReducer(state, { type: 'call-activity', callId, busy: true, active: true });
+    state = advance(state, 180, true);
+    expect(state.call?.idleMs).toBe(0);
+    expect(peerHangupDue(state.call!)).toBe(false);
+    state = dayReducer(state, { type: 'call-activity', callId, busy: false, active: true });
+    state = advance(state, 59, true);
+    expect(peerHangupDue(state.call!)).toBe(false);
+    state = advance(state, 1, true);
+    expect(state.call?.idleMs).toBe(AI_CALL_IDLE_MS);
+    expect(peerHangupDue(state.call!)).toBe(true);
+  });
+  it('실제 입력은 idle만 초기화하고 남은 초안 대신 마지막 입력부터 60초를 센다', () => {
+    let state = advance(connected(), 59, true);
+    const callId = state.call!.id;
+    state = dayReducer(state, { type: 'call-input', callId, requestId });
+    expect(state.call).toMatchObject({ idleMs: 0, liveBusy: false, activityEnabled: true });
+    expect(dayReducer(state, { type: 'call-input', callId, requestId })).toBe(state);
+    state = advance(state, 59, true);
+    expect(peerHangupDue(state.call!)).toBe(false);
+    state = advance(state, 1, true);
+    expect(peerHangupDue(state.call!)).toBe(true);
+    state = dayReducer(state, { type: 'call-input', callId, requestId });
+    expect(dayReducer(state, { type: 'peer-end-call', callId, requestId, reason: 'idle' })).toBe(
+      state,
+    );
+  });
+  it('이전 통화의 입력이나 늦은 음성 입력은 현재 통화의 idle을 연장하지 않는다', () => {
+    const state = advance(connected(), 59, true);
+    expect(dayReducer(state, { type: 'call-input', callId: 'call-999', requestId })).toBe(state);
+    expect(
+      dayReducer(state, {
+        type: 'call-input',
+        callId: state.call!.id,
+        requestId: '00000000-0000-4000-8000-000000000118',
+      }),
+    ).toBe(state);
+  });
+  it('비활성·전역 전화 유예는 idle을 누적하지 않고 복귀 후 다시 센다', () => {
+    let state = advance(connected(), 50, true);
+    const callId = state.call!.id;
+    state = dayReducer(state, { type: 'call-activity', callId, busy: false, active: false });
+    state = advance(state, 120, true);
+    expect(state.call?.idleMs).toBe(0);
+    expect(peerHangupDue(state.call!)).toBe(false);
+    state = dayReducer(state, { type: 'call-activity', callId, busy: false, active: true });
+    state = advance(state, 120, false);
+    expect(state.call?.idleMs).toBe(0);
+    state = advance(state, 60, true);
+    expect(peerHangupDue(state.call!)).toBe(true);
+  });
+  it('busy 변경이나 새 통화 이후의 오래된 종료 콜백은 무시한다', () => {
+    let state = advance(connected(), 60, true);
+    const callId = state.call!.id;
+    state = dayReducer(state, { type: 'call-activity', callId, busy: true, active: true });
+    expect(dayReducer(state, { type: 'peer-end-call', callId, reason: 'idle' })).toBe(state);
+    state = dayReducer(state, { type: 'end-call' });
+    state = dayReducer(state, { type: 'start-call', id: 'haruka' });
+    expect(dayReducer(state, { type: 'call-activity', callId, busy: false, active: true })).toBe(
+      state,
+    );
+    expect(dayReducer(state, { type: 'peer-end-call', callId, reason: 'idle' })).toBe(state);
+  });
+  it.each(['majima', 'haruka'] as const)(
+    '%s idle 종료는 새 사용자 문자 없이 후속 요청 하나만 남긴다',
+    (character) => {
+      let state = advance(connected(character), 60, true);
+      const callId = state.call!.id;
+      state = dayReducer(state, { type: 'peer-end-call', callId, reason: 'idle' });
+      expect(state.pendingCallFollowups).toEqual([
+        {
+          requestId,
+          callId: `${callId}:${requestId}`,
+          character,
+          reason: 'idle',
+          direction: 'outgoing',
+          relationshipTone: 'neutral',
+        },
+      ]);
+      expect(state.storyMessages[character]).toEqual([]);
+      expect(dayReducer(state, { type: 'peer-end-call', callId, reason: 'idle' })).toBe(state);
+      expect(dayReducer(state, { type: 'ack-followup', requestId: 'missing' })).toBe(state);
+      expect(loadDay({ getItem: () => JSON.stringify(state) }).state.pendingCallFollowups).toEqual(
+        state.pendingCallFollowups,
+      );
+      state = dayReducer(state, { type: 'ack-followup', requestId });
+      expect(state.pendingCallFollowups).toEqual([]);
+      expect(dayReducer(state, { type: 'ack-followup', requestId })).toBe(state);
+      expect(validDay(state)).toBe(true);
+    },
+  );
+  it.each(['missed', 'declined'] as const)(
+    '수신 %s만 AI 후속을 만들고 발신 취소는 만들지 않는다',
+    (reason) => {
+      let incoming = dayReducer(
+        { ...initialDay(), nextCallInMs: 0 },
+        { type: 'tick', elapsedMs: 1000, allowCalls: true },
+        100,
+        () => requestId,
+      );
+      incoming = dayReducer(incoming, { type: 'miss-call', reason });
+      expect(incoming.pendingCallFollowups).toHaveLength(1);
+      expect(incoming.pendingCallFollowups[0]).toMatchObject({
+        requestId,
+        reason,
+        direction: 'incoming',
+        character: 'majima',
+      });
+      expect(incoming.storyMessages.majima).toEqual([]);
+      const outgoing = dayReducer(dayReducer(initialDay(), { type: 'start-call', id: 'majima' }), {
+        type: 'end-call',
+      });
+      expect(outgoing.pendingCallFollowups).toEqual([]);
+    },
+  );
+  it('초기화로 같은 call 번호가 재사용돼도 이전 인스턴스의 callback을 거부한다', () => {
+    const previous = connected();
+    let state = dayReducer(initialDay(), { type: 'start-call', id: 'majima' });
+    state = advance(state, 3);
+    const callId = state.call!.id;
+    expect(callId).toBe(previous.call!.id);
+    state = dayReducer(state, { type: 'call-activity', callId, busy: false, active: true });
+    state = advance(state, 60, true);
+    expect(
+      dayReducer(state, {
+        type: 'peer-end-call',
+        callId,
+        requestId: previous.call!.followupRequestId,
+        reason: 'idle',
+      }),
+    ).toBe(state);
+    expect(
+      dayReducer(state, {
+        type: 'call-activity',
+        callId,
+        requestId: previous.call!.followupRequestId,
+        busy: true,
+        active: true,
+      }),
+    ).toBe(state);
+  });
+  it('같은 activity 상태 입력은 불필요한 재렌더를 만들지 않는다', () => {
+    const state = connected();
+    expect(
+      dayReducer(state, {
+        type: 'call-activity',
+        callId: state.call!.id,
+        busy: false,
+        active: true,
+      }),
+    ).toBe(state);
+  });
+  it('구버전 통화는 새 후속을 소급 생성하지 않고 완료 기록과 나머지 상태를 보존한다', () => {
+    const old = JSON.parse(JSON.stringify(connected()));
+    delete old.pendingCallFollowups;
+    delete old.call.idleMs;
+    delete old.call.liveBusy;
+    delete old.call.activityEnabled;
+    delete old.call.followupRequestId;
+    const restored = loadDay({ getItem: () => JSON.stringify(old) }).state;
+    expect(restored.call).toBeNull();
+    expect(restored.callLog).toHaveLength(1);
+    expect(restored.pendingCallFollowups).toEqual([]);
+    expect(validDay(restored)).toBe(true);
+    expect(dayReducer(restored, { type: 'reset' })).toEqual(initialDay());
+  });
+  it('다른 인물·방향·중복·UUID 오류를 포함한 후속 저장을 거부한다', () => {
+    let state = advance(connected(), 60, true);
+    state = dayReducer(state, { type: 'peer-end-call', callId: state.call!.id, reason: 'idle' });
+    const row = state.pendingCallFollowups[0];
+    for (const item of [
+      { ...row, character: 'date' },
+      { ...row, requestId: 'invalid' },
+      { ...row, reason: 'missed', direction: 'outgoing' },
+      { ...row, relationshipTone: 'unknown' },
+    ]) {
+      expect(validDay({ ...state, pendingCallFollowups: [item] })).toBe(false);
+    }
+    expect(validDay({ ...state, pendingCallFollowups: [row, row] })).toBe(false);
+    const active = connected();
+    expect(validDay({ ...active, call: { ...active.call, idleMs: 60_001 } })).toBe(false);
+  });
 });

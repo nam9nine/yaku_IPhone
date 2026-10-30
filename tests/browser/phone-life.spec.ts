@@ -132,7 +132,7 @@ test('마지마는 세 답장 뒤에도 문맥에 맞게 자유 입력하고 고
   ).toHaveCount(0);
 });
 
-test('사용 시간이 지나면 수신하고 마지마 거절 문자는 한 번 남으며 다른 인물에게 발신한다', async ({
+test('사용 시간이 지나면 수신하고 거절 뒤 고정 문자를 만들지 않으며 다른 인물에게 발신한다', async ({
   page,
 }, testInfo) => {
   await page.setViewportSize({ width: 360, height: 800 });
@@ -143,9 +143,7 @@ test('사용 시간이 지나면 수신하고 마지마 거절 문자는 한 번
   ).toBeVisible();
   await page.getByRole('button', { name: '전화 거절', exact: true }).tap();
   await thread(page, 'majima');
-  await expect(
-    page.getByText((await day(page)).storyMessages.majima.at(-1).text, { exact: true }),
-  ).toHaveCount(1);
+  expect((await day(page)).storyMessages.majima).toEqual([]);
   await home(page);
   await launchHomeApp(page, 'phone');
   await page.getByRole('button', { name: '연락처', exact: true }).tap();
@@ -307,6 +305,7 @@ test('마지마가 먼저 문자하고 다시 접속해도 같은 문자를 재�
   await boot(page);
   await page.clock.runFor(60_000);
   await page.getByRole('button', { name: '전화 거절', exact: true }).tap();
+  await finishAiReply(page, 'majima');
   await page.clock.runFor(60_000);
   expect((await day(page)).storyMessages.majima.at(-1).text).toBe('키류쨩! 폰은 살아 있나?');
   await thread(page, 'majima');

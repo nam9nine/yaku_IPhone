@@ -124,3 +124,11 @@ PYTHONPATH=ai python -m unittest discover -s ai/tests -p test_chat_prompt.py -v
 활성 요청은 방문자 전체 하나에서 방문자·인물·시나리오당 하나로 바뀐다. 방문자 최대 둘과 전체 대기열 여덟 개를 별도로 검사한다. DB schema v2는 기존 세션과 원문을 보존하며 이관한다. 대화 원문과 생성 실패를 분리하는 기존 정책은 동일하다. 폰의 선택·전화 대본과 인연은 [폰 흐름 문서](../docs/phone-life.md)에 구분해 기록한다.
 
 전화·퀘스트 사건은 `src/day/phone-events.json`의 ID만 받아 인물별 최대 네 개를 검증한다. 원작 지식이나 실제 대화 발언으로 승격하지 않고, 최근 IF 사건 보고로 renderer 입력에 넣는다. requests.phone_events와 생성 metadata에 버전·ID·카탈로그 해시를 저장한다. 완료 교환 총수는 DB에서 계산해 이력 pagination과 무관한 선택/휴식 주기를 유지한다.
+
+## 통화 후속 발신 문자 (Issue 119)
+
+`POST /v1/call-followups`는 `character`, UUID `request_id`, `call_id`(ASCII 영숫자로 시작하며 영숫자·`_.:-`, 최대 80자), `reason`(`missed`·`declined`·`idle`), `direction`(`incoming`·`outgoing`)을 받는다. 부재중·수신 거절은 수신 전화만 허용한다. 선택 항목은 인연 태도와 종료된 폰 이벤트 ID이며 자유 형식 사용자 문자를 받지 않는다. 인증·범위·대기열·접수 제한은 일반 문자와 같다. 같은 방문자·인물·IF의 같은 통화는 새 요청 UUID가 와도 원래 작업을 반환하며 재생성하지 않는다.
+
+SQLite schema 3은 기존 세션·문자·요청을 보존하면서 `request_kind`, 통화 ID와 이벤트 원문을 추가한다. 후속 요청 접수 시 사용자 메시지는 만들지 않고 정상 생성이 끝나면 assistant 한 줄만 추가한다. 기존 user/assistant 쌍의 검색은 그대로 유지하고 최근 정상 후속 문자 최대 6개를 별도 참고 기록으로 제공한다. 이 기록은 키류의 응답·동의·행동 완료가 아니다. 실패 출력은 다음 입력이나 공개 이력에 넣지 않는다.
+
+후속 발신은 같은 Gemma 서버와 동일 FIFO 실행기에서 non-thinking, 최대 96토큰으로 생성한다. 별도 reader 추론과 임의 전달 대기를 거치지 않는다. 최종 native user 슬롯은 실제 키류의 발언이 아닌 앱 이벤트 envelope이며 `input_envelope_kind=application-event`로 감사 기록에 표시한다. 원문 ID·이벤트·근거·실제 입력 해시로 재구성할 수 있다. 일반 문자의 thinking·RAG 경로는 유지한다. CPU 검사는 접수·분리·복구 계약이며 실제 모델의 말투·속도를 증명하지 않는다.

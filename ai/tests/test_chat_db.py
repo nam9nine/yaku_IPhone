@@ -254,8 +254,11 @@ class ChatDBTests(unittest.TestCase):
             connection.execute(
                 "CREATE UNIQUE INDEX one_active_request_per_visitor ON requests(visitor_id) WHERE status IN ('queued','generating')"
             )
+            connection.execute("DROP INDEX one_followup_per_call")
+            for column in ("request_kind", "call_id", "call_trigger"):
+                connection.execute("ALTER TABLE requests DROP COLUMN " + column)
             connection.execute("PRAGMA user_version=1")
-        # API + owner can start together. Each must observe one committed v2,
+        # API + owner can start together. Each must observe one committed v3,
         # with the same existing cursor key and no duplicate-column failure.
         with ThreadPoolExecutor(max_workers=4) as pool:
             starts = list(pool.map(lambda _: ChatDB(self.db.path), range(4)))
@@ -277,7 +280,7 @@ class ChatDBTests(unittest.TestCase):
         )
         reopened = ChatDB(self.db.path)
         with reopened.connection() as connection:
-            self.assertEqual(connection.execute("PRAGMA user_version").fetchone()[0], 2)
+            self.assertEqual(connection.execute("PRAGMA user_version").fetchone()[0], 3)
             self.assertEqual(
                 [
                     tuple(row)
@@ -362,6 +365,9 @@ class ChatDBTests(unittest.TestCase):
         )
         with self.db.connection(write=True) as connection:
             connection.execute("ALTER TABLE requests DROP COLUMN phone_events")
+            connection.execute("DROP INDEX one_followup_per_call")
+            for column in ("request_kind", "call_id", "call_trigger"):
+                connection.execute("ALTER TABLE requests DROP COLUMN " + column)
             connection.execute("PRAGMA user_version=2")
         reopened = ChatDB(self.db.path)
         repeated, created = reopened.accept(

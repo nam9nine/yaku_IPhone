@@ -6,6 +6,7 @@ const routes = new Map([
   ['/v1/sessions', ['POST']],
   ['/v1/history', ['GET']],
   ['/v1/chat', ['POST']],
+  ['/v1/call-followups', ['POST']],
   ['/v1/push/key', ['GET']],
   ['/v1/push/subscriptions', ['POST', 'DELETE']],
 ]);
@@ -80,7 +81,8 @@ export default {
     const forwarding = new Headers();
     if (origin) forwarding.set('Origin', origin);
     const authorization = request.headers.get('Authorization');
-    if (recording && !authorization) return error(401, 'unauthorized', origin);
+    if ((recording || url.pathname === '/v1/call-followups') && !authorization)
+      return error(401, 'unauthorized', origin);
     if (authorization) {
       if (authorization.length >= 256 || !/^Bearer [^\s]+$/.test(authorization))
         return error(401, 'unauthorized', origin);

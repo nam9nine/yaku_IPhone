@@ -22,7 +22,7 @@ from uuid import UUID, uuid4
 
 from .phone_events import NO_PHONE_EVENTS, validate_phone_events
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 RELATIONSHIP_TONES = ("warm", "neutral", "cool")
 MAX_ACTIVE_PER_VISITOR = 2
 SESSION_LIFETIME = 30 * 24 * 60 * 60
@@ -101,10 +101,14 @@ CREATE TABLE IF NOT EXISTS requests (
     relationship_tone TEXT NOT NULL DEFAULT 'neutral'
         CHECK(relationship_tone IN ('warm','neutral','cool')),
     phone_events TEXT NOT NULL DEFAULT '[]' CHECK(json_valid(phone_events) AND json_type(phone_events)='array'),
+    request_kind TEXT NOT NULL DEFAULT 'chat' CHECK(request_kind IN ('chat','call_followup')),
+    call_id TEXT, call_trigger TEXT CHECK(call_trigger IS NULL OR json_valid(call_trigger)),
     UNIQUE(visitor_id, scenario_version, client_request_id)
 );
 CREATE UNIQUE INDEX IF NOT EXISTS one_active_request_per_conversation ON requests(conversation_id)
     WHERE status IN ('queued','generating');
+CREATE UNIQUE INDEX IF NOT EXISTS one_followup_per_call ON requests(visitor_id,character_id,scenario_version,call_id)
+    WHERE request_kind='call_followup';
 CREATE INDEX IF NOT EXISTS requests_conversation ON requests(conversation_id, accepted_at);
 CREATE TABLE IF NOT EXISTS messages (
     message_id TEXT PRIMARY KEY, conversation_id TEXT NOT NULL REFERENCES conversations,
@@ -159,7 +163,7 @@ class ChatDB:
             connection.execute("BEGIN IMMEDIATE")
             try:
                 version = connection.execute("PRAGMA user_version").fetchone()[0]
-                if version not in (0, 1, SCHEMA_VERSION):
+                if version not in (0, 1, 2, SCHEMA_VERSION):
                     raise ValueError("Unsupported chat database schema version")
                 if version == 1:
                     connection.execute(
@@ -181,6 +185,14 @@ class ChatDB:
                             "ALTER TABLE requests ADD COLUMN phone_events TEXT NOT NULL DEFAULT '[]' "
                             "CHECK(json_valid(phone_events) AND json_type(phone_events)='array')"
                         )
+                if version in (1, 2):
+                    connection.execute(
+                        "ALTER TABLE requests ADD COLUMN request_kind TEXT NOT NULL DEFAULT 'chat' CHECK(request_kind IN ('chat','call_followup'))"
+                    )
+                    connection.execute("ALTER TABLE requests ADD COLUMN call_id TEXT")
+                    connection.execute(
+                        "ALTER TABLE requests ADD COLUMN call_trigger TEXT CHECK(call_trigger IS NULL OR json_valid(call_trigger))"
+                    )
                 # executescript implicitly commits; execute complete statements
                 # individually to keep DDL, version and cursor-key creation atomic.
                 statement = ""
@@ -335,8 +347,16 @@ class ChatDB:
         *,
         relationship_tone="neutral",
         phone_events=NO_PHONE_EVENTS,
+        trigger=None,
         now=None,
     ):
+        from .call_followups import validate_trigger
+
+        request_kind = "call_followup" if trigger is not None else "chat"
+        if trigger is not None:
+            trigger = validate_trigger(trigger)
+            if message is not None:
+                raise ValueError("Followups cannot contain a user message")
         if relationship_tone not in RELATIONSHIP_TONES:
             raise ValueError("Invalid relationship tone")
         phone_events = validate_phone_events(
@@ -346,6 +366,8 @@ class ChatDB:
         # Keep legacy neutral retries byte-compatible. Any tone change still
         # changes the fingerprint, and the persisted enum is the source of truth.
         fingerprint_parts = [character, message]
+        if trigger is not None:
+            fingerprint_parts.extend([request_kind, trigger])
         if relationship_tone != "neutral":
             fingerprint_parts.append(relationship_tone)
         if phone_events:
@@ -367,6 +389,13 @@ class ChatDB:
                         "Request UUID already belongs to different content"
                     )
                 return self._request(connection, previous["job_id"]), False
+            if trigger is not None:
+                prior_call = connection.execute(
+                    "SELECT job_id FROM requests WHERE visitor_id=? AND character_id=? AND scenario_version=? AND call_id=? AND request_kind='call_followup'",
+                    (visitor, character, scenario, trigger["call_id"]),
+                ).fetchone()
+                if prior_call:
+                    return self._request(connection, prior_call["job_id"]), False
             active = connection.execute(
                 "SELECT character_id,scenario_version FROM requests WHERE visitor_id=? AND status IN ('queued','generating')",
                 (visitor,),
@@ -380,8 +409,8 @@ class ChatDB:
                 connection, visitor, character, scenario, accepted_at
             )
             connection.execute(
-                "INSERT INTO requests (job_id,conversation_id,visitor_id,character_id,scenario_version,client_request_id,fingerprint,status,accepted_at,updated_at,error_code,relationship_tone,phone_events) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, 'queued', ?, ?, NULL, ?, ?)",
+                "INSERT INTO requests (job_id,conversation_id,visitor_id,character_id,scenario_version,client_request_id,fingerprint,status,accepted_at,updated_at,error_code,relationship_tone,phone_events,request_kind,call_id,call_trigger) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, 'queued', ?, ?, NULL, ?, ?, ?, ?, ?)",
                 (
                     job_id,
                     conversation,
@@ -394,9 +423,15 @@ class ChatDB:
                     accepted_at,
                     relationship_tone,
                     json_text(phone_events),
+                    request_kind,
+                    trigger["call_id"] if trigger else None,
+                    json_text(trigger) if trigger else None,
                 ),
             )
-            self._append(connection, conversation, job_id, "user", message, accepted_at)
+            if request_kind == "chat":
+                self._append(
+                    connection, conversation, job_id, "user", message, accepted_at
+                )
             return self._request(connection, job_id), True
 
     @staticmethod
@@ -414,6 +449,8 @@ class ChatDB:
         result["character"] = result.pop("character_id")
         result["phone_events"] = json.loads(result["phone_events"])
         result["request_id"] = result.pop("client_request_id")
+        raw_trigger = result.pop("call_trigger")
+        result["trigger"] = json.loads(raw_trigger) if raw_trigger else None
         if result["status"] == "interrupted":
             result["status"] = "error"
         if result["error_code"]:
@@ -434,6 +471,14 @@ class ChatDB:
             row = connection.execute(
                 "SELECT job_id FROM requests WHERE visitor_id=? AND scenario_version=? AND client_request_id=?",
                 (visitor, scenario, str(UUID(request_id))),
+            ).fetchone()
+            return self._request(connection, row[0], visitor) if row else None
+
+    def find_followup(self, visitor, character, scenario, call_id):
+        with self.connection() as connection:
+            row = connection.execute(
+                "SELECT job_id FROM requests WHERE visitor_id=? AND character_id=? AND scenario_version=? AND call_id=? AND request_kind='call_followup'",
+                (visitor, character, scenario, call_id),
             ).fetchone()
             return self._request(connection, row[0], visitor) if row else None
 
@@ -599,6 +644,8 @@ class ChatDB:
             "content": row["content"],
             "time": row["created_at"],
         }
+        if "request_kind" in row.keys():  # noqa: SIM118 -- sqlite3.Row membership tests values
+            result["request_kind"] = row["request_kind"] or "chat"
         if state:
             result["status"] = row["status"] or "complete"
             result["model_eligible"] = bool(row["model_eligible"])
@@ -613,9 +660,22 @@ class ChatDB:
             return [
                 self._message(row)
                 for row in connection.execute(
-                    "SELECT * FROM messages WHERE conversation_id=? AND model_eligible=1 ORDER BY sequence",
+                    "SELECT m.* FROM messages m LEFT JOIN requests r ON r.job_id=m.job_id WHERE m.conversation_id=? AND m.model_eligible=1 AND COALESCE(r.request_kind, 'chat')='chat' ORDER BY m.sequence",
                     (scope_id(visitor, character, scenario),),
                 )
+            ]
+
+    def recent_notices(self, visitor, character, scenario, *, limit=6):
+        if not isinstance(limit, int) or not 1 <= limit <= 20:
+            raise ValueError("Invalid followup notice limit")
+        with self.connection() as connection:
+            rows = connection.execute(
+                "SELECT m.*, r.call_trigger FROM messages m JOIN requests r ON r.job_id=m.job_id WHERE m.conversation_id=? AND m.model_eligible=1 AND m.role='assistant' AND r.request_kind='call_followup' ORDER BY m.sequence DESC LIMIT ?",
+                (scope_id(visitor, character, scenario), limit),
+            ).fetchall()
+            return [
+                {**self._message(row), "call_trigger": json.loads(row["call_trigger"])}
+                for row in reversed(rows)
             ]
 
     def _cursor(self, conversation, before, include_failed):
@@ -667,7 +727,7 @@ class ChatDB:
         )
         with self.connection() as connection:
             rows = connection.execute(
-                "SELECT m.*,r.status,r.client_request_id,r.relationship_tone,r.phone_events FROM messages m LEFT JOIN requests r ON r.job_id=m.job_id "
+                "SELECT m.*,r.status,r.client_request_id,r.relationship_tone,r.phone_events,r.request_kind FROM messages m LEFT JOIN requests r ON r.job_id=m.job_id "
                 "WHERE m.conversation_id=? AND m.sequence<? AND (? OR m.model_eligible=1) ORDER BY m.sequence DESC LIMIT ?",
                 (conversation, before, include_failed, limit + 1),
             ).fetchall()
@@ -718,7 +778,7 @@ class ChatDB:
             job["messages"] = [
                 self._message(row, state=True)
                 for row in connection.execute(
-                    "SELECT m.*,r.status,r.client_request_id,r.relationship_tone,r.phone_events FROM messages m LEFT JOIN requests r ON r.job_id=m.job_id WHERE m.conversation_id=? ORDER BY m.sequence",
+                    "SELECT m.*,r.status,r.client_request_id,r.relationship_tone,r.phone_events,r.request_kind FROM messages m LEFT JOIN requests r ON r.job_id=m.job_id WHERE m.conversation_id=? ORDER BY m.sequence",
                     (job["conversation_id"],),
                 )
             ]
@@ -848,6 +908,7 @@ class ChatDB:
         result = []
         for row in rows:
             item = dict(row)
+            item["trigger"] = json.loads(item.pop("call_trigger") or "null")
             item["metadata"] = json.loads(item.pop("metadata_json") or "{}")
             item["metrics"] = json.loads(item.pop("metrics_json") or "{}")
             result.append(item)

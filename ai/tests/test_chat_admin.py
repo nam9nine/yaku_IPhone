@@ -360,6 +360,39 @@ class ChatAdminTests(unittest.TestCase):
         ]:
             self.assertNotIn(value, response.text)
 
+    def test_assistant_only_followup_failure_is_reviewable_without_fake_user(self):
+        self.login()
+        visitor = self.fixture["sessions"][0]["visitor_id"]
+        job, _ = self.db.accept(
+            visitor,
+            "majima",
+            "daily-if-v1",
+            None,
+            str(uuid4()),
+            trigger={
+                "call_id": "admin-followup",
+                "reason": "idle",
+                "direction": "incoming",
+            },
+        )
+        self.db.begin_run(job["job_id"], [], {"request_kind": "call_followup"})
+        self.db.fail(job["job_id"], "output_limit", "검토 전용 미완성 후속 문자")
+        detail = self.client.get("/v1/admin/cases/" + job["job_id"]).json()
+        self.assertIsNone(detail["message"])
+        self.assertEqual(detail["request_kind"], "call_followup")
+        self.assertEqual(detail["trigger"]["reason"], "idle")
+        self.assertEqual(detail["run"]["output_text"], "검토 전용 미완성 후속 문자")
+        self.assertFalse(
+            any(row["job_id"] == job["job_id"] for row in detail["messages"])
+        )
+        queue = self.client.get("/v1/admin/queue").json()["cases"]
+        item = next(row for row in queue if row["job_id"] == job["job_id"])
+        self.assertEqual(item["trigger"]["call_id"], "admin-followup")
+        exported = self.post("/v1/admin/export", {"job_ids": [job["job_id"]]})
+        saved = json.loads(exported.text)
+        self.assertEqual(saved["request_kind"], "call_followup")
+        self.assertFalse(saved["training_eligible"])
+
     def test_static_security_headers_and_no_public_model_routes(self):
         response = self.client.get("/")
         self.assertEqual(response.status_code, 200)

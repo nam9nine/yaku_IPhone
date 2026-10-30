@@ -18,6 +18,21 @@ export function isPhoneEvents(character: AiCharacter, value: unknown): value is 
   );
 }
 export type RelationshipTone = 'warm' | 'neutral' | 'cool';
+export interface CallFollowupTrigger {
+  call_id: string;
+  reason: 'missed' | 'declined' | 'idle';
+  direction: 'incoming' | 'outgoing';
+}
+export function isCallFollowupTrigger(value: unknown): value is CallFollowupTrigger {
+  return (
+    record(value) &&
+    typeof value.call_id === 'string' &&
+    /^[A-Za-z0-9][A-Za-z0-9_.:-]{0,79}$/.test(value.call_id) &&
+    ['missed', 'declined', 'idle'].includes(String(value.reason)) &&
+    ['incoming', 'outgoing'].includes(String(value.direction)) &&
+    (value.reason === 'idle' || value.direction === 'incoming')
+  );
+}
 export const isRelationshipTone = (value: unknown): value is RelationshipTone =>
   value === 'warm' || value === 'neutral' || value === 'cool';
 export const AI_MAX_MESSAGE_LENGTH = 1000;
@@ -36,6 +51,7 @@ export const isCallEvents = (events: readonly string[] | undefined): boolean =>
   !!events?.some((id) => id === 'majima-call-live' || id === 'haruka-call-live');
 
 export interface AiMessage {
+  request_kind?: 'chat' | 'call_followup';
   id: string;
   role: 'user' | 'assistant';
   content: string;
@@ -56,6 +72,7 @@ export interface AiHistory {
   completed_exchanges?: number;
 }
 export interface AiJob {
+  request_kind?: 'chat' | 'call_followup';
   job_id: string;
   character: AiCharacter;
   status: 'queued' | 'generating' | 'complete' | 'error';
@@ -64,7 +81,9 @@ export interface AiJob {
   messages?: AiMessage[];
   request?: {
     id: string;
-    message: string;
+    message?: string;
+    kind?: 'chat' | 'call_followup';
+    trigger?: CallFollowupTrigger;
     time: string | null;
     relationship_tone?: RelationshipTone;
     phone_events?: PhoneEventId[];
@@ -84,6 +103,8 @@ function messages(value: unknown, character: AiCharacter): value is AiMessage[] 
         typeof message.id === 'string' &&
         (message.role === 'user' || message.role === 'assistant') &&
         typeof message.content === 'string' &&
+        (message.request_kind === undefined ||
+          ['chat', 'call_followup'].includes(String(message.request_kind))) &&
         (message.time === null || typeof message.time === 'string') &&
         (message.relationship_tone === undefined ||
           isRelationshipTone(message.relationship_tone)) &&
@@ -121,7 +142,7 @@ function serverError(status: number, code?: string): AiRequestError {
   if (status === 403)
     return new AiRequestError('지금은 대화에 연결할 수 없습니다. 잠시 후 다시 시도해 주세요.');
   if (status === 409)
-    return new AiRequestError('이전 답장을 처리하고 있습니다. 잠시 후 다시 시도해 주세요.');
+    return new AiRequestError('이전 답장을 처리하고 있습니다. 잠시 후 다시 시도해 주세요.', 'busy');
   if (status === 429) return new AiRequestError('요청이 많습니다. 잠시 후 다시 시도해 주세요.');
   if (status === 503)
     return new AiRequestError('지금은 답장을 받을 수 없습니다. 잠시 후 다시 시도해 주세요.');
@@ -292,7 +313,9 @@ export async function getJob(
     (value.request !== undefined &&
       (!record(value.request) ||
         typeof value.request.id !== 'string' ||
-        typeof value.request.message !== 'string' ||
+        (value.request.kind === 'call_followup'
+          ? !isCallFollowupTrigger(value.request.trigger) || value.request.message !== undefined
+          : typeof value.request.message !== 'string') ||
         (value.request.time !== null && typeof value.request.time !== 'string') ||
         (value.request.relationship_tone !== undefined &&
           !isRelationshipTone(value.request.relationship_tone)) ||
@@ -302,6 +325,26 @@ export async function getJob(
     throw new AiRequestError('답장 상태를 확인할 수 없습니다.');
   }
   return value as unknown as AiJob;
+}
+
+export async function postCallFollowup(
+  connection: AiConnection,
+  character: AiCharacter,
+  requestId: string,
+  trigger: CallFollowupTrigger,
+  relationshipTone: RelationshipTone,
+  signal?: AbortSignal,
+): Promise<string> {
+  if (!isCallFollowupTrigger(trigger) || !isRelationshipTone(relationshipTone))
+    throw new AiRequestError('전화 상태를 확인할 수 없습니다.', 'invalid_input');
+  const value = await aiRequest(connection.endpoint, '/v1/call-followups', {
+    token: connection.token,
+    signal,
+    body: { character, request_id: requestId, ...trigger, relationship_tone: relationshipTone },
+  });
+  if (!record(value) || typeof value.job_id !== 'string' || !value.job_id)
+    throw new AiRequestError('전화 후속 상태를 확인할 수 없습니다.');
+  return value.job_id;
 }
 
 export function shouldSendOnEnter(event: {

@@ -38,6 +38,7 @@ import { consumeNotificationLink, disablePush, registerPushWorker } from './ai/p
 import { resetAiConnection } from './ai/connection';
 import { usePushPresence } from './ai/usePushPresence';
 import { useAiMessenger } from './ai/useAiMessenger';
+import { useCallFollowups } from './ai/useCallFollowups';
 import { isAiCharacter } from './ai/client';
 import { AiReplyBanner, AiReplyNotifications, AiReplySound } from './ai/ReplyNotifications';
 
@@ -82,6 +83,7 @@ function PhoneSession() {
     !!callCharacter ||
       (!state.locked && state.activeApp === 'messages' && !state.panel && !day.state.call),
   );
+  useCallFollowups(ai, isOnline(preferences));
   const inConversation =
     !state.locked &&
     state.activeApp === 'messages' &&

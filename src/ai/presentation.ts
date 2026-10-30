@@ -4,6 +4,7 @@ import { readAiResetId, type AiConnection } from './connection';
 export const AI_PRESENTATION_KEY = 'yaku-iphone.ai.delivery.v1';
 export const MIN_TYPING_MS = 1500;
 export interface ReplyReceipt {
+  fast?: boolean;
   requestId: string;
   character: AiCharacter;
   typingAt: number;
@@ -54,7 +55,8 @@ export class ReplyPresentation {
             ['haruka', 'majima'].includes(r.character) &&
             Number.isFinite(r.typingAt) &&
             Number.isFinite(r.deliverAt) &&
-            r.deliverAt >= r.typingAt + MIN_TYPING_MS &&
+            (r.fast === undefined || typeof r.fast === 'boolean') &&
+            r.deliverAt >= r.typingAt + (r.fast ? 0 : MIN_TYPING_MS) &&
             typeof r.delivered === 'boolean' &&
             typeof r.read === 'boolean' &&
             (r.jobId === undefined || typeof r.jobId === 'string') &&
@@ -78,15 +80,21 @@ export class ReplyPresentation {
       /* Do not fail a successfully received message on storage failure. */
     }
   }
-  begin(character: AiCharacter, requestId: string, startedAt = Date.now()): ReplyReceipt {
+  begin(
+    character: AiCharacter,
+    requestId: string,
+    startedAt = Date.now(),
+    fast = false,
+  ): ReplyReceipt {
     const existing = this.receipts.find((r) => r.requestId === requestId);
     if (existing) return existing;
-    const typingAt = startedAt + typingDelay(requestId);
+    const typingAt = startedAt + (fast ? 0 : typingDelay(requestId));
     const receipt = {
       character,
       requestId,
       typingAt,
-      deliverAt: typingAt + MIN_TYPING_MS,
+      deliverAt: typingAt + (fast ? 0 : MIN_TYPING_MS),
+      ...(fast ? { fast: true } : {}),
       delivered: false,
       read: false,
     };
@@ -96,6 +104,21 @@ export class ReplyPresentation {
   }
   observe(character: AiCharacter, messages: AiMessage[]): void {
     for (const receipt of this.receipts.filter((r) => r.character === character && !r.delivered)) {
+      if (receipt.fast) {
+        const reply = messages.find(
+          (m) =>
+            m.role === 'assistant' &&
+            m.request_id === receipt.requestId &&
+            m.request_kind === 'call_followup' &&
+            (m.status === undefined || m.status === 'complete'),
+        );
+        if (reply && !receipt.replyId) {
+          receipt.replyId = reply.id;
+          receipt.jobId = reply.job_id ?? receipt.jobId;
+          receipt.deliverAt = Math.max(receipt.typingAt, Date.now());
+        }
+        continue;
+      }
       const index = messages.findIndex(
         (m) => m.role === 'user' && m.request_id === receipt.requestId,
       );
@@ -107,10 +130,14 @@ export class ReplyPresentation {
         receipt.read = true;
         continue;
       }
-      const next = messages[index + 1];
+      const next =
+        messages.find((m) => m.role === 'assistant' && m.request_id === receipt.requestId) ??
+        messages[index + 1];
       if (
         !receipt.replyId &&
         next?.role === 'assistant' &&
+        next.request_kind !== 'call_followup' &&
+        (!next.request_id || next.request_id === receipt.requestId) &&
         (next.status === undefined || next.status === 'complete')
       ) {
         receipt.replyId = next.id;

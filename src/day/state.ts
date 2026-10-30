@@ -24,6 +24,21 @@ export interface StoryPending {
   choiceId: string;
   deliverAt: number;
 }
+export interface CallFollowup {
+  requestId: string;
+  callId: string;
+  character: 'haruka' | 'majima';
+  reason: 'missed' | 'declined' | 'idle';
+  direction: 'incoming' | 'outgoing';
+  relationshipTone: 'warm' | 'neutral' | 'cool';
+}
+export const AI_CALL_IDLE_MS = 60_000;
+const MAX_PENDING_CALL_FOLLOWUPS = 200;
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const newRequestId = () => crypto.randomUUID();
+function aiCaller(id: ContactId): id is CallFollowup['character'] {
+  return id === 'haruka' || id === 'majima';
+}
 export interface StoryCall {
   id: string;
   caller: ContactId;
@@ -32,6 +47,10 @@ export interface StoryCall {
   elapsedMs: number;
   lines: string[];
   source: 'quest' | 'scheduled' | 'user';
+  idleMs: number;
+  liveBusy: boolean;
+  activityEnabled: boolean;
+  followupRequestId: string;
 }
 export interface StoryCallRecord {
   id: string;
@@ -65,6 +84,7 @@ export interface DayState {
   call: StoryCall | null;
   callLog: StoryCallRecord[];
   callSerial: number;
+  pendingCallFollowups: CallFollowup[];
   scheduledCalls: number;
   nextCallInMs: number;
   nextMajimaTextInMs: number;
@@ -83,7 +103,10 @@ export type DayAction =
   | { type: 'answer-call' }
   | { type: 'miss-call'; reason?: 'declined' | 'missed' }
   | { type: 'end-call' }
-  | { type: 'peer-end-call'; callId: string }
+  | { type: 'peer-end-call'; callId: string; requestId?: string; reason?: 'idle' }
+  | { type: 'call-activity'; callId: string; requestId?: string; busy: boolean; active: boolean }
+  | { type: 'call-input'; callId: string; requestId: string }
+  | { type: 'ack-followup'; requestId: string }
   | { type: 'notify-kamurocho' }
   | { type: 'reset' };
 export const DAY_STORAGE_KEY = 'yaku-iphone.day.v1';
@@ -113,6 +136,7 @@ export function initialDay(): DayState {
     call: null,
     callLog: [],
     callSerial: 0,
+    pendingCallFollowups: [],
     scheduledCalls: 0,
     nextCallInMs: 60_000,
     nextMajimaTextInMs: 90_000,
@@ -198,8 +222,13 @@ function beginCall(
   caller: ContactId,
   direction: StoryCall['direction'],
   source: StoryCall['source'],
+  makeRequestId: () => string = newRequestId,
 ): DayState {
-  if (state.call) return state;
+  if (
+    state.call ||
+    (aiCaller(caller) && state.pendingCallFollowups.length >= MAX_PENDING_CALL_FOLLOWUPS)
+  )
+    return state;
   const serial = state.callSerial + 1;
   const lines =
     caller === 'majima' && affinityTone(state) === 'cool'
@@ -226,14 +255,25 @@ function beginCall(
       elapsedMs: 0,
       lines,
       source,
+      idleMs: 0,
+      liveBusy: false,
+      activityEnabled: false,
+      followupRequestId: makeRequestId(),
     },
   };
 }
 export function peerHangupDelay(call: StoryCall): number {
-  const serial = Number(call.id.split('-').at(-1)) || 0;
-  return call.caller === 'majima' || call.caller === 'haruka'
-    ? 55_000 + ((serial * 7919) % 35_001)
+  return aiCaller(call.caller)
+    ? AI_CALL_IDLE_MS
     : Math.max(22_000, call.lines.length * 5000 + 7000);
+}
+export function peerHangupDue(call: StoryCall): boolean {
+  return (
+    call.phase === 'connected' &&
+    (aiCaller(call.caller)
+      ? call.activityEnabled && !call.liveBusy && call.idleMs >= AI_CALL_IDLE_MS
+      : call.elapsedMs >= peerHangupDelay(call))
+  );
 }
 
 function finishCall(
@@ -241,6 +281,8 @@ function finishCall(
   result: StoryCallRecord['result'],
   now?: number,
   endedBy: 'user' | 'peer' = 'user',
+  followupReason?: 'idle',
+  createFollowup = true,
 ): DayState {
   const call = state.call;
   if (!call) return state;
@@ -279,6 +321,42 @@ function finishCall(
     nextCallInMs: 60_000 + ((state.callSerial * 29_019) % 60_001),
     nextMajimaTextInMs: Math.max(60_000, state.nextMajimaTextInMs),
   };
+  const reason: CallFollowup['reason'] | null = aiCaller(call.caller)
+    ? followupReason === 'idle' && endedBy === 'peer'
+      ? 'idle'
+      : call.direction === 'incoming' && (result === 'missed' || result === 'declined')
+        ? result
+        : null
+    : null;
+  if (
+    reason &&
+    createFollowup &&
+    aiCaller(call.caller) &&
+    !next.pendingCallFollowups.some(
+      (item) =>
+        item.callId === `${call.id}:${call.followupRequestId}` ||
+        item.requestId === call.followupRequestId,
+    )
+  ) {
+    next = {
+      ...next,
+      pendingCallFollowups: [
+        ...next.pendingCallFollowups,
+        {
+          requestId: call.followupRequestId,
+          callId: `${call.id}:${call.followupRequestId}`,
+          character: call.caller,
+          reason,
+          direction: call.direction,
+          relationshipTone: affinityTone(next),
+        },
+      ],
+    };
+  }
+  if (reason && aiCaller(call.caller)) {
+    const event = `${call.caller}-call-${reason}` as PhoneEventId;
+    next = { ...next, phoneEvents: appendPhoneEvent(next.phoneEvents, event) };
+  }
   if (call.caller === 'majima') {
     const event: PhoneEventId =
       endedBy === 'peer'
@@ -295,6 +373,7 @@ function finishCall(
   if (
     call.caller === 'majima' &&
     endedBy !== 'peer' &&
+    !reason &&
     (result !== 'completed' || call.elapsedMs < 12_000)
   ) {
     const tone = affinityTone(next);
@@ -336,7 +415,12 @@ const questPhoneEvents: Partial<Record<ReminderId, PhoneEventId>> = {
   mame: 'haruka-mame-checked',
   uniform: 'haruka-uniform-checked',
 };
-function completeQuest(state: DayState, id: ReminderId, now?: number): DayState {
+function completeQuest(
+  state: DayState,
+  id: ReminderId,
+  now?: number,
+  makeRequestId: () => string = newRequestId,
+): DayState {
   if (!questComplete(state, id)) return state;
   const event = questPhoneEvents[id];
   const withEvent = event
@@ -353,12 +437,17 @@ function completeQuest(state: DayState, id: ReminderId, now?: number): DayState 
     false,
     now,
   );
-  if (id === 'shopping') next = beginCall(next, 'majima', 'incoming', 'quest');
+  if (id === 'shopping') next = beginCall(next, 'majima', 'incoming', 'quest', makeRequestId);
   return next;
 }
 const schedule: ContactId[] = ['majima', 'majima', 'daigo', 'majima', 'haruka'];
 
-export function dayReducer(state: DayState, action: DayAction, now?: number): DayState {
+export function dayReducer(
+  state: DayState,
+  action: DayAction,
+  now?: number,
+  makeRequestId: () => string = newRequestId,
+): DayState {
   switch (action.type) {
     case 'reset':
       return initialDay();
@@ -383,6 +472,7 @@ export function dayReducer(state: DayState, action: DayAction, now?: number): Da
         { ...state, ingredients: { ...state.ingredients, [action.id]: action.done } },
         'shopping',
         now,
+        makeRequestId,
       );
     }
     case 'reminder': {
@@ -397,12 +487,14 @@ export function dayReducer(state: DayState, action: DayAction, now?: number): Da
           },
           'shopping',
           now,
+          makeRequestId,
         );
       if (state.reminders[action.id] === action.done) return state;
       return completeQuest(
         { ...state, reminders: { ...state.reminders, [action.id]: action.done } },
         action.id,
         now,
+        makeRequestId,
       );
     }
     case 'reply': {
@@ -488,7 +580,14 @@ export function dayReducer(state: DayState, action: DayAction, now?: number): Da
           );
       }
       if (next.call) {
-        next = { ...next, call: { ...next.call, elapsedMs: next.call.elapsedMs + delta } };
+        const current = next.call;
+        const idleMs =
+          current.phase === 'connected' && aiCaller(current.caller)
+            ? action.allowCalls && current.activityEnabled && !current.liveBusy
+              ? Math.min(AI_CALL_IDLE_MS, current.idleMs + delta)
+              : 0
+            : current.idleMs;
+        next = { ...next, call: { ...current, elapsedMs: current.elapsedMs + delta, idleMs } };
         const call = next.call!;
         if (call.phase === 'ringing' && call.direction === 'outgoing' && call.elapsedMs >= 2500)
           return {
@@ -514,6 +613,7 @@ export function dayReducer(state: DayState, action: DayAction, now?: number): Da
           caller,
           'incoming',
           'scheduled',
+          makeRequestId,
         );
       } else if (
         next.nextMajimaTextInMs === 0 &&
@@ -542,7 +642,9 @@ export function dayReducer(state: DayState, action: DayAction, now?: number): Da
       // message or override the intent of the actual conversation from this action.
       return state.kamurochoNotified ? state : { ...state, kamurochoNotified: true };
     case 'start-call':
-      return isContact(action.id) ? beginCall(state, action.id, 'outgoing', 'user') : state;
+      return isContact(action.id)
+        ? beginCall(state, action.id, 'outgoing', 'user', makeRequestId)
+        : state;
     case 'answer-call':
       return state.call?.phase === 'ringing' && state.call.direction === 'incoming'
         ? {
@@ -560,11 +662,61 @@ export function dayReducer(state: DayState, action: DayAction, now?: number): Da
       return state.call
         ? finishCall(state, state.call.phase === 'connected' ? 'completed' : 'declined', now)
         : state;
+    case 'call-input': {
+      const call = state.call;
+      if (
+        !call ||
+        call.id !== action.callId ||
+        call.followupRequestId !== action.requestId ||
+        call.phase !== 'connected' ||
+        !aiCaller(call.caller) ||
+        call.idleMs === 0
+      )
+        return state;
+      return { ...state, call: { ...call, idleMs: 0 } };
+    }
+    case 'call-activity': {
+      const call = state.call;
+      if (
+        !call ||
+        call.id !== action.callId ||
+        (action.requestId !== undefined && call.followupRequestId !== action.requestId) ||
+        call.phase !== 'connected' ||
+        !aiCaller(call.caller)
+      )
+        return state;
+      const idleMs = action.busy || !action.active ? 0 : call.idleMs;
+      if (
+        call.liveBusy === action.busy &&
+        call.activityEnabled === action.active &&
+        call.idleMs === idleMs
+      )
+        return state;
+      return {
+        ...state,
+        call: { ...call, liveBusy: action.busy, activityEnabled: action.active, idleMs },
+      };
+    }
+    case 'ack-followup':
+      return state.pendingCallFollowups.some((item) => item.requestId === action.requestId)
+        ? {
+            ...state,
+            pendingCallFollowups: state.pendingCallFollowups.filter(
+              (item) => item.requestId !== action.requestId,
+            ),
+          }
+        : state;
     case 'peer-end-call':
-      return state.call?.phase === 'connected' &&
-        state.call.id === action.callId &&
-        state.call.elapsedMs >= peerHangupDelay(state.call)
-        ? finishCall(state, 'completed', now, 'peer')
+      return state.call?.id === action.callId &&
+        (action.requestId === undefined || state.call.followupRequestId === action.requestId) &&
+        peerHangupDue(state.call)
+        ? finishCall(
+            state,
+            'completed',
+            now,
+            'peer',
+            aiCaller(state.call.caller) ? 'idle' : undefined,
+          )
         : state;
     case 'read-call':
       return state.missedCall && (!state.missedCallRead || state.callLog.some((item) => !item.read))
@@ -700,6 +852,30 @@ export function validDay(value: unknown): value is DayState {
   )
     return false;
   if (
+    !Array.isArray(value.pendingCallFollowups) ||
+    value.pendingCallFollowups.length > MAX_PENDING_CALL_FOLLOWUPS ||
+    new Set(value.pendingCallFollowups.map((item) => (record(item) ? item.requestId : null)))
+      .size !== value.pendingCallFollowups.length ||
+    new Set(value.pendingCallFollowups.map((item) => (record(item) ? item.callId : null))).size !==
+      value.pendingCallFollowups.length ||
+    !value.pendingCallFollowups.every(
+      (item) =>
+        record(item) &&
+        typeof item.requestId === 'string' &&
+        uuidPattern.test(item.requestId) &&
+        typeof item.callId === 'string' &&
+        /^call-[1-9][0-9]*:[0-9a-f-]{36}$/i.test(item.callId) &&
+        item.callId.length <= 80 &&
+        item.callId.endsWith(`:${item.requestId}`) &&
+        (item.character === 'haruka' || item.character === 'majima') &&
+        ['missed', 'declined', 'idle'].includes(String(item.reason)) &&
+        ['incoming', 'outgoing'].includes(String(item.direction)) &&
+        (item.reason === 'idle' || item.direction === 'incoming') &&
+        ['warm', 'neutral', 'cool'].includes(String(item.relationshipTone)),
+    )
+  )
+    return false;
+  if (
     value.call !== null &&
     (!record(value.call) ||
       typeof value.call.id !== 'string' ||
@@ -708,6 +884,12 @@ export function validDay(value: unknown): value is DayState {
       !['incoming', 'outgoing'].includes(String(value.call.direction)) ||
       !['ringing', 'connected'].includes(String(value.call.phase)) ||
       !nonnegative(value.call.elapsedMs) ||
+      !nonnegative(value.call.idleMs) ||
+      value.call.idleMs > AI_CALL_IDLE_MS ||
+      typeof value.call.liveBusy !== 'boolean' ||
+      typeof value.call.activityEnabled !== 'boolean' ||
+      typeof value.call.followupRequestId !== 'string' ||
+      !uuidPattern.test(value.call.followupRequestId) ||
       !['quest', 'scheduled', 'user'].includes(String(value.call.source)) ||
       !Array.isArray(value.call.lines) ||
       value.call.lines.length < 1 ||
@@ -786,6 +968,7 @@ export function loadDay(
           'call',
           'callLog',
           'callSerial',
+          'pendingCallFollowups',
           'scheduledCalls',
           'nextCallInMs',
           'nextMajimaTextInMs',
@@ -807,6 +990,12 @@ export function loadDay(
           for (const id of historyOnlyContacts) delete value.storyPending[id];
         }
         if (record(value.call) && value.call.caller === 'yuki') value.call = null;
+        if (record(value.call)) {
+          if (!('idleMs' in value.call)) value.call.idleMs = 0;
+          if (!('liveBusy' in value.call)) value.call.liveBusy = false;
+          if (!('activityEnabled' in value.call)) value.call.activityEnabled = false;
+          if (!('followupRequestId' in value.call)) value.call.followupRequestId = newRequestId();
+        }
         if (Array.isArray(value.callLog))
           value.callLog = value.callLog.filter((row) => !record(row) || row.caller !== 'yuki');
         // Legacy story rows have only a display clock, not an event date. Preserve their
@@ -814,7 +1003,14 @@ export function loadDay(
         if (validDay(value)) {
           // A reload never restarts a ringing/connected call or immediately rings again.
           const saved = value.call
-            ? finishCall(value, value.call.phase === 'connected' ? 'completed' : 'missed', now)
+            ? finishCall(
+                value,
+                value.call.phase === 'connected' ? 'completed' : 'missed',
+                now,
+                'user',
+                undefined,
+                false,
+              )
             : value;
           return {
             state: {
