@@ -209,7 +209,9 @@ class EpisodeDBTests(unittest.TestCase):
             "followup_due",
         )
         self.assertEqual(
-            self.db.episodes.response(self.visitor, SCENARIO)["episode"]["call_outcome"],
+            self.db.episodes.response(self.visitor, SCENARIO)["episode"][
+                "call_outcome"
+            ],
             "missed",
         )
 
