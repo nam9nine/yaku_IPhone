@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "reviewed_sha": "31eca13dd25f01a80aff4e6b10706086670f6856",
+  "review_type": "independent agent source and evidence review",
+  "result": "pass_with_limits",
+  "remaining_p1_p2": [],
+  "scope": [
+    "Contact replacement and persisted state migration without relabeling old dialogue",
+    "History-only contacts and suppression of hidden message notifications",
+    "Current-call request isolation, reconnect isolation, and removal of preconnection clock",
+    "Peer hangup identity, delayed termination, busy-state guard, and no user penalty for peer termination",
+    "No synthetic user promise from taxi selection",
+    "Reply pacing and relationship-aware character presentation",
+    "Direct inspection of contact history and peer hangup screenshots",
+    "Local automated check reports, actual model pair, and concurrency evidence"
+  ],
+  "resolved_findings": [
+    {
+      "severity": "P2",
+      "problem": "History-only contacts could trigger notifications for messages hidden in their conversation view.",
+      "resolution": "Quest followup creation, restored pending replies, notification list, and arrival notification paths now honor history-only contacts."
+    }
+  ],
+  "observed_evidence": {
+    "quality": "479 unit tests plus type, lint, format, build and harness checks passed",
+    "python": "377 tests OK; 3 skipped",
+    "browser": "58 relevant scenarios passed across runs; final call/contact rerun 40 passed after one transient blank-reload timeout",
+    "screenshots": ["history-ichiban.png", "peer-ending.png"],
+    "actual_model_pair": {
+      "prompt_version": "kiryu-daily-sms-v14",
+      "warm_seconds": 31.2,
+      "cool_seconds": 27.07,
+      "assessment": "Observed a difference in response length and familiarity. This pair alone does not establish consistent shy-affection roleplay quality."
+    },
+    "load": {
+      "reported_samples": 9,
+      "two_arrivals": {
+        "successful": 2,
+        "fifo": true,
+        "completion_seconds": [28.1, 54.5]
+      },
+      "four_arrivals": {
+        "successful": 4,
+        "fifo": true,
+        "completion_seconds": [33.0, 70.8, 93.9, 118.0]
+      },
+      "restored": true,
+      "isolated": true,
+      "transport": "In-process ASGI HTTP; public network and Worker latency excluded"
+    }
+  },
+  "limits": [
+    "Actual iPhone verification not performed.",
+    "Fan quality review remains pending; two model outputs do not prove consistent personality reproduction.",
+    "Full visual regression baselines were not updated.",
+    "Concurrency results are small local samples and are not a public-service capacity guarantee.",
+    "Deployment and public behavior verification are outside this source-review result."
+  ],
+  "publication_scope": "Product requirements and technical validation only; no private conversation, personal names, account data, or attachment contents included."
+}
