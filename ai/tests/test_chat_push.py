@@ -119,6 +119,34 @@ class PushTests(unittest.TestCase):
             1,
         )
 
+    def test_episode_invitation_never_enters_push_outbox(self):
+        from kiryu_ai.episodes import EPISODE_ID
+
+        state = self.db.episodes.initial()
+        with self.db.connection(write=True) as con:
+            self.db.episodes.save(con, self.a, "daily-if-v1", state)
+        ref = {
+            "episode_id": EPISODE_ID,
+            "instance_id": state["instance_id"],
+            "version": state["version"],
+            "stage": "invite",
+        }
+        job, _ = self.db.accept(
+            self.a,
+            "majima",
+            "daily-if-v1",
+            None,
+            str(uuid4()),
+            episode_ref=ref,
+            now=self.now + 1,
+        )
+        self.db.begin_run(job["job_id"], [], {}, now=self.now + 1)
+        self.db.complete(job["job_id"], "합성 초대", now=self.now + 2)
+        self.now += 60
+        self.assertFalse(self.push.tick())
+        self.assertEqual(self.sent, [])
+        self.assertEqual(self.rows("outbox"), [])
+
     def test_generated_call_followup_push_has_no_random_or_reading_delay(self):
         job, _ = self.db.accept(
             self.a,
