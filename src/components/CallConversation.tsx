@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { messageWithinLimits, type AiCharacter } from '../ai/client';
 import type { AiMessengerView } from '../ai/useAiMessenger';
+import { CallRecording } from '../speech/recording';
 import { useDay } from '../day/DayContext';
 import { affinityTone } from '../day/state';
 import { recentPhoneEvents } from '../day/phoneEvents';
@@ -27,6 +28,10 @@ export function CallConversation({
   const [editing, setEditing] = useState(false);
   const [speechState, setSpeechState] = useState<SpeechRecognitionState>('idle');
   const [speechError, setSpeechError] = useState<string | null>(null);
+  const audio = useRef<CallRecording | null>(null);
+  const [audioStarting, setAudioStarting] = useState(false);
+  const [audioActive, setAudioActive] = useState(false);
+  const mounted = useRef(true);
   const controller = useRef<SpeechRecognitionController | null>(null);
   const draftBeforeSpeech = useRef('');
   const input = useRef<HTMLTextAreaElement>(null);
@@ -48,13 +53,15 @@ export function CallConversation({
   const recognizing = speechState !== 'idle';
   const supported = supportsSpeechRecognition();
   useEffect(() => {
-    onBusyChange(busy || recognizing || !!draft.trim());
+    onBusyChange(busy || recognizing || audioStarting || audioActive || !!draft.trim());
     return () => onBusyChange(false);
-  }, [busy, recognizing, draft, onBusyChange]);
+  }, [busy, recognizing, audioStarting, audioActive, draft, onBusyChange]);
   const ready = online && ai.status === 'ready' && thread.loaded && !thread.loading;
   useEffect(() => {
+    mounted.current = true;
     const cancel = () => {
       controller.current?.cancel();
+      audio.current?.stop();
     };
     const visibility = () => {
       if (document.hidden) cancel();
@@ -64,6 +71,8 @@ export function CallConversation({
     return () => {
       document.removeEventListener('visibilitychange', visibility);
       window.removeEventListener('pagehide', cancel);
+      mounted.current = false;
+      audio.current?.stop();
       controller.current?.dispose();
       controller.current = null;
     };
@@ -81,26 +90,58 @@ export function CallConversation({
   useLayoutEffect(() => {
     if (log.current) log.current.scrollTop = log.current.scrollHeight;
   }, [thread.pending?.requestId, thread.displayedMessages.length]);
-  function start() {
-    if (recognizing) {
+  async function start() {
+    if (recognizing || audioActive) {
       controller.current?.stop();
+      audio.current?.stop();
       return;
     }
-    if (busy || !ready) return;
+    if (busy || audioStarting || !ready || !ai.connection) return;
     controller.current?.dispose();
     draftBeforeSpeech.current = draft.trim();
     controller.current = new SpeechRecognitionController({
-      onState: setSpeechState,
+      onState: (value) => {
+        setSpeechState(value);
+        if (value === 'idle') audio.current?.stop();
+      },
       onTranscript: ({ text }) =>
         setDraft([draftBeforeSpeech.current, text].filter(Boolean).join(' ').slice(0, 1000)),
       onError: ({ message }) => setSpeechError(message),
     });
     setSpeechError(null);
     setEditing(true);
-    controller.current.start();
+    const capture = new CallRecording((active) => {
+      if (mounted.current) setAudioActive(active);
+    });
+    audio.current = capture;
+    setAudioStarting(true);
+    try {
+      const opening = capture.start(ai.connection, character);
+      // Keep both permission-sensitive APIs in the original microphone tap.
+      if (!controller.current.start()) capture.stop();
+      const started = await opening;
+      if (!started || !mounted.current) return;
+      void capture.saved.catch(() => {
+        if (mounted.current) setSpeechError('음성 저장 실패');
+      });
+    } catch {
+      controller.current?.cancel();
+      capture.stop();
+      if (mounted.current) setSpeechError('마이크 시작 실패');
+    } finally {
+      if (mounted.current) setAudioStarting(false);
+    }
   }
   function send() {
-    if (!ready || busy || recognizing || !draft.trim() || !messageWithinLimits(draft.trim()))
+    if (
+      !ready ||
+      busy ||
+      recognizing ||
+      audioStarting ||
+      audioActive ||
+      !draft.trim() ||
+      !messageWithinLimits(draft.trim())
+    )
       return;
     const accepted = ai.messenger.send(character, draft, true, online, {
       relationshipTone: affinityTone(state),
@@ -125,11 +166,9 @@ export function CallConversation({
         : '연결 중…'
       : busy
         ? '답장 대기 중'
-        : speechState === 'listening'
-          ? '● 음성 입력 중'
-          : recognizing
-            ? '음성 인식 중…'
-            : '';
+        : speechState === 'stopping'
+          ? '음성 인식 중…'
+          : '';
   return (
     <section className="call-live" aria-label="음성으로 대화">
       {(recentMessages.length > 0 || pendingText) && (
@@ -166,13 +205,19 @@ export function CallConversation({
             value={draft}
             maxLength={1000}
             rows={2}
-            readOnly={recognizing}
+            readOnly={recognizing || audioStarting || audioActive}
             onChange={(event) => setDraft(event.target.value)}
             placeholder="메시지"
           />
           <button
             disabled={
-              !ready || busy || recognizing || !draft.trim() || !messageWithinLimits(draft.trim())
+              !ready ||
+              busy ||
+              recognizing ||
+              audioStarting ||
+              audioActive ||
+              !draft.trim() ||
+              !messageWithinLimits(draft.trim())
             }
             onClick={send}
           >
@@ -182,18 +227,18 @@ export function CallConversation({
       )}
       <div className="call-tools">
         <button
-          aria-label={recognizing ? '음성 인식 마치기' : '마이크'}
-          aria-pressed={recognizing}
-          disabled={!supported || busy || !ready}
-          onClick={start}
+          aria-label={recognizing || audioActive ? '마이크 끄기' : '마이크'}
+          aria-pressed={recognizing || audioActive}
+          disabled={!supported || busy || audioStarting || !ready}
+          onClick={() => void start()}
         >
           <span>
             <PhoneIcon name="microphone" />
           </span>
-          {recognizing ? '마치기' : '마이크'}
+          마이크
         </button>
         <button
-          disabled={recognizing || busy}
+          disabled={recognizing || busy || audioStarting || audioActive}
           onClick={() => {
             setEditing(true);
             requestAnimationFrame(() => input.current?.focus());

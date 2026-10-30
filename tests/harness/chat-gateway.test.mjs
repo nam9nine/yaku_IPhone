@@ -2,41 +2,132 @@ import { describe, it, expect } from 'vitest';
 import worker from '../../infra/cloudflare/worker.mjs';
 const origin = 'https://nam9nine.github.io';
 const request = (path, options = {}) => new Request(`https://api.example.test${path}`, options);
-it('rejects retired audio uploads without reading the body or calling the Mac', async () => {
+describe('private recording gateway', () => {
   const path = '/v1/recordings/majima/00000000-0000-4000-8000-000000000001';
-  let calls = 0;
-  const env = {
-    GATEWAY_SECRET: 'proof',
-    CHAT_API: {
-      fetch: async () => {
-        calls++;
-        return Response.json({});
+  it('forwards authenticated audio bytes to the private binding and never offers download', async () => {
+    const calls = [];
+    const env = {
+      GATEWAY_SECRET: 'proof',
+      CHAT_API: {
+        fetch: async (url, options) => {
+          calls.push({ url, options });
+          return Response.json({ id: 'test' }, { status: 201 });
+        },
       },
-    },
-  };
-  const upload = request(path, {
-    method: 'POST',
-    headers: { Origin: origin, 'Content-Type': 'audio/webm' },
+    };
+    for (const mime of ['audio/webm;codecs=opus', 'audio/mp4']) {
+      const audio = new Uint8Array([1, 2, 3, 4]);
+      const response = await worker.fetch(
+        request(path, {
+          method: 'POST',
+          headers: { Origin: origin, Authorization: 'Bearer synthetic', 'Content-Type': mime },
+          body: audio,
+        }),
+        env,
+      );
+      expect(response.status).toBe(201);
+      expect(response.headers.get('Access-Control-Allow-Origin')).toBe(origin);
+      const forwarded = calls.at(-1);
+      expect(forwarded.url).toBe('http://kiryu-chat.internal' + path);
+      expect(forwarded.options.headers.get('Content-Type')).toBe(mime);
+      expect(forwarded.options.headers.get('Authorization')).toBe('Bearer synthetic');
+      expect(forwarded.options.headers.get('X-Kiryu-Gateway')).toBe('proof');
+      expect(forwarded.options.body).toEqual(audio);
+    }
+    expect((await worker.fetch(request(path), env)).status).toBe(405);
+    const preflight = await worker.fetch(
+      request(path, {
+        method: 'OPTIONS',
+        headers: { Origin: origin, 'Access-Control-Request-Method': 'POST' },
+      }),
+      env,
+    );
+    expect(preflight.status).toBe(204);
+    expect(calls).toHaveLength(2);
   });
-  Object.defineProperty(upload, 'body', {
-    get() {
-      throw new Error('Audio body must not be read');
-    },
+  it('rejects missing or empty bearer tokens before reading audio', async () => {
+    let calls = 0;
+    const env = {
+      GATEWAY_SECRET: 'proof',
+      CHAT_API: {
+        fetch: async () => {
+          calls++;
+          return Response.json({});
+        },
+      },
+    };
+    for (const authorization of [null, 'Bearer ', 'Bearer', 'Basic token', 'Bearer two tokens']) {
+      const headers = { Origin: origin, 'Content-Type': 'audio/webm' };
+      if (authorization !== null) headers.Authorization = authorization;
+      const upload = request(path, { method: 'POST', headers });
+      Object.defineProperty(upload, 'body', {
+        get() {
+          throw new Error('Unauthenticated audio must not be read');
+        },
+      });
+      const response = await worker.fetch(upload, env);
+      expect(response.status).toBe(401);
+    }
+    expect(calls).toBe(0);
   });
-  const response = await worker.fetch(upload, env);
-  expect(response.status).toBe(410);
-  expect((await response.json()).error.code).toBe('recording_disabled');
-  expect(response.headers.get('Access-Control-Allow-Origin')).toBe(origin);
-  expect(calls).toBe(0);
-  expect((await worker.fetch(request(path), env)).status).toBe(405);
-  const preflight = await worker.fetch(
-    request(path, {
-      method: 'OPTIONS',
-      headers: { Origin: origin, 'Access-Control-Request-Method': 'POST' },
-    }),
-    env,
-  );
-  expect(preflight.status).toBe(204);
+  it('bounds audio at 2MiB without raising JSON request limits', async () => {
+    let calls = 0;
+    const env = {
+      GATEWAY_SECRET: 'proof',
+      CHAT_API: {
+        fetch: async () => {
+          calls++;
+          return Response.json({});
+        },
+      },
+    };
+    const headers = {
+      Origin: origin,
+      Authorization: 'Bearer synthetic',
+      'Content-Type': 'audio/webm',
+    };
+    expect(
+      (
+        await worker.fetch(
+          request(path, { method: 'POST', headers, body: new Uint8Array(2 * 1024 * 1024) }),
+          env,
+        )
+      ).status,
+    ).toBe(200);
+    expect(
+      (
+        await worker.fetch(
+          request(path, { method: 'POST', headers, body: new Uint8Array(2 * 1024 * 1024 + 1) }),
+          env,
+        )
+      ).status,
+    ).toBe(413);
+    expect(
+      (
+        await worker.fetch(
+          request(path, {
+            method: 'POST',
+            headers: { ...headers, 'Content-Type': 'video/mp4' },
+            body: 'x',
+          }),
+          env,
+        )
+      ).status,
+    ).toBe(415);
+    expect(
+      (
+        await worker.fetch(
+          request('/v1/chat', {
+            method: 'POST',
+            headers: { ...headers, 'Content-Type': 'application/json' },
+            body: 'x'.repeat(16 * 1024 + 1),
+          }),
+          env,
+        )
+      ).status,
+    ).toBe(413);
+    expect(calls).toBe(1);
+  });
 });
 describe('fixed chat gateway', () => {
   it('never routes owner/model/arbitrary paths or origins', async () => {

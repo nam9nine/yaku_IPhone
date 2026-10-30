@@ -107,15 +107,14 @@ class ChatServerTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         return {"Authorization": "Bearer " + response.json()["token"]}
 
-    def test_retired_recording_upload_rejects_without_reading_or_writing_audio(self):
+    def test_private_recordings_require_auth_and_do_not_become_messages(self):
         client = self.client()
         auth = self.token(client)
         route = "/v1/recordings/majima/" + str(uuid4())
         data = b"\x1aE\xdf\xa3synthetic-test-only"
-        recordings = self.root / "recordings"
         with patch(
             "starlette.requests.Request.stream",
-            side_effect=AssertionError("Audio body must not be read"),
+            side_effect=AssertionError("Unauthenticated audio must not be read"),
         ):
             self.assertEqual(
                 client.post(
@@ -123,20 +122,31 @@ class ChatServerTests(unittest.TestCase):
                 ).status_code,
                 401,
             )
-            headers = {**auth, "Content-Type": "audio/webm"}
-            for payload in (data, b"not-audio"):
-                response = client.post(route, content=payload, headers=headers)
-                self.assertEqual(response.status_code, 410)
-                self.assertEqual(response.json()["error"]["code"], "recording_disabled")
-        self.assertFalse(recordings.exists())
+        headers = {**auth, "Content-Type": "audio/webm;codecs=opus"}
+        for _ in range(2):
+            self.assertEqual(
+                client.post(route, content=data, headers=headers).status_code, 201
+            )
+        files = list((self.root / "recordings").rglob("*.webm"))
+        self.assertEqual(len(files), 1)
+        self.assertEqual(files[0].read_bytes(), data)
+        self.assertEqual(files[0].stat().st_mode & 0o777, 0o600)
         self.assertEqual(
             client.get("/v1/history?character=majima", headers=auth).json()["messages"],
             [],
         )
         self.assertEqual(client.get(route, headers=auth).status_code, 405)
         self.assertEqual(self.engine.calls, [])
+        other = self.token(client)
+        self.assertEqual(
+            client.post(
+                route, content=data, headers={**other, "Content-Type": "audio/webm"}
+            ).status_code,
+            201,
+        )
+        self.assertEqual(len(list((self.root / "recordings").rglob("*.webm"))), 2)
 
-    def test_retired_recording_upload_preserves_existing_private_files(self):
+    def test_recording_upload_preserves_existing_files_and_rejects_conflicts(self):
         client = self.client()
         auth = self.token(client)
         recordings = self.root / "recordings"
@@ -145,17 +155,101 @@ class ChatServerTests(unittest.TestCase):
         existing.write_bytes(b"existing-private-audio")
         existing.chmod(0o600)
         before = existing.stat()
-        response = client.post(
-            "/v1/recordings/majima/" + str(uuid4()),
-            content=b"new-audio",
-            headers={**auth, "Content-Type": "audio/webm"},
+        route = "/v1/recordings/majima/" + str(uuid4())
+        headers = {**auth, "Content-Type": "audio/webm"}
+        data = b"\x1aE\xdf\xa3new-audio"
+        self.assertEqual(
+            client.post(route, content=data, headers=headers).status_code, 201
         )
-        self.assertEqual(response.status_code, 410)
-        self.assertEqual(response.json()["error"]["code"], "recording_disabled")
-        self.assertEqual(list(recordings.rglob("*.webm")), [existing])
+        new = next(path for path in recordings.rglob("*.webm") if path != existing)
+        new_before = new.stat()
+        conflict = client.post(route, content=data + b"other", headers=headers)
+        self.assertEqual(conflict.status_code, 409)
+        self.assertEqual(conflict.json()["error"]["code"], "recording_conflict")
+        self.assertEqual(new.read_bytes(), data)
+        self.assertEqual(new.stat().st_mtime_ns, new_before.st_mtime_ns)
         self.assertEqual(existing.read_bytes(), b"existing-private-audio")
         self.assertEqual(existing.stat().st_mtime_ns, before.st_mtime_ns)
         self.assertEqual(existing.stat().st_mode & 0o777, 0o600)
+
+    def test_recording_upload_bounds_bytes_type_and_identifier(self):
+        client = self.client()
+        auth = self.token(client)
+        route = "/v1/recordings/haruka/" + str(uuid4())
+        headers = {**auth, "Content-Type": "audio/webm"}
+        self.assertEqual(
+            client.post(route, content=b"not-audio", headers=headers).status_code, 400
+        )
+        self.assertEqual(
+            client.post(
+                route,
+                content=b"{}",
+                headers={**auth, "Content-Type": "application/json"},
+            ).status_code,
+            415,
+        )
+        self.assertEqual(
+            client.post(
+                "/v1/recordings/haruka/not-a-uuid", content=b"x", headers=headers
+            ).status_code,
+            400,
+        )
+        self.assertEqual(
+            client.post(
+                "/v1/recordings/stranger/" + str(uuid4()), content=b"x", headers=headers
+            ).status_code,
+            400,
+        )
+        limit = 2 * 1024 * 1024
+        data = b"\x1aE\xdf\xa3" + b"x" * (limit - 4)
+        self.assertEqual(
+            client.post(route, content=data + b"x", headers=headers).status_code, 413
+        )
+        self.assertFalse((self.root / "recordings").exists())
+        self.assertEqual(
+            client.post(route, content=data, headers=headers).status_code, 201
+        )
+        self.assertEqual(len(list((self.root / "recordings").rglob("*.webm"))), 1)
+        mp4 = b"\x00\x00\x00\x18ftypM4A "
+        response = client.post(
+            "/v1/recordings/haruka/" + str(uuid4()),
+            content=mp4,
+            headers={**auth, "Content-Type": "audio/mp4"},
+        )
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(
+            next((self.root / "recordings").rglob("*.m4a")).read_bytes(), mp4
+        )
+
+    def test_recording_upload_is_limited_to_thirty_per_hour_per_visitor(self):
+        client = self.client()
+        auth = self.token(client)
+        data = b"\x1aE\xdf\xa3audio"
+        headers = {**auth, "Content-Type": "audio/webm"}
+        for _ in range(30):
+            self.assertEqual(
+                client.post(
+                    "/v1/recordings/majima/" + str(uuid4()),
+                    content=data,
+                    headers=headers,
+                ).status_code,
+                201,
+            )
+        response = client.post(
+            "/v1/recordings/majima/" + str(uuid4()), content=data, headers=headers
+        )
+        self.assertEqual(response.status_code, 429)
+        self.assertEqual(response.json()["error"]["code"], "rate_limited")
+        self.assertEqual(len(list((self.root / "recordings").rglob("*.webm"))), 30)
+        other = self.token(client)
+        self.assertEqual(
+            client.post(
+                "/v1/recordings/majima/" + str(uuid4()),
+                content=data,
+                headers={**other, "Content-Type": "audio/webm"},
+            ).status_code,
+            201,
+        )
 
     def send(
         self, client, auth, message="카레 계획", character="haruka", request_id=None
