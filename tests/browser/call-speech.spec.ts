@@ -160,12 +160,21 @@ async function boot(page: Page) {
   await page.goto('./');
   await unlockPhone(page);
 }
-async function outgoing(page: Page, character: 'majima' | 'haruka' = 'majima', waitReady = true) {
+async function outgoing(
+  page: Page,
+  character: 'majima' | 'haruka' = 'majima',
+  waitReady = true,
+  freezeBeforeDial = false,
+) {
   await launchHomeApp(page, 'phone');
   await page.getByRole('button', { name: '연락처', exact: true }).tap();
   const back = page.getByRole('button', { name: '연락처 목록으로 돌아가기', exact: true });
   if (await back.isVisible()) await back.tap();
   await page.locator(`[data-contact=${character}]`).tap();
+  if (freezeBeforeDial) {
+    // Finish app navigation before freezing; CI latency must not consume call deadlines.
+    await page.clock.pauseAt(await page.evaluate(() => Date.now() + 10_000));
+  }
   await page
     .getByRole('button', {
       name: `${character === 'majima' ? '마지마 고로' : '사와무라 하루카'}에게 전화 걸기`,
@@ -504,7 +513,7 @@ test('통화 시각을 숨기고 실제 입력마다 60초를 다시 세지만 �
 }, info) => {
   await installSpeech(page);
   await boot(page);
-  const call = await outgoing(page);
+  const call = await outgoing(page, 'majima', true, true);
   await expect(call.getByLabel('현재 시각', { exact: true })).toHaveCount(0);
   await expect(call.getByLabel('통화 시간', { exact: true })).toHaveText('00:00');
   await call.getByRole('button', { name: '글로 입력', exact: true }).tap();
@@ -515,8 +524,14 @@ test('통화 시각을 숨기고 실제 입력마다 60초를 다시 세지만 �
   await expect(call.getByText('내가 또 연락하께. 끊는다, 키류쨩.', { exact: true })).toHaveCount(0);
   await call.getByRole('textbox', { name: '통화에서 보낼 말' }).fill('아직 작성 중입니다');
   await page.clock.runFor(59_000);
+  const idleMs = () =>
+    page.evaluate(() => JSON.parse(localStorage.getItem('yaku-iphone.day.v1')!).call.idleMs);
+  await expect.poll(idleMs).toBe(59_000);
   await expect(call.getByText('내가 또 연락하께. 끊는다, 키류쨩.', { exact: true })).toHaveCount(0);
   await page.clock.runFor(1000);
+  await expect.poll(idleMs).toBe(60_000);
+  // The committed 60s state schedules the ending UI with a zero-delay timer.
+  await page.clock.runFor(1);
   await expect(call.getByText('내가 또 연락하께. 끊는다, 키류쨩.', { exact: true })).toBeVisible();
   await expect(call.getByRole('textbox', { name: '통화에서 보낼 말' })).toHaveValue(
     '아직 작성 중입니다',
