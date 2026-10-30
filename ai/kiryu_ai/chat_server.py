@@ -873,6 +873,8 @@ def create_app(data_root, *, allow_origins=(), **options):
                 "service": "kiryu-character-chat-v2",
                 "status": service.status,
                 "characters": list(CHARACTERS),
+                "episode_protocol": 1,
+                "episodes_enabled": service.episodes_enabled,
             }
         )
 
