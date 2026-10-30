@@ -27,6 +27,14 @@ def evaluate(args):
     output.mkdir(parents=True, exist_ok=False, mode=0o700)
     fixtures_path = Path(args.fixtures)
     fixtures = json.loads(fixtures_path.read_text())
+    cases = fixtures["cases"]
+    if args.cases:
+        selected = set(args.cases.split(","))
+        unknown = selected - {case["id"] for case in cases}
+        if unknown:
+            raise ValueError(f"Unknown evaluation cases: {sorted(unknown)}")
+        cases = [case for case in cases if case["id"] in selected]
+    cases = cases[: args.limit]
     sources = list(Path(__file__).parent.glob("*.py")) + list(
         fixtures_path.parent.glob("*.json")
     )
@@ -38,6 +46,7 @@ def evaluate(args):
         },
         "model_manifest": json.loads(Path(args.manifest).read_text()),
         "seed": fixtures["seed"],
+        "cases": [case["id"] for case in cases],
         "fan_review": "pending",
         "setup_clock": "synthetic active heartbeats; not public timing validation",
     }
@@ -63,7 +72,7 @@ def evaluate(args):
         # reader and both engine profiles are used without replacement outputs.
         for engine in (service.engine, service.followup_engine):
             engine.reply = functools.partial(engine.reply, seed=fixtures["seed"])
-        for case in fixtures["cases"][: args.limit]:
+        for case in cases:
             session = service.db.issue_session()
             token = session["token"]
             record = service.db.authenticate(token)
@@ -223,6 +232,7 @@ def main():
     parser.add_argument("--embedding-dir", required=True)
     parser.add_argument("--output", required=True)
     parser.add_argument("--limit", type=int, default=12)
+    parser.add_argument("--cases", help="Comma-separated IDs from the frozen fixture")
     args = parser.parse_args()
     if not 1 <= args.limit <= 12:
         parser.error("limit must be 1..12")

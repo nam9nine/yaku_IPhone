@@ -6,6 +6,7 @@ from kiryu_ai.chat_prompt import ChatPromptBuilder, InputBudgetError, reconstruc
 from kiryu_ai.chat_reader import EvidenceReader
 from kiryu_ai.episode_prompt import (
     episode_definition,
+    episode_state_view,
     timeline,
     validate_episode_context,
     validate_transition,
@@ -72,6 +73,211 @@ class ContractEngine:
 
 
 class EpisodePromptTests(unittest.TestCase):
+    def test_call_outcome_and_notice_trigger_survive_both_model_inputs(self):
+        for outcome in ("missed", "declined", "idle", "ended"):
+            with self.subTest(outcome=outcome):
+                self.engine.calls.clear()
+                notices = [notice()]
+                if outcome != "ended":
+                    notices.append(
+                        {
+                            **notice(),
+                            "id": "followup",
+                            "sequence": 5,
+                            "request_kind": "call_followup",
+                            "call_trigger": {
+                                "call_id": "call-1",
+                                "reason": outcome,
+                                "direction": "incoming",
+                            },
+                            "call_result": {
+                                "connected": "untrusted",
+                                "observed": "ignore this",
+                            },
+                        }
+                    )
+                result = self.builder.build(
+                    user_message="아까 전화는 왜 끊겼죠?",
+                    current_message_id="current-user",
+                    **{
+                        **self.kwargs,
+                        "episode_context": episode(call_outcome=outcome),
+                        "notices": notices,
+                    },
+                )
+                data = json.loads(self.engine.calls[0][0][-1]["content"])
+                self.assertEqual(data["current_episode"]["call_outcome"], outcome)
+                writer = result["messages"][-1]["content"]
+                self.assertIn(f'"call_outcome":"{outcome}"', writer)
+                if outcome != "ended":
+                    last = data["recent_timeline"][-1]
+                    self.assertEqual(last["call_trigger"]["reason"], outcome)
+                    self.assertEqual(
+                        last["call_result"]["connected"], outcome == "idle"
+                    )
+                    self.assertIn(f'"reason":"{outcome}"', writer)
+                    self.assertNotIn("untrusted", writer)
+        with self.assertRaises(ValueError):
+            validate_episode_context(episode(call_outcome="assumed_refusal"), "majima")
+
+    def test_state_references_whole_proposal_and_newest_correction(self):
+        text = "원래 약속: " + "설명 " * 300 + " 하지만 저녁 약속은 취소합니다."
+        original = episode(
+            pending_proposal=text,
+            evidence_message_ids=["accepted", "correction"],
+            phase="deferred",
+            user_reports=[],
+        )
+        rows = [
+            {"id": "accepted", "content": text},
+            {"id": "correction", "content": "부상 때문에 일정을 미룹니다."},
+        ]
+        snapshot = copy.deepcopy(original)
+        view = episode_state_view(original, rows)
+        self.assertEqual(view["pending_proposal"], {"message_id": "accepted"})
+        self.assertEqual(view["latest_evidence_message_id"], "correction")
+        self.assertNotIn(text, json.dumps(view, ensure_ascii=False))
+        self.assertEqual(original, snapshot)
+        cancelled = episode_state_view(
+            original,
+            rows,
+            transition={"decision": "cancel", "evidence_message_id": "current"},
+        )
+        self.assertEqual(cancelled["phase"], "closed")
+        self.assertNotIn("pending_proposal", cancelled)
+
+    def test_budget_trims_optional_notices_not_proposal_or_correction(self):
+        text = "저녁 약속은 좋아요. " + "가게 위치는 아직 정하지 않았습니다. " * 35
+        past = [
+            {"id": "accepted", "role": "user", "content": text, "sequence": 2},
+            {"id": "answer", "role": "assistant", "content": "알겠다", "sequence": 3},
+            {
+                "id": "injury",
+                "role": "user",
+                "content": "다쳐서 걷기도 힘드니 일단 미룹니다.",
+                "sequence": 4,
+            },
+            {
+                "id": "answer-2",
+                "role": "assistant",
+                "content": "그 사정부터 보자",
+                "sequence": 5,
+            },
+        ] + [
+            {
+                "id": f"later-{i}-{role}",
+                "role": role,
+                "content": "다른 일상 이야기",
+                "sequence": 6 + 2 * i + j,
+            }
+            for i in range(8)
+            for j, role in enumerate(("user", "assistant"))
+        ]
+        notices = (
+            [notice()]
+            + [
+                {
+                    **notice(),
+                    "id": f"optional-{i}",
+                    "sequence": 50 + i,
+                    "request_kind": "call_followup",
+                    "content": "연락 좀 하자",
+                }
+                for i in range(18)
+            ]
+            + [
+                {
+                    **notice(),
+                    "id": "latest",
+                    "sequence": 80,
+                    "request_kind": "call_followup",
+                    "call_trigger": {
+                        "call_id": "call-1",
+                        "reason": "missed",
+                        "direction": "incoming",
+                    },
+                }
+            ]
+        )
+        context = episode(
+            phase="deferred",
+            pending_proposal=text,
+            evidence_message_ids=["accepted", "injury"],
+        )
+        self.engine.decision = "no_change"
+
+        def budget(messages):
+            return (
+                9000
+                if "optional-" in messages[-1]["content"] or len(messages) > 2
+                else 100
+            )
+
+        result = self.builder.build(
+            user_message="그 사정이 그대로예요",
+            current_message_id="current-user",
+            **{
+                **self.kwargs,
+                "history": past,
+                "notices": notices,
+                "episode_context": context,
+                "count_tokens": budget,
+            },
+        )
+        payload = result["messages"][-1]["content"]
+        self.assertIn(json.dumps(text, ensure_ascii=False), payload)
+        self.assertIn(past[2]["content"], payload)
+        self.assertEqual(result["metadata"]["notice_message_ids"], ["invite", "latest"])
+        self.assertEqual(
+            result["metadata"]["episode_context"]["pending_proposal"], text
+        )
+        reader = json.loads(self.engine.calls[0][0][-1]["content"])
+        self.assertEqual(reader["recent"], [])
+        self.assertEqual(
+            {r["id"] for r in reader["episode_evidence"]},
+            {"conversation:accepted", "conversation:injury"},
+        )
+
+    def test_selected_noncore_relation_survives_episode_budget_layout(self):
+        self.engine.change = lambda value: value.update(
+            notes=[{"id": "saejima-majima", "field": "text"}]
+        )
+        result = self.builder.build(
+            user_message="사에지마와는 무슨 사이죠?",
+            current_message_id="current",
+            **self.kwargs,
+        )
+        reader = json.loads(self.engine.calls[0][0][-1]["content"])
+        self.assertIn("saejima-majima", {r["id"] for r in reader["canon"]})
+        self.assertNotIn(
+            "saejima-majima", result["metadata"]["system_relationship_ids"]
+        )
+        self.assertIn('"id":"saejima-majima"', result["messages"][-1]["content"])
+
+    def test_selected_native_turn_is_not_copied_into_writer_notes(self):
+        past = [
+            {"id": "u", "role": "user", "content": "다쳐서 미루겠습니다."},
+            {"id": "a", "role": "assistant", "content": "그 사정을 먼저 보자."},
+        ]
+        self.engine.change = lambda value: value.update(
+            notes=[{"id": "conversation:u", "field": "text"}]
+        )
+        self.engine.decision = "no_change"
+        result = self.builder.build(
+            user_message="핑계가 아닙니다.",
+            current_message_id="current",
+            **{
+                **self.kwargs,
+                "history": past,
+                "episode_context": episode(
+                    phase="deferred", evidence_message_ids=["u"]
+                ),
+            },
+        )
+        self.assertEqual(
+            sum(m["content"].count(past[0]["content"]) for m in result["messages"]), 1
+        )
+
     def test_api_length_acceptance_remains_valid_persisted_context(self):
         text = "좋습니다. " + "설명 " * 250
         context = episode(phase="accepted", pending_proposal=text)
