@@ -41,7 +41,7 @@ EPISODE_RULES = """현재 사건은 방문자의 IF 진행이다. 취소·거절
 EPISODE_READER_RULES = """current_episode는 이번 방문자의 IF 진행이며 canon과 별개다. recent_timeline에는 실제 선제 발신도 있으므로 '그거'의 대상을 최근 문맥에서 확인한다. 상태의 message_id는 같은 ID의 원문 참조다(conversation:은 검색용 접두사). call_outcome/통화 결과는 관찰 사실이며 상대의 의도·동의가 아니다.
 episode_transition.decision에는 현재 사용자 발화의 행위를 분류한다. discuss_proposal은 제안의 설명·논의 허용이나 재개이며 활동 참여 약속이 아니다. accept_participation은 미결 활동에 직접 참여하겠다는 확정이다. 참여는 확정했지만 날짜·시간만 미정이면 accept_participation이다.
 report_progress는 이동·도착·준비·시작 전·진행 중 등 아직 끝나지 않은 활동에 대한 사용자 보고다. report_activity_completion은 해당 활동 자체를 끝냈다는 명시적 완료나 최종 결과 보고다. 이동의 완료는 활동의 완료가 아니다. 사용자의 새 과거 주장과 원작 퀴즈를 이번 활동 완료로 해석하지 않는다.
-defer는 활동 자체의 연기·부상·급한 사정에 따른 보류, decline는 제안 거절, cancel은 기존 약속 취소, change_topic은 진행 요청 없이 다른 화제로 옮긴 경우다. 논의·참여·일정 확정·진행·완료를 서로 대신하지 않는다.
+defer는 활동 자체의 연기·부상·급한 사정에 따른 보류, decline는 제안 거절, cancel은 기존 약속 취소, change_topic은 진행 요청 없이 다른 화제로 옮긴 경우다. 먼저 결정의 대상이 현재 제안과 같은 활동인지 확인한다. 다른 활동의 거절·취소를 현재 사건에 옮기지 않는다. 비유나 '승부' 같은 넓은 말만으로 같은 활동이라고 확정하지 말고, 대상이 불명확하면 no_change로 둔다. 논의·참여·일정 확정·진행·완료를 서로 대신하지 않는다.
 no_change는 뜻이나 대상이 불명확하거나 사건에 새 결정이 없는 경우다. '좋다' 같은 단어만으로 판정하지 말고 무엇에 대한 답인지 읽는다. 다른 사람의 약속이나 인용된 문장은 사용자의 결정이 아니다. 실제 사용자 원문에 없는 시간·이동·승패·동기를 보충하지 않는다.
 episode_id와 version은 current_episode 값 그대로, evidence_message_id는 상태를 바꿀 때 current_message_id 그대로 사용한다. no_change일 때 evidence_message_id는 null이다. 이 JSON은 검토 가능한 짧은 결론이며 사고 과정이나 설명은 쓰지 않는다."""
 
@@ -235,6 +235,49 @@ def reader_transition_schema(context, message_id):
     schema = transition_schema(context, message_id)
     schema["properties"]["decision"]["enum"] = list(READER_ACTS)
     return schema
+
+
+def episode_reply_task(state, speech_act):
+    """Current response task, separate from the episode's invitation objective.
+
+    Uses validated state/act only, never a keyword check on the user's text.
+    These are response constraints, not suggested character dialogue.
+    """
+    tasks = {
+        "discuss_proposal": (
+            "discuss",
+            "사용자가 다시 꺼낸 제안의 내용과 질문만 설명한다. 논의 허용을 참여 수락이나 일정 확정으로 바꾸지 않는다.",
+        ),
+        "accept_participation": (
+            "acknowledge_acceptance",
+            "사용자가 수락한 활동만 반영한다. 아직 정하지 않은 시간·장소는 미정으로 두고 필요한 것만 짧게 확인한다.",
+        ),
+        "report_progress": (
+            "acknowledge_progress",
+            "사용자가 보고한 진행만 반영한다. 활동 완료·승패나 나의 이동·준비를 덧붙이지 않는다.",
+        ),
+        "report_activity_completion": (
+            "acknowledge_result",
+            "사용자가 알린 최종 결과를 그 사람의 보고로 받아들여 현재 질문에 직접 답한다. 새 점수·경기 장면·재경기 약속을 만들지 않는다.",
+        ),
+    }
+    if speech_act in tasks:
+        policy_id, task = tasks[speech_act]
+    elif state["phase"] in {"deferred", "closed"}:
+        policy_id, task = (
+            "respect_pause_or_end",
+            "현재 질문이나 사정에만 답한다. 보류·종료된 활동을 다시 권유하거나 기한·일정·참가를 재촉하지 않는다. 불만은 표현해도 새 약속을 요구하지 않는다.",
+        )
+    else:
+        policy_id, task = (
+            "answer_current_message",
+            "현재 질문과 용건에 먼저 답한다. 결정되지 않은 것은 그대로 두며, 답장마다 초대를 반복하지 않는다. 대상이 불명확하면 필요한 것만 확인한다.",
+        )
+    return {
+        "policy_id": policy_id,
+        "instruction": task
+        + " 원작 장면과 집착은 말투 참고이며 이번 행동 지시가 아니다. 제공되지 않은 준비·이동·행동 완료를 만들지 않는다.",
+    }
 
 
 def validate_transition(value, context, message_id):

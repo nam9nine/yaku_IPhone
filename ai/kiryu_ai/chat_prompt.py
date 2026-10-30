@@ -17,6 +17,7 @@ from .episode_prompt import (
     EPISODE_RULES,
     episode_definition,
     episode_evidence_ids,
+    episode_reply_task,
     episode_state_view,
     protected_notices,
     timeline,
@@ -25,7 +26,7 @@ from .episode_prompt import (
 )
 from .phone_events import NO_PHONE_EVENTS, resolve_phone_events
 
-PROMPT_VERSION = "kiryu-daily-sms-v19"
+PROMPT_VERSION = "kiryu-daily-sms-v20"
 
 RELATIONSHIP_TONES = {
     "neutral": "평소 관계에 맞는 말투로 답한다.",
@@ -416,6 +417,19 @@ class ChatPromptBuilder:
         dropped = []
         past_omitted = False
         omitted_history_ids = []
+        turn_task = None
+        if episode is not None:
+            speech_act = (
+                (reading_audit or {})
+                .get("episode_interpretation", {})
+                .get("reader_act")
+            )
+            turn_task = episode_reply_task(
+                episode_state_view(
+                    episode, state_sources, transition=episode_transition
+                ),
+                speech_act,
+            )
 
         def can_trim_recent():
             # Preserve the selected utterance and everything following it;
@@ -477,7 +491,6 @@ class ChatPromptBuilder:
                     context["current_episode_speech_act"] = reading_audit[
                         "episode_interpretation"
                     ]["reader_act"]
-                context["episode_purpose"] = episode_definition(episode)["purpose"]
                 # Selected sources already carry the exact quote and full scope.
                 # Fixed relationship text is in the system once, not repeated.
                 episode_ids = {r["id"] for r in episode_facts}
@@ -521,7 +534,7 @@ class ChatPromptBuilder:
             )
             if reading is not None:
                 envelope += (
-                    "\n위 근거와 실제 대화를 따라 키류에게 문자 한 통을 쓴다."
+                    "\n이번 답장의 과제: " + turn_task["instruction"]
                     if episode is not None
                     else "\n선택된 근거와 실제 대화를 읽고 현재 질문에 답하는 문자 한 통을 쓴다. 인물 카드의 관계·판단·말투를 따른다. 인용과 함께 있는 검수 자료의 사실 종류와 적용 범위를 지킨다. 원작의 현재·앞으로·몇 년 전은 그 작품 설명의 시점이며 현재 IF 상태로 옮기지 않는다. 실제 대화의 날짜·정정·취소는 유지하고 말투를 위해 과거 사실을 추가하지 않는다."
                 )
@@ -633,6 +646,7 @@ class ChatPromptBuilder:
             metadata["episode_context"] = episode
             metadata["episode_transition"] = episode_transition
             metadata["current_message_id"] = current_message_id
+            metadata["episode_turn_task"] = turn_task
             if past_omitted:
                 metadata["past_context_omission"] = {
                     "reason": "input_budget",

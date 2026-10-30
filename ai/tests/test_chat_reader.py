@@ -124,8 +124,11 @@ class ReaderTests(unittest.TestCase):
         self.assertEqual(engine.calls[0][1]["temperature"], 0)
         schema = engine.calls[0][1]["response_schema"]
         self.assertEqual(
-            schema["properties"]["notes"]["items"]["properties"]["id"]["enum"],
-            ["source-a"],
+            schema["properties"]["notes"]["items"]["enum"],
+            [
+                {"id": "source-a", "field": "text"},
+                {"id": "source-a", "field": "source_excerpt"},
+            ],
         )
 
     def test_invalid_note_does_not_fall_back_to_an_unverified_success(self):

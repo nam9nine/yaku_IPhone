@@ -76,6 +76,35 @@ class ContractEngine:
 
 
 class EpisodePromptTests(unittest.TestCase):
+    def test_current_turn_task_respects_phase_but_discussion_can_resume(self):
+        cases = (
+            ("defer", "awaiting_reply", "respect_pause_or_end"),
+            ("cancel", "accepted", "respect_pause_or_end"),
+            ("change_topic", "accepted", "respect_pause_or_end"),
+            ("no_change", "closed", "respect_pause_or_end"),
+            ("discuss_proposal", "deferred", "discuss"),
+            ("accept_participation", "deferred", "acknowledge_acceptance"),
+            ("report_progress", "accepted", "acknowledge_progress"),
+        )
+        for act, phase, policy_id in cases:
+            with self.subTest(act=act, phase=phase):
+                self.engine.decision = act
+                result = self.builder.build(
+                    user_message="현재 문자의 질문",
+                    current_message_id="current-user",
+                    **{**self.kwargs, "episode_context": episode(phase=phase)},
+                )
+                task = result["metadata"]["episode_turn_task"]
+                self.assertEqual(task["policy_id"], policy_id)
+                envelope = result["messages"][-1]["content"]
+                self.assertTrue(envelope.endswith(task["instruction"]))
+                self.assertNotIn('"episode_purpose"', envelope)
+                self.assertIn('"id":"majima-bowling-challenge"', envelope)
+                self.assertIn('"id":"majima-retrain-rival"', envelope)
+                self.assertEqual(
+                    reconstruct_input(result["metadata"], []), result["messages"]
+                )
+
     def test_reader_acts_separate_discussion_progress_and_terminal_decisions(self):
         cases = (
             ("discuss_proposal", "deferred", "no_change", "deferred"),
@@ -182,6 +211,16 @@ class EpisodePromptTests(unittest.TestCase):
         )
         self.assertEqual(len(audit["note_normalization"]["raw_notes"]), 3)
         self.assertEqual(len(audit["selected_fields"]), 1)
+        allowed = self.engine.calls[-1][1]["response_schema"]["properties"]["notes"][
+            "items"
+        ]["enum"]
+        self.assertIn({"id": "conversation:" + identifier, "field": "text"}, allowed)
+        self.assertNotIn(
+            {"id": "conversation:" + identifier, "field": "source_excerpt"}, allowed
+        )
+        self.assertIn(
+            {"id": "majima-bowling-challenge", "field": "source_excerpt"}, allowed
+        )
 
     def test_note_deduplication_does_not_hide_invalid_selections(self):
         for notes in (
