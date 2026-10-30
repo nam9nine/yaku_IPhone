@@ -72,9 +72,10 @@ test('빠른 답장은 랜덤 대기 뒤 읽음이 되고 홈에서는 배너·�
   await expect(page.getByText('대화를 불러오는 중…', { exact: true })).toHaveCount(0);
   await page.locator('.message-ai-input textarea').fill('저녁은 우동이 좋아.');
   await expect(send).toBeEnabled();
-  await page.clock.install();
+  // Set one clock origin and pause in its future before sending; host/browser RPC time differs.
   const start = Date.now();
-  await page.clock.pauseAt(start);
+  await page.clock.install({ time: start });
+  await page.clock.pauseAt(start + 10_000);
   await page.locator('.message-ai-input textarea').fill('저녁은 우동이 좋아.');
   await send.click();
   await expect.poll(() => requestId).not.toBe('');
