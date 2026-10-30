@@ -207,7 +207,11 @@ class EpisodeStore:
                 owner = state["owner_client"]
                 previous = state["last_presence_at"]
                 lease = previous is not None and 0 <= now - previous <= PRESENCE_TTL
-                if owner == client or not lease:
+                if (
+                    owner == client
+                    or not lease
+                    or (value["active"] and not state["active"])
+                ):
                     elapsed = (
                         min(10.0, max(0.0, now - previous))
                         if owner == client

@@ -124,6 +124,18 @@ class EpisodeDBTests(unittest.TestCase):
             self.db.episodes.get(self.visitor, SCENARIO)["remaining_ms"], 80_000
         )
 
+    def test_hidden_owner_cannot_starve_or_reclaim_from_visible_tab(self):
+        other = str(uuid4())
+        self.command(active=False, now=1000)
+        self.assertTrue(self.command(active=True, client=other, now=1001))
+        for n in range(1, 10):
+            self.assertFalse(self.command(active=False, now=1000 + n * 10))
+            self.assertTrue(self.command(active=True, client=other, now=1001 + n * 10))
+        state = self.db.episodes.get(self.visitor, SCENARIO)
+        self.assertTrue(state["active"])
+        self.assertEqual(state["owner_client"], other)
+        self.assertEqual(state["remaining_ms"], 0)
+
     def test_old_presence_cannot_revive_client(self):
         self.command(active=True, now=1000)
         self.command(active=False, now=1010)
