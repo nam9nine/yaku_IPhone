@@ -73,6 +73,133 @@ class ContractEngine:
 
 
 class EpisodePromptTests(unittest.TestCase):
+    def test_large_current_text_fails_but_next_short_turn_recovers(self):
+        rare = "".join(chr(0xAC00 + (i * 7919) % 11172) for i in range(300))
+        text = (
+            "좋습니다. 볼링 하죠. 메모한 글자를 보냅니다. "
+            + rare
+            + " 확인했습니다." * 150
+        )[:1000]
+
+        def budget(messages):
+            return 9999 if any(text in m["content"] for m in messages) else 100
+
+        calls = []
+        with self.assertRaises(InputBudgetError):
+            self.builder.build(
+                user_message=text,
+                current_message_id="long-user",
+                on_episode_decision=calls.append,
+                **{**self.kwargs, "count_tokens": budget},
+            )
+        self.assertEqual(calls[0]["decision"], "accept")
+        past = [
+            {"id": "long-user", "role": "user", "content": text},
+            {
+                "id": "long-assistant",
+                "role": "assistant",
+                "content": "시간은 나중에 정하자.",
+            },
+        ]
+        context = episode(
+            phase="accepted", pending_proposal=text, evidence_message_ids=["long-user"]
+        )
+        original = copy.deepcopy((past, context))
+        self.engine.decision = "no_change"
+        self.engine.change = lambda value: value.update(
+            notes=[{"id": "conversation:long-user", "field": "text"}],
+            answer="READER_DRAFT_PRIVATE_DETAIL",
+        )
+        result = self.builder.build(
+            user_message="형님",
+            current_message_id="short-user",
+            **{
+                **self.kwargs,
+                "history": past,
+                "episode_context": context,
+                "count_tokens": budget,
+            },
+        )
+        model_text = json.dumps(result["messages"], ensure_ascii=False)
+        self.assertNotIn(text, model_text)
+        self.assertNotIn(rare[:20], model_text)
+        self.assertNotIn("READER_DRAFT_PRIVATE_DETAIL", model_text)
+        self.assertIn('"content_omitted":true', result["messages"][-1]["content"])
+        self.assertIn("long-user", model_text)
+        self.assertIn("형님", model_text)
+        self.assertEqual(
+            result["metadata"]["episode_context"]["pending_proposal"], text
+        )
+        self.assertIn(
+            "long-user", result["metadata"]["past_context_omission"]["message_ids"]
+        )
+        self.assertEqual((past, context), original)
+        self.assertEqual(
+            reconstruct_input(result["metadata"], past), result["messages"]
+        )
+
+    def test_reader_last_resort_drops_whole_past_but_never_current_question(self):
+        text = "기존 약속의 긴 상세 자료 " * 30
+        context = episode(
+            phase="accepted", pending_proposal=text, evidence_message_ids=["long-user"]
+        )
+        prior = [{"id": "long-user", "role": "user", "content": text}]
+        self.engine.decision = "no_change"
+        self.engine.count_tokens = lambda messages: (
+            5000 if text in messages[-1]["content"] else 100
+        )
+        reader = EvidenceReader(self.engine)
+        kwargs = {
+            "character": "majima",
+            "candidates": [],
+            "relationships": [],
+            "recent": prior,
+            "memories": [],
+            "initial_state": None,
+            "notices": [notice()],
+            "episode_context": context,
+            "current_message_id": "current",
+            "episode_evidence": prior,
+        }
+        _, audit = reader.read(question="형님", **kwargs)
+        payload = json.loads(audit["input_messages"][-1]["content"])
+        self.assertTrue(
+            payload["current_episode"]["pending_proposal"]["content_omitted"]
+        )
+        self.assertEqual(payload["question"], "형님")
+        self.assertEqual(payload["episode_evidence"], [])
+        self.assertIn("long-user", audit["past_context_omission"]["message_ids"])
+        self.engine.calls.clear()
+        with self.assertRaises(GemmaFailure) as caught:
+            reader.read(question=text, **kwargs)
+        self.assertEqual(caught.exception.code, "context_limit")
+        self.assertEqual(self.engine.calls, [])
+
+    def test_followup_omission_keeps_authoritative_call_result(self):
+        text = "세부 조건 전체 원문 " * 50
+        context = episode(
+            phase="accepted",
+            pending_proposal=text,
+            evidence_message_ids=["long-user"],
+            call_outcome="missed",
+        )
+        result = self.builder.build_followup(
+            trigger={"call_id": "call-1", "reason": "missed", "direction": "incoming"},
+            **{
+                **self.kwargs,
+                "episode_context": context,
+                "count_tokens": lambda messages: (
+                    9999 if text in messages[-1]["content"] else 100
+                ),
+            },
+        )
+        envelope = result["messages"][-1]["content"]
+        self.assertNotIn(text, envelope)
+        self.assertIn('"content_omitted":true', envelope)
+        self.assertIn('"reason":"missed"', envelope)
+        self.assertIn('"connected":false', envelope)
+        self.assertIn("past_context_omission", result["metadata"])
+
     def test_call_outcome_and_notice_trigger_survive_both_model_inputs(self):
         for outcome in ("missed", "declined", "idle", "ended"):
             with self.subTest(outcome=outcome):

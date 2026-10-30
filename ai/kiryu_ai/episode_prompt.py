@@ -23,6 +23,8 @@ PHASES = ("not_started", "awaiting_reply", "accepted", "deferred", "closed")
 CALL_OUTCOMES = ("missed", "declined", "idle", "ended")
 CATALOG_PATH = Path(__file__).resolve().parents[1] / "chat/episodes.json"
 
+EPISODE_OMISSION_RULES = "과거 대화 원문이 입력 예산 때문에 통째로 생략되었다. ID와 사건 단계는 유지하지만 세부 내용은 제공되지 않았다. 원문 일부나 요약이 아니다. 시간·조건·이유·약속 내용을 추정하거나 이전 약속을 되살리지 않는다. 현재 문자와 제공된 상태만으로 답하고, 필요한 세부는 짧게 확인한다."
+
 EPISODE_RULES = """현재 사건은 방문자의 IF 진행이다. 취소·거절은 해당 약속을 끝낸다. 불만은 표현해도 재약속 요구나 준비했다는 새 사실로 취소를 뒤집지 않는다. 보류 중에는 사용자가 사건을 다시 꺼내기 전 제안·권유·재촉을 하지 말고 현재 화제에만 답한다. message_id는 실제 원문 참조, native_turn은 system 다음 실제 대화의 1부터 센 순서다. call_outcome은 서버가 확인한 결과(missed=미연결, declined=수신 거절, idle=연결 후 무응답 종료, ended=통화 종료)이며 의도나 약속 수락이 아니다. 데이터 용어는 문자에 쓰지 않는다."""
 
 EPISODE_READER_RULES = """current_episode는 이번 방문자의 IF 진행이며 canon과 별개다. recent_timeline에는 실제 선제 발신도 있으므로 '그거'의 대상을 최근 문맥에서 확인한다. 상태의 message_id는 같은 ID의 원문 참조다(conversation:은 검색용 접두사). call_outcome/통화 결과는 관찰 사실이며 상대의 의도·동의가 아니다.
@@ -112,7 +114,9 @@ def episode_evidence_ids(context, messages):
     return identifiers
 
 
-def episode_state_view(context, messages, *, identity=False, transition=None):
+def episode_state_view(
+    context, messages, *, identity=False, transition=None, omit_details=False
+):
     """Reference original messages once; never substring or summarize a promise."""
     if context is None:
         return None
@@ -142,6 +146,14 @@ def episode_state_view(context, messages, *, identity=False, transition=None):
             )
             else report
         )
+    if omit_details:
+        for key in ("pending_proposal", "user_report"):
+            if key in result:
+                result[key] = {
+                    **{k: v for k, v in result[key].items() if k == "message_id"},
+                    "content_omitted": True,
+                }
+        result["past_details_omitted"] = True
     if transition is not None:
         decision = transition["decision"]
         if decision != "no_change":
