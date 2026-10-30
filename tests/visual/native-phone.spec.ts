@@ -36,7 +36,18 @@ for (const width of [360, 390, 430])
         await page.locator('[data-note-id=curry]').tap();
         for (const name of ['감자', '양파', '고기', '카레'])
           await page.getByRole('checkbox', { name: `${name} 완료`, exact: true }).check();
-        if (scene === 'missed-lock') await page.getByRole('button', { name: '전화 거절' }).tap();
+        if (scene === 'missed-lock') {
+          await page.getByRole('button', { name: '전화 거절' }).tap();
+          const followup = page.getByRole('status', { name: '새 메시지 도착', exact: true });
+          await expect(followup).toContainText('검증용 마지마 전화 후속 문자');
+          await followup.getByRole('button', { name: '메시지 알림 닫기', exact: true }).tap();
+          const storyDismiss = page.getByRole('button', {
+            name: '이야기 메시지 알림 닫기',
+            exact: true,
+          });
+          while (await storyDismiss.count()) await storyDismiss.tap();
+          await expect(page.locator('.ai-reply-banner')).toHaveCount(0);
+        }
         if (scene !== 'incoming') {
           await page.keyboard.press('Alt+Home');
           const lock = page.getByRole('button', { name: '다시 잠그기', exact: true });
