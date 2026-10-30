@@ -24,7 +24,9 @@ async function back(page: Page) {
   await page.mouse.up();
 }
 
-test('다섯 연락처의 프로필에서 선택형 답장을 보내고 새로고침 후 보존한다', async ({ page }) => {
+test('다섯 프로필의 과거 대화·선택 답장·자유 입력을 구분하고 재접속 후 보존한다', async ({
+  page,
+}) => {
   await start(page);
   await launchHomeApp(page, 'notes');
   await page.locator('[data-note-id=curry]').tap();
@@ -45,25 +47,52 @@ test('다섯 연락처의 프로필에서 선택형 답장을 보내고 새로�
     await page.getByRole('button', { name, exact: true }).tap();
     await expect(page.getByRole('img', { name: `${name} 프로필` })).toBeVisible();
     await page.getByRole('button', { name: `${name}에게 메시지 보내기` }).tap();
-    const ai = name === '마지마 고로' || name === '사와무라 하루카';
-    const choice = page.locator('.message-choice-list .message-story-reply').first();
-    const text = await choice.innerText();
-    await expect(choice).toBeEnabled();
-    await choice.tap();
-    await expect(page.locator('.message-bubble').getByText(text, { exact: true })).toBeVisible();
-    if (ai) {
-      await finishAiReply(page, name === '사와무라 하루카' ? 'haruka' : 'majima');
-      await expect(
-        page.getByText(`검증용 ${name === '사와무라 하루카' ? '하루카' : '마지마'} 답장`, {
-          exact: true,
-        }),
-      ).toBeVisible();
+    if (name === '미네 요시타카' || name === '사에지마 타이가') {
+      const history =
+        name === '미네 요시타카'
+          ? [
+              '이해해 달라고 할 생각은 없다. 다이고의 뜻은 존중해 줘라.',
+              '다이고 씨의 뜻이라면 따릅니다. 당신에게 동의했다는 뜻은 아닙니다.',
+            ]
+          : ['형님답군. 사에지마, 너는 별일 없나?', '나는 괜찮다. 니한테는 괜히 숨길 것도 없고.'];
+      for (const text of history)
+        await expect(page.locator('.message-bubble').getByText(text, { exact: true })).toHaveCount(
+          1,
+        );
+      await expect(page.locator('.message-story-reply')).toHaveCount(0);
+      await expect(page.locator('.message-ai-input')).toHaveCount(0);
     } else {
-      await expect(page.getByRole('status')).toContainText('답장 대기 중');
-      await page.clock.runFor(12_000);
-      await expect(page.getByRole('status').filter({ hasText: '답장 대기 중' })).toHaveCount(0);
+      let text: string;
+      if (name === '마지마 고로') {
+        text = '형님, 볼 일이 끝나면 연락드리겠습니다.';
+        await expect(page.locator('.message-story-reply')).toHaveCount(0);
+        await page.getByRole('textbox', { name: '마지마에게 메시지 입력', exact: true }).fill(text);
+        const send = page.getByRole('button', { name: '메시지 보내기', exact: true });
+        await expect(send).toBeEnabled();
+        await send.tap();
+      } else {
+        const choice = page.locator('.message-choice-list .message-story-reply').first();
+        text = await choice.innerText();
+        await expect(choice).toBeEnabled();
+        await choice.tap();
+      }
+      await expect(page.locator('.message-bubble').getByText(text, { exact: true })).toBeVisible();
+      if (name === '마지마 고로' || name === '사와무라 하루카') {
+        await finishAiReply(page, name === '사와무라 하루카' ? 'haruka' : 'majima');
+        await expect(
+          page.getByText(`검증용 ${name === '사와무라 하루카' ? '하루카' : '마지마'} 답장`, {
+            exact: true,
+          }),
+        ).toBeVisible();
+      } else {
+        await expect(page.getByRole('status')).toContainText('답장 대기 중');
+        await page.clock.runFor(12_000);
+        await expect(page.getByRole('status').filter({ hasText: '답장 대기 중' })).toHaveCount(0);
+      }
+      await expect(page.getByRole('button', { name: `${text} 보내기`, exact: true })).toHaveCount(
+        0,
+      );
     }
-    await expect(page.getByRole('button', { name: `${text} 보내기`, exact: true })).toHaveCount(0);
     await home(page);
   }
   await start(page);
@@ -137,20 +166,29 @@ for (const size of [
   });
 }
 
-test('연결이 끊기면 선택형 답장을 막고 복구 후 한 번 보낸다', async ({ page }) => {
+test('연결이 끊기면 자유 입력 전송을 막고 초안을 유지해 복구 후 한 번 보낸다', async ({ page }) => {
   await start(page);
   await launchHomeApp(page, 'messages');
   await page.locator('[data-conversation=majima]').tap();
-  const choices = page.locator('.message-story-reply');
-  await expect(choices).toHaveCount(2);
-  await expect(choices.first()).toBeEnabled();
+  const posts: string[] = [];
+  page.on('request', (request) => {
+    if (request.method() === 'POST' && new URL(request.url()).pathname === '/v1/chat')
+      posts.push(request.postDataJSON().message);
+  });
+  const input = page.getByRole('textbox', { name: '마지마에게 메시지 입력', exact: true });
+  const send = page.getByRole('button', { name: '메시지 보내기', exact: true });
+  const text = '형님, 시간 되면 한 판 하시죠.';
+  await expect(page.locator('.message-story-reply')).toHaveCount(0);
+  await input.fill(text);
+  await expect(send).toBeEnabled();
   await home(page);
   await launchHomeApp(page, 'settings');
   await page.getByRole('switch', { name: '에어플레인 모드', exact: true }).check();
   await home(page);
   await launchHomeApp(page, 'messages');
-  await expect(choices).toHaveCount(2);
-  for (const choice of await choices.all()) await expect(choice).toBeDisabled();
+  await expect(input).toHaveValue(text);
+  await expect(send).toBeDisabled();
+  expect(posts).toEqual([]);
   await home(page);
   await launchHomeApp(page, 'settings');
   await page.getByRole('switch', { name: '에어플레인 모드', exact: true }).uncheck();
@@ -158,15 +196,13 @@ test('연결이 끊기면 선택형 답장을 막고 복구 후 한 번 보낸�
   await page.getByRole('switch', { name: 'Wi-Fi', exact: true }).check();
   await home(page);
   await launchHomeApp(page, 'messages');
-  const choice = page.getByRole('button', {
-    name: '형님, 시간 되면 한 판 하시죠. 보내기',
-    exact: true,
-  });
-  await expect(choice).toBeEnabled();
-  await choice.tap();
-  await expect(
-    page.locator('.message-bubble').getByText('형님, 시간 되면 한 판 하시죠.', { exact: true }),
-  ).toBeVisible();
+  await expect(input).toHaveValue(text);
+  await expect(send).toBeEnabled();
+  expect(posts).toEqual([]);
+  await send.tap();
+  await finishAiReply(page, 'majima');
+  await expect(page.locator('.message-bubble').getByText(text, { exact: true })).toHaveCount(1);
+  await expect.poll(() => posts).toEqual([text]);
 });
 
 test('저장소 쓰기 거부와 낮은 화면에서도 메모·메시지를 사용할 수 있다', async ({ page }) => {
@@ -179,10 +215,10 @@ test('저장소 쓰기 거부와 낮은 화면에서도 메모·메시지를 사
   await start(page);
   await launchHomeApp(page, 'messages');
   await page.locator('[data-conversation=majima]').tap();
-  const send = page.getByRole('button', {
-    name: '형님, 시간 되면 한 판 하시죠. 보내기',
-    exact: true,
-  });
+  await page
+    .getByRole('textbox', { name: '마지마에게 메시지 입력', exact: true })
+    .fill('형님, 시간 되면 한 판 하시죠.');
+  const send = page.getByRole('button', { name: '메시지 보내기', exact: true });
   await expect(send).toBeInViewport();
   await send.tap();
   await expect(

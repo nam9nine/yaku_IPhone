@@ -26,6 +26,8 @@ test('선택 소진 후 12번째 성공 대화는 45초만 쉬며 다른 연락�
     dayReducer(initialDay(), { type: 'reminder', id: 'shopping', done: true }),
     { type: 'miss-call', reason: 'declined' },
   );
+  // Exercise conversation pacing after a settled quest call, without unrelated generated followups.
+  day.pendingCallFollowups = [];
   day.storyChoiceHistory.majima = ['majima-1a', 'majima-2a', 'majima-3a'];
   await page.addInitScript(
     ({ key, state }) => {

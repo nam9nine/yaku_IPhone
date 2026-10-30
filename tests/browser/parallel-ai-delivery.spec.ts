@@ -17,7 +17,8 @@ test('다른 인물에게 즉시 전송하고 같은 순간 도착한 두 답장
   );
   await page.addInitScript(({ key, state }) => localStorage.setItem(key, JSON.stringify(state)), {
     key: DAY_STORAGE_KEY,
-    state: completedShopping,
+    // Start after the quest call; independent call followup delivery has separate coverage.
+    state: { ...completedShopping, pendingCallFollowups: [] },
   });
   await page.addInitScript(() => {
     const fixture = window as unknown as { receivedSounds: number[] };
@@ -124,13 +125,13 @@ test('다른 인물에게 즉시 전송하고 같은 순간 도착한 두 답장
             job_id: job.request_id,
           },
           // Offset server duration against the random typing delay: both actual
-          // delivery deadlines are exactly 30 seconds after the paused send time.
+          // delivery deadlines are exactly 32 seconds after the paused send time.
           {
             id: `${job.request_id}-a`,
             role: 'assistant',
             content: `${job.character} 동시 수신`,
             time: new Date(
-              Date.parse('2026-10-29T00:00:00Z') + 30_000 - typingDelay(job.request_id),
+              Date.parse('2026-10-29T00:00:00Z') + 32_000 - typingDelay(job.request_id),
             ).toISOString(),
             status: 'complete',
             request_id: job.request_id,
@@ -189,7 +190,7 @@ test('다른 인물에게 즉시 전송하고 같은 순간 도착한 두 답장
   await page.evaluate(() => {
     (window as unknown as { receivedSounds: number[] }).receivedSounds = [];
   });
-  await page.clock.runFor(30_001);
+  await page.clock.runFor(32_001);
   await expect.poll(() => [...receipts].sort()).toEqual([...jobs.keys()].sort());
   await expect.poll(() => sounds(page)).toBe(1);
   await page.clock.runFor(1001);

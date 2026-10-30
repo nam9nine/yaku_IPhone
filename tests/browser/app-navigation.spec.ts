@@ -211,8 +211,13 @@ test('설정의 버튼과 왼쪽 안쪽 가장자리는 실제 방문 순서에�
 test('Safari 본문 가로 이동과 양쪽 가장자리 방문 기록을 구분하고 재진입 위치를 보존한다', async ({
   page,
 }) => {
+  // The concise memo fits on one tall screen; use a real compact viewport to exercise pagination.
+  await page.setViewportSize({ width: 390, height: 420 });
   await openApp(page, 'Safari');
   await enterAddress(page, 'https://yaku.test/guide');
+  await expect
+    .poll(async () => Number(await safariBody(page).getAttribute('data-pages')))
+    .toBeGreaterThan(1);
   await page.getByRole('button', { name: 'Safari 본문 다음 페이지', exact: true }).tap();
   await expect(safariBody(page)).toHaveAttribute('data-page', '2');
   await enterAddress(page, 'https://yaku.test/example');
@@ -327,8 +332,13 @@ test('본문 페이지와 가장자리는 실제 터치에서도 구분하고 �
   page,
   browserName,
 }) => {
+  // The concise memo fits on one tall screen; use a real compact viewport to exercise pagination.
+  await page.setViewportSize({ width: 390, height: 420 });
   await openApp(page, 'Safari');
   await enterAddress(page, 'https://yaku.test/guide');
+  await expect
+    .poll(async () => Number(await safariBody(page).getAttribute('data-pages')))
+    .toBeGreaterThan(1);
   const viewport = (await safariBody(page).locator('.paged-viewport').boundingBox())!;
   const app = (await page.locator('.safari-app').boundingBox())!;
   const session = browserName === 'chromium' ? await page.context().newCDPSession(page) : null;
@@ -363,12 +373,13 @@ test('본문 페이지와 가장자리는 실제 터치에서도 구분하고 �
   await expect(address(page)).toHaveText('yaku.test/guide');
   const link = page.getByRole('button', { name: '주말 산책 읽기', exact: true });
   await revealWithPages(safariBody(page), link, 'Safari 본문 다음 페이지');
+  const linkPage = Number(await safariBody(page).getAttribute('data-page'));
   const linkBox = (await link.boundingBox())!;
   await drag(linkBox.x + linkBox.width / 2, linkBox.y + linkBox.height / 2, 25, 0);
-  await expect(safariBody(page)).toHaveAttribute('data-page', '2');
+  await expect(safariBody(page)).toHaveAttribute('data-page', String(linkPage));
   await expect(address(page)).toHaveText('yaku.test/guide');
   await drag(linkBox.x + linkBox.width / 2, linkBox.y + linkBox.height / 2, 100, 0);
-  await expect(safariBody(page)).toHaveAttribute('data-page', '1');
+  await expect(safariBody(page)).toHaveAttribute('data-page', String(linkPage - 1));
   await expect(address(page)).toHaveText('yaku.test/guide');
   await drag(app.x + 20, app.y + 190, 100, 0);
   await expect(address(page)).toHaveText('검색 또는 웹 사이트 이름');
@@ -380,7 +391,7 @@ test('선택한 텍스트를 가장자리 제스처가 가로채지 않고 선�
 }) => {
   await openApp(page, 'Safari');
   await enterAddress(page, 'https://yaku.test/guide');
-  await page.getByRole('heading', { name: /아저씨,/ }).evaluate((element) => {
+  await page.getByRole('heading', { name: '하루카의 메모', exact: true }).evaluate((element) => {
     const range = document.createRange();
     range.selectNodeContents(element);
     window.getSelection()?.removeAllRanges();
