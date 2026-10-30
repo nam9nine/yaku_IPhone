@@ -90,6 +90,12 @@
 
 ## 로컬 원본 증거와 완료 경계
 
+### CI 시계 초기화 보완
+
+같은 main의 DB PR #126 첫 Linux 실행에서 WebKit 알림 검사가 실제 전송 전에 `clock.pauseAt`의 과거 시각 오류로 중단됐다. 브라우저 647/648개와 시각 224개는 통과했고, 동일 SHA 재실행에서는 전체가 통과했다. 다음 검사에서 이 경쟁이 반복되지 않도록 `reply-notifications.spec.ts`의 시계 원점을 명시하고 문자 전송 전 10초 여유 시점에 정지하도록 보완했다. 답장 지연의 `−1ms / +1ms`와 전달·알림 조건은 그대로다. 제품 UI와 AI 소스는 바꾸지 않았다.
+
+이 검사 변경의 Chromium·WebKit 반복 실행, `chromium-read-receipt.png`·`webkit-read-receipt.png` 직접 검토, 전체 시각 회귀와 최종 SHA의 결과는 PR 증거에 별도로 연결한다. 화면은 합성 응답을 사용한 기존 메시지 UI이며 Gemma 내용 평가나 실제 iPhone 검증을 대신하지 않는다.
+
 다음 경로는 저장소 루트 기준의 ignored 로컬 증거다. 실제 방문자 대화를 평가에 사용하지 않았으며 토큰·키·운영 DB를 공개 증거에 복사하지 않는다.
 
 - `references/local/gemma-chat/bowling-eval/{full-v1,corrections-v2,full-v3,full-v4}/`: 실행 manifest, 입력·출력과 상태를 포함한 `responses.jsonl`, summary 또는 중단 사유. 원래 실패 결과 보존.
