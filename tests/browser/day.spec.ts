@@ -1,4 +1,5 @@
-import { finishAiReply } from '../helpers/ai-clock';
+import { finishAiReply, settleAiRequests } from '../helpers/ai-clock';
+import { MIN_TYPING_MS, typingDelay } from '../../src/ai/presentation';
 import { mockStoryAi } from '../helpers/mock-story-ai';
 import { enterPasscode, unlockPhone } from '../helpers/unlock';
 import { expect, test, type Page } from '@playwright/test';
@@ -196,8 +197,25 @@ test('저장소 읽기와 쓰기가 거부되어도 현재 세션의 카레 흐�
   await page.getByRole('button', { name: '전화 거절' }).tap();
   await home(page);
   await launchHomeApp(page, 'messages');
+  const request = page.waitForRequest(
+    (request) => request.method() === 'POST' && new URL(request.url()).pathname === '/v1/chat',
+  );
+  const reply = page.waitForResponse(async (response) => {
+    const url = new URL(response.url());
+    if (url.pathname !== '/v1/history' || url.searchParams.get('character') !== 'haruka')
+      return false;
+    const history = await response.json();
+    return history.messages.some(
+      (message: { role: string; content: string }) =>
+        message.role === 'assistant' && message.content === '검증용 하루카 답장',
+    );
+  });
   await page.getByRole('button', { name: '메모에 적힌 카레 재료는 다 샀다. 보내기' }).tap();
-  await finishAiReply(page, 'haruka');
+  const [sent] = await Promise.all([request, reply]);
+  await settleAiRequests(page);
+  // Storage denial hides the receipt from finishAiReply. Respect this request's
+  // real jitter (up to 30s) and minimum typing time instead of its 22s fallback.
+  await page.clock.fastForward(typingDelay(sent.postDataJSON().request_id) + MIN_TYPING_MS + 1);
   await expect(page.getByText('검증용 하루카 답장', { exact: true })).toBeVisible();
   await lock(page);
   await expect(page.getByRole('button', { name: '남은 할 일 4개', exact: true })).toBeVisible();
