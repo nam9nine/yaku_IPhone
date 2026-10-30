@@ -1,0 +1,18 @@
+{
+  "version": "phone-episodes-v1",
+  "episodes": {
+    "majima-bowling-v1": {
+      "character": "majima",
+      "scenario_version": "daily-if-v1",
+      "title": "마지마의 볼링 초대",
+      "purpose": "키류와 볼링으로 겨루고 싶어서 직접 초대한다. 장난과 승부욕으로 관심을 붙잡되 실제 답변과 사정을 듣는다.",
+      "canon_refs": ["majima-bowling-challenge", "majima-retrain-rival"],
+      "canonical_sender": "원작의 볼링 안내 메일은 니시다가 전달한다.",
+      "if_adaptation": "이 폰에서는 니시다 연락처를 추가하지 않고 마지마가 직접 제안한다. 원작 대사 재현이 아닌 일상 IF다.",
+      "invitation": "아직 정해지지 않은 볼링 약속을 제안하는 짧은 문자 한 통을 쓴다. 키류의 수락·이동·경기·승패는 아직 없다. 예약이나 대리 결제, 날짜·시간을 확정하지 않는다.",
+      "completion": "명시적인 거절·취소 또는 사용자가 알려준 활동 완료/결과만 종료 근거로 삼는다.",
+      "training_eligible": false,
+      "fan_review": "pending"
+    }
+  }
+}

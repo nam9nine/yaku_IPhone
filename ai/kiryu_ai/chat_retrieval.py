@@ -224,7 +224,7 @@ def load_registry(path):
                 raise ValueError("Runtime evidence requires explicit scope lists")
         if not record.get("review_basis"):
             raise ValueError("Missing explicit adoption basis")
-        for field in ("context", "event_id"):
+        for field in ("context", "event_id", "episode_only"):
             if field in record and (
                 not isinstance(record[field], str) or not record[field].strip()
             ):
@@ -239,10 +239,11 @@ def load_registry(path):
     return value
 
 
-def runtime_eligible(record, character, scenario):
+def runtime_eligible(record, character, scenario, *, episode_id=None):
     """One authorization boundary for ranked evidence and fixed card facts."""
     return (
         record.get("runtime_eligible") is True
+        and (record.get("episode_only") is None or record["episode_only"] == episode_id)
         and record.get("approval") == "agent-reviewed-experiment"
         and isinstance(record.get("known_by"), list)
         and character in record["known_by"]
