@@ -1,5 +1,5 @@
 import { unlockPhone } from '../helpers/unlock';
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../helpers/browser-test';
 import { launchHomeApp } from '../helpers/home';
 
 const friends = [

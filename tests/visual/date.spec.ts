@@ -1,5 +1,5 @@
 import { unlockPhone } from '../helpers/unlock';
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../helpers/browser-test';
 import { launchHomeApp } from '../helpers/home';
 for (const scene of ['contact', 'thread'] as const) {
   test(`다테 형사 ${scene} 390`, async ({ page }) => {

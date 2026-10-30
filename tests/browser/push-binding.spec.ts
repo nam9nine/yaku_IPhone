@@ -1,4 +1,4 @@
-import { expect, test, type BrowserContext, type Page, type Route } from '@playwright/test';
+import { expect, test, type BrowserContext, type Page, type Route } from '../helpers/browser-test';
 import { AI_ENDPOINT } from '../../src/ai/config';
 import { unlockPhone } from '../helpers/unlock';
 import { launchHomeApp } from '../helpers/home';
@@ -58,6 +58,8 @@ async function setup(context: BrowserContext) {
     let data: unknown;
     if (request.method() === 'OPTIONS') data = {};
     else if (path === '/v1/health') data = { status: 'ready' };
+    else if (path === '/v1/episodes/majima' && request.method() === 'GET')
+      data = { protocol: 1, enabled: false, episode: null, action: null };
     else if (path === '/v1/history') data = { messages: [], pending_job: null, next_cursor: null };
     else if (path === '/v1/push/key') data = { public_key: 'BAAAAAAA' };
     else if (

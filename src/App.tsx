@@ -39,6 +39,8 @@ import { resetAiConnection } from './ai/connection';
 import { usePushPresence } from './ai/usePushPresence';
 import { useAiMessenger } from './ai/useAiMessenger';
 import { useCallFollowups } from './ai/useCallFollowups';
+import { useEpisodes } from './ai/useEpisodes';
+import { blocksUserInput } from './ai/messenger';
 import { isAiCharacter } from './ai/client';
 import { AiReplyBanner, AiReplyNotifications, AiReplySound } from './ai/ReplyNotifications';
 
@@ -84,6 +86,7 @@ function PhoneSession() {
       (!state.locked && state.activeApp === 'messages' && !state.panel && !day.state.call),
   );
   useCallFollowups(ai, isOnline(preferences));
+  useEpisodes(ai, isOnline(preferences), !state.locked && !unlockRequest);
   const inConversation =
     !state.locked &&
     state.activeApp === 'messages' &&
@@ -428,8 +431,7 @@ function PhoneSession() {
           !state.locked &&
           !unlockRequest &&
           !Object.values(ai.threads).some(
-            (thread) =>
-              thread.deliveryPending || (!!thread.pending && thread.pending.phase !== 'failed'),
+            (thread) => blocksUserInput(thread) && thread.pending?.phase !== 'failed',
           )
         }
         onMessage={openConversation}

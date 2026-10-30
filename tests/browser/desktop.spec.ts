@@ -1,5 +1,5 @@
 import { unlockPhone } from '../helpers/unlock';
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '../helpers/browser-test';
 import { releaseFastSwipe } from '../helpers/gestureClock';
 
 test.use({ isMobile: false, hasTouch: false });

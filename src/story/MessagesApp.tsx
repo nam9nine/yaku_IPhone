@@ -1,3 +1,4 @@
+import { blocksUserInput } from '../ai/messenger';
 import { messageThread } from '../ai/messageThread';
 import { PushControls } from '../ai/PushControls';
 import { messageSentSound } from '../ai/replySound';
@@ -161,7 +162,7 @@ export function MessagesApp({
   const draft = aiCharacter ? drafts[aiCharacter] : '';
   const choices = person ? getStoryChoices(state, person.id) : [];
   const storyPending = person ? state.storyPending[person.id] : undefined;
-  const aiBusy = !!(rawAiThread?.pending || rawAiThread?.deliveryPending);
+  const aiBusy = !!rawAiThread && blocksUserInput(rawAiThread);
   const callRetry =
     isCallEvents(rawAiThread?.pending?.phoneEvents) && rawAiThread?.pending?.phase === 'failed';
   const sentCount = aiThread?.completedCount ?? 0;

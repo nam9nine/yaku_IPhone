@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from '../helpers/browser-test';
 import { launchHomeApp } from '../helpers/home';
 import { finishAiReply } from '../helpers/ai-clock';
 import { mockStoryAi } from '../helpers/mock-story-ai';

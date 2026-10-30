@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../helpers/browser-test';
 import { mockStoryAi } from '../helpers/mock-story-ai';
 import { unlockPhone } from '../helpers/unlock';
 import { launchHomeApp } from '../helpers/home';

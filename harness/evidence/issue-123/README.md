@@ -1,0 +1,40 @@
+# 볼링 사건의 문자·전화 전달 검증
+
+새 클라이언트는 서버의 사건 기능이 켜졌을 때 기존 마지마 선제 문자와 독립 전화 예약을 사건 관리자로 대체한다. 다른 인물, 수동 전화, 일반 대화와 기존 iPhone 화면은 유지한다. 기능 OFF 상태의 신규 클라이언트는 기존 동작을 유지한다.
+
+## 통합 동작
+
+- 활성·잠금·통화·답장 대기 상태를 보고하고, 서버가 발신 소유권과 남은 활성 시간을 관리한다. 브라우저가 꺼진 시간을 더하지 않는다.
+- 전화 claim 응답 유실, 두 탭, 통화 종료 보고 재시도에서 같은 사건 ID와 전화 ID를 사용한다. 사건 전화 결과는 기존 고정 문자와 중복시키지 않는다.
+- 선제 작업과 일반 답장의 pending을 작업 ID로 구분한다. 늦은 선제 조회가 새 사용자 답장의 상태를 지우지 않는다.
+- 사용자 입력보다 먼저 정상 저장된 초대는 원본 이력에 유지하되, 뒤늦은 타이핑·알림으로 재생하지 않는다.
+- Worker에는 인증된 사건 API 경로와 명시적인 protocol/episodes query만 추가한다. 관리자·모델·DB 공개 경로를 만들지 않는다.
+
+## 로컬 검사와 직접 검토
+
+2026-10-31 KST, macOS arm64, Node 24.22.0, Playwright 1.64.1에서 통합 코드 `29e859c4dd0100925acc25bc3d2a00c19d973db9`를 검사했다. 이후 문서 변경과 최종 PR SHA의 검사는 PR 증거에 별도로 연결한다.
+
+| 검사                                                                   | 관찰 결과                                                                                                |
+| ---------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `npm run check`                                                        | 타입·lint·포맷·단위 521개·빌드·harness 통과                                                              |
+| `npm run test:e2e -- tests/browser/majima-episode.spec.ts --workers=1` | Chromium·WebKit 8개 통과. 무응답 단일 흐름, 선제 생성 중 사용자 입력, 전화 claim 응답 유실, 두 탭 소유권 |
+| `npm run test:visual`                                                  | macOS Chromium·WebKit 전체 224개 통과. 기준 이미지 변경 없음                                             |
+| 독립 관련 검사                                                         | `/root/episode_independent_review`가 74개 실행해 통과                                                    |
+
+독립 검토자가 최종 UI diff와 완료 조건을 검토했다. 조정 에이전트와 독립 검토자가 커밋된 `chromium-bowling-followup.png`, `webkit-bowling-followup.png`를 직접 열었다. 390×844에서 입력창·프로필·초대 한 통과 후속 한 통의 가독성, 마지막 말풍선과 입력 영역의 겹침을 확인했다. `idb-messages-ios27` 기준 자료와 비교했으며 이번 범위는 기존 화면을 유지하면서 사건을 연결하는 검토다. Apple 화면 완전 일치 판정은 아니다.
+
+이 캡처와 브라우저 검사는 합성 API 응답을 사용한다. 실제 Gemma 내용 평가는 Issue 122 증거이며, 실제 iPhone Safari·팬 검토·OS 알림 수신을 수행했다고 표시하지 않는다.
+
+## 전체 회귀에서 드러난 테스트 의존성
+
+첫 전체 실행은 656개 중 639개 통과·17개 실패였다. 새 사건 GET을 처리하지 않는 개별 fixture 14건, capability 조회가 추가되어 기존 health 호출 수 단정과 어긋난 2건, 실제 Worker의 CORS 거부를 받은 WebKit 홈 검사 1건이었다. 독립 검토자가 trace를 확인했으며 기존 통화 전송과 홈 레이아웃의 핵심 조건은 통과한 상태였다. 실패 결과는 `.tooling/majima-episode/ui-full-v1-results`와 실행 로그에 보존했다.
+
+새 `tests/helpers/browser-test.ts`는 정확한 health GET만 기본 OFF로 처리하여 UI 검사에서 운영 Mac으로 접속하지 않게 한다. [Playwright 자동 fixture](https://playwright.dev/docs/test-fixtures#automatic-fixtures)와 [context route](https://playwright.dev/docs/api/class-browsercontext#browser-context-route) 방식이며, 나중 등록된 명시적 ON·loading·오류 응답은 우선한다. 예상 못한 chat POST를 통과시키는 포괄 fallback이나 오류 필터는 추가하지 않았다. 개별 서버 mock의 새 GET 처리와 재연결 readiness 제어를 보완했고, 기존 메시지 내용·건수·초기화 검사는 유지했다.
+
+수정 후 관련 98개, 전체 Chromium·WebKit **656개**, macOS 시각 **224개**가 통과했다. 제품 코드와 기준 이미지는 변경하지 않았다. DB PR의 별도 Linux 실행에서 발견한 `clock.pauseAt`의 과거 시각 경쟁도 명시적인 시계 원점과 전송 전 10초 여유로 보완한다. 답장 지연의 `−1ms / +1ms` 및 후속 전달 검사는 그대로 유지한다. 최종 SHA의 반복 검사·독립 검토·Linux CI 결과는 PR 증거로 연결한다.
+
+## 공개 반영 완료 조건
+
+필수 CI와 독립 리뷰 후 병합하고, 운영 DB 백업 → Mac API의 기능 OFF 반영 → Worker → Pages → 인증된 신규 클라이언트 protocol 확인 → 기능 ON 순서로 진행한다. 원래 공개 주소에서 새 방문자의 실제 90초·120~180초 연락 흐름과 기존 방문자의 실제 Gemma 답장을 확인한다. 모델 식별자·메시지 역할·중복 발신은 해당 합성 방문자 범위의 읽기 전용 DB 감사로 대조한다.
+
+공개 실행은 아직 이 문서의 완료 기록이 아니다. 실제 배포·검사 결과와 남은 제한은 Issue/PR 후속 기록에 남긴다. 실패 시 `KIRYU_EPISODES_ENABLED=0`으로 일반 채팅을 유지한다.

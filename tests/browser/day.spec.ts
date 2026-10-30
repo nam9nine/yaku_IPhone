@@ -2,7 +2,7 @@ import { finishAiReply, settleAiRequests } from '../helpers/ai-clock';
 import { MIN_TYPING_MS, typingDelay } from '../../src/ai/presentation';
 import { mockStoryAi } from '../helpers/mock-story-ai';
 import { enterPasscode, unlockPhone } from '../helpers/unlock';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from '../helpers/browser-test';
 import { launchHomeApp } from '../helpers/home';
 
 test.beforeEach(async ({ page }) => {

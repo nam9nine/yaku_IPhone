@@ -1,5 +1,5 @@
 import { unlockPhone } from '../helpers/unlock';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from '../helpers/browser-test';
 import { checkPaged, firstContentPage, tapPaged } from '../helpers/paged-content';
 
 async function start(page: Page, size: { width: number; height: number }) {

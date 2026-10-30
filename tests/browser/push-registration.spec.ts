@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../helpers/browser-test';
 import { AI_ENDPOINT } from '../../src/ai/config';
 
 test.use({ serviceWorkers: 'allow' });

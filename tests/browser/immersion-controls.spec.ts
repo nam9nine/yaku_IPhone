@@ -1,5 +1,5 @@
 import { unlockPhone } from '../helpers/unlock';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from '../helpers/browser-test';
 import { dragTouchWithoutFling } from '../helpers/touch';
 import { launchHomeApp } from '../helpers/home';
 

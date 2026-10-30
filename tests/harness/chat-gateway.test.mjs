@@ -343,3 +343,45 @@ describe('call followup gateway', () => {
     expect(calls).toHaveLength(1);
   });
 });
+
+describe('episode gateway', () => {
+  it('forwards the authenticated versioned episode API and bounded capabilities only', async () => {
+    const calls = [];
+    const env = {
+      GATEWAY_SECRET: 'proof',
+      CHAT_API: {
+        fetch: async (url, options) => {
+          calls.push({ url, options });
+          return Response.json({ protocol: 1, enabled: false });
+        },
+      },
+    };
+    const headers = {
+      Origin: origin,
+      Authorization: 'Bearer synthetic',
+      'Content-Type': 'application/json',
+    };
+    const episode = '/v1/episodes/majima';
+    expect((await worker.fetch(request(episode + '?protocol=1', { headers }), env)).status).toBe(
+      200,
+    );
+    const body = JSON.stringify({ protocol: 1, kind: 'presence', active: false });
+    expect(
+      (await worker.fetch(request(episode, { method: 'POST', headers, body }), env)).status,
+    ).toBe(200);
+    expect(new TextDecoder().decode(calls[1].options.body)).toBe(body);
+    const job = '/v1/jobs/00000000-0000-4000-8000-000000000001';
+    for (const path of ['/v1/history?character=majima&episodes=1', job + '?episodes=1'])
+      expect((await worker.fetch(request(path, { headers }), env)).status).toBe(200);
+    expect((await worker.fetch(request(episode), env)).status).toBe(401);
+    expect((await worker.fetch(request('/v1/episodes/haruka', { headers }), env)).status).toBe(404);
+    for (const path of [
+      episode + '?protocol=2',
+      episode + '?url=https://evil.test',
+      job + '?episodes=all',
+      '/v1/health?episodes=1',
+    ])
+      expect((await worker.fetch(request(path, { headers }), env)).status).toBe(400);
+    expect(calls).toHaveLength(4);
+  });
+});

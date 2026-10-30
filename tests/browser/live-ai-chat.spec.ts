@@ -1,5 +1,5 @@
 import { installAiClock, finishAiReply, showAiTyping, settleAiRequests } from '../helpers/ai-clock';
-import { expect, test, type Page, type Route } from '@playwright/test';
+import { expect, test, type Page, type Route } from '../helpers/browser-test';
 import { AI_ENDPOINT } from '../../src/ai/config';
 import { replyChoices } from '../../src/day/content';
 import { DAY_STORAGE_KEY, dayReducer, initialDay } from '../../src/day/state';
@@ -207,7 +207,7 @@ function bubble(page: Page, text: string) {
   return page.locator('.message-bubble').getByText(text, { exact: true });
 }
 
-test('기존 주소와 오래된 초대 주소 모두 설정 없이 열며 AI 연락처에서만 자동 연결한다', async ({
+test('기존 주소와 오래된 초대 주소는 설정 없이 열고 사건 OFF에서는 AI 연락처에서만 세션을 만든다', async ({
   page,
 }) => {
   const mac = await mockMac(page);
@@ -216,7 +216,12 @@ test('기존 주소와 오래된 초대 주소 모두 설정 없이 열며 AI �
   expect(mac.requests).toEqual([]);
   await unlockPhone(page);
   await launchHomeApp(page, 'messages');
-  expect(mac.requests).toEqual([]);
+  expect(
+    mac.requests.every(
+      ({ method, url }) => method === 'GET' && new URL(url).pathname === '/v1/health',
+    ),
+  ).toBe(true);
+  expect(mac.sessions).toBe(0);
   await expect(page.getByRole('button', { name: 'Mac 연결', exact: true })).toHaveCount(0);
   await expect(page.getByRole('dialog', { name: 'Mac 연결', exact: true })).toHaveCount(0);
   await openThread(page, 'haruka');
