@@ -412,6 +412,98 @@ class EpisodePromptTests(unittest.TestCase):
         )
         self.assertFalse(schema["additionalProperties"])
 
+    def test_timeline_note_and_redundant_current_id_no_change_are_accepted(self):
+        # Reproduces injury turn-4: recent is intentionally empty because the
+        # actual utterance is in recent_timeline; the note ID is valid. The old
+        # failure was the no_change/current-ID pair, not missing quote sources.
+        prior_id = "ffbdcb3e-2a39-4305-9427-cef952753526-user"
+        current = "95b099f5-8ee6-4179-b208-4a229415e136-user"
+        text = "일단 며칠 쉬어야 한대요."
+        self.engine.decision = "no_change"
+
+        def output(value):
+            value.update(
+                mode="grounded",
+                notes=[{"id": "conversation:" + prior_id, "field": "text"}],
+                answer="네, 일단 며칠 쉬어야 한다고 해서 오늘은 별다른 약속은 없습니다.",
+            )
+            value["episode_transition"]["evidence_message_id"] = current
+
+        self.engine.change = output
+        result = self.builder.build(
+            user_message="그러니까 오늘 약속은 없는 거죠?",
+            current_message_id=current,
+            **{
+                **self.kwargs,
+                "history": [
+                    {"id": prior_id, "role": "user", "content": text, "sequence": 2},
+                    {
+                        "id": "last-assistant",
+                        "role": "assistant",
+                        "content": "알겠다",
+                        "sequence": 3,
+                    },
+                ],
+                "episode_context": episode(phase="deferred", version=5),
+            },
+        )
+        grounding = result["metadata"]["grounding"]
+        data = json.loads(grounding["input_messages"][-1]["content"])
+        self.assertEqual(data["recent"], [])
+        self.assertIn(
+            "conversation:" + prior_id, {m["id"] for m in data["recent_timeline"]}
+        )
+        self.assertEqual(grounding["notes"]["notes"][0]["quote"], text)
+        self.assertIsNone(
+            result["metadata"]["episode_transition"]["evidence_message_id"]
+        )
+        self.assertEqual(
+            grounding["transition_normalization"]["raw_transition"][
+                "evidence_message_id"
+            ],
+            current,
+        )
+
+    def test_no_change_normalization_does_not_accept_foreign_evidence_or_scope(self):
+        self.engine.decision = "no_change"
+        for changes in (
+            {"evidence_message_id": "another-user"},
+            {"evidence_message_id": "current-user", "version": 999},
+            {"evidence_message_id": "current-user", "extra": "not allowed"},
+        ):
+            with self.subTest(changes=changes):
+                self.engine.change = lambda value, changes=changes: value[
+                    "episode_transition"
+                ].update(changes)
+                with self.assertRaises(GemmaFailure):
+                    self.builder.build(
+                        user_message="상태는 그대로죠?",
+                        current_message_id="current-user",
+                        **self.kwargs,
+                    )
+
+    def test_mutating_decisions_still_require_exact_current_evidence(self):
+        for decision in (
+            "accept",
+            "defer",
+            "decline",
+            "cancel",
+            "report_outcome",
+            "change_topic",
+        ):
+            self.engine.decision = decision
+            for identifier in (None, "stale-user"):
+                with self.subTest(decision=decision, evidence=identifier):
+                    self.engine.change = lambda value, identifier=identifier: value[
+                        "episode_transition"
+                    ].update(evidence_message_id=identifier)
+                    with self.assertRaises(GemmaFailure):
+                        self.builder.build(
+                            user_message="현재 문자",
+                            current_message_id="current-user",
+                            **self.kwargs,
+                        )
+
     def test_decision_callback_precedes_renderer_budget_failure(self):
         self.engine.decision = "cancel"
         called = []
