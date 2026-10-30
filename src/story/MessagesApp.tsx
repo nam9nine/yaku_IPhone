@@ -518,9 +518,7 @@ export function MessagesApp({
                 )}
               </div>
             ))}
-            {!thread.length && (
-              <p className="social-empty">{person.shortName}에게 첫 메시지를 보내보세요.</p>
-            )}
+            {!thread.length && <p className="social-empty">메시지 없음</p>}
           </div>
           {!online && (
             <p className="social-notice" role="status">

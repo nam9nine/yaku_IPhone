@@ -76,7 +76,6 @@ export function SafariContent({
           <div className="safari-empty">
             <SafariIcon name="search" />
             <h3>일치하는 페이지가 없어요</h3>
-            <p>‘카레’, ‘바느질’, ‘도시락’을 검색해 보세요.</p>
           </div>
         )}
         <button tabIndex={0} className="safari-text-link" onClick={() => visit({ kind: 'start' })}>
@@ -92,7 +91,6 @@ export function SafariContent({
           <SafariIcon name="globe" />
         </span>
         <h2>외부 웹사이트</h2>
-        <p>이 주소는 기기의 브라우저에서 열립니다.</p>
         <p className="safari-external-url">{page.url}</p>
         <a
           tabIndex={0}
@@ -137,49 +135,16 @@ export function SafariContent({
       <article className="safari-article safari-guide">
         <header className="safari-site-header">
           <span>하루카</span>
-          <span>휴대폰 사용법</span>
+          <span>메모</span>
         </header>
         <div className="safari-article-body">
           <span className="safari-eyebrow">아저씨께</span>
-          <h2>
-            아저씨,
-            <br />
-            이것만 기억하세요.
-          </h2>
-          <p className="safari-lead">
-            하루카가 적어 둔
-            <br />
-            휴대폰 사용 메모.
-          </p>
+          <h2>하루카의 메모</h2>
           <div className="safari-guide-art" aria-hidden="true">
             <span />
             <span />
             <SafariIcon name="compass" />
           </div>
-          <section>
-            <span className="safari-step">01</span>
-            <h3>사용하던 앱으로</h3>
-            <p>
-              하단 막대를 빠르게 올리면 홈으로 돌아가요. 올리다 멈추면 최근 앱이 보여요. 카드를
-              누르면 쓰던 앱이 다시 열려요.
-            </p>
-          </section>
-          <section>
-            <span className="safari-step">02</span>
-            <h3>취향에 맞게</h3>
-            <p>
-              설정에서 화면의 밝고 어두운 모드와 글자 크기를 바꿔보세요. 바꾼 모습은 앱을 오가도
-              이어져요.
-            </p>
-          </section>
-          <section>
-            <span className="safari-step">03</span>
-            <h3>탭으로 이어보기</h3>
-            <p>
-              새 탭을 열어 다른 페이지를 살펴보세요. 이전 탭으로 돌아오면 읽던 위치가 기다리고
-              있어요.
-            </p>
-          </section>
           <button
             tabIndex={0}
             className="safari-primary-button"
@@ -233,7 +198,7 @@ export function SafariContent({
           className="safari-text-link"
           onClick={() => visit({ kind: 'internal', id: 'guide' })}
         >
-          휴대폰 사용법으로 돌아가기 <SafariIcon name="arrow" />
+          메모으로 돌아가기 <SafariIcon name="arrow" />
         </button>
       </div>
     </article>

@@ -342,7 +342,6 @@ export function NotesApp({
             {!filtered.length && (
               <div className="personal-empty">
                 <h2>{query ? '검색 결과 없음' : '메모 없음'}</h2>
-                <p>{query ? '다른 단어로 검색해 보세요.' : '새로운 메모를 작성해 보세요.'}</p>
               </div>
             )}
           </>

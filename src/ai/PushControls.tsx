@@ -79,16 +79,11 @@ export function PushControls({
         <div className="message-push-panel" role="region" aria-label="답장 알림">
           <strong>답장 알림</strong>
           {support === 'install' ? (
-            <p>
-              Safari의 공유 버튼에서 ‘홈 화면에 추가’를 선택한 뒤, 추가된 앱을 열어 알림을 켜
-              주세요.
-            </p>
+            <p>홈 화면 앱에서 사용 가능</p>
           ) : support === 'unsupported' ? (
-            <p>이 브라우저에서는 사이트 안에서만 알림을 받을 수 있습니다.</p>
+            <p>알림 미지원</p>
           ) : (
             <>
-              <p>앱을 닫아도 새 답장을 잠금 화면에서 받을 수 있습니다.</p>
-              {!connection && <p>하루카나 마지마의 대화를 연 뒤 알림을 켜 주세요.</p>}
               <button onClick={() => void toggle()} disabled={busy || !connection || !active}>
                 {busy ? '설정 중…' : enabled ? '알림 끄기' : '알림 켜기'}
               </button>

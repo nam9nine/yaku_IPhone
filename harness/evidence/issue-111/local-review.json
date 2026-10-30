@@ -1,0 +1,8 @@
+{
+  "scope": "instruction-copy-removal and private microphone clips",
+  "checks": "npm run check passed; 472 unit tests; Python server 25 passed; browser 24 passed",
+  "review": "recording_review: three P2 fixed, no remaining P1/P2",
+  "ci": "skipped by user request",
+  "physical_iphone": "not tested; simultaneous recognition/recording needs device check",
+  "limits": "upload may not finish on page close; upload failure shown, no automatic retry"
+}

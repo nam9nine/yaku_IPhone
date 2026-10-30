@@ -23,7 +23,7 @@ function error(status, code, origin) {
     headers: headers(origin),
   });
 }
-async function limitedBody(request) {
+async function limitedBody(request, limit = LIMIT) {
   const reader = request.body?.getReader();
   if (!reader) return new Uint8Array();
   const chunks = [];
@@ -33,7 +33,7 @@ async function limitedBody(request) {
       const { done, value } = await reader.read();
       if (done) break;
       length += value.byteLength;
-      if (length > LIMIT) throw new RangeError('request size');
+      if (length > limit) throw new RangeError('request size');
       chunks.push(value);
     }
   } finally {
@@ -53,8 +53,10 @@ export default {
     const url = new URL(request.url);
     const origin = request.headers.get('Origin');
     if (origin && origin !== ORIGIN) return error(403, 'origin_denied', null);
+    const recording = /^\/v1\/recordings\/(haruka|majima)\/[0-9a-f-]{36}$/i.test(url.pathname);
     const expected =
       routes.get(url.pathname) ??
+      (recording ? ['POST'] : null) ??
       (/^\/v1\/jobs\/[0-9a-f-]{36}$/i.test(url.pathname) ? ['GET'] : null);
     if (!expected) return error(404, 'not_found', origin);
     if (request.method === 'OPTIONS') {
@@ -87,14 +89,19 @@ export default {
     forwarding.set('X-Kiryu-Client-IP', request.headers.get('CF-Connecting-IP') ?? 'unknown');
     let body;
     if (request.method === 'POST' || request.method === 'DELETE') {
-      if (request.headers.get('Content-Type')?.split(';')[0].trim() !== 'application/json')
+      const contentType = request.headers.get('Content-Type') ?? '';
+      if (
+        !(recording
+          ? ['audio/mp4', 'audio/webm'].includes(contentType.split(';')[0].trim())
+          : contentType.split(';')[0].trim() === 'application/json')
+      )
         return error(415, 'content_type', origin);
       try {
-        body = await limitedBody(request);
+        body = await limitedBody(request, recording ? 2 * 1024 * 1024 : LIMIT);
       } catch {
         return error(413, 'body_too_large', origin);
       }
-      forwarding.set('Content-Type', 'application/json');
+      forwarding.set('Content-Type', contentType);
     }
     try {
       const upstream = await env.CHAT_API.fetch(

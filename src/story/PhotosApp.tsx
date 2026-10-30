@@ -287,7 +287,6 @@ export function PhotosApp({
                   <div className="personal-empty">
                     <PhotoIcon name="heart" />
                     <h2>즐겨찾는 항목 없음</h2>
-                    <p>사진을 열고 하트를 눌러 추가하세요.</p>
                   </div>
                 ) : (
                   <p className="photo-count">{visible.length}장의 사진</p>

@@ -208,9 +208,7 @@ export function SafariApp({ online, active }: { online: boolean; active: boolean
                         />
                         <strong>{pageTitle(itemPage)}</strong>
                         <span>
-                          {itemPage.kind === 'start'
-                            ? '새로운 페이지를 만나보세요'
-                            : pageAddress(itemPage)}
+                          {itemPage.kind === 'start' ? '시작 페이지' : pageAddress(itemPage)}
                         </span>
                       </span>
                       <span className="safari-tab-caption">{pageTitle(itemPage)}</span>

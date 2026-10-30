@@ -67,7 +67,7 @@ const detailText: Record<
   { title: string; message: string }
 > = {
   media: { title: '재생 중이 아님', message: '재생할 미디어가 없습니다.' },
-  controls: { title: '제어 항목', message: '연결, 밝기와 화면 모드를 조절할 수 있어요.' },
+  controls: { title: '제어 항목', message: '' },
   power: { title: '전원', message: '전원을 끌 수 없습니다.' },
   flashlight: { title: '손전등', message: '손전등을 사용할 수 없습니다.' },
   timer: { title: '타이머', message: '설정된 타이머가 없습니다.' },
