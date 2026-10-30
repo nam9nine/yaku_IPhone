@@ -7,6 +7,7 @@ import {
 } from './phoneEvents';
 import {
   callScripts,
+  historyOnlyContacts,
   contactIds,
   ingredients,
   questFollowups,
@@ -37,6 +38,7 @@ export interface StoryCallRecord {
   caller: ContactId;
   direction: 'incoming' | 'outgoing';
   result: 'missed' | 'declined' | 'completed';
+  endedBy?: 'user' | 'peer';
   time: string;
   read: boolean;
 }
@@ -81,6 +83,7 @@ export type DayAction =
   | { type: 'answer-call' }
   | { type: 'miss-call'; reason?: 'declined' | 'missed' }
   | { type: 'end-call' }
+  | { type: 'peer-end-call'; callId: string }
   | { type: 'notify-kamurocho' }
   | { type: 'reset' };
 export const DAY_STORAGE_KEY = 'yaku-iphone.day.v1';
@@ -136,7 +139,7 @@ function questComplete(state: DayState, id: ReminderId) {
   return id === 'shopping' ? shoppingComplete(state) : state.reminders[id];
 }
 export function getStoryChoices(state: DayState, id: ContactId): StoryChoice[] {
-  if (state.storyPending[id]) return [];
+  if (state.storyPending[id] || historyOnlyContacts.includes(id)) return [];
   const chosen = state.storyChoiceHistory[id];
   if (id === 'haruka')
     return storyRounds.haruka
@@ -201,7 +204,14 @@ function beginCall(
   const lines =
     caller === 'majima' && affinityTone(state) === 'cool'
       ? ['뭐고. 용건 있으면 말해라.', '알았다. 오늘은 길게 얘기 안 한다.']
-      : [...callScripts[caller]];
+      : caller === 'majima' && affinityTone(state) === 'warm'
+        ? [
+            direction === 'outgoing'
+              ? '키류쨩… 니가 먼저 걸어 줬나?'
+              : '받았네, 키류쨩… 별일은 아니고.',
+            '아니, 기다린 건 아니고! 목소리 좀 들으려고 했지.',
+          ]
+        : [...callScripts[caller]];
   return {
     ...state,
     callSerial: serial,
@@ -219,7 +229,19 @@ function beginCall(
     },
   };
 }
-function finishCall(state: DayState, result: StoryCallRecord['result'], now?: number): DayState {
+export function peerHangupDelay(call: StoryCall): number {
+  const serial = Number(call.id.split('-').at(-1)) || 0;
+  return call.caller === 'majima' || call.caller === 'haruka'
+    ? 55_000 + ((serial * 7919) % 35_001)
+    : Math.max(22_000, call.lines.length * 5000 + 7000);
+}
+
+function finishCall(
+  state: DayState,
+  result: StoryCallRecord['result'],
+  now?: number,
+  endedBy: 'user' | 'peer' = 'user',
+): DayState {
   const call = state.call;
   if (!call) return state;
   const read = result === 'completed' || call.direction === 'outgoing';
@@ -231,7 +253,7 @@ function finishCall(state: DayState, result: StoryCallRecord['result'], now?: nu
       Math.min(
         5,
         state.affinity +
-          (call.caller === 'majima'
+          (call.caller === 'majima' && endedBy !== 'peer'
             ? result === 'missed'
               ? 0
               : result === 'completed' && call.elapsedMs >= 12_000
@@ -248,38 +270,63 @@ function finishCall(state: DayState, result: StoryCallRecord['result'], now?: nu
         caller: call.caller,
         direction: call.direction,
         result,
+        endedBy,
         time: eventTime(state),
         read,
       },
       ...state.callLog,
     ].slice(0, 40),
-    nextCallInMs: 120_000 + ((state.callSerial * 79_019) % 120_001),
+    nextCallInMs: 60_000 + ((state.callSerial * 29_019) % 60_001),
     nextMajimaTextInMs: Math.max(60_000, state.nextMajimaTextInMs),
   };
   if (call.caller === 'majima') {
     const event: PhoneEventId =
-      result === 'missed'
-        ? 'majima-call-missed'
-        : result === 'declined'
-          ? 'majima-call-declined'
-          : call.elapsedMs < 12_000
-            ? 'majima-call-short'
-            : 'majima-call-completed';
+      endedBy === 'peer'
+        ? 'majima-call-peer-ended'
+        : result === 'missed'
+          ? 'majima-call-missed'
+          : result === 'declined'
+            ? 'majima-call-declined'
+            : call.elapsedMs < 12_000
+              ? 'majima-call-short'
+              : 'majima-call-completed';
     next = { ...next, phoneEvents: appendPhoneEvent(next.phoneEvents, event) };
   }
-  if (call.caller === 'majima' && (result !== 'completed' || call.elapsedMs < 12_000)) {
-    const cold = affinityTone(state) === 'cool';
-    next = appendMessage(
-      next,
-      'majima',
-      cold
-        ? '끊을 거면 됐다. 나중에 니가 연락해라.'
+  if (
+    call.caller === 'majima' &&
+    endedBy !== 'peer' &&
+    (result !== 'completed' || call.elapsedMs < 12_000)
+  ) {
+    const tone = affinityTone(next);
+    const messages =
+      tone === 'cool'
+        ? [
+            '알았다. 오늘은 길게 얘기 안 한다. 용건 생기면 니가 연락해라.',
+            '그리 바쁘면 됐다. 나도 볼일 보러 간다.',
+            '이번에도 짧네. 다음엔 할 말 있을 때 걸어라.',
+          ]
         : result === 'missed'
-          ? '또 못 받았나. 폰 보이면 연락해라.'
-          : '왜 끊노! 볼일 끝나면 니가 다시 걸어라.',
-      false,
-      now,
-    );
+          ? [
+              '키류쨩, 폰 어디 뒀노? 보이면 연락해라.',
+              '벨은 울리는데 니는 없네. 또 내가 찾으러 가야 되나?',
+              '한 번만 받아 주면 될 걸! 나중엔 니가 먼저 걸어라.',
+            ]
+          : tone === 'warm'
+            ? [
+                '벌써 끊었나… 쫌만 더 듣고 싶었는데. 바쁘면 이따 해라.',
+                '키류쨩, 다음엔 니가 먼저 걸어라. 기다리는 건 아니고!',
+                '아, 아직 할 말 있었는데… 별말은 아니고. 나중에 해라.',
+              ]
+            : [
+                '왜 벌써 끊노! 내 말 아직 안 끝났다, 키류쨩!',
+                '잠깐만이라더니 진짜 잠깐이네. 다음엔 제대로 받아라.',
+                '끊는 건 빠르구마! 볼일 끝나면 니가 다시 걸어라.',
+              ];
+    const previous = next.storyMessages.majima.filter((message) => !message.outgoing).at(-1)?.text;
+    const offset = state.callSerial % messages.length;
+    const text =
+      messages[offset] === previous ? messages[(offset + 1) % messages.length] : messages[offset];
+    next = appendMessage(next, 'majima', text, false, now);
   }
   return next;
 }
@@ -297,6 +344,8 @@ function completeQuest(state: DayState, id: ReminderId, now?: number): DayState 
     : state;
   if (state.completedQuests.includes(id)) return withEvent;
   const followup = questFollowups[id];
+  if ((historyOnlyContacts as readonly string[]).includes(followup.character))
+    return { ...withEvent, completedQuests: [...state.completedQuests, id] };
   let next = appendMessage(
     { ...withEvent, completedQuests: [...state.completedQuests, id] },
     followup.character,
@@ -307,22 +356,7 @@ function completeQuest(state: DayState, id: ReminderId, now?: number): DayState 
   if (id === 'shopping') next = beginCall(next, 'majima', 'incoming', 'quest');
   return next;
 }
-const schedule: ContactId[] = [
-  'majima',
-  'daigo',
-  'majima',
-  'saejima',
-  'majima',
-  'date',
-  'majima',
-  'yuki',
-  'majima',
-  'mine',
-  'majima',
-  'akiyama',
-  'majima',
-  'haruka',
-];
+const schedule: ContactId[] = ['majima', 'majima', 'daigo', 'majima', 'haruka'];
 
 export function dayReducer(state: DayState, action: DayAction, now?: number): DayState {
   switch (action.type) {
@@ -421,7 +455,7 @@ export function dayReducer(state: DayState, action: DayAction, now?: number): Da
           ...next.storyPending,
           [id]: {
             choiceId: choice.id,
-            deliverAt: next.elapsedMs + 6000 + ((next.storySequence * 7919) % 6001),
+            deliverAt: next.elapsedMs + 15_000 + ((next.storySequence * 7919) % 15_001),
           },
         },
       };
@@ -491,7 +525,7 @@ export function dayReducer(state: DayState, action: DayAction, now?: number): Da
           {
             ...next,
             majimaCheckInsSent: next.majimaCheckInsSent + 1,
-            nextMajimaTextInMs: 90_000 + ((next.majimaCheckInsSent * 53_023) % 90_001),
+            nextMajimaTextInMs: 60_000 + ((next.majimaCheckInsSent * 23_023) % 45_001),
             nextCallInMs: Math.max(45_000, next.nextCallInMs),
             phoneEvents: appendPhoneEvent(next.phoneEvents, checkIn.id),
           },
@@ -503,34 +537,10 @@ export function dayReducer(state: DayState, action: DayAction, now?: number): Da
       }
       return next;
     }
-    case 'notify-kamurocho': {
-      if (state.kamurochoNotified || state.call) return state;
-      let next = appendMessage(
-        {
-          ...state,
-          kamurochoNotified: true,
-          phoneEvents: appendPhoneEvent(state.phoneEvents, 'majima-kamurocho-intent'),
-        },
-        'majima',
-        '형님, 카무로쵸로 갈 생각입니다. 도착하면 연락드리겠습니다.',
-        true,
-        now,
-      );
-      next = beginCall(next, 'majima', 'incoming', 'quest');
-      return {
-        ...next,
-        call: next.call
-          ? {
-              ...next.call,
-              lines: [
-                '오, 이제 좀 말이 통하네!',
-                '아직 도착한 건 아니제? 볼일 끝내고 연락해라.',
-                '기다린 만큼 제대로 상대해 줘야 한다, 키류쨩.',
-              ],
-            }
-          : null,
-      };
-    }
+    case 'notify-kamurocho':
+      // A navigation choice is not a user-authored promise. Never synthesize a
+      // message or override the intent of the actual conversation from this action.
+      return state.kamurochoNotified ? state : { ...state, kamurochoNotified: true };
     case 'start-call':
       return isContact(action.id) ? beginCall(state, action.id, 'outgoing', 'user') : state;
     case 'answer-call':
@@ -549,6 +559,12 @@ export function dayReducer(state: DayState, action: DayAction, now?: number): Da
     case 'end-call':
       return state.call
         ? finishCall(state, state.call.phase === 'connected' ? 'completed' : 'declined', now)
+        : state;
+    case 'peer-end-call':
+      return state.call?.phase === 'connected' &&
+        state.call.id === action.callId &&
+        state.call.elapsedMs >= peerHangupDelay(state.call)
+        ? finishCall(state, 'completed', now, 'peer')
         : state;
     case 'read-call':
       return state.missedCall && (!state.missedCallRead || state.callLog.some((item) => !item.read))
@@ -711,6 +727,7 @@ export function validDay(value: unknown): value is DayState {
         ['incoming', 'outgoing'].includes(String(row.direction)) &&
         ['missed', 'declined', 'completed'].includes(String(row.result)) &&
         typeof row.time === 'string' &&
+        (row.endedBy === undefined || row.endedBy === 'user' || row.endedBy === 'peer') &&
         typeof row.read === 'boolean',
     )
   )
@@ -775,6 +792,23 @@ export function loadDay(
           'majimaCheckInsSent',
         ] as const)
           if (!(key in value)) value[key] = defaults[key];
+        // Yuki and Ichiban are different people: never relabel a saved transcript.
+        // Preserve every other contact and all shared quest/relationship progression.
+        for (const key of ['readThreads', 'replies', 'legacyReplies', 'aiReplies'])
+          if (Array.isArray(value[key])) value[key] = value[key].filter((id) => id !== 'yuki');
+        for (const key of ['storyMessages', 'storyChoiceHistory']) {
+          if (record(value[key])) {
+            delete value[key].yuki;
+            if (!('ichiban' in value[key])) value[key].ichiban = [];
+          }
+        }
+        if (record(value.storyPending)) {
+          delete value.storyPending.yuki;
+          for (const id of historyOnlyContacts) delete value.storyPending[id];
+        }
+        if (record(value.call) && value.call.caller === 'yuki') value.call = null;
+        if (Array.isArray(value.callLog))
+          value.callLog = value.callLog.filter((row) => !record(row) || row.caller !== 'yuki');
         // Legacy story rows have only a display clock, not an event date. Preserve their
         // order without inventing createdAt or turning old arrivals into new notifications.
         if (validDay(value)) {

@@ -25,7 +25,7 @@ function fingerprint(value: string): string {
   return `${a >>> 0}-${b >>> 0}`;
 }
 export function typingDelay(requestId: string): number {
-  return 10_000 + (Number(fingerprint(requestId).split('-')[0]) % 10_001);
+  return 15_000 + (Number(fingerprint(requestId).split('-')[0]) % 15_001);
 }
 export class ReplyPresentation {
   receipts: ReplyReceipt[] = [];

@@ -4,11 +4,11 @@ import type { AiMessengerView } from '../ai/useAiMessenger';
 import { isOnline } from '../settings/preferences';
 import { StatusBar } from './StatusBar';
 import type { DevicePreferences } from '../settings/preferences';
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useDay } from '../day/DayContext';
 import { PhoneIcon } from '../story/PhoneIcon';
 import { contacts } from '../story/data';
-import { useDisplayDate } from '../display/useDisplayDate';
+import { peerHangupDelay } from '../day/state';
 import { useRingtone } from './useRingtone';
 import type { ContactId } from '../day/content';
 import './day-call.css';
@@ -43,7 +43,22 @@ export function DayCall({
     if (!active) dispatch({ type: 'defer-contact' });
     return () => setCallActivity(false);
   }, [active, setCallActivity, dispatch]);
-  const date = useDisplayDate();
+  const [liveBusy, setLiveBusy] = useState(false);
+  const [endingCall, setEndingCall] = useState<string | null>(null);
+  const onBusyChange = useCallback((busy: boolean) => setLiveBusy(busy), []);
+  const callId = call?.id;
+  const peerDue = !!call && connected && call.elapsedMs >= peerHangupDelay(call);
+  useEffect(() => {
+    if (!callId || !peerDue || liveBusy) return;
+    const id = callId;
+    const show = window.setTimeout(() => setEndingCall(id), 0);
+    const finish = window.setTimeout(() => dispatch({ type: 'peer-end-call', callId: id }), 6000);
+    return () => {
+      window.clearTimeout(show);
+      window.clearTimeout(finish);
+      setEndingCall(null);
+    };
+  }, [callId, peerDue, liveBusy, dispatch]);
   useRingtone(ringing && !outgoing, silent, volume, caller?.id === 'majima' ? 'majima' : 'other');
   const [expandedCall, setExpandedCall] = useState<string | null>(null);
   const expanded = expandedCall === call?.id;
@@ -120,11 +135,11 @@ export function DayCall({
         <div className="call-screen-content" data-live={connected && isAiCharacter(call.caller)}>
           <div className="call-identity">
             <img src={caller.portrait} alt="" />
-            <p className="call-time" aria-label={connected ? '통화 시간' : '현재 시각'}>
-              {connected
-                ? `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`
-                : date.clock}
-            </p>
+            {connected && (
+              <p className="call-time" aria-label="통화 시간">
+                {`${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`}
+              </p>
+            )}
             <h1>{name}</h1>
             {!connected && <p className="call-kind">{outgoing ? '연결 중…' : '휴대전화'}</p>}
           </div>
@@ -141,8 +156,18 @@ export function DayCall({
                   character={call.caller}
                   ai={ai}
                   online={isOnline(preferences)}
+                  onBusyChange={onBusyChange}
                 />
               ) : null}
+              {endingCall === call.id && (
+                <p className="call-live-status" role="status">
+                  {call.caller === 'majima'
+                    ? '내가 또 연락하께. 끊는다, 키류쨩.'
+                    : call.caller === 'haruka'
+                      ? '아저씨, 나중에 다시 전화할게.'
+                      : '나중에 다시 연락하지.'}
+                </p>
+              )}
               <button
                 className="call-action call-decline call-end"
                 aria-label="통화 종료"

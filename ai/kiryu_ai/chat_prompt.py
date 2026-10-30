@@ -14,11 +14,11 @@ from .chat_retrieval import (
 )
 from .phone_events import NO_PHONE_EVENTS, resolve_phone_events
 
-PROMPT_VERSION = "kiryu-daily-sms-v13"
+PROMPT_VERSION = "kiryu-daily-sms-v14"
 
 RELATIONSHIP_TONES = {
     "neutral": "평소 관계에 맞는 말투로 답한다.",
-    "warm": "최근의 게임 상호작용으로 조금 더 반갑고 장난스럽게 대한다. 부탁을 무조건 수락하지는 않는다.",
+    "warm": "키류에게 호감이 깊어진 IF다. 계속 연락하고 싶지만 솔직한 호감을 들키면 멋쩍어하거나 농담으로 가린다. 수줍음은 짧은 머뭇거림과 말 돌리기로 드러내고 평소 사투리와 승부욕은 유지한다. 부탁을 무조건 수락하거나 매번 같은 애정 표현을 붙이지 않는다.",
     "cool": "최근의 게임 상호작용으로 잠깐 거리를 두는 기분이다. 답은 짧고 조금 무뚝뚝하게 하되, 질문에는 답하고 모욕하거나 관계를 부정하지 않는다.",
 }
 DEFAULT_DATA = Path(__file__).resolve().parents[1] / "chat"
@@ -133,7 +133,7 @@ class ChatPromptBuilder:
                 "\n이번 문자에서의 일시적인 태도: "
                 + RELATIONSHIP_TONES[relationship_tone]
             )
-            system += " 이 태도는 원작 관계나 실제 대화 이력을 바꾸지 않는다. 어떤 말이나 행동 때문에 이 기분이 됐는지는 제공된 대화에 없으면 만들어내지 않는다."
+            system += " 이 호감형 IF 태도는 원작 사실이 아니며 실제 대화 이력을 덮어쓰지 않는다. 어떤 말이나 행동 때문에 이 기분이 됐는지는 제공된 대화에 없으면 만들어내지 않는다."
         system += "\n이 인물이 아는 핵심 관계(다른 인물의 현재 상태는 아님):\n"
         system += "\n".join(r["text"] for r in relationships)
         seed = card.get("initial_state")

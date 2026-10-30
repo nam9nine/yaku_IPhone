@@ -11,12 +11,12 @@ function storage() {
   });
   return values;
 }
-it('요청마다 10~20초의 안정된 지연을 쓰고 타이핑 최소 시간을 별도로 확보한다', () => {
+it('요청마다 15~30초의 안정된 지연을 쓰고 타이핑 최소 시간을 별도로 확보한다', () => {
   storage();
   const store = new ReplyPresentation();
   store.use({ endpoint: 'https://example.test', token: 'visitor-a' });
   const values = Array.from({ length: 100 }, (_, i) => typingDelay(`request-${i}`));
-  expect(values.every((delay) => delay >= 10_000 && delay <= 20_000)).toBe(true);
+  expect(values.every((delay) => delay >= 15_000 && delay <= 30_000)).toBe(true);
   expect(new Set(values).size).toBeGreaterThan(10);
   const first = store.begin('haruka', 'request-1', 1000);
   expect(store.begin('haruka', 'request-1', 99_999)).toBe(first);

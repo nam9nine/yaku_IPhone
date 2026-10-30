@@ -35,24 +35,32 @@ it('이전 버전에서 보낸 문자 원문은 다음 선택과 재접속 뒤�
     await import('../day/state');
   const old: Record<string, unknown> = {
     ...initialDay(),
-    replies: ['date'],
-    readThreads: ['date'],
+    replies: ['daigo'],
+    readThreads: ['daigo'],
   };
   delete old.legacyReplies;
   delete old.storyChoiceHistory;
   let state = loadDay({ getItem: () => JSON.stringify(old) }).state;
-  expect(state.legacyReplies).toEqual(['date']);
+  expect(state.legacyReplies).toEqual(['daigo']);
   state = dayReducer(state, {
     type: 'story-choice',
-    id: 'date',
-    choiceId: getStoryChoices(state, 'date')[0].id,
+    id: 'daigo',
+    choiceId: getStoryChoices(state, 'daigo')[0].id,
   });
   for (let n = 0; n < 12; n++)
     state = dayReducer(state, { type: 'tick', elapsedMs: 1000, allowCalls: false });
   const persisted = JSON.stringify(state);
   state = loadDay({ getItem: (key) => (key === DAY_STORAGE_KEY ? persisted : null) }).state;
-  const texts = storyThreadMessages('date', state).map((item) => item.text);
-  expect(texts).toContain(legacyChoices.date!.text);
-  expect(texts).toContain(legacyChoices.date!.response);
-  expect(state.storyChoiceHistory.date).toHaveLength(1);
+  const texts = storyThreadMessages('daigo', state).map((item) => item.text);
+  expect(texts).toContain(legacyChoices.daigo!.text);
+  expect(texts).toContain(legacyChoices.daigo!.response);
+  expect(state.storyChoiceHistory.daigo).toHaveLength(1);
+});
+
+it('읽기 전용 연락처는 새로 정리한 내역만 표시하고 과거 저장 원본은 바꾸지 않는다', async () => {
+  const { initialDay } = await import('../day/state');
+  const state = initialDay();
+  state.storyMessages.mine = [{ id: 'old', text: '이전 대본', outgoing: false, time: '16:40' }];
+  expect(storyThreadMessages('mine', state)).toEqual(dayMessages.mine);
+  expect(state.storyMessages.mine[0].text).toBe('이전 대본');
 });

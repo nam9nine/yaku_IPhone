@@ -3,7 +3,7 @@ import { AppIcon } from '../home/AppIcon';
 import { ReplySoundPlayer } from '../ai/replySound';
 import { contacts } from '../story/data';
 import { useDay } from './DayContext';
-import type { ContactId, DayMessage } from './content';
+import { historyOnlyContacts, type ContactId, type DayMessage } from './content';
 
 type Arrival = { character: ContactId; message: DayMessage };
 function Card({ arrival, onOpen }: { arrival: Arrival; onOpen: (id: string) => void }) {
@@ -30,6 +30,7 @@ function Card({ arrival, onOpen }: { arrival: Arrival; onOpen: (id: string) => v
 export function StoryNotificationList({ onOpen }: { onOpen: (id: string) => void }) {
   const { state } = useDay();
   const unread = contacts.flatMap(({ id }) => {
+    if ((historyOnlyContacts as readonly string[]).includes(id)) return [];
     const message = state.storyMessages[id].filter((item) => !item.outgoing).at(-1);
     return message && !state.readThreads.includes(id) ? [{ character: id, message }] : [];
   });
@@ -102,6 +103,7 @@ export function StoryReplyNotifications({
       return;
     }
     const arrivals = contacts
+      .filter(({ id }) => !(historyOnlyContacts as readonly string[]).includes(id))
       .flatMap(({ id }) =>
         state.storyMessages[id]
           .filter((message) => !message.outgoing && (message.sequence ?? 0) > previous)

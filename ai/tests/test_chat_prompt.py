@@ -120,7 +120,7 @@ class PromptTests(unittest.TestCase):
             ["majima-call-missed", "majima-call-short"],
         )
         self.assertEqual(
-            result["metadata"]["phone_event_context"]["version"], "phone-events-v1"
+            result["metadata"]["phone_event_context"]["version"], "phone-events-v2"
         )
         self.assertEqual(len(result["metadata"]["phone_event_context"]["sha256"]), 64)
         self.assertEqual(result["metadata"]["input_message_ids"], [])

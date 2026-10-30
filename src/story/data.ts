@@ -37,10 +37,10 @@ export const contacts = [
     portrait: `${import.meta.env.BASE_URL}story/akiyama.jpg`,
   },
   {
-    id: 'yuki',
-    name: '유키',
-    shortName: '유키',
-    portrait: asset('yuki.png'),
+    id: 'ichiban',
+    name: '카스가 이치반',
+    shortName: '이치반',
+    portrait: asset('ichiban.jpg'),
   },
   {
     id: 'haruka',
@@ -84,7 +84,7 @@ export const initialMessages: Record<string, StoryMessage[]> = {
   saejima: [
     {
       id: 's1',
-      text: '잘 지내나. 아이들 밥 챙기느라 네 밥 거르지 마라.',
+      text: '키류, 마지마가 니 찾더라. 무슨 일인지는 끝까지 말을 안 하네.',
       outgoing: false,
       time: '월요일',
     },
@@ -92,7 +92,7 @@ export const initialMessages: Record<string, StoryMessage[]> = {
   mine: [
     {
       id: 'y1',
-      text: '키류 씨. 다음에 뵐 때 나팔꽃에 필요한 것이 있는지 알려 주십시오.',
+      text: '키류 씨. 왜 다이고 씨가 당신을 그토록 신뢰하는지, 저는 아직 모르겠습니다.',
       outgoing: false,
       time: '월요일',
     },

@@ -250,6 +250,10 @@ for (const character of ['majima', 'haruka'] as const) {
     await expect(page.locator('.message-history')).not.toContainText(
       `검증용 ${character === 'majima' ? '마지마' : '하루카'} 답장`,
     );
+    await page.keyboard.press('Alt+Home');
+    const reopened = await outgoing(page, character);
+    await expect(reopened.getByRole('log', { name: '실시간 통화 대화' })).toHaveCount(0);
+    await reopened.getByRole('button', { name: '통화 종료', exact: true }).tap();
   });
 }
 
@@ -329,9 +333,7 @@ for (const reason of ['end-call', 'hidden', 'pagehide'] as const) {
   });
 }
 
-test('문자에서 보낸 답장을 기다리며 통화로 옮겨도 같은 답장을 통화 화면에서 본다', async ({
-  page,
-}) => {
+test('통화로 옮겨도 이전 문자와 그 답장은 통화 화면에 섞이지 않는다', async ({ page }) => {
   await installSpeech(page);
   const posts = requests(page);
   await boot(page);
@@ -346,13 +348,9 @@ test('문자에서 보낸 답장을 기다리며 통화로 옮겨도 같은 답�
   await page.keyboard.press('Alt+Home');
   const call = await outgoing(page, 'majima', false);
   await expect(call.getByRole('status')).toContainText('답장 대기 중');
-  await expect(call.getByRole('log', { name: '실시간 통화 대화' })).toContainText(
-    '형님, 문자 보셨습니까?',
-  );
+  await expect(call.getByText('형님, 문자 보셨습니까?', { exact: true })).toHaveCount(0);
   await finishAiReply(page, 'majima');
-  await expect(call.getByRole('log', { name: '실시간 통화 대화' })).toContainText(
-    '검증용 마지마 답장',
-  );
+  await expect(call.getByText('검증용 마지마 답장', { exact: true })).toHaveCount(0);
   expect(posts).toHaveLength(1);
   expect((await speechState(page)).starts).toBe(0);
 });
@@ -457,4 +455,26 @@ test('통화 전송 실패 후 문자에서는 원문 없이 재시도하고 통
   expect(posts).toHaveLength(2);
   expect(posts[1].request_id).toBe(posts[0].request_id);
   expect(posts[1].phone_events).toEqual(posts[0].phone_events);
+});
+
+test('통화 시작 전 시각을 숨기고 작성 중에는 상대 종료를 미룬다', async ({ page }, info) => {
+  await installSpeech(page);
+  await boot(page);
+  const call = await outgoing(page);
+  await expect(call.getByLabel('현재 시각', { exact: true })).toHaveCount(0);
+  await expect(call.getByLabel('통화 시간', { exact: true })).toHaveText('00:00');
+  await call.getByRole('button', { name: '글로 입력', exact: true }).tap();
+  await call.getByRole('textbox', { name: '통화에서 보낼 말' }).fill('아직 작성 중');
+  await page.clock.runFor(95_000);
+  await expect(call).toBeVisible();
+  await call.getByRole('textbox', { name: '통화에서 보낼 말' }).fill('');
+  await page.clock.runFor(1000);
+  await expect(call.getByText('내가 또 연락하께. 끊는다, 키류쨩.', { exact: true })).toBeVisible();
+  await page.screenshot({ path: info.outputPath('peer-ending.png') });
+  await page.clock.runFor(6000);
+  await expect(call).toHaveCount(0);
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('yaku-iphone.day.v1')!));
+  expect(saved.callLog[0].endedBy).toBe('peer');
+  expect(saved.affinity).toBeGreaterThanOrEqual(0);
+  expect(saved.storyMessages.majima).toEqual([]);
 });
