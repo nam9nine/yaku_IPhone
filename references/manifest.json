@@ -2148,6 +2148,42 @@
           "bytes": 246106
         }
       ]
+    },
+    {
+      "id": "project-pre-episode-ui",
+      "type": "reference-site",
+      "sourceUrl": "https://github.com/nam9nine/yaku_IPhone/tree/53e7d8b04f411c335e74fdf49ee2c6d4573c8915",
+      "version": "53e7d8b04f411c335e74fdf49ee2c6d4573c8915",
+      "retrievedOn": "2026-10-31",
+      "license": {
+        "status": "project-authored-reference",
+        "notice": "Existing project regression captures; embedded third-party artwork retains its existing project notices. Not an Apple reference or new redistribution grant."
+      },
+      "purpose": "Compare prior project layout and approved source changes before the bowling feature. These historical baselines contain known later-corrected text; review differences against commits 1308416, 8632826 and 8234019 instead of treating every old pixel as a target.",
+      "keyPaths": ["harness/evidence/issue-124/README.md", "tests/visual/baselines"],
+      "artifacts": [
+        {
+          "role": "image",
+          "url": "https://raw.githubusercontent.com/nam9nine/yaku_IPhone/53e7d8b04f411c335e74fdf49ee2c6d4573c8915/tests/visual/baselines/darwin/chromium/story-thread-390.png",
+          "localPath": "references/local/project-pre-episode-ui/story-thread-390.png",
+          "sha256": "10838eecec89f7130c7f81bca8e7e6568d33e5b795df260df327d93ba8e86061",
+          "bytes": 61824
+        },
+        {
+          "role": "image",
+          "url": "https://raw.githubusercontent.com/nam9nine/yaku_IPhone/53e7d8b04f411c335e74fdf49ee2c6d4573c8915/tests/visual/baselines/darwin/chromium/safari-guide-390x844.png",
+          "localPath": "references/local/project-pre-episode-ui/safari-guide-390x844.png",
+          "sha256": "1c8a0d9c48719ccf31289f319e8af504128e36197d22c87668b22a65d02deab9",
+          "bytes": 35060
+        },
+        {
+          "role": "image",
+          "url": "https://raw.githubusercontent.com/nam9nine/yaku_IPhone/53e7d8b04f411c335e74fdf49ee2c6d4573c8915/tests/visual/baselines/darwin/chromium/personal-passcode-390.png",
+          "localPath": "references/local/project-pre-episode-ui/personal-passcode-390.png",
+          "sha256": "babd6ce600c8fb9b173d41c98a7d35252180aa08ecaf6774e4cd92d0e2e05450",
+          "bytes": 88102
+        }
+      ]
     }
   ]
 }

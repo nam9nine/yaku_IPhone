@@ -776,8 +776,12 @@ it('두 인물 답장이 같은 렌더 구간에 도착해도 arrival journal과
   await flush();
   await value.activate(null);
   state.hold = false;
-  await vi.advanceTimersByTimeAsync(30_000);
-  await flush();
+  // Stable jitter can reach 30s; wait for both deliveries, including typing time.
+  for (let second = 0; second < 35; second++) {
+    if (value.getSnapshot().arrival?.deliveredJobIds?.length === 2) break;
+    await vi.advanceTimersByTimeAsync(1_000);
+    await flush();
+  }
   const result = value.getSnapshot();
   expect(result.arrival?.deliveredJobIds).toEqual(expect.arrayContaining(['job-1', 'job-2']));
   expect(result.arrival?.deliveries).toHaveLength(2);

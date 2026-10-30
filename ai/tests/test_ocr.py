@@ -393,7 +393,9 @@ class OCRTests(unittest.TestCase):
             "    sys.stdout.write(response[5:]); sys.stdout.flush()\n"
         )
         self.binary.chmod(0o755)
-        worker = VisionWorker(self.binary, timeout=1)
+        # This case checks fragmented JSON, not Python process startup latency.
+        # The separate partial-response test enforces the short timeout path.
+        worker = VisionWorker(self.binary, timeout=5)
         self.addCleanup(worker.close)
         for value in ("first", "second"):
             result = worker.recognize(self.base / "unused.png", value)

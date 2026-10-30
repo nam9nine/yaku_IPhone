@@ -118,7 +118,9 @@ test('설정·사진·Safari에 데모나 출처 안내가 없고 사진 배경 
   await launchHomeApp(page, 'safari');
   await expect(page.locator('.safari-start')).not.toContainText(/가상 페이지|실제 인터넷/);
   await page.getByRole('button', { name: '휴대폰 사용법', exact: true }).tap();
-  await expect(page.locator('.safari-guide')).toContainText('아저씨,');
+  await expect(
+    page.locator('.safari-guide').getByRole('heading', { name: '하루카의 메모', exact: true }),
+  ).toBeVisible();
   await expect(page.locator('.safari-guide')).not.toContainText(/예제|팬메이드|웹 체험/);
 });
 

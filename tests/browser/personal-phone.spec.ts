@@ -126,7 +126,9 @@ for (const size of [
   });
 }
 
-test('통화 시간 바로 아래에 마지마형님 이름을 표시한다', async ({ page }) => {
+test('수신 중 중복 시각 없이 이름을 표시하고 연결 뒤 통화 시간을 이름 위에 표시한다', async ({
+  page,
+}) => {
   await page.goto('./');
   await unlockPhone(page);
   await launchHomeApp(page, 'notes');
@@ -135,11 +137,14 @@ test('통화 시간 바로 아래에 마지마형님 이름을 표시한다', as
     await page.getByRole('checkbox', { name: `${name} 완료`, exact: true }).check();
   await page.getByRole('button', { name: '수신 전화 전체 화면' }).tap();
   const call = page.getByRole('dialog', { name: '마지마 형님 전화 수신' });
-  await expect(call.locator('.call-identity')).toContainText('16:40');
-  const clock = (await call.locator('.call-identity .call-time').boundingBox())!;
-  const name = (await call.getByRole('heading', { name: '마지마 형님' }).boundingBox())!;
+  await expect(call.getByRole('heading', { name: '마지마 형님', exact: true })).toBeVisible();
+  await expect(call.locator('.call-identity .call-time')).toHaveCount(0);
+  await expect(call.locator('.call-kind')).toHaveText('휴대전화');
+  await call.getByRole('button', { name: '전화 응답' }).tap();
+  const connected = page.getByRole('dialog', { name: '마지마 형님 통화', exact: true });
+  await expect(connected.locator('.call-time')).toHaveText(/00:\d\d/);
+  const clock = (await connected.locator('.call-time').boundingBox())!;
+  const name = (await connected.getByRole('heading', { name: '마지마 형님' }).boundingBox())!;
   expect(name.y).toBeGreaterThanOrEqual(clock.y + clock.height);
   expect(name.y - clock.y - clock.height).toBeLessThan(25);
-  await call.getByRole('button', { name: '전화 응답' }).tap();
-  await expect(page.locator('.call-identity .call-time')).toHaveText(/00:\d\d/);
 });

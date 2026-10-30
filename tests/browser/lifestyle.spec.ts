@@ -33,7 +33,7 @@ for (const size of [
     await launchHomeApp(page, 'taxi');
     await expect(page.getByRole('button', { name: /바닷가/ })).toHaveCount(0);
     await expect(page.getByText('현재 위치', { exact: true })).toBeVisible();
-    await expect(page.getByText(/실제 위치 조회나 택시 호출은 하지 않습니다/)).toBeVisible();
+    await expect(page.getByText(/실제 위치 조회나 택시 호출은 하지 않습니다/)).toHaveCount(0);
     await page.getByRole('button', { name: /류큐 거리/ }).tap();
     await expect(page.getByLabel('선택한 목적지 류큐 거리')).toBeVisible();
     await page.keyboard.press('Alt+Home');

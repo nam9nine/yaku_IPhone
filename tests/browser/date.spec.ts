@@ -3,7 +3,9 @@ import { expect, test } from '@playwright/test';
 import { launchHomeApp } from '../helpers/home';
 
 for (const width of [360, 390, 430]) {
-  test(`다테 연락처에서 메시지 답장과 재접속 상태가 이어진다 ${width}`, async ({ page }) => {
+  test(`다테 연락처의 과거 대화와 읽음 상태를 재접속 후에도 보존한다 ${width}`, async ({
+    page,
+  }) => {
     await page.setViewportSize({ width, height: width === 360 ? 800 : width === 390 ? 844 : 932 });
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.clock.install();
@@ -21,15 +23,17 @@ for (const width of [360, 390, 430]) {
       .toBe(900);
     await page.getByRole('button', { name: '다테 마코토에게 메시지 보내기' }).tap();
     const thread = page.getByRole('log', { name: '다테 마코토와의 대화' });
-    await expect(thread).toContainText('키류, 자네한테 확인할 게 있네.');
-    const reply = '다테 씨, 무슨 일입니까?';
-    await page.getByRole('button', { name: `${reply} 보내기`, exact: true }).tap();
-    await expect(thread.getByText(reply, { exact: true })).toHaveCount(1);
-    await expect(thread).not.toContainText('큰일은 아니네.');
-    await page.clock.runFor(12_000);
     await expect(thread).toContainText(
-      '큰일은 아니네. 자네가 또 혼자 나선 건 아닌지 물으려던 참이야.',
+      '키류, 문자 봤으면 연락 좀 해. 또 혼자 무슨 일 벌이는 건 아니지?',
     );
+    const reply = '별일 없습니다, 다테 씨. 걱정 끼쳐서 죄송합니다.';
+    await expect(thread.getByText(reply, { exact: true })).toHaveCount(1);
+    await expect(thread).toContainText('맡아뒀던 네 물건, 봉투에 넣어 보냈다. 받으면 연락해.');
+    await expect(page.locator('.message-story-reply')).toHaveCount(0);
+    await expect(page.locator('.message-ai-input')).toHaveCount(0);
+    const before = await thread.locator('.message-bubble').allTextContents();
+    await page.clock.runFor(12_000);
+    expect(await thread.locator('.message-bubble').allTextContents()).toEqual(before);
     await page.reload();
     await unlockPhone(page);
     await expect(page.getByLabel('읽지 않은 대화 7개')).toBeVisible();
@@ -38,11 +42,13 @@ for (const width of [360, 390, 430]) {
     await page.locator('[data-contact=date]').tap();
     await page.getByRole('button', { name: '다테 마코토에게 메시지 보내기' }).tap();
     await expect(thread.getByText(reply, { exact: true })).toHaveCount(1);
-    await expect(page.getByRole('button', { name: `${reply} 보내기`, exact: true })).toHaveCount(0);
+    expect(await thread.locator('.message-bubble').allTextContents()).toEqual(before);
+    await expect(page.locator('.message-story-reply')).toHaveCount(0);
+    await expect(page.locator('.message-ai-input')).toHaveCount(0);
   });
 }
 
-test('기존 다섯 대화를 읽은 저장 상태에서 다테·아키야마·유키를 새 대화로 표시한다', async ({
+test('기존 다섯 대화를 읽은 저장 상태에서 다테·아키야마·이치반을 새 대화로 표시한다', async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
