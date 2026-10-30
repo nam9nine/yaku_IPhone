@@ -25,7 +25,7 @@ from .episode_prompt import (
 )
 from .phone_events import NO_PHONE_EVENTS, resolve_phone_events
 
-PROMPT_VERSION = "kiryu-daily-sms-v18"
+PROMPT_VERSION = "kiryu-daily-sms-v19"
 
 RELATIONSHIP_TONES = {
     "neutral": "평소 관계에 맞는 말투로 답한다.",
@@ -470,6 +470,13 @@ class ChatPromptBuilder:
                 context["current_episode_interpretation"] = episode_transition[
                     "decision"
                 ]
+                if (
+                    reading_audit is not None
+                    and "episode_interpretation" in reading_audit
+                ):
+                    context["current_episode_speech_act"] = reading_audit[
+                        "episode_interpretation"
+                    ]["reader_act"]
                 context["episode_purpose"] = episode_definition(episode)["purpose"]
                 # Selected sources already carry the exact quote and full scope.
                 # Fixed relationship text is in the system once, not repeated.

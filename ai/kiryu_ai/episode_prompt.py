@@ -19,6 +19,17 @@ DECISIONS = (
     "report_outcome",
     "change_topic",
 )
+READER_ACTS = {
+    "no_change": "no_change",
+    "discuss_proposal": "no_change",
+    "accept_participation": "accept",
+    "defer": "defer",
+    "decline": "decline",
+    "cancel": "cancel",
+    "report_progress": "no_change",
+    "report_activity_completion": "report_outcome",
+    "change_topic": "change_topic",
+}
 PHASES = ("not_started", "awaiting_reply", "accepted", "deferred", "closed")
 CALL_OUTCOMES = ("missed", "declined", "idle", "ended")
 CATALOG_PATH = Path(__file__).resolve().parents[1] / "chat/episodes.json"
@@ -28,8 +39,9 @@ EPISODE_OMISSION_RULES = "과거 대화 원문이 입력 예산 때문에 통째
 EPISODE_RULES = """현재 사건은 방문자의 IF 진행이다. 취소·거절은 해당 약속을 끝낸다. 불만은 표현해도 재약속 요구나 준비했다는 새 사실로 취소를 뒤집지 않는다. 보류 중에는 사용자가 사건을 다시 꺼내기 전 제안·권유·재촉을 하지 말고 현재 화제에만 답한다. message_id는 실제 원문 참조, native_turn은 system 다음 실제 대화의 1부터 센 순서다. call_outcome은 서버가 확인한 결과(missed=미연결, declined=수신 거절, idle=연결 후 무응답 종료, ended=통화 종료)이며 의도나 약속 수락이 아니다. 데이터 용어는 문자에 쓰지 않는다."""
 
 EPISODE_READER_RULES = """current_episode는 이번 방문자의 IF 진행이며 canon과 별개다. recent_timeline에는 실제 선제 발신도 있으므로 '그거'의 대상을 최근 문맥에서 확인한다. 상태의 message_id는 같은 ID의 원문 참조다(conversation:은 검색용 접두사). call_outcome/통화 결과는 관찰 사실이며 상대의 의도·동의가 아니다.
-episode_transition으로 현재 사용자 원문 하나에 근거한 진행 제안을 반환한다. decision은 no_change, accept, defer, decline, cancel, report_outcome, change_topic 중 하나다.
-accept는 미결 활동 제안에 대한 명확한 수락, defer는 연기·부상·급한 사정 등 당장 진행하기 어려움, decline는 제안 거절, cancel은 기존 약속 취소, report_outcome은 해당 활동의 명시적 완료·결과 보고, change_topic은 진행 요청 없이 다른 화제로 옮긴 경우다. 장소 도착만으로 활동 완료나 승패를 보고한 것으로 분류하지 않는다. 사용자의 새 과거 주장과 원작 퀴즈를 현재 사건 완료로 해석하지 않는다.
+episode_transition.decision에는 현재 사용자 발화의 행위를 분류한다. discuss_proposal은 제안의 설명·논의 허용이나 재개이며 활동 참여 약속이 아니다. accept_participation은 미결 활동에 직접 참여하겠다는 확정이다. 참여는 확정했지만 날짜·시간만 미정이면 accept_participation이다.
+report_progress는 이동·도착·준비·시작 전·진행 중 등 아직 끝나지 않은 활동에 대한 사용자 보고다. report_activity_completion은 해당 활동 자체를 끝냈다는 명시적 완료나 최종 결과 보고다. 이동의 완료는 활동의 완료가 아니다. 사용자의 새 과거 주장과 원작 퀴즈를 이번 활동 완료로 해석하지 않는다.
+defer는 활동 자체의 연기·부상·급한 사정에 따른 보류, decline는 제안 거절, cancel은 기존 약속 취소, change_topic은 진행 요청 없이 다른 화제로 옮긴 경우다. 논의·참여·일정 확정·진행·완료를 서로 대신하지 않는다.
 no_change는 뜻이나 대상이 불명확하거나 사건에 새 결정이 없는 경우다. '좋다' 같은 단어만으로 판정하지 말고 무엇에 대한 답인지 읽는다. 다른 사람의 약속이나 인용된 문장은 사용자의 결정이 아니다. 실제 사용자 원문에 없는 시간·이동·승패·동기를 보충하지 않는다.
 episode_id와 version은 current_episode 값 그대로, evidence_message_id는 상태를 바꿀 때 current_message_id 그대로 사용한다. no_change일 때 evidence_message_id는 null이다. 이 JSON은 검토 가능한 짧은 결론이며 사고 과정이나 설명은 쓰지 않는다."""
 
@@ -217,6 +229,12 @@ def transition_schema(context, message_id):
         "required": ["episode_id", "version", "decision", "evidence_message_id"],
         "additionalProperties": False,
     }
+
+
+def reader_transition_schema(context, message_id):
+    schema = transition_schema(context, message_id)
+    schema["properties"]["decision"]["enum"] = list(READER_ACTS)
+    return schema
 
 
 def validate_transition(value, context, message_id):

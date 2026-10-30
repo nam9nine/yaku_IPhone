@@ -62,7 +62,10 @@ class ContractEngine:
             value["episode_transition"] = {
                 "episode_id": data["current_episode"]["episode_id"],
                 "version": data["current_episode"]["version"],
-                "decision": self.decision,
+                "decision": {
+                    "accept": "accept_participation",
+                    "report_outcome": "report_activity_completion",
+                }.get(self.decision, self.decision),
                 "evidence_message_id": None
                 if self.decision == "no_change"
                 else data["current_message_id"],
@@ -73,6 +76,133 @@ class ContractEngine:
 
 
 class EpisodePromptTests(unittest.TestCase):
+    def test_reader_acts_separate_discussion_progress_and_terminal_decisions(self):
+        cases = (
+            ("discuss_proposal", "deferred", "no_change", "deferred"),
+            ("report_progress", "awaiting_reply", "no_change", "awaiting_reply"),
+            ("accept_participation", "deferred", "accept", "accepted"),
+            ("report_activity_completion", "accepted", "report_outcome", "closed"),
+        )
+        for act, phase, decision, next_phase in cases:
+            with self.subTest(act=act):
+                self.engine.decision = act
+                calls = []
+                result = self.builder.build(
+                    user_message="행위 분류 계약 검사용 현재 원문",
+                    current_message_id="current-user",
+                    on_episode_decision=calls.append,
+                    **{**self.kwargs, "episode_context": episode(phase=phase)},
+                )
+                interpretation = result["metadata"]["grounding"][
+                    "episode_interpretation"
+                ]
+                self.assertEqual(interpretation["reader_act"], act)
+                self.assertEqual(interpretation["raw_transition"]["decision"], act)
+                self.assertEqual(
+                    interpretation["validated_transition"]["decision"], decision
+                )
+                self.assertEqual(calls[0]["decision"], decision)
+                self.assertEqual(
+                    calls[0]["evidence_message_id"],
+                    None if decision == "no_change" else "current-user",
+                )
+                envelope = result["messages"][-1]["content"]
+                self.assertIn(f'"current_episode_speech_act":"{act}"', envelope)
+                self.assertIn(f'"phase":"{next_phase}"', envelope)
+                schema = self.engine.calls[-1][1]["response_schema"]["properties"][
+                    "episode_transition"
+                ]
+                allowed = schema["properties"]["decision"]["enum"]
+                self.assertIn(act, allowed)
+                self.assertNotIn("accept", allowed)
+                self.assertNotIn("report_outcome", allowed)
+
+    def test_new_reader_acts_keep_version_and_message_scope_strict(self):
+        for act in (
+            "discuss_proposal",
+            "report_progress",
+            "accept_participation",
+            "report_activity_completion",
+        ):
+            self.engine.decision = act
+            for changes in (
+                {"version": 0},
+                {"evidence_message_id": "other-user"},
+                {"decision": "accept"},
+                {"decision": "report_outcome"},
+            ):
+                with self.subTest(act=act, changes=changes):
+                    self.engine.change = lambda value, changes=changes: value[
+                        "episode_transition"
+                    ].update(changes)
+                    with self.assertRaises(GemmaFailure):
+                        self.builder.build(
+                            user_message="현재 원문",
+                            current_message_id="current-user",
+                            **self.kwargs,
+                        )
+
+    def test_identical_note_selections_are_deduplicated_with_raw_audit(self):
+        identifier = "c1093ba9-ca6c-43f2-8116-41dc2b486824-assistant"
+        quote = "맞다, 그때는 그랬었제. 이번에는 내서 직접 연락한 기다. 그래서, 볼링은 어떠노?"
+        current = "2e8910f5-5a8b-418e-bdd3-f64af8432498-user"
+        self.engine.decision = "no_change"
+
+        def reply(value):
+            value.update(
+                mode="grounded",
+                notes=[
+                    {"id": "conversation:" + identifier, "field": "text"}
+                    for _ in range(3)
+                ],
+                answer="맞다. 이번에는 내 손으로 직접 보낸 기다.",
+            )
+            value["episode_transition"]["evidence_message_id"] = current
+
+        self.engine.change = reply
+        result = self.builder.build(
+            user_message="지금 문자 보낸 건 형님이잖아요.",
+            current_message_id=current,
+            **{
+                **self.kwargs,
+                "history": [
+                    {
+                        "id": "past-user",
+                        "role": "user",
+                        "content": "예전에는 니시다가 연락했죠?",
+                    },
+                    {"id": identifier, "role": "assistant", "content": quote},
+                ],
+            },
+        )
+        audit = result["metadata"]["grounding"]
+        self.assertEqual(
+            audit["notes"]["notes"],
+            [{"id": "conversation:" + identifier, "quote": quote, "role": "assistant"}],
+        )
+        self.assertEqual(len(audit["note_normalization"]["raw_notes"]), 3)
+        self.assertEqual(len(audit["selected_fields"]), 1)
+
+    def test_note_deduplication_does_not_hide_invalid_selections(self):
+        for notes in (
+            [{"id": "unknown-source", "field": "text"}] * 3,
+            [
+                {"id": "majima-bowling-challenge", "field": "text"},
+                {"id": "majima-bowling-challenge", "field": "source_excerpt"},
+            ],
+            [{"id": "majima-bowling-challenge", "field": "text"}] * 6,
+        ):
+            with self.subTest(notes=notes):
+                self.engine.change = lambda value, notes=notes: value.update(
+                    notes=notes
+                )
+                with self.assertRaises(GemmaFailure):
+                    self.builder.build(
+                        user_message="근거 질문",
+                        current_message_id="current-user",
+                        **self.kwargs,
+                    )
+
     def test_large_current_text_fails_but_next_short_turn_recovers(self):
         rare = "".join(chr(0xAC00 + (i * 7919) % 11172) for i in range(300))
         text = (
