@@ -17,6 +17,7 @@ export function isPhoneEvents(character: AiCharacter, value: unknown): value is 
     new Set(value).size === value.length
   );
 }
+export type AiRequestKind = 'chat' | 'call_followup' | 'proactive_episode';
 export type RelationshipTone = 'warm' | 'neutral' | 'cool';
 export interface CallFollowupTrigger {
   call_id: string;
@@ -51,7 +52,7 @@ export const isCallEvents = (events: readonly string[] | undefined): boolean =>
   !!events?.some((id) => id === 'majima-call-live' || id === 'haruka-call-live');
 
 export interface AiMessage {
-  request_kind?: 'chat' | 'call_followup';
+  request_kind?: AiRequestKind;
   id: string;
   role: 'user' | 'assistant';
   content: string;
@@ -71,8 +72,26 @@ export interface AiHistory {
   /** Absent only for older servers or fixtures; independent of history pagination. */
   completed_exchanges?: number;
 }
+export interface AiEpisodeReference {
+  episode_id: string;
+  instance_id: string;
+  version: number;
+  stage: 'invite' | 'followup';
+}
+function isEpisodeReference(value: unknown): value is AiEpisodeReference {
+  return (
+    record(value) &&
+    ['episode_id', 'instance_id'].every(
+      (key) => typeof value[key] === 'string' && value[key].length > 0 && value[key].length <= 160,
+    ) &&
+    Number.isSafeInteger(value.version) &&
+    Number(value.version) >= 1 &&
+    ['invite', 'followup'].includes(String(value.stage))
+  );
+}
 export interface AiJob {
-  request_kind?: 'chat' | 'call_followup';
+  episode?: AiEpisodeReference;
+  request_kind?: AiRequestKind;
   job_id: string;
   character: AiCharacter;
   status: 'queued' | 'generating' | 'complete' | 'error';
@@ -82,7 +101,8 @@ export interface AiJob {
   request?: {
     id: string;
     message?: string;
-    kind?: 'chat' | 'call_followup';
+    kind?: AiRequestKind;
+    episode?: AiEpisodeReference;
     trigger?: CallFollowupTrigger;
     time: string | null;
     relationship_tone?: RelationshipTone;
@@ -104,7 +124,7 @@ function messages(value: unknown, character: AiCharacter): value is AiMessage[] 
         (message.role === 'user' || message.role === 'assistant') &&
         typeof message.content === 'string' &&
         (message.request_kind === undefined ||
-          ['chat', 'call_followup'].includes(String(message.request_kind))) &&
+          ['chat', 'call_followup', 'proactive_episode'].includes(String(message.request_kind))) &&
         (message.time === null || typeof message.time === 'string') &&
         (message.relationship_tone === undefined ||
           isRelationshipTone(message.relationship_tone)) &&
@@ -232,11 +252,12 @@ export async function getHistory(
   character: AiCharacter,
   signal?: AbortSignal,
   cursor?: string | null,
+  episodes = false,
 ): Promise<AiHistory> {
   const suffix = cursor ? `&cursor=${encodeURIComponent(cursor)}` : '';
   const value = await aiRequest(
     connection.endpoint,
-    `/v1/history?character=${character}${suffix}`,
+    `/v1/history?character=${character}${suffix}${episodes ? '&episodes=1' : ''}`,
     {
       token: connection.token,
       signal,
@@ -299,23 +320,32 @@ export async function getJob(
   jobId: string,
   character: AiCharacter,
   signal?: AbortSignal,
+  episodes = false,
 ): Promise<AiJob> {
-  const value = await aiRequest(connection.endpoint, `/v1/jobs/${encodeURIComponent(jobId)}`, {
-    token: connection.token,
-    signal,
-  });
+  const value = await aiRequest(
+    connection.endpoint,
+    `/v1/jobs/${encodeURIComponent(jobId)}${episodes ? '?episodes=1' : ''}`,
+    {
+      token: connection.token,
+      signal,
+    },
+  );
   if (
     !record(value) ||
     value.job_id !== jobId ||
     value.character !== character ||
+    (value.episode !== undefined && !isEpisodeReference(value.episode)) ||
     !['queued', 'generating', 'complete', 'error'].includes(String(value.status)) ||
     (value.messages !== undefined && !messages(value.messages, character)) ||
     (value.request !== undefined &&
       (!record(value.request) ||
         typeof value.request.id !== 'string' ||
+        (value.request.episode !== undefined && !isEpisodeReference(value.request.episode)) ||
         (value.request.kind === 'call_followup'
           ? !isCallFollowupTrigger(value.request.trigger) || value.request.message !== undefined
-          : typeof value.request.message !== 'string') ||
+          : value.request.kind === 'proactive_episode'
+            ? value.request.message !== undefined
+            : typeof value.request.message !== 'string') ||
         (value.request.time !== null && typeof value.request.time !== 'string') ||
         (value.request.relationship_tone !== undefined &&
           !isRelationshipTone(value.request.relationship_tone)) ||

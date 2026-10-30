@@ -56,6 +56,8 @@ export async function mockStoryAi(
     if (request.method() === 'OPTIONS') result = {};
     else if (url.pathname === '/v1/health') result = { status: 'ready' };
     else if (url.pathname === '/v1/sessions') result = { token: 'story-fixture-session' };
+    else if (url.pathname === '/v1/episodes/majima')
+      result = { protocol: 1, enabled: false, episode: null, action: null };
     else if (url.pathname === '/v1/history')
       result = {
         messages: histories[url.searchParams.get('character') as Character],

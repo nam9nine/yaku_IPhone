@@ -5,6 +5,7 @@ export const AI_PRESENTATION_KEY = 'yaku-iphone.ai.delivery.v1';
 export const MIN_TYPING_MS = 1500;
 export interface ReplyReceipt {
   fast?: boolean;
+  unsolicited?: boolean;
   requestId: string;
   character: AiCharacter;
   typingAt: number;
@@ -56,6 +57,7 @@ export class ReplyPresentation {
             Number.isFinite(r.typingAt) &&
             Number.isFinite(r.deliverAt) &&
             (r.fast === undefined || typeof r.fast === 'boolean') &&
+            (r.unsolicited === undefined || typeof r.unsolicited === 'boolean') &&
             r.deliverAt >= r.typingAt + (r.fast ? 0 : MIN_TYPING_MS) &&
             typeof r.delivered === 'boolean' &&
             typeof r.read === 'boolean' &&
@@ -85,6 +87,7 @@ export class ReplyPresentation {
     requestId: string,
     startedAt = Date.now(),
     fast = false,
+    unsolicited = false,
   ): ReplyReceipt {
     const existing = this.receipts.find((r) => r.requestId === requestId);
     if (existing) return existing;
@@ -95,6 +98,7 @@ export class ReplyPresentation {
       typingAt,
       deliverAt: typingAt + (fast ? 0 : MIN_TYPING_MS),
       ...(fast ? { fast: true } : {}),
+      ...(unsolicited ? { unsolicited: true } : {}),
       delivered: false,
       read: false,
     };
@@ -104,18 +108,21 @@ export class ReplyPresentation {
   }
   observe(character: AiCharacter, messages: AiMessage[]): void {
     for (const receipt of this.receipts.filter((r) => r.character === character && !r.delivered)) {
-      if (receipt.fast) {
+      if (receipt.fast || receipt.unsolicited) {
         const reply = messages.find(
           (m) =>
             m.role === 'assistant' &&
             m.request_id === receipt.requestId &&
-            m.request_kind === 'call_followup' &&
+            (m.request_kind === 'call_followup' || m.request_kind === 'proactive_episode') &&
             (m.status === undefined || m.status === 'complete'),
         );
         if (reply && !receipt.replyId) {
           receipt.replyId = reply.id;
           receipt.jobId = reply.job_id ?? receipt.jobId;
-          receipt.deliverAt = Math.max(receipt.typingAt, Date.now());
+          receipt.deliverAt = Math.max(
+            receipt.typingAt + (receipt.fast ? 0 : MIN_TYPING_MS),
+            Date.now(),
+          );
         }
         continue;
       }
@@ -137,6 +144,7 @@ export class ReplyPresentation {
         !receipt.replyId &&
         next?.role === 'assistant' &&
         next.request_kind !== 'call_followup' &&
+        next.request_kind !== 'proactive_episode' &&
         (!next.request_id || next.request_id === receipt.requestId) &&
         (next.status === undefined || next.status === 'complete')
       ) {
@@ -153,6 +161,18 @@ export class ReplyPresentation {
         );
       }
     }
+    this.save();
+  }
+  settleBeforeInput(requestId: string): void {
+    const receipt = this.receipts.find((r) => r.requestId === requestId && !r.delivered);
+    if (!receipt) return;
+    if (!receipt.replyId) {
+      this.cancel(requestId);
+      return;
+    }
+    // Already committed text stays in canonical history, but does not become a delayed new arrival.
+    receipt.delivered = true;
+    receipt.read = true;
     this.save();
   }
   cancel(requestId: string): void {

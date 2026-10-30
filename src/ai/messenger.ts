@@ -15,6 +15,8 @@ import {
   postChat,
   postCallFollowup,
   type CallFollowupTrigger,
+  type AiRequestKind,
+  type AiEpisodeReference,
   type AiCharacter,
   type AiMessage,
   type RelationshipTone,
@@ -29,7 +31,10 @@ import {
 } from './connection';
 
 export interface PendingMessage {
-  kind?: 'chat' | 'call_followup';
+  kind?: AiRequestKind;
+  episode?: AiEpisodeReference;
+  /** Known from an authenticated episode action before the first job poll returns. */
+  episodeOwned?: boolean;
   trigger?: CallFollowupTrigger;
   requestId: string;
   message: string;
@@ -47,6 +52,7 @@ export interface AiThread {
   typing: boolean;
   readRequestIds: string[];
   deliveryPending: boolean;
+  proactiveDeliveryPending?: boolean;
   unread: boolean;
   pending: PendingMessage | null;
   failedMessage: {
@@ -78,6 +84,17 @@ export interface AiReplyArrival extends AiReplyDelivery {
   /** A bounded event journal keeps React-batched deliveries from overwriting each other. */
   deliveries?: AiReplyDelivery[];
   deliveredJobIds?: string[];
+}
+export function blocksUserInput(
+  thread: Pick<AiThread, 'pending' | 'deliveryPending' | 'proactiveDeliveryPending'>,
+): boolean {
+  return (
+    (!!thread.pending &&
+      thread.pending.kind !== 'proactive_episode' &&
+      !thread.pending.episode &&
+      !thread.pending.episodeOwned) ||
+    (thread.deliveryPending && !thread.proactiveDeliveryPending)
+  );
 }
 interface AiSnapshot {
   arrival: AiReplyArrival | null;
@@ -137,7 +154,8 @@ export class AiMessenger {
   private controller = new AbortController();
   private generation = 0;
   private timers = new Map<AiCharacter, ReturnType<typeof setTimeout>>();
-  private polling = new Set<AiCharacter>();
+  private polling = new Set<string>();
+  private episodesProtocol = false;
   private online = true;
   private visible = true;
   private activeCharacter: AiCharacter | null = null;
@@ -272,6 +290,9 @@ export class AiMessenger {
               (r.replyId || thread.pending?.requestId === r.requestId),
           ) && thread.pending?.phase !== 'failed',
         deliveryPending: waiting.some((r) => !!r.replyId),
+        proactiveDeliveryPending:
+          waiting.some((r) => !!r.replyId) &&
+          waiting.filter((r) => !!r.replyId).every((r) => r.unsolicited),
         unread: receipts.some((r) => r.delivered && !r.read),
       };
     }
@@ -398,7 +419,8 @@ export class AiMessenger {
     }
     for (const character of aiCharacters) {
       const pending = this.snapshot.threads[character].pending;
-      if (!pending?.jobId || pending.phase === 'failed' || this.polling.has(character)) continue;
+      if (!pending?.jobId || pending.phase === 'failed' || this.polling.has(pending.jobId))
+        continue;
       const timer = this.timers.get(character);
       if (timer) clearTimeout(timer);
       this.timers.delete(character);
@@ -506,15 +528,6 @@ export class AiMessenger {
             await this.connect(endpoint, generation);
             if (!this.current(generation)) return;
           }
-          this.update({
-            status,
-            error:
-              status === 'loading'
-                ? '답장을 준비하고 있습니다. 잠시 후 다시 시도해 주세요.'
-                : status === 'error'
-                  ? '지금은 답장을 받을 수 없습니다. 잠시 후 다시 시도해 주세요.'
-                  : null,
-          });
           const targets = aiCharacters.filter(
             (character) =>
               character === this.activeCharacter ||
@@ -528,6 +541,15 @@ export class AiMessenger {
           }
           if (!this.current(generation)) return;
           if (this.snapshot.connection) this.remember(this.snapshot.connection);
+          this.update({
+            status,
+            error:
+              status === 'loading'
+                ? '답장을 준비하고 있습니다. 잠시 후 다시 시도해 주세요.'
+                : status === 'error'
+                  ? '지금은 답장을 받을 수 없습니다. 잠시 후 다시 시도해 주세요.'
+                  : null,
+          });
           return;
         } catch (error) {
           if (!this.current(generation)) return;
@@ -553,15 +575,28 @@ export class AiMessenger {
   private async loadThread(character: AiCharacter, generation: number): Promise<void> {
     const connection = this.snapshot.connection;
     if (!connection) return;
+    const initialPending = this.snapshot.threads[character].pending;
     this.thread(character, { loading: true, error: null });
     try {
-      const result = await getHistory(connection, character, this.controller.signal);
+      const result = await getHistory(
+        connection,
+        character,
+        this.controller.signal,
+        undefined,
+        this.episodesProtocol,
+      );
       if (!this.current(generation)) return;
       const thread = this.snapshot.threads[character];
+      if (thread.pending !== initialPending) {
+        this.thread(character, { loading: false });
+        return;
+      }
       const existing = thread.pending;
       const accepted = result.messages.find(
         (message) =>
-          (message.role === 'user' || message.request_kind === 'call_followup') &&
+          (message.role === 'user' ||
+            message.request_kind === 'call_followup' ||
+            message.request_kind === 'proactive_episode') &&
           ((existing?.requestId && message.request_id === existing.requestId) ||
             (result.pending_job && message.job_id === result.pending_job)),
       );
@@ -571,10 +606,13 @@ export class AiMessenger {
         ? {
             requestId: accepted?.request_id ?? existing?.requestId ?? '',
             message:
-              accepted?.request_kind === 'call_followup'
+              accepted?.request_kind === 'call_followup' ||
+              accepted?.request_kind === 'proactive_episode'
                 ? ''
                 : (accepted?.content ?? existing?.message ?? ''),
             kind: accepted?.request_kind ?? existing?.kind,
+            episode: existing?.episode,
+            episodeOwned: existing?.episodeOwned,
             trigger: existing?.trigger,
             time: accepted?.time ?? existing?.time ?? null,
             jobId: result.pending_job,
@@ -594,6 +632,7 @@ export class AiMessenger {
           pending.requestId,
           Number.isFinite(started) ? started : Date.now(),
           pending.kind === 'call_followup',
+          pending.kind === 'proactive_episode' || !!pending.episode || !!pending.episodeOwned,
         );
       }
       this.thread(character, {
@@ -607,7 +646,10 @@ export class AiMessenger {
         loading: false,
         nextCursor: thread.olderLoaded ? thread.nextCursor : result.next_cursor,
         pending,
-        ...(resolved && accepted.status !== 'complete' && accepted.request_kind !== 'call_followup'
+        ...(resolved &&
+        accepted.status !== 'complete' &&
+        accepted.request_kind !== 'call_followup' &&
+        accepted.request_kind !== 'proactive_episode'
           ? {
               failedMessage: {
                 message: accepted.content,
@@ -640,6 +682,7 @@ export class AiMessenger {
         character,
         this.controller.signal,
         thread.nextCursor,
+        this.episodesProtocol,
       );
       if (!this.current(generation)) return;
       this.thread(character, {
@@ -682,10 +725,22 @@ export class AiMessenger {
       this.snapshot.status !== 'ready' ||
       !thread.loaded ||
       thread.loading ||
-      thread.pending ||
-      thread.deliveryPending
+      blocksUserInput(thread)
     )
       return false;
+    if (
+      thread.pending &&
+      (thread.pending.kind === 'proactive_episode' ||
+        thread.pending.episode ||
+        thread.pending.episodeOwned)
+    )
+      this.presentation.settleBeforeInput(thread.pending.requestId);
+    for (const receipt of [...this.presentation.receipts])
+      if (receipt.character === character && receipt.unsolicited && !receipt.delivered)
+        this.presentation.settleBeforeInput(receipt.requestId);
+    const oldTimer = this.timers.get(character);
+    if (oldTimer) clearTimeout(oldTimer);
+    this.timers.delete(character);
     const pending: PendingMessage = {
       requestId: crypto.randomUUID(),
       message,
@@ -770,6 +825,60 @@ export class AiMessenger {
     return this.submit(character, pending, generation);
   }
 
+  /** Establish a background session without marking the conversation read. */
+  prepareEpisodes = async (): Promise<AiConnection | null> => {
+    if (!this.online) return null;
+    this.episodesProtocol = true;
+    this.backgroundCharacters.add('majima');
+    if (this.snapshot.status !== 'ready') await this.refresh();
+    return this.snapshot.status === 'ready' ? this.snapshot.connection : null;
+  };
+
+  setEpisodeProtocol(enabled: boolean): void {
+    if (this.episodesProtocol === enabled) return;
+    this.episodesProtocol = enabled;
+    if (!enabled) this.backgroundCharacters.delete('majima');
+    else if (this.snapshot.status === 'ready' && this.snapshot.threads.majima.loaded) {
+      // Restore old assistant-only invitations even when the feature has since been disabled.
+      const generation = this.generation;
+      void this.loadThread('majima', generation).catch((error: unknown) => {
+        if (this.current(generation)) void this.failConnection(error);
+      });
+    }
+  }
+
+  episodeDelivered(jobId: string): boolean {
+    return this.presentation.receipts.some(
+      (receipt) => receipt.jobId === jobId && receipt.delivered,
+    );
+  }
+
+  /** Adopt a server-owned assistant-only request, never submit a synthetic user turn. */
+  watchEpisodeJob = async (jobId: string): Promise<void> => {
+    const generation = this.generation;
+    if (!this.current(generation) || !this.snapshot.connection) return;
+    const thread = this.snapshot.threads.majima;
+    if (thread.pending && thread.pending.jobId !== jobId) return;
+    if (thread.pending?.jobId === jobId || this.episodeDelivered(jobId)) return;
+    this.episodesProtocol = true;
+    this.thread('majima', {
+      loaded: true,
+      pending: {
+        kind: 'proactive_episode',
+        episodeOwned: true,
+        requestId: '',
+        message: '',
+        time: null,
+        jobId,
+        phase: 'generating',
+        relationshipTone: 'neutral',
+        phoneEvents: [],
+      },
+      error: null,
+    });
+    await this.poll('majima', jobId, generation, 0);
+  };
+
   takeFailedMessage(character: AiCharacter, active: boolean): AiThread['failedMessage'] {
     if (!active) return null;
     const failed = this.snapshot.threads[character].failedMessage;
@@ -824,12 +933,20 @@ export class AiMessenger {
               pending.relationshipTone,
               pending.phoneEvents,
             );
-      if (!this.current(generation)) return false;
+      if (
+        !this.current(generation) ||
+        this.snapshot.threads[character].pending?.requestId !== pending.requestId
+      )
+        return false;
       this.thread(character, { pending: { ...pending, jobId, phase: 'generating' } });
       void this.poll(character, jobId, generation, 0);
       return true;
     } catch (error) {
-      if (!this.current(generation)) return false;
+      if (
+        !this.current(generation) ||
+        this.snapshot.threads[character].pending?.requestId !== pending.requestId
+      )
+        return false;
       if (
         pending.kind === 'call_followup' &&
         error instanceof AiRequestError &&
@@ -894,16 +1011,33 @@ export class AiMessenger {
     queued: number,
   ): Promise<void> {
     const connection = this.snapshot.connection;
-    if (!connection || !this.current(generation) || this.polling.has(character)) return;
-    this.polling.add(character);
+    if (!connection || !this.current(generation) || this.polling.has(jobId)) return;
+    if (this.snapshot.threads[character].pending?.jobId !== jobId) return;
+    this.polling.add(jobId);
     try {
-      const job = await getJob(connection, jobId, character, this.controller.signal);
-      if (!this.current(generation)) return;
+      const job = await getJob(
+        connection,
+        jobId,
+        character,
+        this.controller.signal,
+        this.episodesProtocol,
+      );
+      if (!this.current(generation) || this.snapshot.threads[character].pending?.jobId !== jobId)
+        return;
       const previous = this.snapshot.threads[character].pending;
-      if (job.request?.kind === 'call_followup') {
+      if (job.request?.kind === 'call_followup' || job.request?.kind === 'proactive_episode') {
         if (previous?.requestId && previous.requestId !== job.request.id)
           this.presentation.cancel(previous.requestId);
-        this.presentation.begin(character, job.request.id, Date.now(), true);
+        this.presentation.begin(
+          character,
+          job.request.id,
+          Date.now(),
+          job.request.kind === 'call_followup',
+          job.request.kind === 'proactive_episode' ||
+            !!job.request.episode ||
+            !!job.episode ||
+            !!previous?.episodeOwned,
+        );
       }
       if (job.request && previous?.jobId === jobId)
         this.thread(character, {
@@ -912,6 +1046,8 @@ export class AiMessenger {
             requestId: job.request.id,
             message: job.request.message ?? '',
             kind: job.request.kind,
+            episode: job.request.episode ?? job.episode ?? previous.episode,
+            episodeOwned: !!job.request.episode || !!job.episode || previous.episodeOwned,
             trigger: job.request.trigger,
             time: job.request.time,
             relationshipTone: job.request.relationship_tone ?? previous.relationshipTone,
@@ -919,8 +1055,15 @@ export class AiMessenger {
           },
         });
       if (job.status === 'complete' || job.status === 'error') {
-        const result = await getHistory(connection, character, this.controller.signal);
-        if (!this.current(generation)) return;
+        const result = await getHistory(
+          connection,
+          character,
+          this.controller.signal,
+          undefined,
+          this.episodesProtocol,
+        );
+        if (!this.current(generation) || this.snapshot.threads[character].pending?.jobId !== jobId)
+          return;
         const thread = this.snapshot.threads[character];
         const pending = thread.pending;
         const failedText = job.request?.message || pending?.message;
@@ -949,7 +1092,11 @@ export class AiMessenger {
                 },
               }
             : {}),
-          error: job.status === 'error' ? generationError(job.error?.code) : null,
+          error:
+            job.status === 'error' &&
+            !['episode_superseded', 'episode_inactive'].includes(job.error?.code ?? '')
+              ? generationError(job.error?.code)
+              : null,
         });
         return;
       }
@@ -961,7 +1108,8 @@ export class AiMessenger {
           : 1000;
       this.schedule(character, jobId, generation, delay, count);
     } catch (error) {
-      if (!this.current(generation)) return;
+      if (!this.current(generation) || this.snapshot.threads[character].pending?.jobId !== jobId)
+        return;
       const pending = this.snapshot.threads[character].pending;
       this.thread(character, {
         pending: pending ? { ...pending, phase: 'failed' } : null,
@@ -969,7 +1117,7 @@ export class AiMessenger {
       });
       if (authError(error)) await this.failConnection(error);
     } finally {
-      if (this.current(generation)) this.polling.delete(character);
+      if (this.current(generation)) this.polling.delete(jobId);
     }
   }
 }

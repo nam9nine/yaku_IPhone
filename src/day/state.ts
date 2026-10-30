@@ -39,6 +39,14 @@ const newRequestId = () => crypto.randomUUID();
 function aiCaller(id: ContactId): id is CallFollowup['character'] {
   return id === 'haruka' || id === 'majima';
 }
+export interface EpisodeCallContext {
+  actionId: string;
+  callId: string;
+  scope: string;
+}
+export interface EpisodeCallOutcome extends EpisodeCallContext {
+  outcome: 'missed' | 'declined' | 'idle' | 'ended';
+}
 export interface StoryCall {
   id: string;
   caller: ContactId;
@@ -46,7 +54,8 @@ export interface StoryCall {
   phase: 'ringing' | 'connected';
   elapsedMs: number;
   lines: string[];
-  source: 'quest' | 'scheduled' | 'user';
+  source: 'quest' | 'scheduled' | 'user' | 'episode';
+  episode?: EpisodeCallContext;
   idleMs: number;
   liveBusy: boolean;
   activityEnabled: boolean;
@@ -85,6 +94,8 @@ export interface DayState {
   callLog: StoryCallRecord[];
   callSerial: number;
   pendingCallFollowups: CallFollowup[];
+  pendingEpisodeOutcomes: EpisodeCallOutcome[];
+  episodesEnabled: boolean;
   scheduledCalls: number;
   nextCallInMs: number;
   nextMajimaTextInMs: number;
@@ -107,6 +118,9 @@ export type DayAction =
   | { type: 'call-activity'; callId: string; requestId?: string; busy: boolean; active: boolean }
   | { type: 'call-input'; callId: string; requestId: string }
   | { type: 'ack-followup'; requestId: string }
+  | { type: 'set-episodes'; enabled: boolean }
+  | { type: 'episode-call'; episode: EpisodeCallContext }
+  | { type: 'ack-episode-outcome'; callId: string; scope: string }
   | { type: 'notify-kamurocho' }
   | { type: 'reset' };
 export const DAY_STORAGE_KEY = 'yaku-iphone.day.v1';
@@ -137,6 +151,8 @@ export function initialDay(): DayState {
     callLog: [],
     callSerial: 0,
     pendingCallFollowups: [],
+    pendingEpisodeOutcomes: [],
+    episodesEnabled: false,
     scheduledCalls: 0,
     nextCallInMs: 60_000,
     nextMajimaTextInMs: 90_000,
@@ -330,6 +346,7 @@ function finishCall(
     : null;
   if (
     reason &&
+    !call.episode &&
     createFollowup &&
     aiCaller(call.caller) &&
     !next.pendingCallFollowups.some(
@@ -353,6 +370,20 @@ function finishCall(
       ],
     };
   }
+  if (
+    call.episode &&
+    !next.pendingEpisodeOutcomes.some(
+      (item) => item.callId === call.episode?.callId && item.scope === call.episode.scope,
+    )
+  ) {
+    next = {
+      ...next,
+      pendingEpisodeOutcomes: [
+        ...next.pendingEpisodeOutcomes,
+        { ...call.episode, outcome: reason ?? ('ended' as const) },
+      ].slice(-200),
+    };
+  }
   if (reason && aiCaller(call.caller)) {
     const event = `${call.caller}-call-${reason}` as PhoneEventId;
     next = { ...next, phoneEvents: appendPhoneEvent(next.phoneEvents, event) };
@@ -372,6 +403,7 @@ function finishCall(
   }
   if (
     call.caller === 'majima' &&
+    !call.episode &&
     endedBy !== 'peer' &&
     !reason &&
     (result !== 'completed' || call.elapsedMs < 12_000)
@@ -437,7 +469,8 @@ function completeQuest(
     false,
     now,
   );
-  if (id === 'shopping') next = beginCall(next, 'majima', 'incoming', 'quest', makeRequestId);
+  if (id === 'shopping' && !next.episodesEnabled)
+    next = beginCall(next, 'majima', 'incoming', 'quest', makeRequestId);
   return next;
 }
 const schedule: ContactId[] = ['majima', 'majima', 'daigo', 'majima', 'haruka'];
@@ -607,7 +640,8 @@ export function dayReducer(
         nextMajimaTextInMs: Math.max(0, next.nextMajimaTextInMs - delta),
       };
       if (next.nextCallInMs === 0) {
-        const caller = schedule[next.scheduledCalls % schedule.length];
+        const callers = next.episodesEnabled ? schedule.filter((id) => id !== 'majima') : schedule;
+        const caller = callers[next.scheduledCalls % callers.length];
         next = beginCall(
           { ...next, scheduledCalls: next.scheduledCalls + 1 },
           caller,
@@ -616,6 +650,7 @@ export function dayReducer(
           makeRequestId,
         );
       } else if (
+        !next.episodesEnabled &&
         next.nextMajimaTextInMs === 0 &&
         next.majimaCheckInsSent < majimaCheckIns.length &&
         affinityTone(next) !== 'cool'
@@ -641,6 +676,30 @@ export function dayReducer(
       // A navigation choice is not a user-authored promise. Never synthesize a
       // message or override the intent of the actual conversation from this action.
       return state.kamurochoNotified ? state : { ...state, kamurochoNotified: true };
+    case 'set-episodes':
+      return state.episodesEnabled === action.enabled
+        ? state
+        : { ...state, episodesEnabled: action.enabled };
+    case 'episode-call': {
+      if (
+        !state.episodesEnabled ||
+        state.call ||
+        state.callLog.some((call) => call.id === action.episode.callId) ||
+        state.pendingEpisodeOutcomes.some((item) => item.callId === action.episode.callId)
+      )
+        return state;
+      const next = beginCall(state, 'majima', 'incoming', 'episode', makeRequestId);
+      return next.call
+        ? { ...next, call: { ...next.call, id: action.episode.callId, episode: action.episode } }
+        : state;
+    }
+    case 'ack-episode-outcome':
+      return {
+        ...state,
+        pendingEpisodeOutcomes: state.pendingEpisodeOutcomes.filter(
+          (item) => item.callId !== action.callId || item.scope !== action.scope,
+        ),
+      };
     case 'start-call':
       return isContact(action.id)
         ? beginCall(state, action.id, 'outgoing', 'user', makeRequestId)
@@ -741,6 +800,14 @@ function contactsArray(value: unknown): value is ContactId[] {
 }
 function nonnegative(value: unknown): value is number {
   return Number.isSafeInteger(value) && Number(value) >= 0;
+}
+function validEpisodeCall(value: unknown): value is EpisodeCallContext {
+  return (
+    record(value) &&
+    ['actionId', 'callId', 'scope'].every(
+      (key) => typeof value[key] === 'string' && value[key].length > 0 && value[key].length <= 160,
+    )
+  );
 }
 export function validDay(value: unknown): value is DayState {
   if (!record(value) || !record(value.ingredients) || !record(value.reminders)) return false;
@@ -852,6 +919,18 @@ export function validDay(value: unknown): value is DayState {
   )
     return false;
   if (
+    typeof value.episodesEnabled !== 'boolean' ||
+    !Array.isArray(value.pendingEpisodeOutcomes) ||
+    value.pendingEpisodeOutcomes.length > 200 ||
+    !value.pendingEpisodeOutcomes.every(
+      (item) =>
+        validEpisodeCall(item) &&
+        record(item) &&
+        ['missed', 'declined', 'idle', 'ended'].includes(String(item.outcome)),
+    )
+  )
+    return false;
+  if (
     !Array.isArray(value.pendingCallFollowups) ||
     value.pendingCallFollowups.length > MAX_PENDING_CALL_FOLLOWUPS ||
     new Set(value.pendingCallFollowups.map((item) => (record(item) ? item.requestId : null)))
@@ -890,7 +969,10 @@ export function validDay(value: unknown): value is DayState {
       typeof value.call.activityEnabled !== 'boolean' ||
       typeof value.call.followupRequestId !== 'string' ||
       !uuidPattern.test(value.call.followupRequestId) ||
-      !['quest', 'scheduled', 'user'].includes(String(value.call.source)) ||
+      !['quest', 'scheduled', 'user', 'episode'].includes(String(value.call.source)) ||
+      (value.call.source === 'episode'
+        ? !validEpisodeCall(value.call.episode)
+        : value.call.episode !== undefined) ||
       !Array.isArray(value.call.lines) ||
       value.call.lines.length < 1 ||
       value.call.lines.length > 10 ||
@@ -969,6 +1051,8 @@ export function loadDay(
           'callLog',
           'callSerial',
           'pendingCallFollowups',
+          'pendingEpisodeOutcomes',
+          'episodesEnabled',
           'scheduledCalls',
           'nextCallInMs',
           'nextMajimaTextInMs',

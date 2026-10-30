@@ -7,6 +7,7 @@ const routes = new Map([
   ['/v1/history', ['GET']],
   ['/v1/chat', ['POST']],
   ['/v1/call-followups', ['POST']],
+  ['/v1/episodes/majima', ['GET', 'POST']],
   ['/v1/push/key', ['GET']],
   ['/v1/push/subscriptions', ['POST', 'DELETE']],
 ]);
@@ -74,14 +75,31 @@ export default {
       });
     }
     if (!expected.includes(request.method)) return error(405, 'method_denied', origin);
-    const allowedQuery = url.pathname === '/v1/history' ? ['character', 'cursor'] : [];
+    const allowedQuery =
+      url.pathname === '/v1/history'
+        ? ['character', 'cursor', 'episodes']
+        : /^\/v1\/jobs\/[0-9a-f-]{36}$/i.test(url.pathname)
+          ? ['episodes']
+          : url.pathname === '/v1/episodes/majima'
+            ? ['protocol']
+            : [];
     if ([...url.searchParams.keys()].some((key) => !allowedQuery.includes(key)))
+      return error(400, 'invalid_query', origin);
+    if (
+      (url.searchParams.has('episodes') && url.searchParams.get('episodes') !== '1') ||
+      (url.searchParams.has('protocol') && url.searchParams.get('protocol') !== '1')
+    )
       return error(400, 'invalid_query', origin);
     if (!env.CHAT_API || !env.GATEWAY_SECRET) return error(503, 'unavailable', origin);
     const forwarding = new Headers();
     if (origin) forwarding.set('Origin', origin);
     const authorization = request.headers.get('Authorization');
-    if ((recording || url.pathname === '/v1/call-followups') && !authorization)
+    if (
+      (recording ||
+        url.pathname === '/v1/call-followups' ||
+        url.pathname === '/v1/episodes/majima') &&
+      !authorization
+    )
       return error(401, 'unauthorized', origin);
     if (authorization) {
       if (authorization.length >= 256 || !/^Bearer [^\s]+$/.test(authorization))
