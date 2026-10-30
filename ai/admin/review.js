@@ -146,7 +146,15 @@ function renderQueue() {
       el('span', '', `방문자 ${item.visitor_id.slice(0, 8)}`),
       el('span', '', date(item.accepted_at, true)),
     );
-    open.append(top, el('p', 'case-preview', item.message || '(원문 없음)'), meta);
+    open.append(
+      top,
+      el(
+        'p',
+        'case-preview',
+        item.request_kind === 'call_followup' ? followupLabel(item) : item.message || '(원문 없음)',
+      ),
+      meta,
+    );
     row.append(check, open);
     list.append(row);
   }
@@ -223,6 +231,13 @@ async function selectCase(identifier) {
   }
 }
 
+function followupLabel(item) {
+  const reason =
+    { missed: '부재중', declined: '수신 거절', idle: '무응답 종료' }[item.trigger?.reason] ||
+    '통화 종료';
+  return `통화 후속 발신 · ${reason}`;
+}
+
 function appendMessage(container, message, { failed = false } = {}) {
   const selected = message.job_id === state.current;
   const row = el(
@@ -258,7 +273,22 @@ function renderConversation() {
   container.replaceChildren();
   const detail = state.detail;
   if (!detail) return;
-  const all = detail.messages;
+  const all = [...detail.messages];
+  if (detail.request_kind === 'call_followup') {
+    container.append(
+      el('p', 'context-notice', `${followupLabel(detail)} · ${detail.trigger?.call_id || ''}`),
+    );
+    if (detail.status === 'error') {
+      all.push({
+        role: 'assistant',
+        job_id: state.current,
+        content: detail.run?.output_text || '확보된 실패 출력이 없습니다.',
+        time: detail.run?.completed_at || detail.updated_at,
+        failed: true,
+      });
+      all.sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+    }
+  }
   const index = Math.max(
     0,
     all.findIndex((message) => message.job_id === state.current),
@@ -268,13 +298,15 @@ function renderConversation() {
     el(
       'p',
       'context-notice',
-      state.expanded
-        ? `전체 원문 ${all.length}개`
-        : `원문 ${all.length}개 중 선택한 답장 앞뒤 문맥`,
+      detail.request_kind === 'call_followup' && detail.status === 'error'
+        ? `검토할 실패 출력 · 관련 원문 ${detail.messages.length}개`
+        : state.expanded
+          ? `전체 원문 ${detail.messages.length}개`
+          : `원문 ${detail.messages.length}개 중 선택한 답장 앞뒤 문맥`,
     ),
   );
   for (const message of visible) {
-    appendMessage(container, message);
+    appendMessage(container, message, { failed: message.failed === true });
     if (message.job_id === state.current && message.role === 'user' && detail.status === 'error') {
       appendMessage(
         container,
@@ -290,7 +322,7 @@ function renderConversation() {
   }
   $('#expand-conversation').textContent = state.expanded
     ? '앞뒤 문맥만 보기'
-    : `전체 대화 보기 (${all.length})`;
+    : `전체 대화 보기 (${detail.messages.length})`;
   container.querySelector('.selected')?.scrollIntoView({ block: 'nearest' });
 }
 
@@ -403,7 +435,7 @@ function renderEvidence() {
   for (const hit of state.detail.retrieval_hits)
     evidence.append(
       evidenceBlock(
-        `${hit.kind === 'memory' ? '과거 대화' : hit.kind === 'scene' ? '참고 장면' : '원작 근거'} · ${hit.id || hit.source_id || 'ID 미기록'}`,
+        `${hit.kind === 'notice' ? '이전 통화 후속 문자' : hit.kind === 'memory' ? '과거 대화' : hit.kind === 'scene' ? '참고 장면' : '원작 근거'} · ${hit.id || hit.source_id || 'ID 미기록'}`,
         hit,
       ),
     );

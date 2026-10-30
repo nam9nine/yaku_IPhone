@@ -427,7 +427,7 @@ class ChatPush:
                 continue
             with self.chat_db.connection() as connection:
                 jobs = connection.execute(
-                    "SELECT job_id,client_request_id,accepted_at,updated_at,phone_events FROM requests "
+                    "SELECT job_id,client_request_id,accepted_at,updated_at,phone_events,request_kind FROM requests "
                     "WHERE visitor_id=? AND scenario_version='daily-if-v1' AND status='complete' "
                     "AND (updated_at>? OR (updated_at=? AND job_id>?)) "
                     "ORDER BY updated_at,job_id LIMIT 64",
@@ -446,7 +446,11 @@ class ChatPush:
                     completed = datetime.fromisoformat(job["updated_at"]).timestamp()
                     if completed >= sub["created_at"] and completed + PUSH_TTL > now:
                         delay = reply_delay_seconds(job["client_request_id"])
-                        release = max(completed + delay, accepted + delay + 1.5)
+                        release = (
+                            completed
+                            if job["request_kind"] == "call_followup"
+                            else max(completed + delay, accepted + delay + 1.5)
+                        )
                         connection.execute(
                             "INSERT OR IGNORE INTO outbox VALUES (?,?,?,?, 'pending',0,?,NULL)",
                             (

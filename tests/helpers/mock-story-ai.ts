@@ -2,6 +2,7 @@ import { installAiClock } from './ai-clock';
 import { expect, type Page } from '@playwright/test';
 import { AI_ENDPOINT } from '../../src/ai/config';
 import { isCallEvents, type PhoneEventId } from '../../src/ai/client';
+import type { CallFollowupTrigger } from '../../src/ai/client';
 
 /** Deterministic HTTP fixture for legacy phone/story flows; never calls the local model. */
 export async function mockStoryAi(
@@ -19,6 +20,7 @@ export async function mockStoryAi(
     job_id: string;
     request_id?: string;
     phone_events?: PhoneEventId[];
+    request_kind?: 'chat' | 'call_followup';
   };
   const histories: Record<Character, Message[]> = {
     haruka: [],
@@ -43,7 +45,10 @@ export async function mockStoryAi(
       },
     ]).flat(),
   };
-  const jobs = new Map<string, { character: Character; message: string; id: string }>();
+  const jobs = new Map<
+    string,
+    { character: Character; message: string; id: string; trigger?: CallFollowupTrigger }
+  >();
   await page.route(`${AI_ENDPOINT}/v1/**`, async (route) => {
     const request = route.request();
     const url = new URL(request.url());
@@ -63,7 +68,26 @@ export async function mockStoryAi(
         pending_job: null,
         next_cursor: null,
       };
-    else if (url.pathname === '/v1/chat') {
+    else if (url.pathname === '/v1/call-followups') {
+      const body = request.postDataJSON();
+      const id = String(body.request_id);
+      if (!jobs.has(id)) {
+        const trigger = { call_id: body.call_id, reason: body.reason, direction: body.direction };
+        jobs.set(id, { character: body.character, message: '', id, trigger });
+        histories[body.character as Character].push({
+          id: `${id}-assistant`,
+          role: 'assistant',
+          content: `검증용 ${body.character === 'majima' ? '마지마' : '하루카'} 전화 후속 문자`,
+          time: new Date().toISOString(),
+          status: 'complete',
+          request_id: id,
+          job_id: id,
+          request_kind: 'call_followup',
+          phone_events: [],
+        });
+      }
+      result = { job_id: id, status: 'queued' };
+    } else if (url.pathname === '/v1/chat') {
       const body = request.postDataJSON();
       const id = String(body.request_id);
       if (!jobs.has(id)) {
@@ -98,7 +122,15 @@ export async function mockStoryAi(
         job_id: job.id,
         character: job.character,
         status: 'complete',
-        request: { id: job.id, message: job.message, time: '2026-10-26T00:00:00Z' },
+        ...(job.trigger ? { request_kind: 'call_followup' } : {}),
+        request: job.trigger
+          ? {
+              id: job.id,
+              kind: 'call_followup',
+              trigger: job.trigger,
+              time: new Date().toISOString(),
+            }
+          : { id: job.id, message: job.message, time: '2026-10-26T00:00:00Z' },
       };
     }
     await route.fulfill({

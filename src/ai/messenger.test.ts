@@ -696,7 +696,7 @@ it('완성된 답장이 있어도 새로고침은 원래 대기 시간을 우회
   ).toBe(false);
   await next.activate(null);
   next.setVisible(false);
-  await vi.advanceTimersByTimeAsync(22_000);
+  await vi.advanceTimersByTimeAsync(32_000);
   expect(next.getSnapshot().notification?.character).toBe('haruka');
   next.stop();
   const third = store();
@@ -723,7 +723,7 @@ it('처음 불러온 과거 답장과 생성 실패에는 새 답장 알림이�
   state.fail = 'output_limit';
   value.send('haruka', '실패하는 요청', true, true);
   await flush();
-  await vi.advanceTimersByTimeAsync(22_000);
+  await vi.advanceTimersByTimeAsync(32_000);
   expect(value.getSnapshot().threads.haruka.typing).toBe(false);
   expect(value.getSnapshot().notification).toBeNull();
   expect(value.getSnapshot().arrival).toBeNull();
@@ -757,7 +757,7 @@ it.each([false, true])(
       value.setOnline(true);
     }
     await flush();
-    await vi.advanceTimersByTimeAsync(22_000);
+    await vi.advanceTimersByTimeAsync(32_000);
     expect(value.getSnapshot().notification?.character).toBe('haruka');
     expect(value.getSnapshot().threads.haruka.pending).toBeNull();
     expect(state.chats).toHaveLength(1);

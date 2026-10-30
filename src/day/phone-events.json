@@ -1,5 +1,5 @@
 {
-  "version": "phone-events-v2",
+  "version": "phone-events-v3",
   "events": {
     "majima-call-missed": {
       "character": "majima",
@@ -92,6 +92,22 @@
     "majima-proactive-pocket": {
       "character": "majima",
       "text": "브라우저의 IF 이벤트로 마지마가 먼저 보낸 문자: “포켓 서킷 얘기만 나오면 눈빛 달라지더라. 내하고도 한 번 달려 볼래?” 키류의 수락·일정 확정·실제 만남이나 행동 완료는 보고되지 않았다."
+    },
+    "majima-call-idle": {
+      "character": "majima",
+      "text": "브라우저 가상 통화에서 키류의 말·입력·답장 대기가 없는 상태가 60초 이어져 마지마 쪽에서 통화를 마쳤다고 보고됐다. 키류가 거절하거나 먼저 끊은 것은 아니다. 무응답의 이유를 추측해서 확정하지 않는다."
+    },
+    "haruka-call-idle": {
+      "character": "haruka",
+      "text": "브라우저 가상 통화에서 키류의 말·입력·답장 대기가 없는 상태가 60초 이어져 하루카 쪽에서 통화를 마쳤다고 보고됐다. 키류가 거절하거나 먼저 끊은 것은 아니다. 무응답의 이유를 추측해서 확정하지 않는다."
+    },
+    "haruka-call-missed": {
+      "character": "haruka",
+      "text": "브라우저 가상 전화에서 하루카가 건 수신 전화에 키류가 응답하지 않아 부재중으로 끝났다고 보고됐다. 이유나 실제 통화 내용은 전달되지 않았다."
+    },
+    "haruka-call-declined": {
+      "character": "haruka",
+      "text": "브라우저 가상 전화에서 하루카가 건 수신 전화를 키류가 연결 전에 거절했다고 보고됐다. 거절 이유를 추측해서 확정하지 않는다."
     }
   }
 }

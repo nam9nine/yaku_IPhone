@@ -280,3 +280,66 @@ describe('push gateway', () => {
     expect(calls).toBe(0);
   });
 });
+
+describe('call followup gateway', () => {
+  it('forwards only an authenticated bounded JSON call outcome', async () => {
+    const calls = [];
+    const env = {
+      GATEWAY_SECRET: 'proof',
+      CHAT_API: {
+        fetch: async (url, options) => {
+          calls.push({ url, options });
+          return Response.json({ job_id: 'cpu-test' }, { status: 202 });
+        },
+      },
+    };
+    const path = '/v1/call-followups';
+    const body = JSON.stringify({
+      character: 'majima',
+      request_id: 'test-uuid',
+      call_id: 'call-1',
+      reason: 'missed',
+      direction: 'incoming',
+    });
+    const headers = {
+      Origin: origin,
+      Authorization: 'Bearer synthetic',
+      'Content-Type': 'application/json',
+    };
+    const response = await worker.fetch(request(path, { method: 'POST', headers, body }), env);
+    expect(response.status).toBe(202);
+    expect(calls[0].url).toBe('http://kiryu-chat.internal' + path);
+    expect(new TextDecoder().decode(calls[0].options.body)).toBe(body);
+    expect(calls[0].options.headers.get('Authorization')).toBe('Bearer synthetic');
+    expect(
+      (
+        await worker.fetch(
+          request(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body }),
+          env,
+        )
+      ).status,
+    ).toBe(401);
+    expect(
+      (
+        await worker.fetch(
+          request(path, { method: 'POST', headers, body: 'x'.repeat(16 * 1024 + 1) }),
+          env,
+        )
+      ).status,
+    ).toBe(413);
+    expect(
+      (
+        await worker.fetch(
+          request(path, {
+            method: 'POST',
+            headers: { ...headers, 'Content-Type': 'audio/webm' },
+            body,
+          }),
+          env,
+        )
+      ).status,
+    ).toBe(415);
+    expect((await worker.fetch(request(path), env)).status).toBe(405);
+    expect(calls).toHaveLength(1);
+  });
+});

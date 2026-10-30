@@ -1,0 +1,162 @@
+{
+  "model": "gemma-4-26B-A4B-it-Q4_K_M",
+  "prompt": "kiryu-daily-sms-v15",
+  "synthetic_visitors_only": true,
+  "results": [
+    {
+      "character": "majima",
+      "reason": "missed",
+      "status": "complete",
+      "seconds": 4.56,
+      "messages": [
+        {
+          "role": "assistant",
+          "content": "키류쨩, 전화 왜 안 받노? 바쁜 거 아니면 얼른 다시 전화해라!"
+        }
+      ],
+      "generation_options": {
+        "max_tokens": 96,
+        "thinking": false
+      },
+      "metrics": {
+        "prompt_tokens": 2512,
+        "completion_tokens": 23,
+        "queue_seconds": 0.001523733139038086,
+        "generation_seconds": 4.300743875093758,
+        "service_seconds": 4.479845291934907,
+        "finish_reason": "stop",
+        "generation": {
+          "context_tokens": 6144,
+          "max_tokens": 96,
+          "reasoning_budget_tokens": 0,
+          "reasoning_observed": false,
+          "thinking": false,
+          "timeout_seconds": 120
+        }
+      }
+    },
+    {
+      "character": "majima",
+      "reason": "declined",
+      "status": "complete",
+      "seconds": 3.95,
+      "messages": [
+        {
+          "role": "assistant",
+          "content": "키류쨩, 전화 왜 안 받노? 바쁜가 본데, 이따가라도 꼭 다시 전화해라!"
+        }
+      ],
+      "generation_options": {
+        "max_tokens": 96,
+        "thinking": false
+      },
+      "metrics": {
+        "prompt_tokens": 2506,
+        "completion_tokens": 27,
+        "queue_seconds": 0.002740144729614258,
+        "generation_seconds": 3.7734617500100285,
+        "service_seconds": 3.80211499996949,
+        "finish_reason": "stop",
+        "generation": {
+          "context_tokens": 6144,
+          "max_tokens": 96,
+          "reasoning_budget_tokens": 0,
+          "reasoning_observed": false,
+          "thinking": false,
+          "timeout_seconds": 120
+        }
+      }
+    },
+    {
+      "character": "majima",
+      "reason": "idle",
+      "status": "complete",
+      "seconds": 4.14,
+      "messages": [
+        {
+          "role": "assistant",
+          "content": "키류쨩, 통화 연결됐는데 왜 아무 말이 없노? 쫌이 야박하게 굴지 말고 얼른 다시 전화해라!"
+        }
+      ],
+      "generation_options": {
+        "max_tokens": 96,
+        "thinking": false
+      },
+      "metrics": {
+        "prompt_tokens": 2524,
+        "completion_tokens": 33,
+        "queue_seconds": 0.001611948013305664,
+        "generation_seconds": 4.017329041962512,
+        "service_seconds": 4.047379832947627,
+        "finish_reason": "stop",
+        "generation": {
+          "context_tokens": 6144,
+          "max_tokens": 96,
+          "reasoning_budget_tokens": 0,
+          "reasoning_observed": false,
+          "thinking": false,
+          "timeout_seconds": 120
+        }
+      }
+    },
+    {
+      "character": "majima",
+      "case": "next_turn_notice_recall",
+      "status": "complete",
+      "seconds": 23.67,
+      "messages": [
+        {
+          "role": "assistant",
+          "content": "키류쨩, 통화 연결됐는데 왜 아무 말이 없노? 쫌이 야박하게 굴지 말고 얼른 다시 전화해라!"
+        },
+        {
+          "role": "user",
+          "content": "형님, 방금 왜 문자 보내셨어요?"
+        },
+        {
+          "role": "assistant",
+          "content": "전화를 받았는데 아무 말도 안 하고 가만히 있길래 보냈제! 쫌 답답하다 아이가."
+        }
+      ],
+      "notice_count": 1
+    },
+    {
+      "character": "haruka",
+      "reason": "missed",
+      "status": "complete",
+      "seconds": 2.73,
+      "messages": [
+        {
+          "role": "assistant",
+          "content": "아저씨, 왜 전화 안 받아요? 바빠요?"
+        }
+      ],
+      "generation_options": {
+        "max_tokens": 96,
+        "thinking": false
+      },
+      "metrics": {
+        "prompt_tokens": 1661,
+        "completion_tokens": 15,
+        "queue_seconds": 0.0024869441986083984,
+        "generation_seconds": 2.491741875070147,
+        "service_seconds": 2.5492443339899182,
+        "finish_reason": "stop",
+        "generation": {
+          "context_tokens": 6144,
+          "max_tokens": 96,
+          "reasoning_budget_tokens": 0,
+          "reasoning_observed": false,
+          "thinking": false,
+          "timeout_seconds": 120
+        }
+      }
+    }
+  ],
+  "limits": [
+    "4 quick outputs and 1 next-turn sample, not a quality benchmark",
+    "fan review pending",
+    "idle output includes awkward Korean: 쫌이 야박하게",
+    "normal next-turn check uses lexical retrieval builder; production hybrid RAG unchanged"
+  ]
+}

@@ -23,7 +23,7 @@ export function CallConversation({
   online: boolean;
   onBusyChange: (busy: boolean) => void;
 }) {
-  const { state } = useDay();
+  const { state, dispatch } = useDay();
   const [draft, setDraft] = useState('');
   const [editing, setEditing] = useState(false);
   const [speechState, setSpeechState] = useState<SpeechRecognitionState>('idle');
@@ -50,12 +50,19 @@ export function CallConversation({
       ? thread.pending.message
       : null;
   const busy = !!thread.pending || thread.deliveryPending;
+  const waitingForReply =
+    (!!thread.pending && thread.pending.phase !== 'failed') || thread.deliveryPending;
   const recognizing = speechState !== 'idle';
   const supported = supportsSpeechRecognition();
   useEffect(() => {
-    onBusyChange(busy || recognizing || audioStarting || audioActive || !!draft.trim());
+    onBusyChange(waitingForReply || recognizing || audioStarting || audioActive);
     return () => onBusyChange(false);
-  }, [busy, recognizing, audioStarting, audioActive, draft, onBusyChange]);
+  }, [waitingForReply, recognizing, audioStarting, audioActive, onBusyChange]);
+  function noteInput() {
+    const call = state.call;
+    if (call?.caller === character)
+      dispatch({ type: 'call-input', callId: call.id, requestId: call.followupRequestId });
+  }
   const ready = online && ai.status === 'ready' && thread.loaded && !thread.loading;
   useEffect(() => {
     mounted.current = true;
@@ -104,8 +111,10 @@ export function CallConversation({
         setSpeechState(value);
         if (value === 'idle') audio.current?.stop();
       },
-      onTranscript: ({ text }) =>
-        setDraft([draftBeforeSpeech.current, text].filter(Boolean).join(' ').slice(0, 1000)),
+      onTranscript: ({ text }) => {
+        noteInput();
+        setDraft([draftBeforeSpeech.current, text].filter(Boolean).join(' ').slice(0, 1000));
+      },
       onError: ({ message }) => setSpeechError(message),
     });
     setSpeechError(null);
@@ -206,7 +215,10 @@ export function CallConversation({
             maxLength={1000}
             rows={2}
             readOnly={recognizing || audioStarting || audioActive}
-            onChange={(event) => setDraft(event.target.value)}
+            onChange={(event) => {
+              noteInput();
+              setDraft(event.target.value);
+            }}
             placeholder="메시지"
           />
           <button
@@ -240,6 +252,7 @@ export function CallConversation({
         <button
           disabled={recognizing || busy || audioStarting || audioActive}
           onClick={() => {
+            noteInput();
             setEditing(true);
             requestAnimationFrame(() => input.current?.focus());
           }}
@@ -266,6 +279,7 @@ export function CallConversation({
           onClick={() => {
             const failed = ai.messenger.takeFailedMessage(character, true);
             if (failed) {
+              noteInput();
               setDraft(failed.message);
               setEditing(true);
             }

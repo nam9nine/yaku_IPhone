@@ -8,7 +8,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { useDay } from '../day/DayContext';
 import { PhoneIcon } from '../story/PhoneIcon';
 import { contacts } from '../story/data';
-import { peerHangupDelay } from '../day/state';
+import { peerHangupDue } from '../day/state';
 import { useRingtone } from './useRingtone';
 import type { ContactId } from '../day/content';
 import './day-call.css';
@@ -31,6 +31,13 @@ export function DayCall({
   volume: number;
 }) {
   const { state, dispatch, setCallActivity } = useDay();
+  const [visible, setVisible] = useState(() => document.visibilityState !== 'hidden');
+  const callActive = active && visible;
+  useEffect(() => {
+    const update = () => setVisible(document.visibilityState !== 'hidden');
+    document.addEventListener('visibilitychange', update);
+    return () => document.removeEventListener('visibilitychange', update);
+  }, []);
   const call = state.call;
   const caller = contacts.find((person) => person.id === call?.caller);
   const name = caller?.id === 'majima' ? '마지마 형님' : caller?.shortName;
@@ -39,26 +46,46 @@ export function DayCall({
   const outgoing = call?.direction === 'outgoing';
   const seconds = Math.floor((call?.elapsedMs ?? 0) / 1000);
   useEffect(() => {
-    setCallActivity(active);
-    if (!active) dispatch({ type: 'defer-contact' });
+    setCallActivity(callActive);
+    if (!callActive) dispatch({ type: 'defer-contact' });
     return () => setCallActivity(false);
-  }, [active, setCallActivity, dispatch]);
+  }, [callActive, setCallActivity, dispatch]);
   const [liveBusy, setLiveBusy] = useState(false);
   const [endingCall, setEndingCall] = useState<string | null>(null);
-  const onBusyChange = useCallback((busy: boolean) => setLiveBusy(busy), []);
   const callId = call?.id;
-  const peerDue = !!call && connected && call.elapsedMs >= peerHangupDelay(call);
+  const requestId = call?.followupRequestId;
+  const onBusyChange = useCallback(
+    (busy: boolean) => {
+      setLiveBusy(busy);
+      if (callId) dispatch({ type: 'call-activity', callId, requestId, busy, active: callActive });
+    },
+    [callId, requestId, callActive, dispatch],
+  );
   useEffect(() => {
-    if (!callId || !peerDue || liveBusy) return;
+    if (callId)
+      dispatch({ type: 'call-activity', callId, requestId, busy: liveBusy, active: callActive });
+  }, [callId, requestId, connected, liveBusy, callActive, dispatch]);
+  const peerDue = !!call && peerHangupDue(call);
+  useEffect(() => {
+    if (!callId || !peerDue || liveBusy || !callActive) return;
     const id = callId;
     const show = window.setTimeout(() => setEndingCall(id), 0);
-    const finish = window.setTimeout(() => dispatch({ type: 'peer-end-call', callId: id }), 6000);
+    const finish = window.setTimeout(
+      () =>
+        dispatch({
+          type: 'peer-end-call',
+          callId: id,
+          requestId,
+          ...(caller && isAiCharacter(caller.id) ? { reason: 'idle' as const } : {}),
+        }),
+      6000,
+    );
     return () => {
       window.clearTimeout(show);
       window.clearTimeout(finish);
       setEndingCall(null);
     };
-  }, [callId, peerDue, liveBusy, dispatch]);
+  }, [callId, requestId, peerDue, liveBusy, callActive, caller, dispatch]);
   useRingtone(ringing && !outgoing, silent, volume, caller?.id === 'majima' ? 'majima' : 'other');
   const [expandedCall, setExpandedCall] = useState<string | null>(null);
   const expanded = expandedCall === call?.id;
