@@ -208,6 +208,10 @@ class EpisodeDBTests(unittest.TestCase):
             self.db.episodes.get(self.visitor, SCENARIO)["contact_stage"],
             "followup_due",
         )
+        self.assertEqual(
+            self.db.episodes.response(self.visitor, SCENARIO)["episode"]["call_outcome"],
+            "missed",
+        )
 
     def test_actual_user_supersedes_atomic_and_no_fake_user_for_invite(self):
         state = self.advance()

@@ -21,6 +21,7 @@ CONTEXT_KEYS = (
     "evidence_message_ids",
     "user_reports",
     "contact_stage",
+    "call_outcome",
 )
 EPISODE_SCHEMA = """
 CREATE TABLE IF NOT EXISTS episodes (
