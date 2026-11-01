@@ -35,8 +35,16 @@ def evaluate(args):
             raise ValueError(f"Unknown evaluation cases: {sorted(unknown)}")
         cases = [case for case in cases if case["id"] in selected]
     cases = cases[: args.limit]
-    sources = list(Path(__file__).parent.glob("*.py")) + list(
-        fixtures_path.parent.glob("*.json")
+    # Bind the runtime policies even when a private fixture lives elsewhere;
+    # its directory may contain unrelated records and is not the app config.
+    package = Path(__file__).parent
+    sources = sorted(
+        {
+            *package.glob("*.py"),
+            *(package.parent / "chat").glob("*.json"),
+            fixtures_path.resolve(),
+        },
+        key=str,
     )
     manifest = {
         "started_at": datetime.now(UTC).isoformat(),
@@ -46,6 +54,10 @@ def evaluate(args):
         },
         "model_manifest": json.loads(Path(args.manifest).read_text()),
         "seed": fixtures["seed"],
+        "generation_seeds": dict.fromkeys(
+            ("writer", "followup", "source_reader", "episode_interpreter"),
+            fixtures["seed"],
+        ),
         "cases": [case["id"] for case in cases],
         "fan_review": "pending",
         "setup_clock": "synthetic active heartbeats; not public timing validation",
@@ -69,9 +81,15 @@ def evaluate(args):
                 raise RuntimeError("Model setup failed")
             time.sleep(0.1)
         # Only deterministic sampling changes: the production builder, DB, queue,
-        # reader and both engine profiles are used without replacement outputs.
-        for engine in (service.engine, service.followup_engine):
+        # reader and scoped engine profiles are used without replacement outputs.
+        engines = (
+            service.engine,
+            service.followup_engine,
+            service.episode_followup_engine,
+        )
+        for engine in {id(value): value for value in engines}.values():
             engine.reply = functools.partial(engine.reply, seed=fixtures["seed"])
+        service.builder.reader.seed = fixtures["seed"]
         for case in cases:
             session = service.db.issue_session()
             token = session["token"]

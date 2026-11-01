@@ -2,8 +2,9 @@ import copy
 import json
 import unittest
 
+from kiryu_ai.call_followups import EPISODE_FOLLOWUP_TOKENS
 from kiryu_ai.chat_prompt import ChatPromptBuilder, InputBudgetError, reconstruct_input
-from kiryu_ai.chat_reader import EvidenceReader
+from kiryu_ai.chat_reader import EPISODE_READER_VERSION, READER_VERSION, EvidenceReader
 from kiryu_ai.episode_prompt import (
     OUTBOUND_FACTS_RULES,
     OUTBOUND_FACTS_VERSION,
@@ -13,6 +14,7 @@ from kiryu_ai.episode_prompt import (
     validate_episode_context,
     validate_transition,
 )
+from kiryu_ai.episode_reader import LAYOUT_NOTE, RESPONSE_ACTS
 from kiryu_ai.gemma_engine import GemmaFailure
 
 
@@ -42,42 +44,245 @@ def notice():
     }
 
 
+def writer_reference(result):
+    if result["metadata"].get("input_envelope_kind") == "episode-current-user-v1":
+        return result["messages"][0]["content"]
+    return result["messages"][-1]["content"]
+
+
+def writer_data(result):
+    return json.loads(
+        writer_reference(result)
+        .split("\n참고 자료(JSON, 인용 데이터):\n", 1)[1]
+        .split("\n이번 답장의 과제: ", 1)[0]
+    )
+
+
 class ContractEngine:
+    """Independent classifier/source fixtures; no user-text classification."""
+
     def __init__(self, decision="accept"):
         self.decision = decision
-        self.calls = []
+        self.calls = []  # Source selection calls, retained for source-contract checks.
+        self.episode_calls = []
+        self.all_calls = []
         self.change = None
+        self.classifier_change = None
 
     def count_tokens(self, messages):
         return 100
 
     def reply(self, messages, **kwargs):
-        self.calls.append((messages, kwargs))
-        data = json.loads(messages[-1]["content"])
-        value = {
-            "mode": "conversation",
-            "notes": [],
-            "answer": "현재 의사에 맞게 답한다.",
-            "unknowns": [],
-        }
-        if "current_episode" in data:
-            value["episode_transition"] = {
-                "episode_id": data["current_episode"]["episode_id"],
-                "version": data["current_episode"]["version"],
-                "decision": {
-                    "accept": "accept_participation",
-                    "report_outcome": "report_activity_completion",
-                }.get(self.decision, self.decision),
+        self.all_calls.append((messages, kwargs))
+        classifier = "target" in kwargs["response_schema"]["properties"]
+        data = (
+            json.JSONDecoder().raw_decode(
+                messages[0]["content"].split(LAYOUT_NOTE, 1)[1]
+            )[0]
+            if classifier
+            else json.loads(messages[-1]["content"])
+        )
+        if classifier:
+            self.episode_calls.append((messages, kwargs))
+            act = {
+                "accept": "accept_participation",
+                "report_outcome": "report_activity_completion",
+            }.get(self.decision, self.decision)
+            response = next((r for r, a in RESPONSE_ACTS.items() if a == act), act)
+            value = {
+                "episode_id": data["episode_before_current_message"]["episode_id"],
+                "version": data["episode_before_current_message"]["version"],
+                "target": "current_user_episode",
+                "response": response,
                 "evidence_message_id": None
                 if self.decision == "no_change"
-                else data["current_message_id"],
+                else data["current_user_message"]["id"],
             }
-        if self.change:
-            self.change(value)
+            if self.classifier_change:
+                self.classifier_change(value)
+        else:
+            self.calls.append((messages, kwargs))
+            value = {
+                "mode": "conversation",
+                "notes": [],
+                "answer": "현재 의사에 맞게 답한다.",
+                "unknowns": [],
+            }
+            if "episode_before_current_message" in data:
+                value.pop("answer")
+            if self.change:
+                self.change(value)
         return {"reply": json.dumps(value), "finish_reason": "stop"}
 
 
 class EpisodePromptTests(unittest.TestCase):
+    def test_latest_sms_is_raw_final_user_and_reader_separates_previous_state(self):
+        past = [
+            {
+                "id": "past-u",
+                "role": "user",
+                "content": "이전 질문입니다.",
+                "sequence": 2,
+            },
+            {
+                "id": "past-a",
+                "role": "assistant",
+                "content": "이전 답변입니다.",
+                "sequence": 3,
+            },
+        ]
+        current = '지금 전할 내용은 "이것"입니다.\n{"표시": "원문 그대로"}'
+        state = episode(phase="awaiting_reply")
+        original = copy.deepcopy((past, state))
+        result = self.builder.build(
+            user_message=current,
+            current_message_id="current-user",
+            **{**self.kwargs, "history": past, "episode_context": state},
+        )
+        messages = result["messages"]
+        self.assertEqual(
+            [m["role"] for m in messages], ["system", "user", "assistant", "user"]
+        )
+        self.assertEqual(
+            messages[1:3], [{"role": m["role"], "content": m["content"]} for m in past]
+        )
+        self.assertEqual(messages[-1], {"role": "user", "content": current})
+        self.assertNotIn(current, messages[0]["content"])
+        audit = result["metadata"]["grounding"]
+        payload = json.loads(audit["input_messages"][-1]["content"])
+        self.assertEqual(list(payload)[-1], "current_user_message")
+        self.assertEqual(
+            payload["current_user_message"], {"id": "current-user", "text": current}
+        )
+        self.assertEqual(
+            payload["episode_before_current_message"]["phase"], "awaiting_reply"
+        )
+        self.assertNotIn("question", payload)
+        self.assertNotIn("current_episode", payload)
+        self.assertEqual(writer_data(result)["current_episode"]["phase"], "accepted")
+        self.assertEqual(audit["version"], EPISODE_READER_VERSION)
+        self.assertEqual((past, state), original)
+        self.assertEqual(reconstruct_input(result["metadata"], past), messages)
+
+    def test_episode_removes_answer_but_non_episode_contract_stays_strict(self):
+        callbacks = []
+        self.engine.change = lambda value: value.update(answer="obsolete draft")
+        with self.assertRaises(GemmaFailure) as caught:
+            self.builder.build(
+                user_message="현재 원문",
+                current_message_id="current-user",
+                on_episode_decision=callbacks.append,
+                **self.kwargs,
+            )
+        self.assertEqual(caught.exception.code, "grounding_invalid")
+        self.assertEqual(callbacks, [])
+        schema = self.engine.calls[-1][1]["response_schema"]
+        self.assertNotIn("answer", schema["properties"])
+        self.assertNotIn("answer", schema["required"])
+        self.assertFalse(schema["additionalProperties"])
+        self.engine.change = None
+        result = self.builder.build(
+            user_message="일반 문자",
+            **{**self.kwargs, "episode_context": None},
+        )
+        normal_schema = self.engine.calls[-1][1]["response_schema"]
+        self.assertIn("answer", normal_schema["properties"])
+        self.assertIn("answer", normal_schema["required"])
+        self.assertNotIn("episode_transition", normal_schema["properties"])
+        self.assertEqual(result["metadata"]["grounding"]["version"], READER_VERSION)
+        self.engine.change = lambda value: value.pop("answer")
+        with self.assertRaises(GemmaFailure):
+            self.builder.build(
+                user_message="일반 문자", **{**self.kwargs, "episode_context": None}
+            )
+
+    def test_question_evidence_is_not_mixed_with_automatic_background(self):
+        selected = {"majima-bowling-challenge", "saejima-majima"}
+        self.engine.change = lambda value: value.update(
+            notes=[
+                {"id": identifier, "field": "text"} for identifier in sorted(selected)
+            ]
+        )
+        result = self.builder.build(
+            user_message="근거를 확인하는 질문",
+            current_message_id="current",
+            **self.kwargs,
+        )
+        data = writer_data(result)
+        self.assertEqual({row["id"] for row in data["question_evidence"]}, selected)
+        self.assertEqual(
+            [row["id"] for row in data["episode_background"]], ["majima-retrain-rival"]
+        )
+        self.assertNotIn("source_reading_notes", data)
+        self.assertEqual(set(result["metadata"]["question_evidence_ids"]), selected)
+        self.assertEqual(
+            result["metadata"]["episode_background_ids"], ["majima-retrain-rival"]
+        )
+        registry = {row["id"]: row for row in self.builder.registry["records"]}
+        for row in data["question_evidence"]:
+            self.assertEqual(row["quote"], registry[row["id"]]["text"])
+        hits = {hit["id"]: hit for hit in result["retrieval_hits"]}
+        self.assertEqual(
+            hits["majima-bowling-challenge"]["source"],
+            registry["majima-bowling-challenge"]["source"],
+        )
+
+    def test_selected_existing_sources_keep_provenance_without_duplicate_text(self):
+        prior = "실제 대화의 약속은 보류되었습니다."
+        history = [
+            {"id": "prior", "role": "user", "content": prior},
+            {"id": "prior-answer", "role": "assistant", "content": "알겠습니다."},
+        ]
+        self.engine.change = lambda value: value.update(
+            notes=[
+                {"id": "conversation:prior", "field": "text"},
+                {"id": "kiryu-majima-address", "field": "text"},
+            ]
+        )
+        result = self.builder.build(
+            user_message="지금의 원문",
+            current_message_id="current",
+            **{**self.kwargs, "history": history},
+        )
+        data = writer_data(result)
+        self.assertEqual(data["question_evidence"], [])
+        self.assertEqual(
+            set(data["selected_existing_context_ids"]),
+            {"conversation:prior", "kiryu-majima-address"},
+        )
+        self.assertIn("kiryu-majima-address:", result["messages"][0]["content"])
+        self.assertEqual(
+            sum(message["content"].count(prior) for message in result["messages"]), 1
+        )
+        self.assertEqual(
+            result["metadata"]["selected_existing_context_ids"],
+            data["selected_existing_context_ids"],
+        )
+
+    def test_episode_followup_format_and_budget_do_not_change_generic_followups(self):
+        trigger = {"call_id": "call-1", "reason": "missed", "direction": "incoming"}
+        result = self.builder.build_followup(
+            trigger=trigger, **{**self.kwargs, "max_tokens": EPISODE_FOLLOWUP_TOKENS}
+        )
+        system = result["messages"][0]["content"]
+        self.assertIn("1~2문장", system)
+        self.assertNotIn("1~3문장", system)
+        self.assertEqual(result["metadata"]["output_budget"], EPISODE_FOLLOWUP_TOKENS)
+        with self.assertRaises(ValueError):
+            self.builder.build_followup(
+                trigger=trigger,
+                **{
+                    **self.kwargs,
+                    "episode_context": None,
+                    "max_tokens": EPISODE_FOLLOWUP_TOKENS,
+                },
+            )
+        normal = self.builder.build_followup(
+            trigger=trigger,
+            **{**self.kwargs, "episode_context": None, "max_tokens": 96},
+        )
+        self.assertEqual(normal["metadata"]["output_budget"], 96)
+
     def test_current_turn_task_respects_phase_but_discussion_can_resume(self):
         cases = (
             ("defer", "awaiting_reply", "respect_pause_or_end"),
@@ -99,7 +304,7 @@ class EpisodePromptTests(unittest.TestCase):
                 )
                 task = result["metadata"]["episode_turn_task"]
                 self.assertEqual(task["policy_id"], policy_id)
-                envelope = result["messages"][-1]["content"]
+                envelope = writer_reference(result)
                 self.assertTrue(envelope.endswith(task["instruction"]))
                 self.assertNotIn('"episode_purpose"', envelope)
                 self.assertIn('"id":"majima-bowling-challenge"', envelope)
@@ -130,7 +335,14 @@ class EpisodePromptTests(unittest.TestCase):
                     "episode_interpretation"
                 ]
                 self.assertEqual(interpretation["reader_act"], act)
-                self.assertEqual(interpretation["raw_transition"]["decision"], act)
+                self.assertEqual(
+                    RESPONSE_ACTS[
+                        result["metadata"]["grounding"]["episode_classifier"]["arms"][
+                            "primary"
+                        ]["output_json"]["response"]
+                    ],
+                    act,
+                )
                 self.assertEqual(
                     interpretation["validated_transition"]["decision"], decision
                 )
@@ -139,14 +351,17 @@ class EpisodePromptTests(unittest.TestCase):
                     calls[0]["evidence_message_id"],
                     None if decision == "no_change" else "current-user",
                 )
-                envelope = result["messages"][-1]["content"]
+                envelope = writer_reference(result)
                 self.assertIn(f'"current_episode_speech_act":"{act}"', envelope)
                 self.assertIn(f'"phase":"{next_phase}"', envelope)
-                schema = self.engine.calls[-1][1]["response_schema"]["properties"][
-                    "episode_transition"
-                ]
-                allowed = schema["properties"]["decision"]["enum"]
-                self.assertIn(act, allowed)
+                schema = self.engine.episode_calls[-1][1]["response_schema"]
+                allowed = schema["properties"]["response"]["enum"]
+                self.assertIn(
+                    result["metadata"]["grounding"]["episode_classifier"]["arms"][
+                        "primary"
+                    ]["output_json"]["response"],
+                    allowed,
+                )
                 self.assertNotIn("accept", allowed)
                 self.assertNotIn("report_outcome", allowed)
 
@@ -162,13 +377,13 @@ class EpisodePromptTests(unittest.TestCase):
             for changes in (
                 {"version": 0},
                 {"evidence_message_id": "other-user"},
-                {"decision": "accept"},
-                {"decision": "report_outcome"},
+                {"response": "accept"},
+                {"response": "report_outcome"},
             ):
                 with self.subTest(act=act, changes=changes):
-                    self.engine.change = lambda value, changes=changes: value[
-                        "episode_transition"
-                    ].update(changes)
+                    self.engine.classifier_change = lambda value, changes=changes: (
+                        value.update(changes)
+                    )
                     with self.assertRaises(GemmaFailure):
                         self.builder.build(
                             user_message="현재 원문",
@@ -222,13 +437,16 @@ class EpisodePromptTests(unittest.TestCase):
                 ]
                 self.assertEqual(interpretation["reader_act"], "amend_participation")
                 self.assertEqual(
-                    interpretation["raw_transition"]["decision"], "amend_participation"
+                    result["metadata"]["grounding"]["episode_classifier"]["arms"][
+                        "primary"
+                    ]["output_json"]["response"],
+                    "terms_change",
                 )
                 self.assertEqual(
                     result["metadata"]["episode_turn_task"]["policy_id"],
                     "acknowledge_amendment",
                 )
-                envelope = result["messages"][-1]["content"]
+                envelope = writer_reference(result)
                 self.assertIn('"current_episode_interpretation":"accept"', envelope)
                 self.assertIn(
                     '"current_episode_speech_act":"amend_participation"', envelope
@@ -237,7 +455,9 @@ class EpisodePromptTests(unittest.TestCase):
                     '"pending_proposal":{"message_id":"replacement-user"}', envelope
                 )
                 self.assertIn('"phase":"accepted"', envelope)
-                self.assertIn(json.dumps(current, ensure_ascii=False), envelope)
+                self.assertEqual(
+                    result["messages"][-1], {"role": "user", "content": current}
+                )
                 self.assertNotIn('"close_reason":"cancel"', envelope)
                 self.assertEqual(
                     reconstruct_input(result["metadata"], history), result["messages"]
@@ -284,11 +504,9 @@ class EpisodePromptTests(unittest.TestCase):
                 self.assertEqual(
                     result["metadata"]["episode_turn_task"]["policy_id"], task
                 )
-                self.assertIn(f'"phase":"{phase}"', result["messages"][-1]["content"])
+                self.assertIn(f'"phase":"{phase}"', writer_reference(result))
                 if act == "cancel":
-                    self.assertIn(
-                        '"close_reason":"cancel"', result["messages"][-1]["content"]
-                    )
+                    self.assertIn('"close_reason":"cancel"', writer_reference(result))
 
     def test_identical_note_selections_are_deduplicated_with_raw_audit(self):
         identifier = "c1093ba9-ca6c-43f2-8116-41dc2b486824-assistant"
@@ -303,11 +521,12 @@ class EpisodePromptTests(unittest.TestCase):
                     {"id": "conversation:" + identifier, "field": "text"}
                     for _ in range(3)
                 ],
-                answer="맞다. 이번에는 내 손으로 직접 보낸 기다.",
             )
-            value["episode_transition"]["evidence_message_id"] = current
 
         self.engine.change = reply
+        self.engine.classifier_change = lambda value: value.update(
+            evidence_message_id=current
+        )
         result = self.builder.build(
             user_message="지금 문자 보낸 건 형님이잖아요.",
             current_message_id=current,
@@ -396,7 +615,6 @@ class EpisodePromptTests(unittest.TestCase):
         self.engine.decision = "no_change"
         self.engine.change = lambda value: value.update(
             notes=[{"id": "conversation:long-user", "field": "text"}],
-            answer="READER_DRAFT_PRIVATE_DETAIL",
         )
         result = self.builder.build(
             user_message="형님",
@@ -411,8 +629,7 @@ class EpisodePromptTests(unittest.TestCase):
         model_text = json.dumps(result["messages"], ensure_ascii=False)
         self.assertNotIn(text, model_text)
         self.assertNotIn(rare[:20], model_text)
-        self.assertNotIn("READER_DRAFT_PRIVATE_DETAIL", model_text)
-        self.assertIn('"content_omitted":true', result["messages"][-1]["content"])
+        self.assertIn('"content_omitted":true', writer_reference(result))
         self.assertIn("long-user", model_text)
         self.assertIn("형님", model_text)
         self.assertEqual(
@@ -431,10 +648,13 @@ class EpisodePromptTests(unittest.TestCase):
         context = episode(
             phase="accepted", pending_proposal=text, evidence_message_ids=["long-user"]
         )
-        prior = [{"id": "long-user", "role": "user", "content": text}]
+        prior = [
+            {"id": "long-user", "role": "user", "content": text},
+            {"id": "long-assistant", "role": "assistant", "content": "알겠다"},
+        ]
         self.engine.decision = "no_change"
         self.engine.count_tokens = lambda messages: (
-            5000 if text in messages[-1]["content"] else 100
+            5000 if text in json.dumps(messages, ensure_ascii=False) else 100
         )
         reader = EvidenceReader(self.engine)
         kwargs = {
@@ -452,9 +672,11 @@ class EpisodePromptTests(unittest.TestCase):
         _, audit = reader.read(question="형님", **kwargs)
         payload = json.loads(audit["input_messages"][-1]["content"])
         self.assertTrue(
-            payload["current_episode"]["pending_proposal"]["content_omitted"]
+            payload["episode_before_current_message"]["pending_proposal"][
+                "content_omitted"
+            ]
         )
-        self.assertEqual(payload["question"], "형님")
+        self.assertEqual(payload["current_user_message"]["text"], "형님")
         self.assertEqual(payload["episode_evidence"], [])
         self.assertIn("long-user", audit["past_context_omission"]["message_ids"])
         self.engine.calls.clear()
@@ -481,7 +703,7 @@ class EpisodePromptTests(unittest.TestCase):
                 ),
             },
         )
-        envelope = result["messages"][-1]["content"]
+        envelope = writer_reference(result)
         self.assertNotIn(text, envelope)
         self.assertIn('"content_omitted":true', envelope)
         self.assertIn('"reason":"missed"', envelope)
@@ -526,8 +748,10 @@ class EpisodePromptTests(unittest.TestCase):
                     },
                 )
                 data = json.loads(self.engine.calls[0][0][-1]["content"])
-                self.assertEqual(data["current_episode"]["call_outcome"], outcome)
-                writer = result["messages"][-1]["content"]
+                self.assertEqual(
+                    data["episode_before_current_message"]["call_outcome"], outcome
+                )
+                writer = writer_reference(result)
                 self.assertIn(f'"call_outcome":"{outcome}"', writer)
                 if outcome != "ended":
                     last = data["recent_timeline"][-1]
@@ -629,7 +853,8 @@ class EpisodePromptTests(unittest.TestCase):
         def budget(messages):
             return (
                 9000
-                if "optional-" in messages[-1]["content"] or len(messages) > 2
+                if any("optional-" in m["content"] for m in messages)
+                or len(messages) > 2
                 else 100
             )
 
@@ -644,7 +869,7 @@ class EpisodePromptTests(unittest.TestCase):
                 "count_tokens": budget,
             },
         )
-        payload = result["messages"][-1]["content"]
+        payload = writer_reference(result)
         self.assertIn(json.dumps(text, ensure_ascii=False), payload)
         self.assertIn(past[2]["content"], payload)
         self.assertEqual(result["metadata"]["notice_message_ids"], ["invite", "latest"])
@@ -672,7 +897,7 @@ class EpisodePromptTests(unittest.TestCase):
         self.assertNotIn(
             "saejima-majima", result["metadata"]["system_relationship_ids"]
         )
-        self.assertIn('"id":"saejima-majima"', result["messages"][-1]["content"])
+        self.assertIn('"id":"saejima-majima"', writer_reference(result))
 
     def test_selected_native_turn_is_not_copied_into_writer_notes(self):
         past = [
@@ -790,13 +1015,13 @@ class EpisodePromptTests(unittest.TestCase):
             [r["id"] for r in reader_payload["recent_timeline"]],
             ["conversation:invite", "conversation:u", "conversation:a"],
         )
-        self.assertEqual(reader_payload["current_message_id"], "current-user")
+        self.assertEqual(reader_payload["current_user_message"]["id"], "current-user")
         self.assertEqual(reader_payload["recent_timeline"][0]["role"], "assistant")
         self.assertEqual(
             [m["role"] for m in result["messages"]],
             ["system", "user", "assistant", "user"],
         )
-        self.assertIn('"sequence":1', result["messages"][-1]["content"])
+        self.assertIn('"sequence":1', writer_reference(result))
         self.assertEqual(called[0]["decision"], "cancel")
         self.assertEqual(result["metadata"]["episode_transition"], called[0])
         self.assertEqual(
@@ -812,9 +1037,7 @@ class EpisodePromptTests(unittest.TestCase):
         )
 
     def test_reader_schema_cannot_select_other_message_to_change_state(self):
-        self.engine.change = lambda v: v["episode_transition"].update(
-            evidence_message_id="invite"
-        )
+        self.engine.classifier_change = lambda v: v.update(evidence_message_id="invite")
         called = []
         with self.assertRaises(GemmaFailure):
             self.builder.build(
@@ -824,9 +1047,7 @@ class EpisodePromptTests(unittest.TestCase):
                 **self.kwargs,
             )
         self.assertEqual(called, [])
-        schema = self.engine.calls[0][1]["response_schema"]["properties"][
-            "episode_transition"
-        ]
+        schema = self.engine.episode_calls[0][1]["response_schema"]
         self.assertEqual(
             schema["properties"]["evidence_message_id"]["enum"], ["current-user", None]
         )
@@ -845,11 +1066,12 @@ class EpisodePromptTests(unittest.TestCase):
             value.update(
                 mode="grounded",
                 notes=[{"id": "conversation:" + prior_id, "field": "text"}],
-                answer="네, 일단 며칠 쉬어야 한다고 해서 오늘은 별다른 약속은 없습니다.",
             )
-            value["episode_transition"]["evidence_message_id"] = current
 
         self.engine.change = output
+        self.engine.classifier_change = lambda value: value.update(
+            evidence_message_id=current
+        )
         result = self.builder.build(
             user_message="그러니까 오늘 약속은 없는 거죠?",
             current_message_id=current,
@@ -878,9 +1100,9 @@ class EpisodePromptTests(unittest.TestCase):
             result["metadata"]["episode_transition"]["evidence_message_id"]
         )
         self.assertEqual(
-            grounding["transition_normalization"]["raw_transition"][
-                "evidence_message_id"
-            ],
+            grounding["episode_classifier"]["arms"]["primary"]["interpretation"][
+                "raw_transition"
+            ]["evidence_message_id"],
             current,
         )
 
@@ -892,9 +1114,9 @@ class EpisodePromptTests(unittest.TestCase):
             {"evidence_message_id": "current-user", "extra": "not allowed"},
         ):
             with self.subTest(changes=changes):
-                self.engine.change = lambda value, changes=changes: value[
-                    "episode_transition"
-                ].update(changes)
+                self.engine.classifier_change = lambda value, changes=changes: (
+                    value.update(changes)
+                )
                 with self.assertRaises(GemmaFailure):
                     self.builder.build(
                         user_message="상태는 그대로죠?",
@@ -914,9 +1136,11 @@ class EpisodePromptTests(unittest.TestCase):
             self.engine.decision = decision
             for identifier in (None, "stale-user"):
                 with self.subTest(decision=decision, evidence=identifier):
-                    self.engine.change = lambda value, identifier=identifier: value[
-                        "episode_transition"
-                    ].update(evidence_message_id=identifier)
+                    self.engine.classifier_change = (
+                        lambda value, identifier=identifier: value.update(
+                            evidence_message_id=identifier
+                        )
+                    )
                     with self.assertRaises(GemmaFailure):
                         self.builder.build(
                             user_message="현재 문자",
@@ -969,8 +1193,8 @@ class EpisodePromptTests(unittest.TestCase):
         self.assertEqual(result["metadata"]["request_kind"], "proactive_episode")
         self.assertEqual(result["metadata"]["input_message_ids"], [])
         self.assertEqual(result["metadata"]["input_envelope_kind"], "application-event")
-        self.assertIn("니시다가", result["messages"][-1]["content"])
-        self.assertIn("IF", result["messages"][-1]["content"])
+        self.assertIn("니시다가", writer_reference(result))
+        self.assertIn("IF", writer_reference(result))
         self.assertEqual(reconstruct_input(result["metadata"], []), result["messages"])
         self.assertEqual(self.engine.calls, [])
         with self.assertRaises(ValueError):
@@ -981,12 +1205,12 @@ class EpisodePromptTests(unittest.TestCase):
             trigger={"call_id": "call-1", "reason": "idle", "direction": "incoming"},
             **self.kwargs,
         )
-        self.assertIn("연결된 뒤", result["messages"][-1]["content"])
+        self.assertIn("연결된 뒤", writer_reference(result))
         self.assertEqual(result["metadata"]["request_kind"], "call_followup")
         self.assertEqual(result["metadata"]["output_budget"], 96)
         self.assertNotIn(
             episode_definition(episode())["invitation"],
-            result["messages"][-1]["content"],
+            writer_reference(result),
         )
         self.assertEqual(result["metadata"]["episode_context"]["version"], 4)
         self.assertEqual(self.engine.calls, [])
@@ -1005,9 +1229,7 @@ class EpisodePromptTests(unittest.TestCase):
         )
         for result in (invitation, followup):
             with self.subTest(kind=result["metadata"]["request_kind"]):
-                self.assertTrue(
-                    result["messages"][-1]["content"].endswith(OUTBOUND_FACTS_RULES)
-                )
+                self.assertTrue(writer_reference(result).endswith(OUTBOUND_FACTS_RULES))
                 sources = result["metadata"]["outbound_fact_sources"]
                 self.assertEqual(sources["version"], OUTBOUND_FACTS_VERSION)
                 self.assertEqual(
@@ -1129,13 +1351,11 @@ class EpisodePromptTests(unittest.TestCase):
                 self.assertIn(current_history[-2]["content"], str(result["messages"]))
                 self.assertIn(
                     '"latest_evidence_message_id":"correct"',
-                    result["messages"][-1]["content"],
+                    writer_reference(result),
                 )
                 if phase == "closed":
                     self.assertIsNone(sources["pending_proposal_source"])
-                    self.assertIn(
-                        '"close_reason":"cancel"', result["messages"][-1]["content"]
-                    )
+                    self.assertIn('"close_reason":"cancel"', writer_reference(result))
 
     def test_outbound_does_not_guess_proposal_provenance_or_modify_non_episode_inputs(
         self,
@@ -1149,7 +1369,7 @@ class EpisodePromptTests(unittest.TestCase):
         )
         self.assertIn(
             self.kwargs["episode_context"]["pending_proposal"],
-            result["messages"][-1]["content"],
+            writer_reference(result),
         )
         normal = self.builder.build(
             user_message="형님", current_message_id="current", **self.kwargs
