@@ -1,5 +1,6 @@
 """Synthetic episode state, migration, queue races and wire compatibility."""
 
+import copy
 import json
 import sqlite3
 import tempfile
@@ -305,6 +306,64 @@ class EpisodeDBTests(unittest.TestCase):
             self.db.episodes.get(self.db.issue_session()["visitor_id"], SCENARIO)
         )
 
+    def test_defer_and_topic_change_have_equal_effect_and_preserve_closed_state(self):
+        self.invitation()
+        user, _ = self.db.accept(
+            self.visitor,
+            "majima",
+            SCENARIO,
+            "검사용 새 화제",
+            str(uuid4()),
+            supersede_episode=True,
+        )
+        evidence = user["job_id"] + "-user"
+        original = self.db.episodes.get(self.visitor, SCENARIO)
+        variants = [
+            (phase, None)
+            for phase in ("not_started", "awaiting_reply", "accepted", "deferred")
+        ]
+        variants += [
+            ("closed", reason) for reason in ("cancel", "decline", "report_outcome")
+        ]
+        for phase, reason in variants:
+            with self.subTest(phase=phase, reason=reason):
+                before = {
+                    **copy.deepcopy(original),
+                    "phase": phase,
+                    "close_reason": reason,
+                }
+                after = []
+                for decision in ("defer", "change_topic"):
+                    with self.db.connection(write=True) as connection:
+                        self.db.episodes.save(
+                            connection, self.visitor, SCENARIO, before
+                        )
+                    self.assertTrue(
+                        self.db.episodes.apply_decision(
+                            self.visitor,
+                            SCENARIO,
+                            {
+                                "episode_id": EPISODE_ID,
+                                "version": before["version"],
+                                "decision": decision,
+                                "evidence_message_id": evidence,
+                            },
+                            evidence,
+                        )
+                    )
+                    after.append(self.db.episodes.get(self.visitor, SCENARIO))
+                self.assertEqual(after[0], after[1])
+                self.assertEqual(
+                    after[0]["phase"], "closed" if phase == "closed" else "deferred"
+                )
+                self.assertEqual(after[0]["close_reason"], reason)
+                self.assertEqual(
+                    after[0]["pending_proposal"], before["pending_proposal"]
+                )
+                self.assertFalse(after[0]["interpretation_pending"])
+                self.assertEqual(after[0]["contact_stage"], "rest")
+                self.assertEqual(after[0]["evidence_message_ids"][-1], evidence)
+
     def test_old_history_filters_proactive_without_breaking_cursor(self):
         self.invitation()
         self.assertEqual(
@@ -540,7 +599,14 @@ class EpisodeAPITests(unittest.TestCase):
             # Fixed model outputs exercise the real builder/API/DB boundary;
             # they do not claim a model understood these synthetic messages.
             responses = iter(
-                ("rejection", "decision_postponed", "agreement", "agreement")
+                (
+                    "rejection",
+                    "decision_postponed",
+                    "agreement",
+                    "agreement",
+                    "topic_change",
+                    "decision_postponed",
+                )
             )
 
             def count_tokens(self, messages):
@@ -549,14 +615,17 @@ class EpisodeAPITests(unittest.TestCase):
             def reply(self, messages, **kwargs):
                 properties = kwargs["response_schema"]["properties"]
                 if "target" in properties:
+                    response = next(self.responses)
                     value = {
                         "episode_id": properties["episode_id"]["enum"][0],
                         "version": properties["version"]["enum"][0],
                         "evidence_message_id": properties["evidence_message_id"][
                             "enum"
                         ][0],
-                        "target": "current_user_episode",
-                        "response": next(self.responses),
+                        "target": "other"
+                        if response == "topic_change"
+                        else "current_user_episode",
+                        "response": response,
                     }
                 else:
                     value = {"mode": "conversation", "notes": [], "unknowns": []}
@@ -612,6 +681,16 @@ class EpisodeAPITests(unittest.TestCase):
         self.assertEqual(
             len(self.service.db.history(self.visitor, "majima", SCENARIO)), 4
         )
+
+        # Two different acts can have the same authoritative DB effect. The
+        # only permitted pair is defer/change_topic, both preserving a pause.
+        deferred = send("검사용 보류와 화제 전환")
+        paused = self.service.db.episodes.get(self.visitor, SCENARIO)
+        self.assertEqual(paused["phase"], "deferred")
+        self.assertFalse(paused["interpretation_pending"])
+        self.assertEqual(paused["evidence_message_ids"][-1], deferred + "-user")
+        self.assertEqual(paused["contact_stage"], "rest")
+        self.assertIsNone(self.pulse().json()["action"])
 
     def event(self, kind, **fields):
         self.seq += 1

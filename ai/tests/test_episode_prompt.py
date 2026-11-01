@@ -3,7 +3,14 @@ import json
 import unittest
 
 from kiryu_ai.call_followups import EPISODE_FOLLOWUP_TOKENS
-from kiryu_ai.chat_prompt import ChatPromptBuilder, InputBudgetError, reconstruct_input
+from kiryu_ai.chat_prompt import (
+    EPISODE_COMMON_RULES,
+    EPISODE_FOLLOWUP_RULES,
+    EPISODE_PRIVATE_BACKGROUND_RULES,
+    ChatPromptBuilder,
+    InputBudgetError,
+    reconstruct_input,
+)
 from kiryu_ai.chat_reader import EPISODE_READER_VERSION, READER_VERSION, EvidenceReader
 from kiryu_ai.episode_prompt import (
     OUTBOUND_FACTS_RULES,
@@ -116,6 +123,78 @@ class ContractEngine:
 
 
 class EpisodePromptTests(unittest.TestCase):
+    def test_private_background_permission_only_reaches_actual_episode_reply_writer(
+        self,
+    ):
+        result = self.builder.build(
+            user_message="현재 기분을 묻는 원문",
+            current_message_id="current",
+            **self.kwargs,
+        )
+        self.assertIn(
+            EPISODE_PRIVATE_BACKGROUND_RULES, result["messages"][0]["content"]
+        )
+        # The classifier/source reader is not permitted to manufacture history
+        # or commitments under a writer's limited fictional-background policy.
+        for messages, _ in self.engine.all_calls:
+            self.assertNotIn(
+                EPISODE_PRIVATE_BACKGROUND_RULES,
+                json.dumps(messages, ensure_ascii=False),
+            )
+        ordinary = self.builder.build(
+            user_message="일반 문자",
+            **{**self.kwargs, "episode_context": None},
+        )
+        self.assertNotIn(
+            EPISODE_PRIVATE_BACKGROUND_RULES, ordinary["messages"][0]["content"]
+        )
+        invitation = self.builder.build_episode(
+            **{
+                **self.kwargs,
+                "episode_context": episode(phase="not_started"),
+            }
+        )
+        followup = self.builder.build_followup(
+            trigger={
+                "call_id": "call-scope",
+                "reason": "missed",
+                "direction": "incoming",
+            },
+            **self.kwargs,
+        )
+        for outbound, rules in (
+            (invitation, EPISODE_COMMON_RULES),
+            (followup, EPISODE_FOLLOWUP_RULES),
+        ):
+            self.assertTrue(outbound["messages"][0]["content"].startswith(rules))
+            self.assertNotIn(
+                EPISODE_PRIVATE_BACKGROUND_RULES, outbound["messages"][0]["content"]
+            )
+
+    def test_uncertain_new_act_preserves_an_existing_participation_agreement(self):
+        outputs = iter(("discussion", "progress"))
+        self.engine.classifier_change = lambda value: value.update(
+            response=next(outputs)
+        )
+        state = episode(
+            phase="accepted", pending_proposal="같이 가기로 함; 장소는 미정"
+        )
+        result = self.builder.build(
+            user_message="장소는 어떻게 정할까요?",
+            current_message_id="current",
+            **{**self.kwargs, "episode_context": state},
+        )
+        data = writer_data(result)
+        self.assertEqual(data["current_episode"]["phase"], "accepted")
+        self.assertEqual(data["current_episode_interpretation"], "no_change")
+        self.assertEqual(data["current_episode_consensus"]["status"], "agreed")
+        self.assertFalse(data["current_episode_consensus"]["reader_act_agreement"])
+        self.assertIsNone(data["current_episode_speech_act"])
+        task = result["metadata"]["episode_turn_task"]["instruction"]
+        self.assertIn("이전 확정 기록을 지우는 것이 아니다", task)
+        self.assertIn("장소·일정 질문에 답할 수 있다", task)
+        self.assertNotIn("미합의 참석을 전제로", task)
+
     def test_latest_sms_is_raw_final_user_and_reader_separates_previous_state(self):
         past = [
             {
@@ -763,6 +842,48 @@ class EpisodePromptTests(unittest.TestCase):
                     self.assertNotIn("untrusted", writer)
         with self.assertRaises(ValueError):
             validate_episode_context(episode(call_outcome="assumed_refusal"), "majima")
+
+    def test_closed_state_projection_only_reopens_for_explicit_acceptance(self):
+        for reason in ("decline", "cancel", "report_outcome"):
+            original = episode(
+                phase="closed",
+                close_reason=reason,
+                pending_proposal=None,
+                user_reports=[{"message_id": "result", "text": "사용자 보고"}]
+                if reason == "report_outcome"
+                else [],
+            )
+            snapshot = copy.deepcopy(original)
+            for decision in ("defer", "change_topic"):
+                with self.subTest(reason=reason, decision=decision):
+                    view = episode_state_view(
+                        original,
+                        [],
+                        transition={
+                            "decision": decision,
+                            "evidence_message_id": "current",
+                        },
+                    )
+                    self.assertEqual(view["phase"], "closed")
+                    self.assertEqual(view["close_reason"], reason)
+                    self.assertNotIn("pending_proposal", view)
+                    self.assertEqual(view["latest_evidence_message_id"], "current")
+                    if reason == "report_outcome":
+                        self.assertEqual(
+                            view["user_report"], snapshot["user_reports"][0]
+                        )
+                    self.assertEqual(original, snapshot)
+            reopened = episode_state_view(
+                original,
+                [],
+                transition={
+                    "decision": "accept",
+                    "evidence_message_id": "current",
+                },
+            )
+            self.assertEqual(reopened["phase"], "accepted")
+            self.assertNotIn("close_reason", reopened)
+            self.assertEqual(reopened["pending_proposal"], {"message_id": "current"})
 
     def test_state_references_whole_proposal_and_newest_correction(self):
         text = "원래 약속: " + "설명 " * 300 + " 하지만 저녁 약속은 취소합니다."

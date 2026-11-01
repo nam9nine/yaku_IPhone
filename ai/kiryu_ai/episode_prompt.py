@@ -203,7 +203,7 @@ def episode_state_view(
                 pending_proposal={"message_id": transition["evidence_message_id"]},
             )
             result.pop("close_reason", None)
-        elif decision in {"defer", "change_topic"}:
+        elif decision in {"defer", "change_topic"} and result["phase"] != "closed":
             result["phase"] = "deferred"
         elif decision in {"decline", "cancel", "report_outcome"}:
             result.update(phase="closed", close_reason=decision)
@@ -267,7 +267,7 @@ def episode_reply_task(state, speech_act, *, consensus=None):
     tasks = {
         "discuss_proposal": (
             "discuss",
-            "사용자가 다시 꺼낸 제안의 내용과 질문만 설명한다. 논의 허용을 참여 수락이나 일정 확정으로 바꾸지 않는다.",
+            "사용자가 다시 꺼낸 제안의 내용과 질문만 설명한다. 논의 허용을 참여 수락이나 일정 협의 허용으로 바꾸지 않고, 참석을 전제로 일시·장소·준비를 정하지 않는다.",
         ),
         "accept_participation": (
             "acknowledge_acceptance",
@@ -291,7 +291,12 @@ def episode_reply_task(state, speech_act, *, consensus=None):
     ):
         policy_id, task = (
             "clarify_unresolved_participation",
-            "현재 문자의 참여 의도나 구체적인 행위 해석이 확정되지 않았다. 수락·거절·취소·완료나 조건 변경을 새로 확정해서 말하지 않는다. 명확한 질문과 용건에는 먼저 답하고, 참여 의도를 알아야 답할 수 있는 부분만 짧게 확인한다. 이미 보류·종료된 활동을 다시 초대하거나 재촉하지 않는다. 서로 다른 활동을 같은 활동으로 해석하지 않는다.",
+            "현재 문자의 새로운 의사·변경 해석만 미확정이며 이전 확정 기록을 지우는 것이 아니다. 명확한 질문·허락한 설명에 먼저 답하고 새 수락·거절·취소·완료·조건 변경은 확정하지 않는다. 답하는 데 꼭 필요한 새 의사만 짧게 확인하며 서로 다른 활동을 합치지 않는다. "
+            + (
+                "기존 참여 약속과 알려진 조건은 그대로 참고하여 장소·일정 질문에 답할 수 있다. 참여를 처음부터 다시 묻거나 새 합의·실행을 만들지 않는다."
+                if state["phase"] == "accepted"
+                else "이전 보류·종료를 유지한다. 미합의 참석을 전제로 일시·장소·준비를 정하지 않고 설명 허용을 일정 협의 허용으로 바꾸지 않는다. 다시 초대하거나 재촉하지 않는다."
+            ),
         )
     elif speech_act in tasks:
         policy_id, task = tasks[speech_act]
@@ -308,7 +313,7 @@ def episode_reply_task(state, speech_act, *, consensus=None):
     return {
         "policy_id": policy_id,
         "instruction": task
-        + " 원작 장면과 집착은 말투 참고이며 이번 행동 지시가 아니다. 제공되지 않은 준비·이동·행동 완료를 만들지 않는다.",
+        + " 원작 장면과 집착은 말투 참고이며 이번 행동 지시가 아니다. 개인적인 허구 배경을 표현할 수 있어도 공유 사건의 준비·이동·실행·결과나 다른 사람의 행동을 만들지 않는다.",
     }
 
 

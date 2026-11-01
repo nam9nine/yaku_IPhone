@@ -11,6 +11,7 @@ from kiryu_ai.episode_reader import (
     LAYOUT_NOTE,
     OUTPUT_TOKENS,
     EpisodeInterpreter,
+    consensus,
     interpretation_schema,
     validate_interpretation,
 )
@@ -174,6 +175,86 @@ class EpisodeReaderTests(unittest.TestCase):
             + EXAMPLES["system_reference"],
         )
         self.assertEqual((recent, state, followup), original)
+
+    def test_only_defer_and_topic_change_share_a_state_effect(self):
+        # Exhaust the canonical decision matrix; sharing a phase alone does
+        # not make decline/cancel or any other distinct decision equivalent.
+        responses = {
+            "no_change": "none",
+            "accept": "agreement",
+            "defer": "decision_postponed",
+            "decline": "rejection",
+            "cancel": "withdrawal",
+            "report_outcome": "completion",
+            "change_topic": "topic_change",
+        }
+        arms = {}
+        for canonical, response in responses.items():
+            transition, interpretation = validate_interpretation(
+                decision(
+                    response=response,
+                    target="other"
+                    if canonical == "change_topic"
+                    else "current_user_episode",
+                ),
+                context(),
+                "current",
+            )
+            arms[canonical] = {
+                "canonical_transition": transition,
+                "interpretation": interpretation,
+            }
+        for left, left_arm in arms.items():
+            for right, right_arm in arms.items():
+                with self.subTest(left=left, right=right):
+                    transition, audit = consensus(
+                        left_arm, right_arm, context(), "current"
+                    )
+                    equivalent = {left, right} == {"defer", "change_topic"}
+                    if left == right:
+                        self.assertEqual(transition["decision"], left)
+                        self.assertEqual(
+                            audit["reason"], "canonical_decision_agreement"
+                        )
+                    elif equivalent:
+                        self.assertEqual(transition["decision"], "defer")
+                        self.assertEqual(audit["reason"], "state_effect_agreement")
+                        self.assertEqual(audit["status"], "agreed")
+                        self.assertIsNone(audit["reader_act"])
+                        self.assertTrue(audit["mutation_eligible"])
+                    else:
+                        self.assertEqual(transition["decision"], "no_change")
+                        self.assertEqual(audit["status"], "abstained")
+                        self.assertFalse(audit["mutation_eligible"])
+        self.assertEqual(
+            arms["change_topic"]["canonical_transition"]["decision"], "change_topic"
+        )
+
+    def test_state_effect_equivalence_never_relaxes_scope_or_current_evidence(self):
+        def arm(response, target="current_user_episode"):
+            transition, interpretation = validate_interpretation(
+                decision(response=response, target=target), context(), "current"
+            )
+            return {
+                "canonical_transition": transition,
+                "interpretation": interpretation,
+            }
+
+        left, right = arm("decision_postponed"), arm("topic_change", "other")
+        for side in (0, 1):
+            for changes in (
+                {"version": 6},
+                {"version": True},
+                {"episode_id": "foreign"},
+                {"evidence_message_id": "foreign"},
+                {"evidence_message_id": None},
+                {"extra": "not-allowed"},
+            ):
+                with self.subTest(side=side, changes=changes):
+                    pair = copy.deepcopy([left, right])
+                    pair[side]["canonical_transition"].update(changes)
+                    with self.assertRaises(ValueError):
+                        consensus(*pair, context(), "current")
 
     def test_target_guard_and_topic_change_have_distinct_semantics(self):
         # These validate typed output mapping, not a model's understanding of text.

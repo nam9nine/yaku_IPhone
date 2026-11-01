@@ -366,7 +366,10 @@ class EpisodeStore:
                     phase="accepted", pending_proposal=row[0][:1000], close_reason=None
                 )
             elif decision in {"defer", "change_topic"}:
-                state.update(phase="deferred")
+                # A new topic/postponement must not reopen an already ended
+                # activity. An explicit new acceptance can still do so above.
+                if state["phase"] != "closed":
+                    state.update(phase="deferred")
             elif decision in {"decline", "cancel", "report_outcome"}:
                 state.update(
                     phase="closed", close_reason=decision, pending_proposal=None

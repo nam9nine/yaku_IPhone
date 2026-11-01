@@ -24,7 +24,7 @@ from .episode_prompt import (
 )
 from .gemma_engine import GemmaFailure
 
-INTERPRETER_VERSION = "episode-interpreter-v3"
+INTERPRETER_VERSION = "episode-interpreter-v4"
 INPUT_TOKENS = 3072
 OUTPUT_TOKENS = 1024
 TARGETS = ("current_user_episode", "other", "unclear")
@@ -173,13 +173,23 @@ def native_messages(
 
 def consensus(primary, secondary, episode, current_id):
     """Agreement is a state-mutation gate, not a correctness/confidence score."""
-    left, right = primary["canonical_transition"], secondary["canonical_transition"]
-    agreed = left == right
+    left = validate_transition(primary["canonical_transition"], episode, current_id)
+    right = validate_transition(secondary["canonical_transition"], episode, current_id)
+    # EpisodeStore.apply_decision gives these two decisions the same deferred
+    # state, evidence, pending-proposal and contact behavior. This is a state
+    # effect equivalence, not agreement on the user's complete speech act.
+    equivalent_defer = left != right and {left["decision"], right["decision"]} == {
+        "defer",
+        "change_topic",
+    }
+    agreed = left == right or equivalent_defer
     left_act = primary["interpretation"]["reader_act"]
     right_act = secondary["interpretation"]["reader_act"]
     reader_act = left_act if agreed and left_act == right_act else None
     transition = validate_transition(
-        left
+        {**left, "decision": "defer"}
+        if equivalent_defer
+        else left
         if agreed
         else {
             "episode_id": episode["episode_id"],
@@ -192,7 +202,9 @@ def consensus(primary, secondary, episode, current_id):
     )
     return transition, {
         "status": "agreed" if agreed else "abstained",
-        "reason": "canonical_decision_agreement"
+        "reason": "state_effect_agreement"
+        if equivalent_defer
+        else "canonical_decision_agreement"
         if agreed
         else "abstain_conflicting_interpretations",
         "reader_act": reader_act,
@@ -237,7 +249,7 @@ class EpisodeInterpreter:
         omitted = False
         audit = {
             "version": INTERPRETER_VERSION,
-            "method": "native-and-generic-examples-canonical-agreement",
+            "method": "native-and-generic-examples-state-transition-consensus",
             "examples_version": EXAMPLES["version"],
             "examples_reference_sha256": EXAMPLES["system_reference_sha256"],
             "arms": {},
