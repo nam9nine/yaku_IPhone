@@ -171,6 +171,41 @@ class EpisodePromptTests(unittest.TestCase):
                 EPISODE_PRIVATE_BACKGROUND_RULES, outbound["messages"][0]["content"]
             )
 
+    def test_episode_reply_profile_is_scoped_and_required_without_changing_original(
+        self,
+    ):
+        card = self.builder.cards["characters"]["majima"]
+        original, compact = card["prompt"], card["episode_reply_profile"]
+        reply = self.builder.build(
+            user_message="현재 용건", current_message_id="current", **self.kwargs
+        )
+        self.assertIn(compact, reply["messages"][0]["content"])
+        self.assertNotIn(original, reply["messages"][0]["content"])
+        self.assertEqual(card["prompt"], original)
+        ordinary = self.builder.build(
+            user_message="현재 용건", **{**self.kwargs, "episode_context": None}
+        )
+        invitation = self.builder.build_episode(
+            **{**self.kwargs, "episode_context": episode(phase="not_started")}
+        )
+        followup = self.builder.build_followup(
+            trigger={
+                "call_id": "profile-scope",
+                "reason": "missed",
+                "direction": "incoming",
+            },
+            **self.kwargs,
+        )
+        for item in (ordinary, invitation, followup):
+            self.assertIn(original, item["messages"][0]["content"])
+            self.assertNotIn(compact, item["messages"][0]["content"])
+        del card["episode_reply_profile"]
+        with self.assertRaisesRegex(InputBudgetError, "compact character profile"):
+            self.builder.build(
+                user_message="현재 용건", current_message_id="current", **self.kwargs
+            )
+        card["episode_reply_profile"] = compact
+
     def test_uncertain_new_act_preserves_an_existing_participation_agreement(self):
         outputs = iter(("discussion", "progress"))
         self.engine.classifier_change = lambda value: value.update(
