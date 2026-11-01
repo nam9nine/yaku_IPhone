@@ -26,9 +26,10 @@ from .episode_prompt import (
     validate_episode_context,
     validate_transition,
 )
+from .gemma_engine import GemmaFailure
 from .phone_events import NO_PHONE_EVENTS, resolve_phone_events
 
-PROMPT_VERSION = "kiryu-daily-sms-v32"
+PROMPT_VERSION = "kiryu-daily-sms-v34"
 
 RELATIONSHIP_TONES = {
     "neutral": "평소 관계에 맞는 말투로 답한다.",
@@ -451,8 +452,9 @@ class ChatPromptBuilder:
                 if (
                     on_episode_decision is not None
                     and reading_audit["episode_interpretation"]["status"] == "agreed"
+                    and on_episode_decision(episode_transition) is False
                 ):
-                    on_episode_decision(episode_transition)
+                    raise GemmaFailure("episode_superseded")
             selected = {note["id"] for note in reading["notes"]}
             supplied_records = {r["id"]: r for r in (*relationships, *candidates)}
             writer_notes = []

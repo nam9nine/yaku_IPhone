@@ -1,3 +1,5 @@
+from episode_verifier_fixture import verifier_fixture
+
 """Synthetic episode state, migration, queue races and wire compatibility."""
 
 import copy
@@ -589,6 +591,57 @@ class EpisodeAPITests(unittest.TestCase):
         )
         self.assertIsNone(self.pulse().json()["action"])
 
+    def test_rejected_state_callback_stops_current_reply_but_not_other_conversation(
+        self,
+    ):
+        from test_episode_prompt import ContractEngine
+
+        invitation = self.ready_invitation()
+        self.wait(
+            lambda: self.service.db.get_request(invitation)["status"] == "complete"
+        )
+        self.service.builder = ChatPromptBuilder(
+            reader=EvidenceReader(ContractEngine(), episode_verifier=verifier_fixture())
+        )
+        self.engine.count_tokens = lambda _: 100
+        self.engine.calls.clear()
+
+        def send(character, message):
+            response = self.client.post(
+                "/v1/chat",
+                headers=self.auth,
+                json={
+                    "character": character,
+                    "message": message,
+                    "request_id": str(uuid4()),
+                },
+            )
+            self.assertEqual(response.status_code, 202, response.text)
+            job_id = response.json()["job_id"]
+            self.wait(
+                lambda: (
+                    self.service.db.get_request(job_id)["status"]
+                    in {"complete", "error"}
+                )
+            )
+            return self.service.db.get_request(job_id)
+
+        # Explicit callback refusal tests the contract. It does not simulate a
+        # demonstrated natural race through the public admission checks.
+        with patch.object(
+            self.service.db.episodes, "apply_decision", return_value=False
+        ):
+            failed = send("majima", "검사용 수락")
+        self.assertEqual(failed["status"], "error")
+        self.assertEqual(failed["error_code"], "episode_superseded")
+        self.assertEqual(self.engine.calls, [])
+        self.assertEqual(self.service.db.history(self.visitor, "majima", SCENARIO), [])
+        self.assertEqual(self.service.status, "ready")
+        completed = send("haruka", "안녕")
+        self.assertEqual(completed["status"], "complete")
+        self.assertEqual(len(self.engine.calls), 1)
+        self.assertNotIn("검사용 수락", str(self.engine.calls[0]))
+
     def test_uncertain_real_builder_holds_db_until_later_agreed_user_decision(self):
         invitation = self.ready_invitation()
         self.wait(
@@ -632,7 +685,7 @@ class EpisodeAPITests(unittest.TestCase):
                 return {"reply": json.dumps(value), "finish_reason": "stop"}
 
         self.service.builder = ChatPromptBuilder(
-            reader=EvidenceReader(ScriptedReader())
+            reader=EvidenceReader(ScriptedReader(), episode_verifier=verifier_fixture())
         )
         self.engine.count_tokens = lambda _: 100
 

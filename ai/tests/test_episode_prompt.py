@@ -2,6 +2,7 @@ import copy
 import json
 import unittest
 
+from episode_verifier_fixture import verifier_fixture
 from kiryu_ai.call_followups import EPISODE_FOLLOWUP_TOKENS
 from kiryu_ai.chat_prompt import (
     EPISODE_COMMON_RULES,
@@ -923,7 +924,7 @@ class EpisodePromptTests(unittest.TestCase):
         self.engine.count_tokens = lambda messages: (
             5000 if text in json.dumps(messages, ensure_ascii=False) else 100
         )
-        reader = EvidenceReader(self.engine)
+        reader = EvidenceReader(self.engine, episode_verifier=verifier_fixture())
         kwargs = {
             "character": "majima",
             "candidates": [],
@@ -1241,7 +1242,9 @@ class EpisodePromptTests(unittest.TestCase):
 
     def setUp(self):
         self.engine = ContractEngine()
-        self.builder = ChatPromptBuilder(reader=EvidenceReader(self.engine))
+        self.builder = ChatPromptBuilder(
+            reader=EvidenceReader(self.engine, episode_verifier=verifier_fixture())
+        )
         self.kwargs = {
             "visitor_id": "visitor-a",
             "character_id": "majima",

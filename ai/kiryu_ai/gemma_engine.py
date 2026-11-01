@@ -157,6 +157,23 @@ class GemmaEngine:
         )
         self._lock = threading.Lock()
 
+    def with_generation_profile(
+        self, *, thinking, reasoning_tokens, context_tokens, timeout
+    ):
+        """A separate client/profile for the same pinned model, never a reload."""
+        host = f"[{self.host}]" if ":" in self.host else self.host
+        engine = GemmaEngine(
+            base_url=f"http://{host}:{self.port}",
+            api_key=self.api_key,
+            thinking=thinking,
+            reasoning_tokens=reasoning_tokens,
+            context_tokens=context_tokens,
+            timeout=timeout,
+        )
+        engine.manifest_path = self.manifest_path
+        engine.manifest = json.loads(json.dumps(self.manifest))
+        return engine
+
     def _connect(self, path, body=None, *, timeout=None):
         connection = http.client.HTTPConnection(
             self.host, self.port, timeout=timeout or self.timeout

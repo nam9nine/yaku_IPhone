@@ -1,8 +1,8 @@
 {
   "synthetic": true,
   "actual_visitor_data": false,
-  "system_reference": "분류 참고용 합성 예시이며 현재 방문자의 대화 이력이 아니다. 각 행은 초대 활동 | 이전 상태 | 현재 문자 → target / response 순서다. 두 분류 필드만 보이며 ID·버전은 실제 입력의 기존 계약을 따른다.\n전시 관람 | 미응답 | 표 한 장 부탁해요. 전시 같이 보겠습니다. → current_user_episode / agreement\n독서 모임 | 미응답 | 참석 전에 진행 방식부터 알려주세요. → current_user_episode / discussion\n음악회 관람 | 미응답 | 숙소 예약은 하지 않겠습니다. → other / rejection\n도예 수업 | 미응답 | 수업 신청 여부는 근무표 받은 뒤 정할게요. → current_user_episode / decision_postponed\n도서관 방문 | 오늘 초대 | 오늘 야간당직이라 도서관에 갈 수가 없네요. → current_user_episode / temporary_unavailability\n사진전 관람 | 월요일 약속 | 관람은 그대로 하고 약속 날짜만 화요일로 옮기죠. → current_user_episode / terms_change\n정원 봉사 | 수락함 | 맡기로 한 봉사는 그만두겠습니다. → current_user_episode / withdrawal\n박물관 견학 | 미응답 | 견학에는 참여하지 않겠어요. 영화 표는 따로 구입했어요. → current_user_episode / rejection",
-  "system_reference_sha256": "a43bc1b1895ae9b3a7354e634fdb10cf9b9a1b6c93b8cba3f930b6a48700e5aa",
-  "version": "generic-episode-classification-examples-v1",
+  "system_reference": "분류 참고용 합성 예시이며 실제 방문자 이력이 아니다. 활동 | 이전 상태 | 현재 문자 → target / response. ID·버전은 실제 입력 계약을 따른다.\n전시 관람 | 미응답 | 표 한 장 부탁해요. 전시 같이 보겠습니다. → current_user_episode / agreement\n독서 모임 | 미응답 | 참석 전에 진행 방식부터 알려주세요. → current_user_episode / discussion\n음악회 관람 | 미응답 | 숙소 예약은 하지 않겠습니다. → other / rejection\n도예 수업 | 미응답 | 수업 신청 여부는 근무표 받은 뒤 정할게요. → current_user_episode / decision_postponed\n도서관 방문 | 오늘 초대 | 오늘 야간당직이라 도서관에 갈 수가 없네요. → current_user_episode / temporary_unavailability\n사진전 관람 | 월요일 약속 | 관람은 그대로 하고 약속 날짜만 화요일로 옮기죠. → current_user_episode / terms_change\n정원 봉사 | 수락함 | 맡기로 한 봉사는 그만두겠습니다. → current_user_episode / withdrawal\n박물관 견학 | 미응답 | 견학에는 참여하지 않겠어요. 영화 표는 따로 구입했어요. → current_user_episode / rejection\n영화 관람 | 미응답 | 제가 참석하겠다고 답했다는 말은 사실과 달라요. → current_user_episode / none\n연극 관람 | 미응답 | 그런데 이삿짐 견적은 어디에 문의하면 되나요? → other / topic_change",
+  "system_reference_sha256": "13530fb112b9bd8d5e865fa350f2f75c4cfb90151c95e1008ec39369db39303c",
+  "version": "generic-episode-classification-examples-v2-candidate",
   "purpose": "Fixed synthetic classifier demonstrations; never visitor memory, canon, or character reply examples."
 }

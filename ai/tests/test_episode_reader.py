@@ -2,6 +2,7 @@ import copy
 import json
 import unittest
 
+from episode_verifier_fixture import verifier_fixture
 from kiryu_ai.chat_prompt import ChatPromptBuilder, reconstruct_input
 from kiryu_ai.chat_reader import EvidenceReader
 from kiryu_ai.chat_retrieval import stable_hash
@@ -468,7 +469,9 @@ class EpisodeReaderTests(unittest.TestCase):
 
     def test_same_engine_runs_classifier_then_source_reader_with_separate_audits(self):
         stages = []
-        notes, audit = EvidenceReader(self.engine, seed=42).read(
+        notes, audit = EvidenceReader(
+            self.engine, seed=42, episode_verifier=verifier_fixture()
+        ).read(
             character="majima",
             question="현재 원문",
             candidates=[],
@@ -507,6 +510,11 @@ class EpisodeReaderTests(unittest.TestCase):
                 "episode_interpreting",
                 "episode_arm_complete",
                 "episode_complete",
+                "episode_verifier_preparing",
+                "episode_verifier_generating",
+                "episode_verifier_returned",
+                "episode_verifier_complete",
+                "episode_deliberation_complete",
                 "reader_preparing",
                 "reader_generating",
                 "reader_complete",
@@ -533,7 +541,9 @@ class EpisodeReaderTests(unittest.TestCase):
                         raise Superseded
 
                 with self.assertRaises(Superseded):
-                    EvidenceReader(self.engine).read(
+                    EvidenceReader(
+                        self.engine, episode_verifier=verifier_fixture()
+                    ).read(
                         character="majima",
                         question="현재 원문",
                         candidates=[],
@@ -553,7 +563,9 @@ class EpisodeReaderTests(unittest.TestCase):
         self.engine.source_output["episode_transition"] = {"decision": "accept"}
         callbacks = []
         with self.assertRaises(GemmaFailure) as caught:
-            ChatPromptBuilder(reader=EvidenceReader(self.engine)).build(
+            ChatPromptBuilder(
+                reader=EvidenceReader(self.engine, episode_verifier=verifier_fixture())
+            ).build(
                 visitor_id="v",
                 character_id="majima",
                 scenario_version="daily-if-v1",
@@ -582,7 +594,9 @@ class EpisodeReaderTests(unittest.TestCase):
             decision(response="temporary_unavailability"),
         ]
         callbacks = []
-        result = ChatPromptBuilder(reader=EvidenceReader(self.engine)).build(
+        result = ChatPromptBuilder(
+            reader=EvidenceReader(self.engine, episode_verifier=verifier_fixture())
+        ).build(
             visitor_id="v",
             character_id="majima",
             scenario_version="daily-if-v1",
@@ -641,7 +655,11 @@ class EpisodeReaderTests(unittest.TestCase):
                 engine.classifier_outputs = [bad, decision()]
                 callbacks = []
                 with self.assertRaises(GemmaFailure) as caught:
-                    ChatPromptBuilder(reader=EvidenceReader(engine)).build(
+                    ChatPromptBuilder(
+                        reader=EvidenceReader(
+                            engine, episode_verifier=verifier_fixture()
+                        )
+                    ).build(
                         visitor_id="v",
                         character_id="majima",
                         scenario_version="daily-if-v1",
@@ -705,7 +723,9 @@ class EpisodeReaderTests(unittest.TestCase):
             mode="grounded", notes=[{"id": "saejima-majima", "field": "text"}]
         )
         current = "사에지마 형님은 형님에게 어떤 분입니까?"
-        builder = ChatPromptBuilder(reader=EvidenceReader(self.engine))
+        builder = ChatPromptBuilder(
+            reader=EvidenceReader(self.engine, episode_verifier=verifier_fixture())
+        )
         result = builder.build(
             visitor_id="v",
             character_id="majima",
