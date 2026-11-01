@@ -24,7 +24,7 @@ from .episode_prompt import (
 )
 from .gemma_engine import GemmaFailure
 
-INTERPRETER_VERSION = "episode-interpreter-v4"
+INTERPRETER_VERSION = "episode-interpreter-v5"
 INPUT_TOKENS = 3072
 OUTPUT_TOKENS = 1024
 TARGETS = ("current_user_episode", "other", "unclear")
@@ -47,7 +47,7 @@ target과 response는 현재 문자에서 선택한 같은 발화 행위 한 개
 response는 현재 발화의 의미다. agreement는 활동 참여의 확정이며 시간·장소는 미정일 수 있다. temporary_unavailability는 지금 참여를 어렵게 하는 일시적 사정의 보고이며 참여 의사를 끝내는 거절이 아니다. decision_postponed는 참여 여부의 결정을 뒤로 미룸이다. rejection은 제안에 참여하지 않겠다는 의사, withdrawal은 이미 했던 참여 약속 자체를 철회하는 의사다. 같은 문장에 사정과 명시적인 수락·거절·철회가 있으면 명시적인 의사를 우선한다. 일시적 사정만으로 확정적인 거절·철회를 보충하지 않는다.
 discussion은 제안의 설명·논의를 허락하거나 질문하는 것일 뿐 참여 확정이 아니다. terms_change는 실제 기존 조건을 대체하면서 같은 활동의 참여를 유지하는 경우다. 처음 참여를 정하고 미정 조건을 남기는 것은 변경이 아니다. 조건 철회와 활동 참여 철회를 구분한다. progress는 이동·준비·도착·시작·진행 보고이며 completion은 해당 활동 자체의 완료나 최종 결과 보고다. 다른 이야기의 과거 사건이나 이동 완료를 활동 완료로 옮기지 않는다.
 topic_change는 이번 활동에 대한 새 요청·결정·진행 보고 없이 명백히 별개의 질문이나 요청으로 대화 주제를 옮긴 경우이며 target=other다. 다른 활동에 대한 의사나 이번 제안을 인지했다는 말만으로 화제 전환을 보충하지 않는다. none은 단순 수신 확인·인지에 그치거나 해석할 새 행위가 없거나 불명확한 경우다. 이번 활동의 참여를 결정하지 않았다는 이유로 분명한 다른 질문·요청을 none으로 덮지 않는다. 새 시간·이동·승패를 만들지 않는다.
-episode_id와 version은 이전 상태 값 그대로 사용한다. evidence_message_id는 current_user_message.id 또는 null만 가능하고 상태를 바꿀 때는 현재 ID가 필요하다. target과 response를 포함한 지정 JSON만 출력한다. 설명·생각과정·인물 대사는 쓰지 않는다."""
+episode_id와 version은 이전 상태 값 그대로 사용한다. evidence_message_id는 모든 판정에서 current_user_message.id를 그대로 반환한다. 상태 변경이 없는 no_change의 canonical 근거는 서버가 null로 정규화하므로 모델은 null을 쓰지 않는다. target과 response를 포함한 지정 JSON만 출력한다. 설명·생각과정·인물 대사는 쓰지 않는다."""
 
 
 def interpretation_schema(context, message_id):
@@ -55,6 +55,7 @@ def interpretation_schema(context, message_id):
     del schema["properties"]["decision"]
     schema["required"].remove("decision")
     schema["properties"].update(
+        evidence_message_id={"type": "string", "enum": [message_id]},
         target={"type": "string", "enum": list(TARGETS)},
         response={"type": "string", "enum": list(RESPONSE_ACTS)},
     )

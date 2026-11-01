@@ -5,6 +5,7 @@ import unittest
 from kiryu_ai.chat_prompt import ChatPromptBuilder, reconstruct_input
 from kiryu_ai.chat_reader import EvidenceReader
 from kiryu_ai.chat_retrieval import stable_hash
+from kiryu_ai.episode_prompt import episode_state_view
 from kiryu_ai.episode_reader import (
     EXAMPLES,
     INPUT_TOKENS,
@@ -307,7 +308,8 @@ class EpisodeReaderTests(unittest.TestCase):
         schema = interpretation_schema(context(), "current")
         self.assertFalse(schema["additionalProperties"])
         self.assertEqual(
-            schema["properties"]["evidence_message_id"]["enum"], ["current", None]
+            schema["properties"]["evidence_message_id"],
+            {"type": "string", "enum": ["current"]},
         )
         for change in (
             {"version": True},
@@ -328,6 +330,78 @@ class EpisodeReaderTests(unittest.TestCase):
             validate_interpretation(
                 decision(evidence_message_id=None), context(), "current"
             )
+
+    def test_current_evidence_is_normalized_only_in_canonical_no_change(self):
+        self.engine.classifier_outputs = [
+            decision(response="discussion"),
+            decision(response="progress"),
+        ]
+        value, audit = EpisodeInterpreter(self.engine).read(**self.kwargs)
+        self.assertEqual(value["decision"], "no_change")
+        self.assertIsNone(value["evidence_message_id"])
+        self.assertEqual(audit["interpretation"]["status"], "agreed")
+        for name, response in (("primary", "discussion"), ("secondary", "progress")):
+            with self.subTest(arm=name):
+                arm = audit["arms"][name]
+                raw = decision(response=response)
+                self.assertEqual(arm["output_json"], raw)
+                self.assertEqual(arm["interpretation"]["raw_transition"], raw)
+                self.assertIsNone(arm["canonical_transition"]["evidence_message_id"])
+        for _, settings in self.engine.calls:
+            self.assertEqual(
+                settings["response_schema"]["properties"]["evidence_message_id"],
+                {"type": "string", "enum": ["current"]},
+            )
+        # Historical no-change outputs remain readable, without weakening
+        # validation of mutation evidence or foreign IDs.
+        old, _ = validate_interpretation(
+            decision(response="none", evidence_message_id=None), context(), "current"
+        )
+        self.assertEqual(old, value)
+
+    def test_closed_episode_topic_change_uses_current_evidence_without_reopening(self):
+        for reason in ("decline", "cancel", "report_outcome"):
+            with self.subTest(reason=reason):
+                state = context(
+                    phase="closed", close_reason=reason, pending_proposal=None
+                )
+                raw = decision(target="other", response="topic_change")
+                engine = Engine(output=raw)
+                value, audit = EpisodeInterpreter(engine).read(
+                    **{**self.kwargs, "context": state}
+                )
+                self.assertEqual(value["decision"], "change_topic")
+                self.assertEqual(value["evidence_message_id"], "current")
+                self.assertEqual(audit["interpretation"]["status"], "agreed")
+                for arm in audit["arms"].values():
+                    self.assertEqual(arm["output_json"], raw)
+                    self.assertEqual(arm["canonical_transition"], value)
+                view = episode_state_view(state, [], transition=value)
+                self.assertEqual(view["phase"], "closed")
+                self.assertEqual(view["close_reason"], reason)
+                self.assertNotIn("pending_proposal", view)
+
+    def test_topic_change_cannot_use_missing_or_foreign_current_evidence(self):
+        for evidence_id in (None, "previous"):
+            with self.subTest(evidence_id=evidence_id):
+                bad = decision(
+                    target="other",
+                    response="topic_change",
+                    evidence_message_id=evidence_id,
+                )
+                engine = Engine()
+                engine.classifier_outputs = [bad, decision()]
+                with self.assertRaises(GemmaFailure) as caught:
+                    EpisodeInterpreter(engine).read(**self.kwargs)
+                self.assertEqual(caught.exception.code, "grounding_invalid")
+                audit = caught.exception.result["episode_classifier"]
+                self.assertEqual(len(engine.calls), 2)
+                self.assertEqual(audit["arms"]["primary"]["stage"], "failed")
+                self.assertEqual(
+                    json.loads(audit["arms"]["primary"]["model_result"]["reply"]), bad
+                )
+                self.assertEqual(audit["arms"]["secondary"]["stage"], "complete")
+                self.assertEqual(audit["interpretation"]["status"], "failed")
 
     def test_whole_past_omission_cannot_retain_a_promise_without_its_correction(self):
         history = [

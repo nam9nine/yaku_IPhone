@@ -1358,7 +1358,8 @@ class EpisodePromptTests(unittest.TestCase):
         self.assertEqual(called, [])
         schema = self.engine.episode_calls[0][1]["response_schema"]
         self.assertEqual(
-            schema["properties"]["evidence_message_id"]["enum"], ["current-user", None]
+            schema["properties"]["evidence_message_id"],
+            {"type": "string", "enum": ["current-user"]},
         )
         self.assertFalse(schema["additionalProperties"])
 

@@ -28,7 +28,7 @@ from .episode_prompt import (
 )
 from .phone_events import NO_PHONE_EVENTS, resolve_phone_events
 
-PROMPT_VERSION = "kiryu-daily-sms-v31"
+PROMPT_VERSION = "kiryu-daily-sms-v32"
 
 RELATIONSHIP_TONES = {
     "neutral": "평소 관계에 맞는 말투로 답한다.",
