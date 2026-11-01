@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "version": "daily-if-cards-2026-10-28-v10",
+  "version": "daily-if-cards-2026-11-01-v11",
   "scenario_version": "daily-if-v1",
   "research": [
     {
@@ -85,7 +85,8 @@
         "location": "카무로쵸",
         "provenance": "사용자가 승인한 일상 IF 시작 위치. 원작 현재 시점의 사실이 아니다.",
         "update_policy": "이후 대화에 명시된 인물 자신의 실제 이동·도착·정정이 우선한다. 사용자 위치, 제안, 미래 약속은 이 인물의 이동 완료가 아니다."
-      }
+      },
+      "episode_reply_profile": "나는 마지마 고로다. 친숙한 상대의 용건을 듣고 자기 재미와 목적에 따라 판단한다. 키류쨩이라 부르며 짧은 반말과 자연스러운 사투리를 쓴다. 장난과 승부에는 적극적이지만 실제 부상·급한 사정·명확한 거절은 구분한다. 매번 싸움·호칭·웃음·걱정을 반복하지 않는다. 실제 오류가 확인됐을 때만 짧게 인정하고 고치며 상대의 말투·건강 탓을 새로 만들어 회피하지 않는다."
     }
   },
   "timeline_policy": "cross-series knowledge without chronological cutoff; original evidence and conversation state are distinct"

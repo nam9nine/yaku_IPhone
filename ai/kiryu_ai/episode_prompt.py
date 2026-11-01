@@ -23,6 +23,7 @@ READER_ACTS = {
     "no_change": "no_change",
     "discuss_proposal": "no_change",
     "accept_participation": "accept",
+    "amend_participation": "accept",
     "defer": "defer",
     "decline": "decline",
     "cancel": "cancel",
@@ -33,17 +34,15 @@ READER_ACTS = {
 PHASES = ("not_started", "awaiting_reply", "accepted", "deferred", "closed")
 CALL_OUTCOMES = ("missed", "declined", "idle", "ended")
 CATALOG_PATH = Path(__file__).resolve().parents[1] / "chat/episodes.json"
+OUTBOUND_FACTS_VERSION = "episode-outbound-facts-v1"
+
+# Shared by first invitations and call followups, not only the catalog's
+# invitation instruction. This is an evidence contract, not a date extractor.
+OUTBOUND_FACTS_RULES = "확인된 현재 사실, 내가 한 미결 제안, 키류가 실제 동의한 내용을 구분해 발신한다. 내 발신의 희망·제안과 부재중은 키류의 동의가 아니다. pending_proposal이나 accepted 단계만으로 날짜·시간까지 확정됐다고 보지 않는다. 날짜·시간은 제공된 실제 원문에 있는 제안 또는 최신 사용자 확인 범위에서만 언급하며, 제안은 제안으로 표현한다. 미정이거나 원문이 생략됐으면 새 날짜·기한을 만들지 않는다. 최신 취소·정정은 옛 약속보다 우선한다. 출처 없는 예약·이동·경기·승패를 완료된 일로 말하지 않는다. 원작 사건·성격·승부욕은 이번 사실을 보충할 근거가 아니다."
 
 EPISODE_OMISSION_RULES = "과거 대화 원문이 입력 예산 때문에 통째로 생략되었다. ID와 사건 단계는 유지하지만 세부 내용은 제공되지 않았다. 원문 일부나 요약이 아니다. 시간·조건·이유·약속 내용을 추정하거나 이전 약속을 되살리지 않는다. 현재 문자와 제공된 상태만으로 답하고, 필요한 세부는 짧게 확인한다."
 
 EPISODE_RULES = """현재 사건은 방문자의 IF 진행이다. 취소·거절은 해당 약속을 끝낸다. 불만은 표현해도 재약속 요구나 준비했다는 새 사실로 취소를 뒤집지 않는다. 보류 중에는 사용자가 사건을 다시 꺼내기 전 제안·권유·재촉을 하지 말고 현재 화제에만 답한다. message_id는 실제 원문 참조, native_turn은 system 다음 실제 대화의 1부터 센 순서다. call_outcome은 서버가 확인한 결과(missed=미연결, declined=수신 거절, idle=연결 후 무응답 종료, ended=통화 종료)이며 의도나 약속 수락이 아니다. 데이터 용어는 문자에 쓰지 않는다."""
-
-EPISODE_READER_RULES = """current_episode는 이번 방문자의 IF 진행이며 canon과 별개다. recent_timeline에는 실제 선제 발신도 있으므로 '그거'의 대상을 최근 문맥에서 확인한다. 상태의 message_id는 같은 ID의 원문 참조다(conversation:은 검색용 접두사). call_outcome/통화 결과는 관찰 사실이며 상대의 의도·동의가 아니다.
-episode_transition.decision에는 현재 사용자 발화의 행위를 분류한다. discuss_proposal은 제안의 설명·논의 허용이나 재개이며 활동 참여 약속이 아니다. accept_participation은 미결 활동에 직접 참여하겠다는 확정이다. 참여는 확정했지만 날짜·시간만 미정이면 accept_participation이다.
-report_progress는 이동·도착·준비·시작 전·진행 중 등 아직 끝나지 않은 활동에 대한 사용자 보고다. report_activity_completion은 해당 활동 자체를 끝냈다는 명시적 완료나 최종 결과 보고다. 이동의 완료는 활동의 완료가 아니다. 사용자의 새 과거 주장과 원작 퀴즈를 이번 활동 완료로 해석하지 않는다.
-defer는 활동 자체의 연기·부상·급한 사정에 따른 보류, decline는 제안 거절, cancel은 기존 약속 취소, change_topic은 진행 요청 없이 다른 화제로 옮긴 경우다. 먼저 결정의 대상이 현재 제안과 같은 활동인지 확인한다. 다른 활동의 거절·취소를 현재 사건에 옮기지 않는다. 비유나 '승부' 같은 넓은 말만으로 같은 활동이라고 확정하지 말고, 대상이 불명확하면 no_change로 둔다. 논의·참여·일정 확정·진행·완료를 서로 대신하지 않는다.
-no_change는 뜻이나 대상이 불명확하거나 사건에 새 결정이 없는 경우다. '좋다' 같은 단어만으로 판정하지 말고 무엇에 대한 답인지 읽는다. 다른 사람의 약속이나 인용된 문장은 사용자의 결정이 아니다. 실제 사용자 원문에 없는 시간·이동·승패·동기를 보충하지 않는다.
-episode_id와 version은 current_episode 값 그대로, evidence_message_id는 상태를 바꿀 때 current_message_id 그대로 사용한다. no_change일 때 evidence_message_id는 null이다. 이 JSON은 검토 가능한 짧은 결론이며 사고 과정이나 설명은 쓰지 않는다."""
 
 
 def _text(value, *, nullable=False, limit=500):
@@ -126,6 +125,34 @@ def episode_evidence_ids(context, messages):
     return identifiers
 
 
+def outbound_fact_sources(context, messages, *, omitted=False):
+    """Expose provenance only; no semantic extraction of dates or agreements.
+
+    An assistant proposal is not a user confirmation. Likewise, a state evidence
+    ID identifies a source, not every detail the user supposedly agreed to.
+    Only bodies actually available in this input can support a source reference.
+    """
+    if context is None:
+        return None
+    proposal = context["pending_proposal"]
+    matches = [m for m in messages if proposal and m["content"] == proposal]
+    # Repeated identical words from different turns are not enough to choose a
+    # speaker. Missing/ambiguous provenance stays unknown rather than guessed.
+    source = matches[0] if len(matches) == 1 and not omitted else None
+    return {
+        "version": OUTBOUND_FACTS_VERSION,
+        "pending_proposal_source": (
+            {"message_id": source["id"], "role": source["role"]} if source else None
+        ),
+        "state_evidence_sources": [
+            {"message_id": m["id"], "role": m["role"]}
+            for m in messages
+            if not omitted and m["id"] in context["evidence_message_ids"][-2:]
+        ],
+        "details_omitted": omitted,
+    }
+
+
 def episode_state_view(
     context, messages, *, identity=False, transition=None, omit_details=False
 ):
@@ -176,7 +203,7 @@ def episode_state_view(
                 pending_proposal={"message_id": transition["evidence_message_id"]},
             )
             result.pop("close_reason", None)
-        elif decision in {"defer", "change_topic"}:
+        elif decision in {"defer", "change_topic"} and result["phase"] != "closed":
             result["phase"] = "deferred"
         elif decision in {"decline", "cancel", "report_outcome"}:
             result.update(phase="closed", close_reason=decision)
@@ -231,13 +258,7 @@ def transition_schema(context, message_id):
     }
 
 
-def reader_transition_schema(context, message_id):
-    schema = transition_schema(context, message_id)
-    schema["properties"]["decision"]["enum"] = list(READER_ACTS)
-    return schema
-
-
-def episode_reply_task(state, speech_act):
+def episode_reply_task(state, speech_act, *, consensus=None):
     """Current response task, separate from the episode's invitation objective.
 
     Uses validated state/act only, never a keyword check on the user's text.
@@ -246,11 +267,15 @@ def episode_reply_task(state, speech_act):
     tasks = {
         "discuss_proposal": (
             "discuss",
-            "사용자가 다시 꺼낸 제안의 내용과 질문만 설명한다. 논의 허용을 참여 수락이나 일정 확정으로 바꾸지 않는다.",
+            "사용자가 다시 꺼낸 제안의 내용과 질문만 설명한다. 논의 허용을 참여 수락이나 일정 협의 허용으로 바꾸지 않고, 참석을 전제로 일시·장소·준비를 정하지 않는다.",
         ),
         "accept_participation": (
             "acknowledge_acceptance",
             "사용자가 수락한 활동만 반영한다. 아직 정하지 않은 시간·장소는 미정으로 두고 필요한 것만 짧게 확인한다.",
+        ),
+        "amend_participation": (
+            "acknowledge_amendment",
+            "같은 활동 참여는 유지하고 사용자가 철회한 이전 조건을 되살리지 않는다. 대체 조건은 최신 변경 요청 범위로 반영하고 내 수락 여부를 답한다. 변경 요청만으로 양측 합의나 실행이 이미 끝났다고 하지 않는다. 새 조건이 불명확하면 필요한 것만 확인한다.",
         ),
         "report_progress": (
             "acknowledge_progress",
@@ -261,7 +286,19 @@ def episode_reply_task(state, speech_act):
             "사용자가 알린 최종 결과를 그 사람의 보고로 받아들여 현재 질문에 직접 답한다. 새 점수·경기 장면·재경기 약속을 만들지 않는다.",
         ),
     }
-    if speech_act in tasks:
+    if consensus is not None and (
+        consensus["status"] == "abstained" or not consensus["reader_act_agreement"]
+    ):
+        policy_id, task = (
+            "clarify_unresolved_participation",
+            "현재 문자의 새로운 의사·변경 해석만 미확정이며 이전 확정 기록을 지우는 것이 아니다. 명확한 질문·허락한 설명에 먼저 답하고 새 수락·거절·취소·완료·조건 변경은 확정하지 않는다. 답하는 데 꼭 필요한 새 의사만 짧게 확인하며 서로 다른 활동을 합치지 않는다. "
+            + (
+                "기존 참여 약속과 알려진 조건은 그대로 참고하여 장소·일정 질문에 답할 수 있다. 참여를 처음부터 다시 묻거나 새 합의·실행을 만들지 않는다."
+                if state["phase"] == "accepted"
+                else "현재 사건 단계를 유지한다. 미합의 참석을 전제로 일시·장소·준비를 정하지 않고 설명 허용을 일정 협의 허용으로 바꾸지 않는다. 다시 초대하거나 재촉하지 않는다."
+            ),
+        )
+    elif speech_act in tasks:
         policy_id, task = tasks[speech_act]
     elif state["phase"] in {"deferred", "closed"}:
         policy_id, task = (
@@ -276,7 +313,7 @@ def episode_reply_task(state, speech_act):
     return {
         "policy_id": policy_id,
         "instruction": task
-        + " 원작 장면과 집착은 말투 참고이며 이번 행동 지시가 아니다. 제공되지 않은 준비·이동·행동 완료를 만들지 않는다.",
+        + " 원작 장면과 집착은 말투 참고이며 이번 행동 지시가 아니다. 개인적인 허구 배경을 표현할 수 있어도 공유 사건의 준비·이동·실행·결과나 다른 사람의 행동을 만들지 않는다.",
     }
 
 

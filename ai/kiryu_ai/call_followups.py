@@ -3,6 +3,10 @@
 import re
 
 FOLLOWUP_TOKENS = 96
+# Episode followups need room to distinguish proposals from confirmed plans.
+# These profiles share the same model process and the service's single FIFO.
+EPISODE_FOLLOWUP_TOKENS = 3072
+EPISODE_FOLLOWUP_REASONING_TOKENS = -1
 
 
 def validate_trigger(value):

@@ -515,6 +515,7 @@ class ChatService:
         return self.db.episodes.response(visitor, SCENARIO, accepted=accepted)
 
     def _load_engine(self):
+        from .call_followups import EPISODE_FOLLOWUP_REASONING_TOKENS
         from .chat_prompt import ChatPromptBuilder
         from .gemma_engine import GemmaEngine
 
@@ -540,6 +541,17 @@ class ChatService:
                 manifest_path=self.manifest_path,
                 api_key_file=self.api_key_file,
                 thinking=False,
+            )
+        )
+        self.episode_followup_engine = (
+            self.engine
+            if self.engine_factory
+            else GemmaEngine(
+                base_url=self.model_url,
+                manifest_path=self.manifest_path,
+                api_key_file=self.api_key_file,
+                thinking=True,
+                reasoning_tokens=EPISODE_FOLLOWUP_REASONING_TOKENS,
             )
         )
         if self.builder is None:
@@ -576,7 +588,7 @@ class ChatService:
         )
 
     def _generate(self, job):
-        from .call_followups import FOLLOWUP_TOKENS
+        from .call_followups import EPISODE_FOLLOWUP_TOKENS, FOLLOWUP_TOKENS
         from .chat_prompt import InputBudgetError
         from .gemma_engine import CONTEXT_TOKENS, OUTPUT_TOKENS, SAMPLING, GemmaFailure
 
@@ -595,6 +607,9 @@ class ChatService:
             getattr(self, "followup_engine", self.engine) if followup else self.engine
         )
         output_budget = FOLLOWUP_TOKENS if followup else OUTPUT_TOKENS
+        if followup and episode_job:
+            engine = self.episode_followup_engine
+            output_budget = EPISODE_FOLLOWUP_TOKENS
         started = time.monotonic()
         queue_seconds = max(
             0, time.time() - datetime.fromisoformat(job["accepted_at"]).timestamp()
@@ -632,6 +647,10 @@ class ChatService:
                     "max_tokens": output_budget,
                 },
             }
+            if hasattr(engine, "reasoning_tokens"):
+                metadata["generation_options"]["reasoning_budget_tokens"] = (
+                    engine.reasoning_tokens
+                )
             record = self.db.record_run_input if run_started else self.db.begin_run
             record(
                 job["job_id"],

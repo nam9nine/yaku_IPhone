@@ -1,5 +1,9 @@
+from episode_verifier_fixture import verifier_fixture
+
 """Synthetic episode state, migration, queue races and wire compatibility."""
 
+import copy
+import json
 import sqlite3
 import tempfile
 import time
@@ -9,7 +13,9 @@ from unittest.mock import patch
 from uuid import uuid4
 
 from kiryu_ai.chat_db import SCHEMA, ChatDB
+from kiryu_ai.chat_prompt import ChatPromptBuilder
 from kiryu_ai.chat_queue import CancellableFIFO
+from kiryu_ai.chat_reader import EvidenceReader
 from kiryu_ai.chat_server import SCENARIO, create_app
 from kiryu_ai.episodes import EPISODE_ID, validate_command
 from starlette.testclient import TestClient
@@ -302,6 +308,64 @@ class EpisodeDBTests(unittest.TestCase):
             self.db.episodes.get(self.db.issue_session()["visitor_id"], SCENARIO)
         )
 
+    def test_defer_and_topic_change_have_equal_effect_and_preserve_closed_state(self):
+        self.invitation()
+        user, _ = self.db.accept(
+            self.visitor,
+            "majima",
+            SCENARIO,
+            "검사용 새 화제",
+            str(uuid4()),
+            supersede_episode=True,
+        )
+        evidence = user["job_id"] + "-user"
+        original = self.db.episodes.get(self.visitor, SCENARIO)
+        variants = [
+            (phase, None)
+            for phase in ("not_started", "awaiting_reply", "accepted", "deferred")
+        ]
+        variants += [
+            ("closed", reason) for reason in ("cancel", "decline", "report_outcome")
+        ]
+        for phase, reason in variants:
+            with self.subTest(phase=phase, reason=reason):
+                before = {
+                    **copy.deepcopy(original),
+                    "phase": phase,
+                    "close_reason": reason,
+                }
+                after = []
+                for decision in ("defer", "change_topic"):
+                    with self.db.connection(write=True) as connection:
+                        self.db.episodes.save(
+                            connection, self.visitor, SCENARIO, before
+                        )
+                    self.assertTrue(
+                        self.db.episodes.apply_decision(
+                            self.visitor,
+                            SCENARIO,
+                            {
+                                "episode_id": EPISODE_ID,
+                                "version": before["version"],
+                                "decision": decision,
+                                "evidence_message_id": evidence,
+                            },
+                            evidence,
+                        )
+                    )
+                    after.append(self.db.episodes.get(self.visitor, SCENARIO))
+                self.assertEqual(after[0], after[1])
+                self.assertEqual(
+                    after[0]["phase"], "closed" if phase == "closed" else "deferred"
+                )
+                self.assertEqual(after[0]["close_reason"], reason)
+                self.assertEqual(
+                    after[0]["pending_proposal"], before["pending_proposal"]
+                )
+                self.assertFalse(after[0]["interpretation_pending"])
+                self.assertEqual(after[0]["contact_stage"], "rest")
+                self.assertEqual(after[0]["evidence_message_ids"][-1], evidence)
+
     def test_old_history_filters_proactive_without_breaking_cursor(self):
         self.invitation()
         self.assertEqual(
@@ -527,6 +591,160 @@ class EpisodeAPITests(unittest.TestCase):
         )
         self.assertIsNone(self.pulse().json()["action"])
 
+    def test_rejected_state_callback_stops_current_reply_but_not_other_conversation(
+        self,
+    ):
+        from test_episode_prompt import ContractEngine
+
+        invitation = self.ready_invitation()
+        self.wait(
+            lambda: self.service.db.get_request(invitation)["status"] == "complete"
+        )
+        self.service.builder = ChatPromptBuilder(
+            reader=EvidenceReader(ContractEngine(), episode_verifier=verifier_fixture())
+        )
+        self.engine.count_tokens = lambda _: 100
+        self.engine.calls.clear()
+
+        def send(character, message):
+            response = self.client.post(
+                "/v1/chat",
+                headers=self.auth,
+                json={
+                    "character": character,
+                    "message": message,
+                    "request_id": str(uuid4()),
+                },
+            )
+            self.assertEqual(response.status_code, 202, response.text)
+            job_id = response.json()["job_id"]
+            self.wait(
+                lambda: (
+                    self.service.db.get_request(job_id)["status"]
+                    in {"complete", "error"}
+                )
+            )
+            return self.service.db.get_request(job_id)
+
+        # Explicit callback refusal tests the contract. It does not simulate a
+        # demonstrated natural race through the public admission checks.
+        with patch.object(
+            self.service.db.episodes, "apply_decision", return_value=False
+        ):
+            failed = send("majima", "검사용 수락")
+        self.assertEqual(failed["status"], "error")
+        self.assertEqual(failed["error_code"], "episode_superseded")
+        self.assertEqual(self.engine.calls, [])
+        self.assertEqual(self.service.db.history(self.visitor, "majima", SCENARIO), [])
+        self.assertEqual(self.service.status, "ready")
+        completed = send("haruka", "안녕")
+        self.assertEqual(completed["status"], "complete")
+        self.assertEqual(len(self.engine.calls), 1)
+        self.assertNotIn("검사용 수락", str(self.engine.calls[0]))
+
+    def test_uncertain_real_builder_holds_db_until_later_agreed_user_decision(self):
+        invitation = self.ready_invitation()
+        self.wait(
+            lambda: self.service.db.get_request(invitation)["status"] == "complete"
+        )
+
+        class ScriptedReader:
+            # Fixed model outputs exercise the real builder/API/DB boundary;
+            # they do not claim a model understood these synthetic messages.
+            responses = iter(
+                (
+                    "rejection",
+                    "decision_postponed",
+                    "agreement",
+                    "agreement",
+                    "topic_change",
+                    "decision_postponed",
+                )
+            )
+
+            def count_tokens(self, messages):
+                return 100
+
+            def reply(self, messages, **kwargs):
+                properties = kwargs["response_schema"]["properties"]
+                if "target" in properties:
+                    response = next(self.responses)
+                    value = {
+                        "episode_id": properties["episode_id"]["enum"][0],
+                        "version": properties["version"]["enum"][0],
+                        "evidence_message_id": properties["evidence_message_id"][
+                            "enum"
+                        ][0],
+                        "target": "other"
+                        if response == "topic_change"
+                        else "current_user_episode",
+                        "response": response,
+                    }
+                else:
+                    value = {"mode": "conversation", "notes": [], "unknowns": []}
+                return {"reply": json.dumps(value), "finish_reason": "stop"}
+
+        self.service.builder = ChatPromptBuilder(
+            reader=EvidenceReader(ScriptedReader(), episode_verifier=verifier_fixture())
+        )
+        self.engine.count_tokens = lambda _: 100
+
+        def send(message):
+            response = self.client.post(
+                "/v1/chat",
+                headers=self.auth,
+                json={
+                    "character": "majima",
+                    "message": message,
+                    "request_id": str(uuid4()),
+                },
+            )
+            self.assertEqual(response.status_code, 202, response.text)
+            job_id = response.json()["job_id"]
+            self.wait(
+                lambda: (
+                    self.service.db.get_request(job_id)["status"]
+                    in {"complete", "error"}
+                )
+            )
+            self.assertEqual(self.service.db.get_request(job_id)["status"], "complete")
+            return job_id
+
+        uncertain = send("검사용 불확실한 의사")
+        held = self.service.db.episodes.get(self.visitor, SCENARIO)
+        self.assertTrue(held["interpretation_pending"])
+        self.assertEqual(held["phase"], "awaiting_reply")
+        self.assertIsNone(held["close_reason"])
+        self.assertEqual(held["contact_stage"], "rest")
+        self.assertNotIn(uncertain + "-user", held["evidence_message_ids"])
+        self.assertIsNone(self.pulse().json()["action"])
+        self.assertTrue(
+            self.service.db.episodes.get(self.visitor, SCENARIO)[
+                "interpretation_pending"
+            ]
+        )
+
+        agreed = send("검사용 명확한 참여 의사")
+        resolved = self.service.db.episodes.get(self.visitor, SCENARIO)
+        self.assertFalse(resolved["interpretation_pending"])
+        self.assertEqual(resolved["phase"], "accepted")
+        self.assertEqual(resolved["evidence_message_ids"][-1], agreed + "-user")
+        self.assertGreater(resolved["version"], held["version"])
+        self.assertIsNone(self.pulse().json()["action"])
+        self.assertEqual(
+            len(self.service.db.history(self.visitor, "majima", SCENARIO)), 4
+        )
+
+        # Two different acts can have the same authoritative DB effect. The
+        # only permitted pair is defer/change_topic, both preserving a pause.
+        deferred = send("검사용 보류와 화제 전환")
+        paused = self.service.db.episodes.get(self.visitor, SCENARIO)
+        self.assertEqual(paused["phase"], "deferred")
+        self.assertFalse(paused["interpretation_pending"])
+        self.assertEqual(paused["evidence_message_ids"][-1], deferred + "-user")
+        self.assertEqual(paused["contact_stage"], "rest")
+        self.assertIsNone(self.pulse().json()["action"])
+
     def event(self, kind, **fields):
         self.seq += 1
         response = self.client.post(
@@ -618,6 +836,57 @@ class EpisodeAPITests(unittest.TestCase):
             [message["role"] for message in messages], ["assistant", "assistant"]
         )
         self.assertEqual(len(self.engine.calls), 2)
+
+    def test_episode_followup_profile_is_scoped_and_audited(self):
+        class EpisodeFollowupEngine(Engine):
+            thinking = True
+            reasoning_tokens = -1
+
+            def reply(self, messages, **options):
+                self.options = options
+                return super().reply(messages, **options)
+
+        scoped = EpisodeFollowupEngine()
+        self.service.episode_followup_engine = scoped
+        _, call = self.ringing_call()
+        outcome = self.event("call_result", call_id=call, outcome="missed")
+        job_id = outcome["action"]["job_id"]
+        self.wait(lambda: self.service.db.get_request(job_id)["status"] == "complete")
+        self.assertEqual(len(scoped.calls), 1)
+        self.assertEqual(scoped.options["max_tokens"], 3072)
+        self.assertEqual(len(self.engine.calls), 1)  # Invitation stays normal.
+        metadata = self.service.db.request_detail(job_id)["run"]["metadata"]
+        self.assertEqual(
+            metadata["generation_options"],
+            {"thinking": True, "max_tokens": 3072, "reasoning_budget_tokens": -1},
+        )
+        self.event("delivered", action_id=job_id, job_id=job_id)
+        for character in ("haruka", "majima"):
+            response = self.client.post(
+                "/v1/call-followups",
+                headers=self.auth,
+                json={
+                    "character": character,
+                    "request_id": str(uuid4()),
+                    "call_id": str(uuid4()),
+                    "reason": "missed",
+                    "direction": "incoming",
+                },
+            )
+            self.assertEqual(response.status_code, 202, response.text)
+            ordinary_id = response.json()["job_id"]
+            self.wait(
+                lambda request_id=ordinary_id: (
+                    self.service.db.get_request(request_id)["status"] == "complete"
+                )
+            )
+            ordinary = self.service.db.request_detail(ordinary_id)["run"]["metadata"]
+            self.assertEqual(
+                ordinary["generation_options"],
+                {"thinking": False, "max_tokens": 96},
+            )
+        self.assertEqual(len(scoped.calls), 1)
+        self.assertEqual(len(self.engine.calls), 3)
 
     def test_manual_end_has_no_extra_script_or_followup_generation(self):
         _, call = self.ringing_call()
