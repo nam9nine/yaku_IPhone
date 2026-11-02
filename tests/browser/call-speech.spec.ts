@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '../helpers/browser-test';
+import { expect, test, type Page, type Locator } from '../helpers/browser-test';
 import type { SpeechRecognitionEngine, SpeechResultEvent } from '../../src/speech/recognition';
 import { AI_ENDPOINT } from '../../src/ai/config';
 import { mockStoryAi } from '../helpers/mock-story-ai';
@@ -16,89 +16,127 @@ interface SpeechProbe {
   speaks: number;
   mediaRequests: number;
   captures: number;
+  uploadBytes: number[];
+  stoppedTracks: number;
+  releasePermission?: () => void;
   lateResult: SpeechRecognitionEngine['onresult'];
 }
 type ProbeWindow = Window & { __callSpeech: SpeechProbe };
 
 /** Synthetic browser API only: these tests never request microphone access. */
-async function installSpeech(page: Page, mode: 'standard' | 'webkit' | 'unsupported' = 'standard') {
-  await page.addInitScript((mode) => {
-    Object.defineProperty(navigator, 'mediaDevices', {
-      configurable: true,
-      value: {
-        getUserMedia: async () => {
-          probe.mediaRequests++;
-          return { getTracks: () => [{ stop: () => undefined }] };
+async function installSpeech(
+  page: Page,
+  mode: 'standard' | 'webkit' | 'unsupported' = 'standard',
+  desktopCaptureFailure = false,
+  mobile = false,
+) {
+  await page.addInitScript(
+    ({ mode, desktopCaptureFailure, mobile }) => {
+      Object.defineProperty(navigator, 'userAgent', {
+        configurable: true,
+        value: mobile
+          ? 'Mozilla/5.0 (iPhone; CPU iPhone OS 27_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148'
+          : 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15',
+      });
+      Object.defineProperty(navigator, 'platform', {
+        configurable: true,
+        value: mobile ? 'iPhone' : 'MacIntel',
+      });
+      Object.defineProperty(navigator, 'maxTouchPoints', {
+        configurable: true,
+        value: mobile ? 5 : 0,
+      });
+      Object.defineProperty(navigator, 'mediaDevices', {
+        configurable: true,
+        value: {
+          getUserMedia: async () => {
+            probe.mediaRequests++;
+            if (desktopCaptureFailure)
+              throw new DOMException('capture rejected', 'NotAllowedError');
+            return { getTracks: () => [{ stop: () => undefined }] };
+          },
         },
-      },
-    });
-    class Recorder {
-      constructor() {
-        probe.captures++;
+      });
+      class Recorder {
+        constructor() {
+          probe.captures++;
+        }
+        static isTypeSupported() {
+          return true;
+        }
+        state = 'inactive';
+        ondataavailable: ((event: { data: Blob }) => void) | null = null;
+        onstop: (() => void) | null = null;
+        start() {
+          this.state = 'recording';
+        }
+        stop() {
+          this.state = 'inactive';
+          this.ondataavailable?.({ data: new Blob(['synthetic-test-audio']) });
+          this.onstop?.();
+        }
       }
-      static isTypeSupported() {
-        return true;
+      Object.defineProperty(window, 'MediaRecorder', { configurable: true, value: Recorder });
+      const probe: SpeechProbe = {
+        engines: [],
+        speaks: 0,
+        mediaRequests: 0,
+        captures: 0,
+        uploadBytes: [],
+        stoppedTracks: 0,
+        lateResult: null,
+      };
+      Object.defineProperty(window, '__callSpeech', { value: probe });
+      // WebKit's protocol omits Blob bodies from request.postDataBuffer().
+      // Observe the real fetch argument without replacing its body or response.
+      const originalFetch = window.fetch.bind(window);
+      window.fetch = (input, init) => {
+        const url = new URL(input instanceof Request ? input.url : String(input), location.href);
+        if (url.pathname.startsWith('/v1/recordings/') && init?.body instanceof Blob)
+          probe.uploadBytes.push(init.body.size);
+        return originalFetch(input, init);
+      };
+      class Recognition implements ProbeEngine {
+        lang = '';
+        continuous = true;
+        interimResults = false;
+        starts = 0;
+        stops = 0;
+        aborts = 0;
+        onstart: SpeechRecognitionEngine['onstart'] = null;
+        onresult: SpeechRecognitionEngine['onresult'] = null;
+        onerror: SpeechRecognitionEngine['onerror'] = null;
+        onend: SpeechRecognitionEngine['onend'] = null;
+        constructor() {
+          probe.engines.push(this);
+        }
+        start() {
+          this.starts++;
+          probe.lateResult = this.onresult;
+          this.onstart?.();
+        }
+        stop() {
+          this.stops++;
+        }
+        abort() {
+          this.aborts++;
+        }
       }
-      state = 'inactive';
-      ondataavailable: ((event: { data: Blob }) => void) | null = null;
-      onstop: (() => void) | null = null;
-      start() {
-        this.state = 'recording';
-      }
-      stop() {
-        this.state = 'inactive';
-        this.ondataavailable?.({ data: new Blob(['synthetic-test-audio']) });
-        this.onstop?.();
-      }
-    }
-    Object.defineProperty(window, 'MediaRecorder', { configurable: true, value: Recorder });
-    const probe: SpeechProbe = {
-      engines: [],
-      speaks: 0,
-      mediaRequests: 0,
-      captures: 0,
-      lateResult: null,
-    };
-    Object.defineProperty(window, '__callSpeech', { value: probe });
-    class Recognition implements ProbeEngine {
-      lang = '';
-      continuous = true;
-      interimResults = false;
-      starts = 0;
-      stops = 0;
-      aborts = 0;
-      onstart: SpeechRecognitionEngine['onstart'] = null;
-      onresult: SpeechRecognitionEngine['onresult'] = null;
-      onerror: SpeechRecognitionEngine['onerror'] = null;
-      onend: SpeechRecognitionEngine['onend'] = null;
-      constructor() {
-        probe.engines.push(this);
-      }
-      start() {
-        this.starts++;
-        probe.lateResult = this.onresult;
-        this.onstart?.();
-      }
-      stop() {
-        this.stops++;
-      }
-      abort() {
-        this.aborts++;
-      }
-    }
-    Object.defineProperty(window, 'SpeechRecognition', {
-      configurable: true,
-      value: mode === 'standard' ? Recognition : undefined,
-    });
-    Object.defineProperty(window, 'webkitSpeechRecognition', {
-      configurable: true,
-      value: mode === 'webkit' ? Recognition : undefined,
-    });
-    Object.defineProperty(window, 'speechSynthesis', {
-      configurable: true,
-      value: { speak: () => probe.speaks++, cancel: () => undefined },
-    });
-  }, mode);
+      Object.defineProperty(window, 'SpeechRecognition', {
+        configurable: true,
+        value: mode === 'standard' ? Recognition : undefined,
+      });
+      Object.defineProperty(window, 'webkitSpeechRecognition', {
+        configurable: true,
+        value: mode === 'webkit' ? Recognition : undefined,
+      });
+      Object.defineProperty(window, 'speechSynthesis', {
+        configurable: true,
+        value: { speak: () => probe.speaks++, cancel: () => undefined },
+      });
+    },
+    { mode, desktopCaptureFailure, mobile },
+  );
 }
 async function speechState(page: Page) {
   return page.evaluate(() => {
@@ -111,6 +149,8 @@ async function speechState(page: Page) {
       speaks: probe.speaks,
       mediaRequests: probe.mediaRequests,
       captures: probe.captures,
+      uploadBytes: probe.uploadBytes,
+      stoppedTracks: probe.stoppedTracks,
       settings: probe.engines.map(({ lang, continuous, interimResults }) => ({
         lang,
         continuous,
@@ -138,6 +178,12 @@ async function finishRecognition(page: Page) {
     (window as unknown as ProbeWindow).__callSpeech.engines.at(-1)?.onend?.(),
   );
 }
+async function speak(page: Page, call: Locator, text: string) {
+  await call.getByRole('button', { name: '마이크', exact: true }).tap();
+  await recognize(page, text, true);
+  await finishRecognition(page);
+  await expect(call.getByLabel('인식한 말', { exact: true })).toHaveText(text);
+}
 function requests(page: Page) {
   const posts: {
     character: string;
@@ -154,7 +200,13 @@ function requests(page: Page) {
 async function boot(page: Page) {
   await mockStoryAi(page);
   await page.route(`${AI_ENDPOINT}/v1/recordings/**`, (route) =>
-    route.fulfill({ status: 201, contentType: 'application/json', body: '{}' }),
+    route.fulfill({
+      status: 201,
+      json: {
+        id: new URL(route.request().url()).pathname.split('/').at(-1),
+        transcript: '휴대폰에서 말한 내용입니다.',
+      },
+    }),
   );
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('./');
@@ -210,7 +262,7 @@ test('수신 전화에 응답해도 마이크를 누르기 전에는 마이크�
 });
 
 for (const character of ['majima', 'haruka'] as const) {
-  test(`${character}: 인식 내용을 수정·확인한 뒤 한 번만 전송하고 텍스트 AI 답장을 받는다`, async ({
+  test(`${character}: 인식 내용을 확인하거나 다시 말한 뒤 한 번만 전송하고 답장을 받는다`, async ({
     page,
   }, testInfo) => {
     await installSpeech(page, character === 'haruka' ? 'webkit' : 'standard');
@@ -231,13 +283,14 @@ for (const character of ['majima', 'haruka'] as const) {
       'true',
     );
     await page.screenshot({ path: testInfo.outputPath(`call-${character}-microphone-on.png`) });
-    const input = call.getByRole('textbox', { name: '통화에서 보낼 말', exact: true });
+    const input = call.getByLabel('인식한 말', { exact: true });
     expect((await speechState(page)).settings).toEqual([
       { lang: 'ko-KR', continuous: false, interimResults: true },
     ]);
     await recognize(page, '지금 가');
-    await expect(input).toHaveValue('지금 가');
-    await expect(input).toHaveAttribute('readonly', '');
+    await expect(input).toHaveText('지금 가');
+    await expect(call.getByRole('textbox')).toHaveCount(0);
+    await expect(call.getByRole('button', { name: '글로 입력', exact: true })).toHaveCount(0);
     await expect(call.getByRole('button', { name: '말 보내기', exact: true })).toBeDisabled();
     expect(posts).toEqual([]);
     await call.getByRole('button', { name: '마이크 끄기', exact: true }).tap();
@@ -249,14 +302,14 @@ for (const character of ['majima', 'haruka'] as const) {
       'false',
     );
     await expect.poll(() => uploads.length).toBe(1);
-    await expect(input).toHaveValue('지금 가겠습니다');
-    await expect(input).toBeEditable();
+    await expect(input).toHaveText('지금 가겠습니다');
     expect(posts).toEqual([]);
     const message =
       character === 'majima'
         ? '형님, 볼일 끝내고 연락드리겠습니다.'
         : '하루카, 오늘은 늦게 돌아가겠다.';
-    await input.fill(message);
+    await speak(page, call, message);
+    await expect(input).toHaveText(message);
     const send = call.getByRole('button', { name: '말 보내기', exact: true });
     await expect(send).toBeEnabled();
     // Two activation events in one task must still create only one UUID/job.
@@ -275,9 +328,9 @@ for (const character of ['majima', 'haruka'] as const) {
     await settleAiRequests(page);
     expect(posts).toHaveLength(1);
     expect((await speechState(page)).speaks).toBe(0);
-    expect((await speechState(page)).mediaRequests).toBe(1);
-    expect((await speechState(page)).captures).toBe(1);
-    expect(uploads).toHaveLength(1);
+    expect((await speechState(page)).mediaRequests).toBe(2);
+    expect((await speechState(page)).captures).toBe(2);
+    expect(uploads).toHaveLength(2);
     await expect(call.locator('audio, video')).toHaveCount(0);
     await page.screenshot({ path: testInfo.outputPath(`call-${character}-reply.png`) });
     await call.getByRole('button', { name: '통화 종료', exact: true }).tap();
@@ -308,7 +361,7 @@ for (const character of ['majima', 'haruka'] as const) {
   });
 }
 
-test('마이크 권한 거절 뒤에는 인식 결과를 보내지 않고 글로 입력해 계속한다', async ({ page }) => {
+test('마이크 권한 거절 뒤에는 전송 없이 음성 인식을 다시 시도한다', async ({ page }) => {
   await installSpeech(page);
   const posts = requests(page);
   await boot(page);
@@ -321,30 +374,227 @@ test('마이크 권한 거절 뒤에는 인식 결과를 보내지 않고 글로
   );
   await expect(call.getByRole('alert')).toContainText('마이크 사용이 허용되지 않았어요');
   expect(posts).toEqual([]);
-  await call.getByRole('button', { name: '글로 입력', exact: true }).tap();
-  const input = call.getByRole('textbox', { name: '통화에서 보낼 말', exact: true });
-  await expect(input).toBeFocused();
-  await input.fill('형님, 지금은 글로 말씀드리겠습니다.');
+  await expect(call.getByRole('textbox')).toHaveCount(0);
+  await speak(page, call, '형님, 이제 들리십니까?');
   await call.getByRole('button', { name: '말 보내기', exact: true }).tap();
   await expect.poll(() => posts.length).toBe(1);
-  expect(posts[0].message).toBe('형님, 지금은 글로 말씀드리겠습니다.');
+  expect(posts[0].message).toBe('형님, 이제 들리십니까?');
 });
 
-test('미지원 브라우저에서도 통화의 직접 입력과 전송을 사용할 수 있다', async ({ page }) => {
+test('미지원 브라우저는 마이크를 비활성화하고 글 입력을 제공하지 않는다', async ({ page }) => {
   await installSpeech(page, 'unsupported');
+  await page.addInitScript(() =>
+    Object.defineProperty(window, 'MediaRecorder', { configurable: true, value: undefined }),
+  );
   const posts = requests(page);
   await boot(page);
   const call = await outgoing(page);
   await expect(call.getByRole('button', { name: '마이크', exact: true })).toBeDisabled();
   await expect(call.getByText('음성 인식 미지원')).toBeVisible();
-  await call.getByRole('button', { name: '글로 입력', exact: true }).tap();
-  await call
-    .getByRole('textbox', { name: '통화에서 보낼 말', exact: true })
-    .fill('전화 받았습니다, 형님.');
-  await call.getByRole('button', { name: '말 보내기', exact: true }).tap();
-  await expect.poll(() => posts.length).toBe(1);
+  await expect(call.getByRole('textbox')).toHaveCount(0);
+  await expect(call.getByRole('button', { name: '글로 입력', exact: true })).toHaveCount(0);
+  expect(posts).toEqual([]);
   expect((await speechState(page)).starts).toBe(0);
 });
+
+test('데스크톱의 별도 캡처 실패가 정상 음성 인식을 취소하지 않는다', async ({ page }) => {
+  await installSpeech(page, 'standard', true);
+  const posts = requests(page);
+  await boot(page);
+  const call = await outgoing(page);
+  await call.getByRole('button', { name: '마이크', exact: true }).tap();
+  await expect.poll(async () => (await speechState(page)).mediaRequests).toBe(1);
+  expect((await speechState(page)).aborts).toBe(0);
+  await expect(call.getByRole('button', { name: '마이크 끄기', exact: true })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  await recognize(page, '별도 캡처가 실패해도 들리는 말입니다.', true);
+  await finishRecognition(page);
+  await call.getByRole('button', { name: '말 보내기', exact: true }).tap();
+  await expect.poll(() => posts.length).toBe(1);
+  expect(posts[0].message).toBe('별도 캡처가 실패해도 들리는 말입니다.');
+});
+
+test('결과 없이 끝난 음성 인식은 전송하지 않고 다시 시작할 수 있다', async ({ page }) => {
+  await installSpeech(page, 'webkit');
+  const posts = requests(page);
+  await boot(page);
+  const call = await outgoing(page);
+  await call.getByRole('button', { name: '마이크', exact: true }).tap();
+  await finishRecognition(page);
+  await expect(call.getByRole('button', { name: '마이크', exact: true })).toBeEnabled();
+  expect(posts).toEqual([]);
+  await speak(page, call, '다시 말하겠습니다.');
+  await call.getByRole('button', { name: '말 보내기', exact: true }).tap();
+  await expect.poll(() => posts.length).toBe(1);
+  expect(posts[0].message).toBe('다시 말하겠습니다.');
+  expect((await speechState(page)).starts).toBe(2);
+});
+
+for (const native of ['webkit', 'unsupported'] as const) {
+  test(`휴대폰 ${native}: 마이크 하나로 수집·변환하고 확인한 음성만 한 번 전송한다`, async ({
+    page,
+  }, info) => {
+    await installSpeech(page, native, false, true);
+    const posts = requests(page);
+    const recordings: { query: string | null }[] = [];
+    page.on('request', (request) => {
+      const url = new URL(request.url());
+      if (url.pathname.startsWith('/v1/recordings/'))
+        recordings.push({
+          query: url.searchParams.get('transcribe'),
+        });
+    });
+    await boot(page);
+    const call = await outgoing(page);
+    await call.getByRole('button', { name: '마이크', exact: true }).tap();
+    await expect(call.getByRole('button', { name: '마이크 끄기', exact: true })).toBeEnabled();
+    expect((await speechState(page)).starts).toBe(0);
+    expect((await speechState(page)).mediaRequests).toBe(1);
+    expect((await speechState(page)).captures).toBe(1);
+    expect(recordings).toEqual([]);
+    await expect(call.getByRole('textbox')).toHaveCount(0);
+    await call.getByRole('button', { name: '마이크 끄기', exact: true }).tap();
+    await expect(call.getByLabel('인식한 말', { exact: true })).toHaveText(
+      '휴대폰에서 말한 내용입니다.',
+    );
+    expect(recordings).toHaveLength(1);
+    expect(recordings[0].query).toBe('1');
+    const { uploadBytes } = await speechState(page);
+    expect(uploadBytes).toHaveLength(1);
+    expect(uploadBytes[0]).toBeGreaterThan(0);
+    expect(posts).toEqual([]);
+    await page.screenshot({ path: info.outputPath(`mobile-${native}-transcript.png`) });
+    const send = call.getByRole('button', { name: '말 보내기', exact: true });
+    await send.evaluate((button: HTMLButtonElement) => {
+      button.click();
+      button.click();
+    });
+    await expect.poll(() => posts.length).toBe(1);
+    expect(posts[0].message).toBe('휴대폰에서 말한 내용입니다.');
+    expect((await speechState(page)).starts).toBe(0);
+  });
+}
+
+test('휴대폰 권한 대기 취소 후 재시작하면 늦은 첫 마이크를 해제하고 새 캡처를 유지한다', async ({
+  page,
+}) => {
+  await installSpeech(page, 'unsupported', false, true);
+  const posts = requests(page);
+  await boot(page);
+  const call = await outgoing(page);
+  await page.evaluate(() => {
+    const probe = (window as unknown as ProbeWindow).__callSpeech;
+    const original = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
+    let attempts = 0;
+    Object.defineProperty(navigator.mediaDevices, 'getUserMedia', {
+      configurable: true,
+      value: (constraints: MediaStreamConstraints) => {
+        if (++attempts > 1) return original(constraints);
+        probe.mediaRequests++;
+        return new Promise<MediaStream>((resolve) => {
+          probe.releasePermission = () =>
+            resolve({
+              getTracks: () => [{ stop: () => probe.stoppedTracks++ }],
+            } as unknown as MediaStream);
+        });
+      },
+    });
+  });
+  await call.getByRole('button', { name: '마이크', exact: true }).tap();
+  await expect(call.getByRole('status')).toHaveText('마이크 연결 중…');
+  await call.getByRole('button', { name: '마이크 끄기', exact: true }).tap();
+  await expect(call.getByRole('button', { name: '마이크', exact: true })).toBeEnabled();
+  await call.getByRole('button', { name: '마이크', exact: true }).tap();
+  await expect(call.getByRole('status')).toHaveText('듣는 중…');
+  await page.evaluate(() => (window as unknown as ProbeWindow).__callSpeech.releasePermission?.());
+  await expect.poll(async () => (await speechState(page)).stoppedTracks).toBe(1);
+  await expect(call.getByRole('status')).toHaveText('듣는 중…');
+  const captured = await speechState(page);
+  expect(captured.mediaRequests).toBe(2);
+  expect(captured.captures).toBe(1);
+  expect(captured.uploadBytes).toEqual([]);
+  await call.getByRole('button', { name: '마이크 끄기', exact: true }).tap();
+  await expect(call.getByLabel('인식한 말', { exact: true })).toHaveText(
+    '휴대폰에서 말한 내용입니다.',
+  );
+  expect((await speechState(page)).uploadBytes).toHaveLength(1);
+  expect(posts).toEqual([]);
+});
+
+test('휴대폰의 빈 변환 결과는 보내지 않고 같은 마이크로 다시 시도한다', async ({ page }) => {
+  await installSpeech(page, 'unsupported', false, true);
+  const posts = requests(page);
+  await boot(page);
+  let attempts = 0;
+  await page.route(`${AI_ENDPOINT}/v1/recordings/**`, (route) =>
+    route.fulfill({
+      status: 201,
+      json: {
+        id: new URL(route.request().url()).pathname.split('/').at(-1),
+        transcript: ++attempts === 1 ? '' : '이번에는 들리십니까?',
+      },
+    }),
+  );
+  const call = await outgoing(page);
+  await call.getByRole('button', { name: '마이크', exact: true }).tap();
+  await call.getByRole('button', { name: '마이크 끄기', exact: true }).tap();
+  await expect(call.getByRole('button', { name: '마이크', exact: true })).toBeEnabled();
+  await expect.poll(() => attempts).toBe(1);
+  expect(posts).toEqual([]);
+  const send = call.getByRole('button', { name: '말 보내기', exact: true });
+  if (await send.count()) await expect(send).toBeDisabled();
+  await call.getByRole('button', { name: '마이크', exact: true }).tap();
+  await call.getByRole('button', { name: '마이크 끄기', exact: true }).tap();
+  await expect(call.getByLabel('인식한 말', { exact: true })).toHaveText('이번에는 들리십니까?');
+  await send.tap();
+  await expect.poll(() => posts.length).toBe(1);
+  expect(posts[0].message).toBe('이번에는 들리십니까?');
+  expect((await speechState(page)).mediaRequests).toBe(2);
+});
+
+for (const reason of ['hidden', 'end-call'] as const) {
+  test(`휴대폰 ${reason}: 전송 중인 음성 변환의 늦은 결과를 취소한다`, async ({ page }) => {
+    await installSpeech(page, 'webkit', false, true);
+    const posts = requests(page);
+    await boot(page);
+    let received = false;
+    let release!: () => void;
+    const delayed = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await page.route(`${AI_ENDPOINT}/v1/recordings/**`, async (route) => {
+      received = true;
+      await delayed;
+      await route
+        .fulfill({
+          status: 201,
+          json: {
+            id: new URL(route.request().url()).pathname.split('/').at(-1),
+            transcript: '취소 뒤에 도착한 모바일 음성',
+          },
+        })
+        .catch(() => {});
+    });
+    const call = await outgoing(page);
+    await call.getByRole('button', { name: '마이크', exact: true }).tap();
+    await call.getByRole('button', { name: '마이크 끄기', exact: true }).tap();
+    await expect.poll(() => received).toBe(true);
+    if (reason === 'end-call')
+      await call.getByRole('button', { name: '통화 종료', exact: true }).tap();
+    else
+      await page.evaluate(() => {
+        Object.defineProperty(document, 'hidden', { configurable: true, value: true });
+        document.dispatchEvent(new Event('visibilitychange'));
+      });
+    release();
+    await settleAiRequests(page);
+    await expect(page.getByText('취소 뒤에 도착한 모바일 음성', { exact: true })).toHaveCount(0);
+    expect(posts).toEqual([]);
+    expect((await speechState(page)).starts).toBe(0);
+  });
+}
 
 for (const reason of ['end-call', 'hidden', 'pagehide'] as const) {
   test(`${reason}: 인식을 중단하고 늦은 결과를 새 통화나 초안에 섞지 않는다`, async ({ page }) => {
@@ -371,14 +621,9 @@ for (const reason of ['end-call', 'hidden', 'pagehide'] as const) {
     if (reason === 'end-call') {
       await page.keyboard.press('Alt+Home');
       const reopened = await outgoing(page);
-      await reopened.getByRole('button', { name: '글로 입력', exact: true }).tap();
-      await expect(
-        reopened.getByRole('textbox', { name: '통화에서 보낼 말', exact: true }),
-      ).toHaveValue('');
+      await expect(reopened.getByLabel('인식한 말', { exact: true })).toHaveCount(0);
     } else {
-      await expect(
-        call.getByRole('textbox', { name: '통화에서 보낼 말', exact: true }),
-      ).toHaveValue('지금 인식한 말');
+      await expect(call.getByText('취소 뒤 늦게 도착한 말', { exact: true })).toHaveCount(0);
     }
     expect(posts).toEqual([]);
   });
@@ -406,7 +651,7 @@ test('통화로 옮겨도 이전 문자와 그 답장은 통화 화면에 섞이
   expect((await speechState(page)).starts).toBe(0);
 });
 
-test('모델 준비 중 통화에서도 다시 연결한 뒤 작성한 말을 보낼 수 있다', async ({ page }) => {
+test('모델 준비 중 통화에서도 다시 연결한 뒤 인식한 말을 보낼 수 있다', async ({ page }) => {
   await installSpeech(page);
   const posts = requests(page);
   await boot(page);
@@ -423,32 +668,26 @@ test('모델 준비 중 통화에서도 다시 연결한 뒤 작성한 말을 �
   const call = await outgoing(page, 'majima', false);
   const retry = call.getByRole('button', { name: '다시 연결', exact: true });
   await expect(retry).toBeVisible();
-  await call.getByRole('button', { name: '글로 입력', exact: true }).tap();
-  await call
-    .getByRole('textbox', { name: '통화에서 보낼 말', exact: true })
-    .fill('연결을 기다렸다가 보냅니다.');
-  const send = call.getByRole('button', { name: '말 보내기', exact: true });
-  await expect(send).toBeDisabled();
+  await expect(call.getByRole('button', { name: '마이크', exact: true })).toBeDisabled();
   const beforeRetry = healthCalls;
   ready = true;
   await retry.tap();
-  await expect(send).toBeEnabled();
-  await send.tap();
+  await speak(page, call, '연결을 기다렸다가 보냅니다.');
+  await call.getByRole('button', { name: '말 보내기', exact: true }).tap();
   await expect.poll(() => posts.length).toBe(1);
   expect(posts[0].message).toBe('연결을 기다렸다가 보냅니다.');
   expect(healthCalls).toBeGreaterThan(beforeRetry);
 });
 
-test('짧은 통화 화면에서도 인식 편집·전송·종료 버튼에 접근하고 페이지는 밀리지 않는다', async ({
+test('짧은 통화 화면에서도 인식 결과·전송·종료 버튼에 접근하고 페이지는 밀리지 않는다', async ({
   page,
 }, testInfo) => {
   await page.setViewportSize({ width: 360, height: 400 });
   await installSpeech(page);
   await boot(page);
   const call = await outgoing(page);
-  await call.getByRole('button', { name: '글로 입력', exact: true }).tap();
-  const input = call.getByRole('textbox', { name: '통화에서 보낼 말', exact: true });
-  await input.fill('형님, 짧게 여쭙겠습니다. 어디로 가면 됩니까?');
+  await speak(page, call, '형님, 짧게 여쭙겠습니다. 어디로 가면 됩니까?');
+  const input = call.getByLabel('인식한 말', { exact: true });
   await expect(input).toBeInViewport({ ratio: 1 });
   const send = call.getByRole('button', { name: '말 보내기', exact: true });
   await send.scrollIntoViewIfNeeded();
@@ -483,10 +722,7 @@ test('통화 전송 실패 후 문자에서는 원문 없이 재시도하고 통
     } else await route.fallback();
   });
   const call = await outgoing(page);
-  await call.getByRole('button', { name: '글로 입력', exact: true }).tap();
-  await call
-    .getByRole('textbox', { name: '통화에서 보낼 말' })
-    .fill('문자에 옮기지 않을 통화 원문');
+  await speak(page, call, '문자에 옮기지 않을 통화 원문');
   await call.getByRole('button', { name: '말 보내기', exact: true }).tap();
   await expect(call.getByRole('button', { name: '보낸 말 다시 시도' })).toBeVisible();
   await call.getByRole('button', { name: '통화 종료', exact: true }).tap();
@@ -519,13 +755,12 @@ test('통화 시각을 숨기고 실제 입력마다 60초를 다시 세지만 �
   const call = await outgoing(page, 'majima', true, true);
   await expect(call.getByLabel('현재 시각', { exact: true })).toHaveCount(0);
   await expect(call.getByLabel('통화 시간', { exact: true })).toHaveText('00:00');
-  await call.getByRole('button', { name: '글로 입력', exact: true }).tap();
   await page.clock.runFor(49_000);
-  await call.getByRole('textbox', { name: '통화에서 보낼 말' }).fill('아직 작성 중');
+  await speak(page, call, '아직 말씀 중');
   await page.clock.runFor(49_000);
   await expect(call).toBeVisible();
   await expect(call.getByText('내가 또 연락하께. 끊는다, 키류쨩.', { exact: true })).toHaveCount(0);
-  await call.getByRole('textbox', { name: '통화에서 보낼 말' }).fill('아직 작성 중입니다');
+  await speak(page, call, '아직 말씀 중입니다');
   await page.clock.runFor(59_000);
   const idleMs = () =>
     page.evaluate(() => JSON.parse(localStorage.getItem('yaku-iphone.day.v1')!).call.idleMs);
@@ -536,9 +771,7 @@ test('통화 시각을 숨기고 실제 입력마다 60초를 다시 세지만 �
   // The committed 60s state schedules the ending UI with a zero-delay timer.
   await page.clock.runFor(1);
   await expect(call.getByText('내가 또 연락하께. 끊는다, 키류쨩.', { exact: true })).toBeVisible();
-  await expect(call.getByRole('textbox', { name: '통화에서 보낼 말' })).toHaveValue(
-    '아직 작성 중입니다',
-  );
+  await expect(call.getByLabel('인식한 말', { exact: true })).toHaveText('아직 말씀 중입니다');
   await page.screenshot({ path: info.outputPath('peer-ending.png') });
   await page.clock.runFor(6000);
   await expect(call).toHaveCount(0);
@@ -565,8 +798,7 @@ test('통화 답변 생성과 전달 대기는 60초를 넘겨도 종료하지 �
     });
   });
   const call = await outgoing(page);
-  await call.getByRole('button', { name: '글로 입력', exact: true }).tap();
-  await call.getByRole('textbox', { name: '통화에서 보낼 말' }).fill('형님, 답을 기다리겠습니다.');
+  await speak(page, call, '형님, 답을 기다리겠습니다.');
   await call.getByRole('button', { name: '말 보내기', exact: true }).tap();
   await expect(call.getByRole('status')).toContainText('답장 대기 중');
   await page.clock.runFor(95_000);
@@ -599,11 +831,10 @@ test('전송 실패는 재시도를 제공하지만 무응답 통화를 영구 �
     }),
   );
   const call = await outgoing(page);
-  await call.getByRole('button', { name: '글로 입력', exact: true }).tap();
-  await call.getByRole('textbox', { name: '통화에서 보낼 말' }).fill('형님, 들리십니까?');
+  await speak(page, call, '형님, 들리십니까?');
   await call.getByRole('button', { name: '말 보내기', exact: true }).tap();
   await expect(call.getByRole('button', { name: '보낸 말 다시 시도' })).toBeVisible();
-  await expect(call.getByRole('button', { name: '글로 입력', exact: true })).toBeDisabled();
+  await expect(call.getByRole('button', { name: '마이크', exact: true })).toBeDisabled();
   await page.clock.runFor(59_000);
   await expect(call.getByText('내가 또 연락하께. 끊는다, 키류쨩.', { exact: true })).toHaveCount(0);
   await page.clock.runFor(1000);

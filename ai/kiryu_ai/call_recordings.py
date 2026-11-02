@@ -14,6 +14,9 @@ MAX_BYTES = 2 * 1024 * 1024
 
 async def save_recording(request, service):
     record = service.authenticate(request)
+    queries = list(request.query_params.multi_items())
+    if queries and queries != [("transcribe", "1")]:
+        raise ApiFailure(400, "invalid_query", "지원하지 않는 요청 항목입니다.")
     character = request.path_params["character"]
     try:
         identifier = str(UUID(request.path_params["recording_id"]))
@@ -64,4 +67,9 @@ async def save_recording(request, service):
         except BaseException:
             target.unlink(missing_ok=True)
             raise
-    return JSONResponse({"id": identifier}, status_code=201)
+    result = {"id": identifier}
+    if queries:
+        from .speech_transcribe import transcribe_recording
+
+        result["transcript"] = await transcribe_recording(target)
+    return JSONResponse(result, status_code=201)
