@@ -82,12 +82,17 @@ export default {
           ? ['episodes']
           : url.pathname === '/v1/episodes/majima'
             ? ['protocol']
-            : [];
+            : recording
+              ? ['transcribe']
+              : [];
     if ([...url.searchParams.keys()].some((key) => !allowedQuery.includes(key)))
       return error(400, 'invalid_query', origin);
     if (
       (url.searchParams.has('episodes') && url.searchParams.get('episodes') !== '1') ||
-      (url.searchParams.has('protocol') && url.searchParams.get('protocol') !== '1')
+      (url.searchParams.has('protocol') && url.searchParams.get('protocol') !== '1') ||
+      (url.searchParams.has('transcribe') &&
+        (url.searchParams.get('transcribe') !== '1' ||
+          url.searchParams.getAll('transcribe').length !== 1))
     )
       return error(400, 'invalid_query', origin);
     if (!env.CHAT_API || !env.GATEWAY_SECRET) return error(503, 'unavailable', origin);
@@ -129,7 +134,9 @@ export default {
           headers: forwarding,
           body,
           redirect: 'manual',
-          signal: AbortSignal.timeout(10_000),
+          signal: AbortSignal.timeout(
+            recording && url.searchParams.has('transcribe') ? 75_000 : 10_000,
+          ),
         },
       );
       if (upstream.status >= 300 && upstream.status < 400)

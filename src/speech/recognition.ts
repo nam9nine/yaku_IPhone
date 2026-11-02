@@ -40,6 +40,7 @@ export interface SpeechRecognitionEngine {
 export type SpeechRecognitionConstructor = new () => SpeechRecognitionEngine;
 export interface SpeechRecognitionOptions {
   onState: (state: SpeechRecognitionState) => void;
+  onEnd?: () => void;
   onTranscript: (transcript: SpeechTranscript) => void;
   onError: (failure: SpeechRecognitionFailure) => void;
   /** Undefined detects the browser; null deliberately represents no support. */
@@ -68,41 +69,41 @@ function failure(code: string): SpeechRecognitionFailure {
     case 'SecurityError':
       return {
         code: 'permission-denied',
-        message: '마이크 사용이 허용되지 않았어요. 직접 입력할 수 있어요.',
+        message: '마이크 사용이 허용되지 않았어요. 브라우저의 마이크 권한을 확인해 주세요.',
       };
     case 'network':
       return {
         code: 'network',
-        message: '음성 인식 연결이 끊겼어요. 다시 시도하거나 직접 입력해 주세요.',
+        message: '음성 인식 연결이 끊겼어요. 다시 시도해 주세요.',
       };
     case 'no-speech':
       return {
         code: 'no-speech',
-        message: '말소리를 듣지 못했어요. 다시 시도하거나 직접 입력해 주세요.',
+        message: '말소리를 듣지 못했어요. 다시 시도해 주세요.',
       };
     case 'unsupported':
     case 'language-not-supported':
       return {
         code: 'unsupported',
-        message: '이 브라우저에서는 음성 인식을 사용할 수 없어요. 직접 입력해 주세요.',
+        message: '이 브라우저에서는 음성 인식을 사용할 수 없어요. 마이크 권한을 확인해 주세요.',
       };
     case 'audio-capture':
     case 'NotFoundError':
     case 'NotReadableError':
       return {
         code: 'microphone',
-        message: '마이크를 사용할 수 없어요. 마이크를 확인하거나 직접 입력해 주세요.',
+        message: '마이크를 사용할 수 없어요. 마이크 권한을 확인해 주세요.',
       };
     case 'aborted':
     case 'AbortError':
       return {
         code: 'aborted',
-        message: '음성 인식이 중단됐어요. 다시 시도하거나 직접 입력해 주세요.',
+        message: '음성 인식이 중단됐어요. 다시 시도해 주세요.',
       };
     default:
       return {
         code: 'unknown',
-        message: '음성을 인식하지 못했어요. 다시 시도하거나 직접 입력해 주세요.',
+        message: '음성을 인식하지 못했어요. 다시 시도해 주세요.',
       };
   }
 }
@@ -217,7 +218,10 @@ export class SpeechRecognitionController {
       if (!this.disposed) this.options.onError(failure(error));
     };
     engine.onend = () => {
-      if (this.run === run && !this.disposed) this.finish(run, false);
+      if (this.run === run && !this.disposed) {
+        this.finish(run, false);
+        if (!this.disposed) this.options.onEnd?.();
+      }
     };
     this.setState('starting');
     if (this.run !== run || this.disposed) return false;

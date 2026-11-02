@@ -9,7 +9,7 @@ import threading
 import time
 import unittest
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 from uuid import uuid4
 
 from kiryu_ai.chat_prompt import ChatPromptBuilder
@@ -250,6 +250,79 @@ class ChatServerTests(unittest.TestCase):
             ).status_code,
             201,
         )
+
+    def test_recording_transcribes_only_authenticated_saved_audio(self):
+        client = self.client()
+        auth = self.token(client)
+        route = "/v1/recordings/majima/" + str(uuid4())
+        data = b"\x1aE\xdf\xa3synthetic-audio"
+        headers = {**auth, "Content-Type": "audio/webm"}
+
+        async def transcribe(path):
+            self.assertEqual(path.read_bytes(), data)
+            self.assertEqual(path.stat().st_mode & 0o777, 0o600)
+            return "형님 지금 어디 계십니까?"
+
+        with patch(
+            "kiryu_ai.speech_transcribe.transcribe_recording", side_effect=transcribe
+        ) as mocked:
+            unauthorized = client.post(route + "?transcribe=1", content=data)
+            self.assertEqual(unauthorized.status_code, 401)
+            self.assertEqual(mocked.call_count, 0)
+            response = client.post(
+                route + "?transcribe=1", content=data, headers=headers
+            )
+            self.assertEqual(response.status_code, 201)
+            self.assertEqual(response.json()["transcript"], "형님 지금 어디 계십니까?")
+            self.assertEqual(mocked.call_count, 1)
+            self.assertEqual(
+                client.post(route, content=data, headers=headers).status_code, 201
+            )
+            self.assertEqual(mocked.call_count, 1)  # Older clients remain save-only.
+        self.assertEqual(len(list((self.root / "recordings").rglob("*.webm"))), 1)
+        self.assertEqual(
+            client.get("/v1/history?character=majima", headers=auth).json()["messages"],
+            [],
+        )
+        self.assertEqual(self.engine.calls, [])
+
+    def test_transcription_failure_retains_audio_and_rejects_invalid_options(self):
+        from kiryu_ai.web_server import ApiFailure
+
+        client = self.client()
+        auth = self.token(client)
+        route = "/v1/recordings/haruka/" + str(uuid4())
+        data = b"\x1aE\xdf\xa3synthetic-audio"
+        headers = {**auth, "Content-Type": "audio/webm"}
+        with patch(
+            "kiryu_ai.speech_transcribe.transcribe_recording", new_callable=AsyncMock
+        ) as mocked:
+            for query in [
+                "?transcribe=0",
+                "?transcribe=1&transcribe=1",
+                "?url=elsewhere",
+            ]:
+                self.assertEqual(
+                    client.post(
+                        route + query, content=data, headers=headers
+                    ).status_code,
+                    400,
+                )
+            self.assertFalse((self.root / "recordings").exists())
+            mocked.side_effect = ApiFailure(422, "no_speech", "말소리를 듣지 못했어요.")
+            response = client.post(
+                route + "?transcribe=1", content=data, headers=headers
+            )
+            self.assertEqual(response.status_code, 422)
+            self.assertEqual(response.json()["error"]["code"], "no_speech")
+            files = list((self.root / "recordings").rglob("*.webm"))
+            self.assertEqual(len(files), 1)
+            self.assertEqual(files[0].read_bytes(), data)
+            mocked.side_effect = None
+            mocked.return_value = "다시 인식한 말"
+            retry = client.post(route + "?transcribe=1", content=data, headers=headers)
+            self.assertEqual(retry.status_code, 201)
+            self.assertEqual(len(list((self.root / "recordings").rglob("*.webm"))), 1)
 
     def send(
         self, client, auth, message="카레 계획", character="haruka", request_id=None

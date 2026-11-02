@@ -1,9 +1,66 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import worker from '../../infra/cloudflare/worker.mjs';
 const origin = 'https://nam9nine.github.io';
 const request = (path, options = {}) => new Request(`https://api.example.test${path}`, options);
 describe('private recording gateway', () => {
   const path = '/v1/recordings/majima/00000000-0000-4000-8000-000000000001';
+  it('allows bounded transcription only on authenticated recording uploads', async () => {
+    const calls = [];
+    const env = {
+      GATEWAY_SECRET: 'proof',
+      CHAT_API: {
+        fetch: async (url, options) => {
+          calls.push({ url, options });
+          return Response.json({ id: 'test', transcript: '형님 어디 계십니까?' }, { status: 201 });
+        },
+      },
+    };
+    const headers = {
+      Origin: origin,
+      Authorization: 'Bearer synthetic',
+      'Content-Type': 'audio/mp4',
+    };
+    const timeout = vi.spyOn(AbortSignal, 'timeout');
+    try {
+      const response = await worker.fetch(
+        request(path + '?transcribe=1', { method: 'POST', headers, body: new Uint8Array([1]) }),
+        env,
+      );
+      expect(response.status).toBe(201);
+      expect((await response.json()).transcript).toBe('형님 어디 계십니까?');
+      expect(calls[0].url).toBe('http://kiryu-chat.internal' + path + '?transcribe=1');
+      expect(timeout).toHaveBeenLastCalledWith(75_000);
+      await worker.fetch(
+        request(path, { method: 'POST', headers, body: new Uint8Array([1]) }),
+        env,
+      );
+      expect(timeout).toHaveBeenLastCalledWith(10_000);
+      for (const query of [
+        '?transcribe=0',
+        '?transcribe=1&transcribe=1',
+        '?transcribe=1&url=evil',
+      ]) {
+        expect(
+          (await worker.fetch(request(path + query, { method: 'POST', headers }), env)).status,
+        ).toBe(400);
+      }
+      expect((await worker.fetch(request('/v1/health?transcribe=1'), env)).status).toBe(400);
+      expect(
+        (
+          await worker.fetch(
+            request(path + '?transcribe=1', {
+              method: 'POST',
+              headers: { 'Content-Type': 'audio/mp4' },
+            }),
+            env,
+          )
+        ).status,
+      ).toBe(401);
+      expect(calls).toHaveLength(2);
+    } finally {
+      timeout.mockRestore();
+    }
+  });
   it('forwards authenticated audio bytes to the private binding and never offers download', async () => {
     const calls = [];
     const env = {

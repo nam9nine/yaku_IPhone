@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { messageWithinLimits, type AiCharacter } from '../ai/client';
 import type { AiMessengerView } from '../ai/useAiMessenger';
-import { CallRecording } from '../speech/recording';
+import { CallRecording, supportsCallRecording, useRecordedSpeech } from '../speech/recording';
 import { useDay } from '../day/DayContext';
 import { affinityTone } from '../day/state';
 import { recentPhoneEvents } from '../day/phoneEvents';
@@ -25,7 +25,6 @@ export function CallConversation({
 }) {
   const { state, dispatch } = useDay();
   const [draft, setDraft] = useState('');
-  const [editing, setEditing] = useState(false);
   const [speechState, setSpeechState] = useState<SpeechRecognitionState>('idle');
   const [speechError, setSpeechError] = useState<string | null>(null);
   const audio = useRef<CallRecording | null>(null);
@@ -33,8 +32,9 @@ export function CallConversation({
   const [audioActive, setAudioActive] = useState(false);
   const mounted = useRef(true);
   const controller = useRef<SpeechRecognitionController | null>(null);
-  const draftBeforeSpeech = useRef('');
-  const input = useRef<HTMLTextAreaElement>(null);
+  const speechRun = useRef(0);
+  const recognizedText = useRef('');
+  const [transcribing, setTranscribing] = useState(false);
   const log = useRef<HTMLDivElement>(null);
   const thread = ai.threads[character];
   const [requestIds, setRequestIds] = useState<Set<string>>(() => new Set());
@@ -53,11 +53,12 @@ export function CallConversation({
   const waitingForReply =
     (!!thread.pending && thread.pending.phase !== 'failed') || thread.deliveryPending;
   const recognizing = speechState !== 'idle';
-  const supported = supportsSpeechRecognition();
+  const recordedSpeech = useRecordedSpeech() || !supportsSpeechRecognition();
+  const supported = recordedSpeech ? supportsCallRecording() : supportsSpeechRecognition();
   useEffect(() => {
-    onBusyChange(waitingForReply || recognizing || audioStarting || audioActive);
+    onBusyChange(waitingForReply || recognizing || audioStarting || audioActive || transcribing);
     return () => onBusyChange(false);
-  }, [waitingForReply, recognizing, audioStarting, audioActive, onBusyChange]);
+  }, [waitingForReply, recognizing, audioStarting, audioActive, transcribing, onBusyChange]);
   function noteInput() {
     const call = state.call;
     if (call?.caller === character)
@@ -66,9 +67,18 @@ export function CallConversation({
   const ready = online && ai.status === 'ready' && thread.loaded && !thread.loading;
   useEffect(() => {
     mounted.current = true;
+    const invalidateRun = () => {
+      speechRun.current++;
+    };
     const cancel = () => {
+      invalidateRun();
       controller.current?.cancel();
       audio.current?.stop();
+      setSpeechState('idle');
+      setAudioActive(false);
+      setAudioStarting(false);
+      setTranscribing(false);
+      setDraft('');
     };
     const visibility = () => {
       if (document.hidden) cancel();
@@ -79,6 +89,7 @@ export function CallConversation({
       document.removeEventListener('visibilitychange', visibility);
       window.removeEventListener('pagehide', cancel);
       mounted.current = false;
+      invalidateRun();
       audio.current?.stop();
       controller.current?.dispose();
       controller.current = null;
@@ -98,47 +109,90 @@ export function CallConversation({
     if (log.current) log.current.scrollTop = log.current.scrollHeight;
   }, [thread.pending?.requestId, thread.displayedMessages.length]);
   async function start() {
-    if (recognizing || audioActive) {
+    if (audioStarting && !audioActive && !recognizing) {
+      speechRun.current++;
+      audio.current?.stop();
+      setAudioStarting(false);
+      setAudioActive(false);
+      setTranscribing(false);
+      return;
+    }
+    if (recognizing || audioActive || audioStarting) {
       controller.current?.stop();
       audio.current?.stop();
       return;
     }
-    if (busy || audioStarting || !ready || !ai.connection) return;
+    if (busy || transcribing || !ready || !ai.connection) return;
+    const run = ++speechRun.current;
+    const current = () => mounted.current && speechRun.current === run;
     controller.current?.dispose();
-    draftBeforeSpeech.current = draft.trim();
-    controller.current = new SpeechRecognitionController({
-      onState: (value) => {
-        setSpeechState(value);
-        if (value === 'idle') audio.current?.stop();
-      },
-      onTranscript: ({ text }) => {
-        noteInput();
-        setDraft([draftBeforeSpeech.current, text].filter(Boolean).join(' ').slice(0, 1000));
-      },
-      onError: ({ message }) => setSpeechError(message),
-    });
+    setDraft('');
+    recognizedText.current = '';
     setSpeechError(null);
-    setEditing(true);
+    noteInput();
     const capture = new CallRecording((active) => {
-      if (mounted.current) setAudioActive(active);
+      if (!current()) return;
+      setAudioActive(active);
+      if (recordedSpeech && !active) setTranscribing(true);
     });
     audio.current = capture;
+    if (recordedSpeech) {
+      // One microphone owner: the same saved audio is transcribed on the Mac.
+      setAudioStarting(true);
+      try {
+        if (!(await capture.start(ai.connection, character, { transcribe: true })) || !current())
+          return;
+        setAudioStarting(false);
+        await capture.saved;
+        if (!current()) return;
+        const text = capture.transcript;
+        setDraft(text);
+        if (text) noteInput();
+        else setSpeechError('말소리를 듣지 못했어요. 다시 시도해 주세요.');
+      } catch (error) {
+        if (current()) setSpeechError(error instanceof Error ? error.message : '마이크 시작 실패');
+      } finally {
+        if (current()) {
+          setAudioStarting(false);
+          setAudioActive(false);
+          setTranscribing(false);
+        }
+      }
+      return;
+    }
+    controller.current = new SpeechRecognitionController({
+      onState: (value) => {
+        if (!current()) return;
+        setSpeechState(value);
+        if (value === 'idle') capture.stop();
+      },
+      onTranscript: ({ text }) => {
+        if (!current()) return;
+        recognizedText.current = text;
+        if (text) noteInput();
+        setDraft(text);
+      },
+      onEnd: () => {
+        if (current() && !recognizedText.current)
+          setSpeechError('말소리를 듣지 못했어요. 다시 시도해 주세요.');
+      },
+      onError: ({ message }) => {
+        if (current()) setSpeechError(message);
+      },
+    });
+    // Native desktop recognition starts inside the original tap. An optional
+    // archive failure must not cancel otherwise working recognition.
+    if (!controller.current.start()) return;
     setAudioStarting(true);
     try {
-      const opening = capture.start(ai.connection, character);
-      // Keep both permission-sensitive APIs in the original microphone tap.
-      if (!controller.current.start()) capture.stop();
-      const started = await opening;
-      if (!started || !mounted.current) return;
-      void capture.saved.catch(() => {
-        if (mounted.current) setSpeechError('음성 저장 실패');
-      });
+      if (await capture.start(ai.connection, character))
+        void capture.saved.catch(() => {
+          if (current()) setSpeechError('음성 저장 실패');
+        });
     } catch {
-      controller.current?.cancel();
-      capture.stop();
-      if (mounted.current) setSpeechError('마이크 시작 실패');
+      if (current()) setSpeechError('음성 저장 실패');
     } finally {
-      if (mounted.current) setAudioStarting(false);
+      if (current()) setAudioStarting(false);
     }
   }
   function send() {
@@ -148,6 +202,7 @@ export function CallConversation({
       recognizing ||
       audioStarting ||
       audioActive ||
+      transcribing ||
       !draft.trim() ||
       !messageWithinLimits(draft.trim())
     )
@@ -164,8 +219,6 @@ export function CallConversation({
     if (pending) setRequestIds((ids) => new Set([...ids, pending.requestId]));
     setDraft('');
     setSpeechError(null);
-    setEditing(false);
-    input.current?.blur();
   }
   const status = !online
     ? '연결 끊김'
@@ -175,9 +228,13 @@ export function CallConversation({
         : '연결 중…'
       : busy
         ? '답장 대기 중'
-        : speechState === 'stopping'
+        : transcribing || speechState === 'stopping'
           ? '음성 인식 중…'
-          : '';
+          : audioStarting || speechState === 'starting'
+            ? '마이크 연결 중…'
+            : audioActive || speechState === 'listening'
+              ? '듣는 중…'
+              : '';
   return (
     <section className="call-live" aria-label="음성으로 대화">
       {(recentMessages.length > 0 || pendingText) && (
@@ -206,21 +263,11 @@ export function CallConversation({
         </p>
       )}
       {!supported && <p className="call-live-hint">음성 인식 미지원</p>}
-      {editing && (
+      {(draft || recognizing || audioActive || transcribing) && (
         <div className="call-live-editor">
-          <textarea
-            ref={input}
-            aria-label="통화에서 보낼 말"
-            value={draft}
-            maxLength={1000}
-            rows={2}
-            readOnly={recognizing || audioStarting || audioActive}
-            onChange={(event) => {
-              noteInput();
-              setDraft(event.target.value);
-            }}
-            placeholder="메시지"
-          />
+          <p className="call-live-transcript" aria-label="인식한 말">
+            {draft || '…'}
+          </p>
           <button
             disabled={
               !ready ||
@@ -228,6 +275,7 @@ export function CallConversation({
               recognizing ||
               audioStarting ||
               audioActive ||
+              transcribing ||
               !draft.trim() ||
               !messageWithinLimits(draft.trim())
             }
@@ -239,25 +287,15 @@ export function CallConversation({
       )}
       <div className="call-tools">
         <button
-          aria-label={recognizing || audioActive ? '마이크 끄기' : '마이크'}
-          aria-pressed={recognizing || audioActive}
-          disabled={!supported || busy || audioStarting || !ready}
+          aria-label={recognizing || audioActive || audioStarting ? '마이크 끄기' : '마이크'}
+          aria-pressed={recognizing || audioActive || audioStarting}
+          disabled={!supported || busy || transcribing || !ready}
           onClick={() => void start()}
         >
           <span>
             <PhoneIcon name="microphone" />
           </span>
           마이크
-        </button>
-        <button
-          disabled={recognizing || busy || audioStarting || audioActive}
-          onClick={() => {
-            noteInput();
-            setEditing(true);
-            requestAnimationFrame(() => input.current?.focus());
-          }}
-        >
-          <span aria-hidden="true">⌨</span>글로 입력
         </button>
       </div>
       {!ready && online && ai.status !== 'checking' && !thread.loading && (
@@ -277,15 +315,12 @@ export function CallConversation({
         <button
           className="call-live-retry"
           onClick={() => {
-            const failed = ai.messenger.takeFailedMessage(character, true);
-            if (failed) {
-              noteInput();
-              setDraft(failed.message);
-              setEditing(true);
-            }
+            ai.messenger.takeFailedMessage(character, true);
+            setDraft('');
+            setSpeechError(null);
           }}
         >
-          보낸 말 수정
+          다시 말하기
         </button>
       )}
     </section>
