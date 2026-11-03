@@ -46,11 +46,19 @@ async function installSpeech(
         configurable: true,
         value: mobile ? 5 : 0,
       });
+      // WebKit rejects capture unless the page audio session allows recording.
+      const audioSession = { type: 'auto' };
+      Object.defineProperty(navigator, 'audioSession', { configurable: true, value: audioSession });
       Object.defineProperty(navigator, 'mediaDevices', {
         configurable: true,
         value: {
           getUserMedia: async () => {
             probe.mediaRequests++;
+            if (!['auto', 'play-and-record'].includes(audioSession.type))
+              throw new DOMException(
+                'AudioSession category is not compatible with audio capture.',
+                'InvalidStateError',
+              );
             if (desktopCaptureFailure)
               throw new DOMException('capture rejected', 'NotAllowedError');
             return { getTracks: () => [{ stop: () => undefined }] };

@@ -1,3 +1,5 @@
+import { holdCaptureSession } from './audioSession';
+
 export type SpeechRecognitionState = 'idle' | 'starting' | 'listening' | 'stopping';
 export interface SpeechTranscript {
   text: string;
@@ -122,6 +124,7 @@ interface RecognitionRun {
   engine: SpeechRecognitionEngine;
   fragments: Map<number, { text: string; final: boolean }>;
   last: SpeechTranscript;
+  releaseSession: () => void;
 }
 
 /**
@@ -161,6 +164,7 @@ export class SpeechRecognitionController {
       engine,
       fragments: new Map(),
       last: { text: '', finalText: '', interimText: '' },
+      releaseSession: holdCaptureSession(),
     };
     this.run = run;
     engine.lang = 'ko-KR';
@@ -281,6 +285,7 @@ export class SpeechRecognitionController {
         /* The browser may already have ended. */
       }
     }
+    run.releaseSession();
     this.setState('idle');
   }
 }

@@ -146,3 +146,27 @@ it('does not request microphone again after cancellation or start', async () => 
   expect(await capture.start(connection, 'haruka')).toBe(false);
   expect(env.media).toHaveBeenCalledTimes(1);
 });
+it('captures in play-and-record after a reply tone set transient and restores it after', async () => {
+  const env = setup();
+  const session = { type: 'transient' };
+  Object.assign(navigator, { audioSession: session });
+  env.media.mockImplementation(async () => {
+    // WebKit rejects capture in transient, ambient and playback sessions.
+    expect(session.type).toBe('play-and-record');
+    return env.stream;
+  });
+  const capture = new CallRecording();
+  expect(await capture.start(connection, 'majima')).toBe(true);
+  expect(session.type).toBe('play-and-record');
+  capture.stop();
+  await capture.saved;
+  expect(session.type).toBe('transient');
+});
+it('restores the session when microphone permission fails', async () => {
+  const env = setup();
+  const session = { type: 'auto' };
+  Object.assign(navigator, { audioSession: session });
+  env.media.mockRejectedValue(new DOMException('denied', 'NotAllowedError'));
+  await expect(new CallRecording().start(connection, 'majima')).rejects.toThrow('denied');
+  expect(session.type).toBe('auto');
+});
