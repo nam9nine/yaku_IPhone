@@ -1,5 +1,6 @@
 import type { AiConnection } from '../ai/connection';
 import type { AiCharacter } from '../ai/client';
+import { holdCaptureSession } from './audioSession';
 
 const MAX_BYTES = 2 * 1024 * 1024;
 
@@ -26,6 +27,7 @@ export class CallRecording {
   private started = false;
   private active = false;
   private timer: ReturnType<typeof setTimeout> | undefined;
+  private releaseSession = () => {};
   private readonly onActiveChange: (active: boolean) => void;
   saved: Promise<void> = Promise.resolve();
   transcript = '';
@@ -43,6 +45,7 @@ export class CallRecording {
     this.started = true;
     let rejectSaved: ((reason: Error) => void) | undefined;
     try {
+      this.releaseSession = holdCaptureSession();
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       if (this.cancelled) {
         stream.getTracks().forEach((track) => track.stop());
@@ -143,6 +146,7 @@ export class CallRecording {
     this.setActive(false);
     this.stream?.getTracks().forEach((track) => track.stop());
     this.stream = null;
+    this.releaseSession();
   }
 
   stop() {

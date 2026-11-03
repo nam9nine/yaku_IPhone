@@ -304,4 +304,17 @@ describe('브라우저 음성 인식 수명', () => {
     engine().onresult?.(event([['가'.repeat(999) + '😀', true]]));
     expect(transcripts.at(-1)?.text).toHaveLength(999);
   });
+
+  it('인식하는 동안 녹음 가능한 오디오 세션을 유지하고 끝나면 되돌린다', () => {
+    const session = { type: 'transient' };
+    vi.stubGlobal('navigator', { audioSession: session });
+    const { controller, engine } = setup();
+    controller.start();
+    expect(session.type).toBe('play-and-record');
+    engine().onend?.();
+    expect(session.type).toBe('transient');
+    controller.start();
+    controller.dispose();
+    expect(session.type).toBe('transient');
+  });
 });
