@@ -341,6 +341,26 @@ class SelectTests(unittest.TestCase):
             inspect("아빠 깜빡했죠?", character="haruka", user_message="네")["soft"],
         )
 
+    def test_near_copies_and_complaint_only_replies_lose(self):
+        example = "숙제라… 그건 빼먹으면 안 되제. 그래, 애들 잘 봐 줘라."
+        self.assertIn(
+            "copies_example",
+            inspect(
+                "숙제라… 그건 빼먹으면 안 되제. 애들 잘 봐 줘라.",
+                character="majima",
+                examples=[example],
+            )["hard"],
+        )
+        for text in (
+            "섭섭하네. 마, 나중에 연락해라.",
+            "이번만 봐준다. 대신 내일은 꼭 온나.",
+        ):
+            self.assertIn(
+                "complains_after_short_reply",
+                inspect(text, character="majima", user_message="네.")["soft"],
+                text,
+            )
+
     def test_complaint_removal_never_keeps_a_reproach_or_its_concession(self):
         self.assertIsNone(_without_complaint("대답이 짧네. 이번만 봐주께, 키류 쨩."))
         self.assertIsNone(

@@ -188,6 +188,8 @@ def inspect(reply, *, character, user_message=None, previous=(), examples=()):
             soft.append(("repeated_catchphrase", 2))
         elif first:
             soft.append(("catchphrase", first))
+    if short and any(COMPLAINT.search(part) for part in SENTENCE.findall(text)):
+        soft.append(("complains_after_short_reply", 2))
     if _blames(text, user_message or ""):
         soft.append(("blames_memory_health_or_drink", 2))
     if ADDRESS_REMARK.search(text) and not ADDRESS_REMARK.search(user_message or ""):
@@ -212,7 +214,7 @@ def inspect(reply, *, character, user_message=None, previous=(), examples=()):
     # The model copies an authored example word for word when the situation
     # matches it (seen on declines), which gives every visitor the same line.
     closest = max((_similarity(text, example) for example in examples), default=0.0)
-    if closest >= 0.8:
+    if closest >= 0.65:
         hard.append("copies_example")
     elif closest >= 0.5:
         soft.append(("echoes_example", 3))
