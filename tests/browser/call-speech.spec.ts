@@ -838,7 +838,8 @@ test('전송 실패는 재시도를 제공하지만 무응답 통화를 영구 �
       json: { error: { code: 'unavailable', message: '잠시 연결할 수 없습니다.' } },
     }),
   );
-  const call = await outgoing(page);
+  // Frozen clock: CI latency after the failed send must not count toward the 60s idle limit.
+  const call = await outgoing(page, 'majima', true, true);
   await speak(page, call, '형님, 들리십니까?');
   await call.getByRole('button', { name: '말 보내기', exact: true }).tap();
   await expect(call.getByRole('button', { name: '보낸 말 다시 시도' })).toBeVisible();
@@ -846,6 +847,8 @@ test('전송 실패는 재시도를 제공하지만 무응답 통화를 영구 �
   await page.clock.runFor(59_000);
   await expect(call.getByText('내가 또 연락하께. 끊는다, 키류쨩.', { exact: true })).toHaveCount(0);
   await page.clock.runFor(1000);
+  // The committed 60s state schedules the ending UI with a zero-delay timer.
+  await page.clock.runFor(1);
   await expect(call.getByText('내가 또 연락하께. 끊는다, 키류쨩.', { exact: true })).toBeVisible();
   await page.clock.runFor(6000);
   await expect(call).toHaveCount(0);
