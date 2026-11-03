@@ -10,6 +10,7 @@ import {
   historyOnlyContacts,
   contactIds,
   ingredients,
+  previousChoices,
   questFollowups,
   reminders,
   storyRounds,
@@ -178,16 +179,28 @@ function isContact(id: string): id is ContactId {
 function questComplete(state: DayState, id: ReminderId) {
   return id === 'shopping' ? shoppingComplete(state) : state.reminders[id];
 }
+/** Both options of every finished Haruka task not yet reported, oldest task first. */
+function openHarukaChoices(state: DayState): StoryChoice[] {
+  const options = storyRounds.haruka.flat();
+  const chosen = state.storyChoiceHistory.haruka;
+  const reported = new Set(
+    options.filter((choice) => chosen.includes(choice.id)).map((choice) => choice.quest),
+  );
+  return state.completedQuests
+    .filter((quest) => !reported.has(quest) && questComplete(state, quest))
+    .flatMap((quest) => options.filter((choice) => choice.quest === quest));
+}
 export function getStoryChoices(state: DayState, id: ContactId): StoryChoice[] {
   if (state.storyPending[id] || historyOnlyContacts.includes(id)) return [];
   const chosen = state.storyChoiceHistory[id];
-  if (id === 'haruka')
-    return storyRounds.haruka
-      .flat()
-      .filter(
-        (choice) =>
-          !!choice.quest && questComplete(state, choice.quest) && !chosen.includes(choice.id),
-      );
+  if (id === 'haruka') {
+    // Both options for a task answer Haruka's followup for it and name the task.
+    // Show one task at a time, starting from her latest followup; it goes away
+    // once either option was sent.
+    const open = openHarukaChoices(state);
+    const quest = open.at(-1)?.quest;
+    return open.filter((choice) => choice.quest === quest);
+  }
   const nextRound = chosen.length
     ? Math.max(
         ...chosen.map((choiceId) =>
@@ -473,6 +486,15 @@ function completeQuest(
     next = beginCall(next, 'majima', 'incoming', 'quest', makeRequestId);
   return next;
 }
+/**
+ * Choices a sent message can still record. A Haruka report sent through the AI
+ * is recorded when its reply arrives, even if a newer task is shown by then.
+ */
+export function recordableStoryChoices(state: DayState, id: ContactId): StoryChoice[] {
+  return id === 'haruka' && !state.storyPending.haruka
+    ? openHarukaChoices(state)
+    : getStoryChoices(state, id);
+}
 const schedule: ContactId[] = ['majima', 'majima', 'daigo', 'majima', 'haruka'];
 
 export function dayReducer(
@@ -552,7 +574,7 @@ export function dayReducer(
     case 'story-choice': {
       if (!isContact(action.id)) return state;
       const id = action.id;
-      const choice = getStoryChoices(state, id).find((item) => item.id === action.choiceId);
+      const choice = recordableStoryChoices(state, id).find((item) => item.id === action.choiceId);
       if (!choice) return state;
       let next: DayState = {
         ...state,
@@ -601,13 +623,17 @@ export function dayReducer(
         const pendingMap = { ...next.storyPending };
         delete pendingMap[id];
         next = { ...next, storyPending: pendingMap };
+        const sent = [...next.storyMessages[id]].reverse().find((row) => row.outgoing)?.text ?? '';
+        const previous = previousChoices[sent];
         if (choice)
           next = appendMessage(
             next,
             id,
             id === 'majima' && affinityTone(next) === 'cool'
               ? '알았다. 더 할 말 없으면 이만하자.'
-              : choice.response,
+              : previous?.id === choice.id
+                ? previous.response
+                : choice.response,
             false,
             now,
           );
@@ -836,7 +862,8 @@ export function validDay(value: unknown): value is DayState {
     return false;
   if (
     value.replySent !== value.replies.includes('haruka') ||
-    (value.replySent && !value.missedCall) ||
+    (value.replySent &&
+      !(Array.isArray(value.completedQuests) && value.completedQuests.includes('shopping'))) ||
     (value.missedCallRead && !value.missedCall) ||
     !value.replies.every(
       (id) =>
@@ -996,9 +1023,11 @@ export function validDay(value: unknown): value is DayState {
     )
   )
     return false;
+  // Finished shopping is a completed quest, not proof of a Majima call: enabled
+  // episodes replace that call (completeQuest), and the server can switch later.
   return (
     !ingredients.every(({ id }) => (value.ingredients as Record<string, unknown>)[id]) ||
-    value.missedCall
+    value.completedQuests.includes('shopping')
   );
 }
 export function loadDay(

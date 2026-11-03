@@ -1,0 +1,63 @@
+{
+  "version": "ai-openings-v1",
+  "threads": {
+    "haruka": [
+      {
+        "id": "h1",
+        "speaker": "haruka",
+        "text": "아저씨, 오늘 저녁은 카레 어때요?",
+        "time": "16:25"
+      },
+      { "id": "h2", "speaker": "kiryu", "text": "좋다. 장은 내가 봐 오겠다.", "time": "16:28" },
+      {
+        "id": "h-uniform",
+        "speaker": "haruka",
+        "text": "아이들 체육복 이름표가 또 풀렸어요. 아저씨 메모에 적어뒀어요. 제가 정리하는 동안 조금만 도와주실래요?",
+        "time": "16:30",
+        "noteId": "gym",
+        "attachment": "메모 「체육복」: 아이들 체육복 이름표 다시 달기. 실이 쉽게 풀리지 않게 할 것."
+      },
+      {
+        "id": "h-evening",
+        "speaker": "haruka",
+        "text": "텃밭이랑 마메 밥은 미리 알림에 적어뒀어요. 한꺼번에 하지 말고 하나씩 해요.",
+        "time": "16:32"
+      },
+      {
+        "id": "h3",
+        "speaker": "haruka",
+        "text": "아저씨, 카레 재료 메모에 적어뒀어요.\n당근은 아직 있어요!",
+        "time": "16:40",
+        "noteId": "curry",
+        "attachment": "메모 「오늘 저녁 카레」: 감자·양파·고기·카레. 이번에는 너무 맵지 않게."
+      }
+    ],
+    "majima": [
+      {
+        "id": "m1",
+        "speaker": "majima",
+        "text": "키류쨩! 폰은 들고 다니는 기 맞나?",
+        "time": "어제"
+      },
+      {
+        "id": "m2",
+        "speaker": "majima",
+        "text": "전화도 안 받고. 혼자 재밌는 거라도 찾았나 보네.",
+        "time": "어제"
+      },
+      {
+        "id": "m3",
+        "speaker": "majima",
+        "text": "못 봤다고 또 그러지 마라. 여기 남겨놓는다.",
+        "time": "11:10"
+      },
+      {
+        "id": "m4",
+        "speaker": "majima",
+        "text": "오늘은 한 판 받아줄 시간이 있겠제? 카무로쵸 올 거면 연락해라.",
+        "time": "15:10",
+        "noteId": "majima-meet"
+      }
+    ]
+  }
+}

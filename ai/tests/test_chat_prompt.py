@@ -28,6 +28,28 @@ def history(pairs):
     ]
 
 
+def system_of(result):
+    return result["messages"][0]["content"]
+
+
+def instructions_of(messages):
+    """System text without the quoted reference block that budget trimming may shrink."""
+    system = messages[0]["content"]
+    if "\n\n참고 자료(" not in system:
+        return system
+    head, rest = system.split("\n\n참고 자료(", 1)
+    return head + "\n\n이번 답장" + rest.split("\n\n이번 답장", 1)[1]
+
+
+def reference(result):
+    """Quoted reference data sits in the system turn; the last turn is Kiryu's text."""
+    system = system_of(result)
+    if "\n참고 자료(" not in system:
+        return {}
+    block = system.split("\n참고 자료(", 1)[1].split("):\n", 1)[1]
+    return json.loads(block.split("\n\n이번 답장", 1)[0])
+
+
 class RecordingEncoder:
     def __init__(self):
         self.seen = []
@@ -66,6 +88,13 @@ class PromptTests(unittest.TestCase):
             count_tokens=kwargs.pop("count_tokens", lambda messages: 100),
             **kwargs,
         )
+
+    def test_ordinary_limits_keep_harm_disclosures_and_reworded_requests(self):
+        system = system_of(self.build("안녕"))
+        self.assertIn("피해를 겪었거나 도움이 필요하다는 이야기는", system)
+        self.assertIn("표현이나 언어를 바꿔 와도", system)
+        self.assertIn("틀린 전제로 물으면", system)
+        self.assertIn("하겠다는 말과 이미 했다는 말을 구분한다", system)
 
     def test_temporary_affinity_only_conditions_majima_without_inventing_history(self):
         base = {
@@ -110,17 +139,22 @@ class PromptTests(unittest.TestCase):
         )
         system = result["messages"][0]["content"]
         self.assertIn("12초 미만", system)
-        self.assertIn("사용자 문자의 정정·새 상황", system)
-        self.assertIn("통화 대본", system)
+        self.assertIn("앱이 알려 준 게임 상태", system)
+        self.assertIn("대화에 없는 통화 내용이나 약속은 만들지 않고", system)
+        # The authored opening Majima sent is one burst before Kiryu's text.
         self.assertEqual(
-            [message["role"] for message in result["messages"]], ["system", "user"]
+            [message["role"] for message in result["messages"]],
+            ["system", "assistant", "user"],
+        )
+        self.assertIn(
+            "오늘은 한 판 받아줄 시간이 있겠제?", result["messages"][1]["content"]
         )
         self.assertEqual(
             result["metadata"]["phone_event_context"]["ids"],
             ["majima-call-missed", "majima-call-short"],
         )
         self.assertEqual(
-            result["metadata"]["phone_event_context"]["version"], "phone-events-v3"
+            result["metadata"]["phone_event_context"]["version"], "phone-events-v4"
         )
         self.assertEqual(len(result["metadata"]["phone_event_context"]["sha256"]), 64)
         self.assertEqual(result["metadata"]["input_message_ids"], [])
@@ -137,15 +171,16 @@ class PromptTests(unittest.TestCase):
     def test_native_roles_and_current_message_are_not_original_scene(self):
         past = history([("우동으로 바꾸자", "그럼 우동으로 해요.")])
         result = self.build("고기는 예산 때문에 빼자", past)
+        # Opening (Haruka, Kiryu, Haruka burst), the stored exchange, then the
+        # current text exactly as sent.
         self.assertEqual(
             [m["role"] for m in result["messages"]],
-            ["system", "user", "assistant", "user"],
+            ["system", "assistant", "user", "assistant", "user", "assistant", "user"],
         )
-        self.assertEqual(result["messages"][1]["content"], "우동으로 바꾸자")
-        self.assertIn('"고기는 예산 때문에 빼자"', result["messages"][-1]["content"])
-        self.assertIn(
-            "reference_scenes_not_our_history", result["messages"][-1]["content"]
-        )
+        self.assertEqual(result["messages"][2]["content"], "좋다. 장은 내가 봐 오겠다.")
+        self.assertEqual(result["messages"][4]["content"], "우동으로 바꾸자")
+        self.assertEqual(result["messages"][-1]["content"], "고기는 예산 때문에 빼자")
+        self.assertIn("reference_scenes_not_our_history", system_of(result))
         self.assertNotIn(
             self.builder.cards["characters"]["haruka"]["initial_event"],
             result["messages"][0]["content"],
@@ -163,7 +198,7 @@ class PromptTests(unittest.TestCase):
             ]
         )
         result = self.build("전에 사기로 한 카레 재료가 뭐였지?", past)
-        payload = result["messages"][-1]["content"]
+        payload = system_of(result)
         self.assertIn("카레 말고 우동으로 바꾸자", payload)
         memory = [x for x in result["retrieval_hits"] if x["kind"] == "memory"]
         self.assertTrue(memory)
@@ -181,10 +216,8 @@ class PromptTests(unittest.TestCase):
             ]
         )
         result = self.build("수요일에 카레 사기로 했었지?", past)
-        self.assertIn("그거 취소하자", result["messages"][-1]["content"])
-        self.assertIn(
-            "candidate-not-confirmed-state", result["messages"][-1]["content"]
-        )
+        self.assertIn("그거 취소하자", system_of(result))
+        self.assertIn("candidate-not-confirmed-state", system_of(result))
 
     def test_renderer_uses_selected_sources_without_reader_draft_or_unknowns(self):
         core_ids = self.builder.cards["characters"]["haruka"]["relationship_refs"]
@@ -238,16 +271,16 @@ class PromptTests(unittest.TestCase):
                     self.builder.retriever, "candidates", return_value=[dynamic]
                 ):
                     result = self.build("선택된 근거를 알려줘", past)
-                envelope = result["messages"][-1]["content"]
-                context = json.loads(
-                    envelope.split("\n", 1)[1].split("\n방금 받은", 1)[0]
-                )
+                context = reference(result)
                 notes = context["source_reading_notes"]
                 self.assertEqual(set(notes), {"mode", "notes"})
                 self.assertEqual(notes["mode"], mode)
                 self.assertNotIn(bad_draft, json.dumps(result["messages"]))
                 self.assertNotIn(bad_unknown, json.dumps(result["messages"]))
-                self.assertNotIn("초안", envelope)
+                self.assertNotIn("초안", system_of(result))
+                self.assertEqual(
+                    result["messages"][-1]["content"], "선택된 근거를 알려줘"
+                )
                 self.assertEqual(
                     result["metadata"]["grounding"]["notes"]["answer"], bad_draft
                 )
@@ -271,7 +304,7 @@ class PromptTests(unittest.TestCase):
                     selected_core["source_snapshot"]["text"],
                     result["messages"][0]["content"],
                 )
-                self.assertEqual(context["allowed_canon"], [])
+                self.assertNotIn("allowed_canon", context)
                 hit_ids = [hit["id"] for hit in result["retrieval_hits"]]
                 self.assertEqual(len(hit_ids), len(set(hit_ids)))
                 self.assertEqual(hit_ids.count(selected_core["id"]), 1)
@@ -280,7 +313,9 @@ class PromptTests(unittest.TestCase):
                 self.assertEqual(conversation_note["role"], past[0]["role"])
                 self.assertEqual(conversation_note["time"], past[0]["time"])
                 self.assertNotIn("source_snapshot", conversation_note)
-                self.assertIn(past[0]["content"], result["messages"][1]["content"])
+                self.assertIn(
+                    {"role": "user", "content": past[0]["content"]}, result["messages"]
+                )
 
     def test_reader_selected_memory_cannot_outlive_its_correction_window(self):
         class Reader:
@@ -304,7 +339,7 @@ class PromptTests(unittest.TestCase):
         def count(messages):
             # Reproduces the boundary where removing the old window would fit,
             # but leave its selected quote/brief detached from the cancellation.
-            return 5000 if "그거 취소하자" in messages[-1]["content"] else 100
+            return 5000 if "그거 취소하자" in messages[0]["content"] else 100
 
         with self.assertRaises(InputBudgetError):
             self.build("카레 먹기로 했었지?", past, count_tokens=count)
@@ -358,7 +393,7 @@ class PromptTests(unittest.TestCase):
                 },
                 memory["correction_links"],
             )
-        envelope = result["messages"][-1]["content"]
+        envelope = system_of(result)
         self.assertIn("카레 말고 우동으로 바꾸자", envelope)
         self.assertIn("카레 재료 준비는 내게 맡겨요.", envelope)
         self.assertIn("past-utterances-not-current-facts", envelope)
@@ -405,7 +440,7 @@ class PromptTests(unittest.TestCase):
             {"m1-user", "m7-user"}
             <= {link["message_id"] for link in memory["correction_links"]}
         )
-        self.assertIn("우동 취소하고 소바로 바꾸자", result["messages"][-1]["content"])
+        self.assertIn("우동 취소하고 소바로 바꾸자", system_of(result))
 
     def test_current_named_topic_survives_unrelated_recent_exchange_dominance(self):
         self.builder = ChatPromptBuilder(
@@ -430,7 +465,7 @@ class PromptTests(unittest.TestCase):
         self.assertLessEqual(len(memory), 2)
         self.assertEqual(len({hit["id"] for hit in memory}), len(memory))
         self.assertTrue({"m0-assistant", "m1-user"} <= set(memory[0]["message_ids"]))
-        self.assertIn("일요일에 자전거 수리 맡기자", result["messages"][-1]["content"])
+        self.assertIn("일요일에 자전거 수리 맡기자", system_of(result))
 
     def test_pronoun_query_still_uses_recent_topic_for_memory(self):
         self.builder = ChatPromptBuilder(
@@ -448,7 +483,7 @@ class PromptTests(unittest.TestCase):
         self.assertTrue(
             any(hit["id"] == "memory:m0-user" for hit in result["retrieval_hits"])
         )
-        self.assertIn("자전거 수리는 일요일이야", result["messages"][-1]["content"])
+        self.assertIn("자전거 수리는 일요일이야", system_of(result))
 
     def test_unrelated_corrections_do_not_evict_relevant_old_memory(self):
         pairs = [("카레 재료를 사자", "좋아요."), ("카레 말고 우동으로 바꾸자", "네.")]
@@ -466,7 +501,7 @@ class PromptTests(unittest.TestCase):
         self.assertTrue(memories)
         self.assertTrue(any("m1-user" in h["message_ids"] for h in memories))
         self.assertTrue(all(len(h["message_ids"]) <= 10 for h in memories))
-        self.assertNotIn("m20-user", result["messages"][-1]["content"])
+        self.assertNotIn("m20-user", system_of(result))
 
     def test_replacement_chain_keeps_later_new_subject_correction(self):
         past = history(
@@ -478,9 +513,7 @@ class PromptTests(unittest.TestCase):
             ]
         )
         result = self.build("전에 카레 이야기 했지?", past)
-        self.assertIn(
-            "우동도 취소하고 소바로 바꾸자", result["messages"][-1]["content"]
-        )
+        self.assertIn("우동도 취소하고 소바로 바꾸자", system_of(result))
 
     def test_explicit_iso_date_filters_memory_anchors_in_seoul_time(self):
         past = history(
@@ -495,14 +528,14 @@ class PromptTests(unittest.TestCase):
         memories = [h for h in result["retrieval_hits"] if h["kind"] == "memory"]
         self.assertEqual([h["id"] for h in memories], ["memory:m0-user"])
         self.assertEqual(memories[0]["date_filter"], ["2026-10-21"])
-        self.assertIn("2026-10-20T16:00:00Z", result["messages"][-1]["content"])
+        self.assertIn("2026-10-20T16:00:00Z", system_of(result))
 
     def test_never_infers_action_completion_or_changes_originals(self):
         past = history([("우유 좀 사다 줘", "사올게요.")])
         before = copy.deepcopy(past)
         result = self.build("샀어?", past)
         self.assertEqual(past, before)
-        self.assertEqual(result["messages"][2]["content"], "사올게요.")
+        self.assertEqual(result["messages"][-2]["content"], "사올게요.")
         self.assertNotIn("구매 완료", result["messages"][-1]["content"])
 
     def test_audit_reconstruction_checks_original_message_hash(self):
@@ -540,9 +573,12 @@ class PromptTests(unittest.TestCase):
 
         result = self.build("current-secret", past, count_tokens=counter)
         self.assertEqual(len(result["messages"]), 2)
-        self.assertIn('"current-secret"', result["messages"][-1]["content"])
+        self.assertEqual(result["messages"][-1]["content"], "current-secret")
         self.assertTrue(result["metadata"]["dropped_ids"])
-        self.assertTrue(all(c[0] == calls[0][0] for c in calls))
+        self.assertTrue(
+            all(instructions_of(c) == instructions_of(calls[0]) for c in calls)
+        )
+        self.assertTrue(all(c[-1] == calls[0][-1] for c in calls))
 
     def test_budget_drops_whole_corrected_memory_not_just_correction(self):
         past = history(
@@ -551,11 +587,13 @@ class PromptTests(unittest.TestCase):
         )
 
         def counter(messages):
-            return 4000 if '"correction_links":[' in messages[-1]["content"] else 100
+            return 4000 if '"correction_links":[' in messages[0]["content"] else 100
 
         result = self.build("카레 재료", past, count_tokens=counter)
         self.assertFalse(any(x["kind"] == "memory" for x in result["retrieval_hits"]))
-        self.assertNotIn("카레 사러 가자", result["messages"][-1]["content"])
+        self.assertNotIn(
+            "카레 사러 가자", json.dumps(result["messages"], ensure_ascii=False)
+        )
 
     def test_oversized_current_message_rejected_not_silently_truncated(self):
         with self.assertRaises(InputBudgetError):
@@ -700,8 +738,8 @@ class PromptTests(unittest.TestCase):
                 self.assertEqual(seed["location"], location)
                 self.assertEqual(seed["approval"], "user-approved-if")
                 self.assertEqual(past, original)
-                self.assertEqual(result["messages"][1]["content"], past[0]["content"])
-                self.assertEqual(result["messages"][2]["content"], past[1]["content"])
+                self.assertEqual(result["messages"][-3]["content"], past[0]["content"])
+                self.assertEqual(result["messages"][-2]["content"], past[1]["content"])
                 self.assertEqual(
                     result["metadata"]["input_sha256"], stable_hash(result["messages"])
                 )

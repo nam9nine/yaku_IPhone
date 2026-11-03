@@ -159,10 +159,13 @@ class FollowupTests(unittest.TestCase):
         self.assertEqual(
             detail["run"]["metadata"]["notice_message_ids"], [notice["id"]]
         )
-        self.assertIn(
-            "my_prior_call_followup_texts", self.engine.calls[-1][0][-1]["content"]
+        # The followup Majima actually sent is his own turn, right before Kiryu's text.
+        sent = self.engine.calls[-1][0]
+        self.assertEqual(
+            sent[-1], {"role": "user", "content": "아까 보내신 문자 봤어요"}
         )
-        self.assertIn('"reason":"missed"', self.engine.calls[-1][0][-1]["content"])
+        self.assertEqual(sent[-2]["role"], "assistant")
+        self.assertTrue(sent[-2]["content"].endswith(notice["content"]))
         self.assertEqual(
             [m["role"] for m in self.db.history(self.visitor, "majima", "daily-if-v1")],
             ["user", "assistant"],

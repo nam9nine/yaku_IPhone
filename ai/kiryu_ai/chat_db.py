@@ -778,15 +778,31 @@ class ChatDB:
             result["phone_events"] = json.loads(row["phone_events"] or "[]")
         return result
 
-    def history(self, visitor, character, scenario, *, with_sequence=False):
+    def history(
+        self, visitor, character, scenario, *, with_sequence=False, with_events=False
+    ):
+        """Model-eligible chat turns; with_events adds each user turn's reported events."""
         with self.connection() as connection:
-            return [
-                self._message(row, sequence=with_sequence)
-                for row in connection.execute(
-                    "SELECT m.* FROM messages m LEFT JOIN requests r ON r.job_id=m.job_id WHERE m.conversation_id=? AND m.model_eligible=1 AND COALESCE(r.request_kind, 'chat')='chat' ORDER BY m.sequence",
-                    (scope_id(visitor, character, scenario),),
-                )
-            ]
+            rows = connection.execute(
+                "SELECT m.*, r.phone_events FROM messages m LEFT JOIN requests r ON r.job_id=m.job_id WHERE m.conversation_id=? AND m.model_eligible=1 AND COALESCE(r.request_kind, 'chat')='chat' ORDER BY m.sequence",
+                (scope_id(visitor, character, scenario),),
+            ).fetchall()
+        result = []
+        for row in rows:
+            message = self._message(row, sequence=with_sequence)
+            if with_events and row["role"] == "user":
+                message["phone_events"] = json.loads(row["phone_events"] or "[]")
+            result.append(message)
+        return result
+
+    def latest_message_time(self, visitor, character, scenario):
+        """Epoch seconds of the newest stored message in this conversation, if any."""
+        with self.connection() as connection:
+            row = connection.execute(
+                "SELECT max(created_at) FROM messages WHERE conversation_id=?",
+                (scope_id(visitor, character, scenario),),
+            ).fetchone()
+        return datetime.fromisoformat(row[0]).timestamp() if row and row[0] else None
 
     def recent_notices(self, visitor, character, scenario, *, limit=20):
         if not isinstance(limit, int) or not 1 <= limit <= 20:

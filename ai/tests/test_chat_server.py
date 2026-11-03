@@ -107,6 +107,60 @@ class ChatServerTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         return {"Authorization": "Bearer " + response.json()["token"]}
 
+    def test_quality_first_sampling_stores_a_checked_candidate_with_its_audit(self):
+        scripted = iter(
+            [
+                "대답이 왜 이리 짧노?",
+                "갑자기 그라노, 키류쨩.",
+                "그래, 또 연락하께.",
+            ]
+        )
+        self.engine.reply = lambda messages, **kwargs: {
+            "reply": next(scripted),
+            "finish_reason": "stop",
+            "total_seconds": 0.01,
+        }
+        client = self.client(reply_candidates=3)
+        auth = self.token(client)
+        response = client.post(
+            "/v1/chat",
+            headers=auth,
+            json={"character": "majima", "message": "네", "request_id": str(uuid4())},
+        )
+        job = response.json()["job_id"]
+        self.assertEqual(self.finished(client, auth, job)["status"], "complete")
+        service = client.app.state.service
+        detail = service.db.request_detail(job)
+        self.assertEqual(detail["messages"][-1]["content"], "그래, 또 연락하께.")
+        selection = detail["run"]["metrics"]["selection"]
+        self.assertEqual(selection["chosen"], 2)
+        self.assertEqual(selection["candidates"][0]["hard"], ["scolds_short_reply"])
+
+    def test_calls_and_app_texts_draw_two_samples_ordinary_texts_all(self):
+        service = ChatService(
+            self.root, engine_factory=lambda: self.engine, reply_candidates=3
+        )
+        self.assertEqual(service._candidate_count({"request_kind": "chat"}), 3)
+        self.assertEqual(
+            service._candidate_count(
+                {"request_kind": "chat", "phone_events": ["majima-call-live"]}
+            ),
+            2,
+        )
+        self.assertEqual(service._candidate_count({"request_kind": "call_followup"}), 2)
+        # Only ordinary replies are judged; app texts and episode replies follow
+        # instructions the judge does not see.
+        chat = {"request_kind": "chat", "character": "majima"}
+        self.assertTrue(callable(service._judge(chat, False, [])))
+        self.assertIsNone(service._judge(chat, True, []))
+        self.assertIsNone(
+            service._judge({**chat, "request_kind": "call_followup"}, False, [])
+        )
+        with self.assertRaises(ValueError):
+            ChatService(
+                self.root, engine_factory=lambda: self.engine, reply_candidates=9
+            )
+
     def test_private_recordings_require_auth_and_do_not_become_messages(self):
         client = self.client()
         auth = self.token(client)
@@ -594,6 +648,46 @@ class ChatServerTests(unittest.TestCase):
                 client.post("/v1/chat", headers=auth, json=changed).status_code, 400
             )
 
+    def test_reported_local_line_stays_before_the_turn_that_first_reported_it(self):
+        from kiryu_ai.story_context import event_messages
+
+        client = self.client()
+        service = client.app.state.service
+        service.builder = ChatPromptBuilder()
+        self.engine.count_tokens = lambda _: 100
+        auth = self.token(client)
+        line = event_messages("haruka", ["haruka-shopping-checked"])[0]["content"]
+        # The browser keeps sending its recent events with every later text.
+        for text in (
+            "목록 다시 봤다. 빠진 건 없다.",
+            "그래, 이름표 달고 바늘은 상자에 넣어 뒀다.",
+        ):
+            response = client.post(
+                "/v1/chat",
+                headers=auth,
+                json={
+                    "character": "haruka",
+                    "message": text,
+                    "request_id": str(uuid4()),
+                    "phone_events": ["haruka-shopping-checked"],
+                },
+            )
+            self.assertEqual(response.status_code, 202, response.text)
+            job = response.json()["job_id"]
+            self.assertEqual(self.finished(client, auth, job)["status"], "complete")
+        turns = self.engine.calls[-1][1:]
+        self.assertEqual(sum(line in turn["content"] for turn in turns), 1)
+        index = next(i for i, turn in enumerate(turns) if line in turn["content"])
+        self.assertEqual(turns[index]["role"], "assistant")
+        self.assertEqual(
+            turns[index + 1],
+            {"role": "user", "content": "목록 다시 봤다. 빠진 건 없다."},
+        )
+        self.assertEqual(
+            turns[-1],
+            {"role": "user", "content": "그래, 이름표 달고 바늘은 상자에 넣어 뒀다."},
+        )
+
     def test_canonical_event_reaches_actual_renderer_without_other_scope_leak(self):
         client = self.client()
         service = client.app.state.service
@@ -611,8 +705,10 @@ class ChatServerTests(unittest.TestCase):
         job = response.json()["job_id"]
         self.assertEqual(self.finished(client, auth, job)["status"], "complete")
         self.assertIn("12초 미만", self.engine.calls[0][0]["content"])
+        # The authored opening precedes Kiryu's text; a call event never becomes a turn.
         self.assertEqual(
-            [row["role"] for row in self.engine.calls[0]], ["system", "user"]
+            [row["role"] for row in self.engine.calls[0]],
+            ["system", "assistant", "user"],
         )
         metadata = service.db.request_detail(job)["run"]["metadata"]
         self.assertEqual(metadata["phone_event_context"]["ids"], ["majima-call-short"])

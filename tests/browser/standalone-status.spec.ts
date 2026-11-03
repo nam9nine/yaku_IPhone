@@ -81,7 +81,7 @@ test('합성 iPhone standalone은 잠금·암호·홈·메시지·전화의 웹 
   await expect(page.getByRole('log', { name: '사와무라 하루카와의 대화' })).toBeVisible();
   await expect(page.getByRole('textbox', { name: '하루카에게 메시지 입력' })).toHaveCount(0);
   const reply = page.getByRole('button', {
-    name: '오늘 할 일에 적힌 텃밭 물 주기는 끝냈다. 보내기',
+    name: '텃밭 흙이 많이 말라 있더군. 넉넉히 줬다. 보내기',
     exact: true,
   });
   await expect(reply).toBeEnabled();

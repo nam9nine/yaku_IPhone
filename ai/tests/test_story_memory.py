@@ -37,8 +37,10 @@ class StoryMemoryTests(unittest.TestCase):
         self.assertIn(
             "synthetic-new-record", [r["id"] for r in result["retrieval_hits"]]
         )
-        self.assertIn(record["text"], result["messages"][-1]["content"])
-        self.assertNotIn(record["text"], result["messages"][0]["content"])
+        # Retrieved facts are quoted reference data, never the fixed relationships.
+        instructions, quoted = result["messages"][0]["content"].split("\n참고 자료(", 1)
+        self.assertIn(record["text"], quoted)
+        self.assertNotIn(record["text"], instructions)
 
     def test_ui_launch_backstory_is_not_injected_as_visitor_memory(self):
         for character in ("haruka", "majima"):
@@ -82,7 +84,7 @@ class StoryMemoryTests(unittest.TestCase):
             with self.subTest(question=question):
                 result = self.build(question, character)
                 self.assertIn(expected, [h["id"] for h in result["retrieval_hits"]])
-                self.assertIn(expected, result["messages"][-1]["content"])
+                self.assertIn(expected, result["messages"][0]["content"])
                 self.assertEqual(
                     reconstruct_input(result["metadata"], []), result["messages"]
                 )

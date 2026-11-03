@@ -514,6 +514,52 @@ class EpisodeAPITests(unittest.TestCase):
         self.assertFalse(response.json()["enabled"])
         self.assertIsNone(self.service.db.episodes.get(self.visitor, SCENARIO))
 
+    def test_first_invitation_waits_for_a_quiet_majima_thread(self):
+        response = self.client.post(
+            "/v1/chat",
+            headers=self.auth,
+            json={
+                "character": "majima",
+                "message": "형님, 뭐 하십니까?",
+                "request_id": str(uuid4()),
+            },
+        )
+        chat = response.json()["job_id"]
+        self.wait(lambda: self.service.db.get_request(chat)["status"] == "complete")
+        start = time.time() - 100
+        for n in range(10):
+            self.service.db.episodes.command(
+                self.visitor,
+                SCENARIO,
+                {
+                    "protocol": 1,
+                    "client_id": self.client_id,
+                    "sequence": n + 1,
+                    "kind": "presence",
+                    "active": True,
+                },
+                now=start + n * 10,
+            )
+        self.seq = 10
+        # Countdown is done, but the reply just arrived: no new topic yet.
+        self.assertIsNone(self.pulse().json().get("action"))
+        later = time.time() + 181
+        self.service.db.episodes.command(
+            self.visitor,
+            SCENARIO,
+            {
+                "protocol": 1,
+                "client_id": self.client_id,
+                "sequence": 12,
+                "kind": "presence",
+                "active": True,
+            },
+            now=later,
+        )
+        self.service.schedule_episode(self.visitor, now=later)
+        state = self.service.db.episodes.get(self.visitor, SCENARIO)
+        self.assertIsNotNone(state["job_id"])
+
     def test_invite_contract_old_clients_and_no_user_row(self):
         job_id = self.ready_invitation()
         self.wait(lambda: self.service.db.get_request(job_id)["status"] == "complete")

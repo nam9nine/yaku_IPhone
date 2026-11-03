@@ -8,8 +8,14 @@ import { useEffect, useEffectEvent, useLayoutEffect, useRef, useState } from 're
 import { useEdgeNavigation } from '../navigation/EdgeNavigation';
 import { contacts } from './data';
 import { useDay } from '../day/DayContext';
-import { dayNotes, historyOnlyContacts, type ContactId, type DayMessage } from '../day/content';
-import { affinityTone, getStoryChoices } from '../day/state';
+import {
+  dayNotes,
+  historyOnlyContacts,
+  previousChoices,
+  type ContactId,
+  type DayMessage,
+} from '../day/content';
+import { affinityTone, getStoryChoices, recordableStoryChoices } from '../day/state';
 import { recentPhoneEvents } from '../day/phoneEvents';
 import './social.css';
 import {
@@ -218,12 +224,13 @@ export function MessagesApp({
     for (const id of ['haruka', 'majima'] as const) {
       const remote = messageThread(ai.threads[id]);
       if (remote.pending || remote.deliveryPending) continue;
-      const available = getStoryChoices(state, id);
+      const available = recordableStoryChoices(state, id);
       const completed = available.find((choice) =>
         remote.messages.some(
           (message, index) =>
             message.role === 'user' &&
-            message.content === choice.text &&
+            (message.content === choice.text ||
+              previousChoices[message.content]?.id === choice.id) &&
             message.status === 'complete' &&
             !!message.request_id &&
             remote.messages[index + 1]?.role === 'assistant' &&

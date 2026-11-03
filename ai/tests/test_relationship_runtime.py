@@ -38,8 +38,9 @@ class RelationshipRuntimeTests(unittest.TestCase):
         self.assertIn("majima-kiryu-familiar-rivalry", fixed)
         self.assertNotIn("story-kiryu-majima-construction-help", fixed)
         self.assertIn("story-kiryu-majima-construction-help", dynamic)
+        # Quoted reference data sits in the system turn; Kiryu's text stays raw.
         self.assertIn(
-            "story-kiryu-majima-construction-help", result["messages"][-1]["content"]
+            "story-kiryu-majima-construction-help", result["messages"][0]["content"]
         )
 
     def test_quoted_original_line_can_retrieve_its_own_speaker_context(self):
@@ -47,13 +48,16 @@ class RelationshipRuntimeTests(unittest.TestCase):
         self.assertIn(
             "scene-majima-defiance", [h["id"] for h in result["retrieval_hits"]]
         )
-        payload = result["messages"][-1]["content"].split("\n", 1)[1]
-        context, _ = json.JSONDecoder().raw_decode(payload)
+        payload = result["messages"][0]["content"].split("\n참고 자료(", 1)[1]
+        context, _ = json.JSONDecoder().raw_decode(payload.split("):\n", 1)[1])
         scene = context["reference_scenes_not_our_history"][0]["scene"]
         self.assertEqual(scene["transcript"][-1]["speaker_id"], "shimano")
         self.assertEqual(scene["target_speaker"]["speaker_id"], "majima")
         self.assertFalse(scene["is_current_history"])
-        self.assertEqual([m["role"] for m in result["messages"]], ["system", "user"])
+        # A reference scene never becomes a turn: only the authored opening precedes Kiryu.
+        self.assertEqual(
+            [m["role"] for m in result["messages"]], ["system", "assistant", "user"]
+        )
 
     def test_story_does_not_leak_to_other_character_or_continuity(self):
         original = copy.deepcopy(self.registry)
@@ -109,7 +113,7 @@ class RelationshipRuntimeTests(unittest.TestCase):
             "키류는 마지마를 마지마 형님 또는 형님이라고 부른다",
             result["messages"][0]["content"],
         )
-        self.assertEqual(result["messages"][2]["content"], history[1]["content"])
+        self.assertEqual(result["messages"][-2]["content"], history[1]["content"])
         self.assertEqual(history, original)
 
 

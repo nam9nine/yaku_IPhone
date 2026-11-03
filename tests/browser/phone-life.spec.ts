@@ -41,11 +41,11 @@ test('선택형 문자는 인물별로 기다리고 세 왕복 뒤 끝난다', a
   await boot(page);
   await thread(page, 'daigo');
   await page
-    .getByRole('button', { name: '네가 직접 보고 판단해라. 이야기는 듣겠다. 보내기', exact: true })
+    .getByRole('button', { name: '물론이다. 용건이 없어도 연락해라. 보내기', exact: true })
     .tap();
   await expect(page.getByText('답장 대기 중', { exact: true })).toBeVisible();
   await expect(
-    page.getByText('네. 먼저 제가 확인하겠습니다. 그 뒤에 말씀드리겠습니다.', { exact: true }),
+    page.getByText('감사합니다. …사실 그 말씀이 듣고 싶었습니다.', { exact: true }),
   ).toHaveCount(0);
   await back(page);
   await page.locator('[data-conversation=ichiban]').tap();
@@ -55,9 +55,9 @@ test('선택형 문자는 인물별로 기다리고 세 왕복 뒤 끝난다', a
   await back(page);
   await page.locator('[data-conversation=daigo]').tap();
   await expect(
-    page.getByText('네. 먼저 제가 확인하겠습니다. 그 뒤에 말씀드리겠습니다.', { exact: true }),
+    page.getByText('감사합니다. …사실 그 말씀이 듣고 싶었습니다.', { exact: true }),
   ).toBeVisible();
-  for (const choice of ['혼자 모든 걸 떠안을 필요는 없다.', '그래. 기다리마.']) {
+  for (const choice of ['혼자 다 떠안지는 마라.', '그래. 기다리마.']) {
     await page.getByRole('button', { name: `${choice} 보내기`, exact: true }).tap();
     await page.clock.runFor(30_000);
   }
@@ -83,7 +83,7 @@ test('하루카는 완료한 할 일 선택으로만 답장하고 다른 연락�
     page.getByRole('textbox', { name: '하루카에게 메시지 입력', exact: true }),
   ).toHaveCount(0);
   await page
-    .getByRole('button', { name: '오늘 할 일에 적힌 텃밭 물 주기는 끝냈다. 보내기', exact: true })
+    .getByRole('button', { name: '텃밭 흙이 많이 말라 있더군. 넉넉히 줬다. 보내기', exact: true })
     .tap();
   await back(page);
   await page.locator('[data-conversation=majima]').tap();
@@ -98,7 +98,7 @@ test('하루카는 완료한 할 일 선택으로만 답장하고 다른 연락�
   await page.locator('[data-conversation=haruka]').tap();
   await expect(
     page.getByRole('button', {
-      name: '오늘 할 일에 적힌 텃밭 물 주기는 끝냈다. 보내기',
+      name: '텃밭 흙이 많이 말라 있더군. 넉넉히 줬다. 보내기',
       exact: true,
     }),
   ).toHaveCount(0);
@@ -196,7 +196,10 @@ test('옛 저장에 니시키가 있어도 다른 인물의 읽음과 장보기 
   await expect(page.locator('[data-conversation=ichiban]')).toBeVisible();
   await page.locator('[data-conversation=daigo]').tap();
   await expect(
-    page.getByRole('button', { name: '혼자 모든 걸 떠안을 필요는 없다. 보내기', exact: true }),
+    page.getByRole('button', {
+      name: '그래서, 직접 확인해야 한다던 일은 뭐지? 보내기',
+      exact: true,
+    }),
   ).toBeVisible();
   await page.clock.runFor(1000);
   const state = await day(page);
@@ -211,7 +214,7 @@ test('비AI 답장은 홈 배너에서 하단으로 열리고 다른 채팅 안�
   await boot(page);
   await thread(page, 'daigo');
   await page
-    .getByRole('button', { name: '네가 직접 보고 판단해라. 이야기는 듣겠다. 보내기', exact: true })
+    .getByRole('button', { name: '물론이다. 용건이 없어도 연락해라. 보내기', exact: true })
     .tap();
   await home(page);
   const waiting = await day(page);
@@ -221,7 +224,7 @@ test('비AI 답장은 홈 배너에서 하단으로 열리고 다른 채팅 안�
   await banner.getByRole('button', { name: '다이고의 새 메시지 알림 열기', exact: true }).tap();
   const log = page.getByRole('log', { name: '도지마 다이고와의 대화', exact: true });
   await expect(
-    log.getByText('네. 먼저 제가 확인하겠습니다. 그 뒤에 말씀드리겠습니다.', { exact: true }),
+    log.getByText('감사합니다. …사실 그 말씀이 듣고 싶었습니다.', { exact: true }),
   ).toBeVisible();
   expect(
     await log.evaluate(

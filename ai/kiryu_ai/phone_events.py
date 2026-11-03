@@ -1,7 +1,8 @@
 """Resolve bounded browser game events from one versioned, checked-in catalog.
 
 Clients send IDs only. These are untrusted reports about the current game's UI,
-not canon facts, purchases, dialogue turns, or evidence from another visitor.
+not canon facts, purchases, or evidence from another visitor. An event's optional
+``message`` is the exact authored line the app showed in the same thread.
 """
 
 from __future__ import annotations
@@ -30,20 +31,31 @@ def _catalog():
     if data.get("version") not in (
         "phone-events-v2",
         "phone-events-v3",
+        "phone-events-v4",
     ) or not isinstance(data.get("events"), dict):
         raise ValueError("Unsupported phone event catalog")
     for identifier, item in data["events"].items():
         if (
             not isinstance(identifier, str)
             or not isinstance(item, dict)
-            or set(item) != {"character", "text"}
+            or not {"character", "text"}
+            <= set(item)
+            <= {"character", "text", "message"}
             or item["character"] not in ("haruka", "majima")
-            or not isinstance(item["text"], str)
-            or not item["text"].strip()
-            or len(item["text"]) > 250
+            or any(
+                not isinstance(item[key], str)
+                or not item[key].strip()
+                or len(item[key]) > 250
+                for key in ("text", "message")
+                if key in item
+            )
         ):
             raise ValueError("Invalid canonical phone event")
     return data
+
+
+def catalog_events():
+    return _catalog()["events"]
 
 
 def validate_phone_events(character, value):
