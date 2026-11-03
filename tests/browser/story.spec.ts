@@ -98,7 +98,7 @@ test('다섯 프로필의 과거 대화·선택 답장·자유 입력을 구분�
   await start(page);
   await launchHomeApp(page, 'messages');
   await page.locator('[data-conversation=haruka]').tap();
-  await expect(page.getByText('메모에 적힌 카레 재료는 다 샀다.', { exact: true })).toBeVisible();
+  await expect(page.getByText('목록 다시 봤다. 빠진 건 없다.', { exact: true })).toBeVisible();
   await expect(page.getByText('검증용 하루카 답장', { exact: true })).toBeVisible();
   await expect(page.locator('.message-choice-list .message-story-reply')).toHaveCount(0);
 });

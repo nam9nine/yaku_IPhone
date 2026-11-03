@@ -20,6 +20,14 @@ from kiryu_ai.episode_reader import (
 from kiryu_ai.gemma_engine import GemmaFailure
 
 
+def rebuild_input(result, history=()):
+    """Owner audits read the stored turns plus the outbound texts the run used."""
+    notices = [
+        hit["snapshot"] for hit in result["retrieval_hits"] if hit["kind"] == "notice"
+    ]
+    return reconstruct_input(result["metadata"], [*history, *notices])
+
+
 def context(**changes):
     return {
         "episode_id": "majima-bowling-v1",
@@ -756,7 +764,7 @@ class EpisodeReaderTests(unittest.TestCase):
         )
         self.assertEqual(quoted["quote"], relation["text"])
         self.assertEqual(result["messages"][-1], {"role": "user", "content": current})
-        self.assertEqual(reconstruct_input(result["metadata"], []), result["messages"])
+        self.assertEqual(rebuild_input(result, []), result["messages"])
 
 
 if __name__ == "__main__":

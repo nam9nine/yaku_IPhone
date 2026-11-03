@@ -28,6 +28,14 @@ from kiryu_ai.episode_reader import LAYOUT_NOTE, RESPONSE_ACTS
 from kiryu_ai.gemma_engine import GemmaFailure
 
 
+def rebuild_input(result, history=()):
+    """Owner audits read the stored turns plus the outbound texts the run used."""
+    notices = [
+        hit["snapshot"] for hit in result["retrieval_hits"] if hit["kind"] == "notice"
+    ]
+    return reconstruct_input(result["metadata"], [*history, *notices])
+
+
 def episode(**updates):
     return {
         "episode_id": "majima-bowling-v1",
@@ -171,7 +179,13 @@ class EpisodePromptTests(unittest.TestCase):
             (invitation, EPISODE_COMMON_RULES),
             (followup, EPISODE_FOLLOWUP_RULES),
         ):
-            self.assertTrue(outbound["messages"][0]["content"].startswith(rules))
+            system = outbound["messages"][0]["content"]
+            # Persona first (primacy), then the outbound episode rules.
+            self.assertIn(rules, system)
+            self.assertLess(
+                system.index(self.builder.cards["characters"]["majima"]["prompt"]),
+                system.index(rules),
+            )
             self.assertNotIn(
                 EPISODE_PRIVATE_BACKGROUND_RULES,
                 outbound["messages"][0]["content"],
@@ -223,7 +237,7 @@ class EpisodePromptTests(unittest.TestCase):
         self.assertEqual(audit["rendered_indexes"], [0, 1])
         self.assertEqual(audit["omitted_indexes"], [])
         self.assertEqual(grounding["notes"]["unknowns"], gaps)
-        self.assertEqual(reconstruct_input(result["metadata"], []), result["messages"])
+        self.assertEqual(rebuild_input(result, []), result["messages"])
 
     def test_gap_bridge_does_not_reach_ordinary_chat_or_outbound(self):
         marker = "UNVERIFIED_GAP_SCOPE_MARKER"
@@ -288,8 +302,9 @@ class EpisodePromptTests(unittest.TestCase):
             **{**self.kwargs, "history": history, "count_tokens": counter},
         )
         self.assertEqual(len(counted), 3)
+        # Index 1 is the authored opening Majima sent before any stored turn.
         self.assertEqual(
-            [row["content"] for row in result["messages"][1:-1]],
+            [row["content"] for row in result["messages"][2:-1]],
             [row["content"] for row in history],
         )
         self.assertEqual(result["metadata"]["dropped_ids"], [])
@@ -304,9 +319,7 @@ class EpisodePromptTests(unittest.TestCase):
         self.assertEqual(audit["omitted_indexes"], [0, 1])
         self.assertEqual(audit["omission_reason"], "input_budget")
         self.assertEqual(result["metadata"]["grounding"]["notes"]["unknowns"], gaps)
-        self.assertEqual(
-            reconstruct_input(result["metadata"], history), result["messages"]
-        )
+        self.assertEqual(rebuild_input(result, history), result["messages"])
 
     def test_malformed_reader_gaps_never_reach_decision_callback(self):
         for invalid in (None, "not-an-array", [""], [True], ["x" * 201], ["x"] * 5):
@@ -360,6 +373,42 @@ class EpisodePromptTests(unittest.TestCase):
             )
         card["episode_reply_profile"] = compact
 
+    def test_episode_reply_keeps_voice_but_not_scene_or_a_consent_reading(self):
+        card = self.builder.cards["characters"]["majima"]
+        system = self.builder.build(
+            user_message="네", current_message_id="current", **self.kwargs
+        )["messages"][0]["content"]
+        self.assertIn("마지마: " + card["examples"][0]["reply"], system)
+        self.assertNotIn(card["scene"], system)
+        self.assertIn("'이번 답장의 과제'를 따르고", system)
+        self.assertNotIn("그렇다는", system)
+        self.assertIn("반복 요구만으로 같은 사정의 거절을 바꾸지 않는다", system)
+        ordinary = self.builder.build(
+            user_message="네", **{**self.kwargs, "episode_context": None}
+        )["messages"][0]["content"]
+        self.assertIn(card["scene"], ordinary)
+        self.assertIn("그렇다는 대답", ordinary)
+
+    def test_reply_to_the_invitation_follows_it_as_majimas_latest_turn(self):
+        result = self.builder.build(
+            user_message="네.", current_message_id="current", **self.kwargs
+        )
+        messages = result["messages"]
+        # The opening and the invitation are Majima's texts in the order shown,
+        # so Kiryu's answer reads as a reply to the invitation.
+        self.assertEqual(messages[-1], {"role": "user", "content": "네."})
+        self.assertEqual(messages[-2]["role"], "assistant")
+        self.assertTrue(messages[-2]["content"].endswith(notice()["content"]))
+        self.assertEqual(
+            writer_reference(result).count(notice()["content"]), 0, "not copied"
+        )
+        timeline = writer_data(result)["recent_timeline"]
+        self.assertEqual(
+            [(row["id"], row["request_kind"]) for row in timeline],
+            [("invite", "proactive_episode")],
+        )
+        self.assertEqual(rebuild_input(result), messages)
+
     def test_uncertain_new_act_preserves_an_existing_participation_agreement(self):
         outputs = iter(("discussion", "progress"))
         self.engine.classifier_change = lambda value: value.update(
@@ -409,10 +458,11 @@ class EpisodePromptTests(unittest.TestCase):
         )
         messages = result["messages"]
         self.assertEqual(
-            [m["role"] for m in messages], ["system", "user", "assistant", "user"]
+            [m["role"] for m in messages],
+            ["system", "assistant", "user", "assistant", "user"],
         )
         self.assertEqual(
-            messages[1:3], [{"role": m["role"], "content": m["content"]} for m in past]
+            messages[2:4], [{"role": m["role"], "content": m["content"]} for m in past]
         )
         self.assertEqual(messages[-1], {"role": "user", "content": current})
         self.assertNotIn(current, messages[0]["content"])
@@ -430,7 +480,7 @@ class EpisodePromptTests(unittest.TestCase):
         self.assertEqual(writer_data(result)["current_episode"]["phase"], "accepted")
         self.assertEqual(audit["version"], EPISODE_READER_VERSION)
         self.assertEqual((past, state), original)
-        self.assertEqual(reconstruct_input(result["metadata"], past), messages)
+        self.assertEqual(rebuild_input(result, past), messages)
 
     def test_episode_removes_answer_but_non_episode_contract_stays_strict(self):
         callbacks = []
@@ -573,13 +623,14 @@ class EpisodePromptTests(unittest.TestCase):
                 task = result["metadata"]["episode_turn_task"]
                 self.assertEqual(task["policy_id"], policy_id)
                 envelope = writer_reference(result)
-                self.assertTrue(envelope.endswith(task["instruction"]))
+                # Only the one-line turn note follows the episode task.
+                self.assertTrue(
+                    envelope.split("\n이번 답장: ", 1)[0].endswith(task["instruction"])
+                )
                 self.assertNotIn('"episode_purpose"', envelope)
                 self.assertIn('"id":"majima-bowling-challenge"', envelope)
                 self.assertIn('"id":"majima-retrain-rival"', envelope)
-                self.assertEqual(
-                    reconstruct_input(result["metadata"], []), result["messages"]
-                )
+                self.assertEqual(rebuild_input(result, []), result["messages"])
 
     def test_reader_acts_separate_discussion_progress_and_terminal_decisions(self):
         cases = (
@@ -727,9 +778,7 @@ class EpisodePromptTests(unittest.TestCase):
                     result["messages"][-1], {"role": "user", "content": current}
                 )
                 self.assertNotIn('"close_reason":"cancel"', envelope)
-                self.assertEqual(
-                    reconstruct_input(result["metadata"], history), result["messages"]
-                )
+                self.assertEqual(rebuild_input(result, history), result["messages"])
                 self.assertEqual(state, original)
 
     def test_condition_question_deferral_and_full_cancellation_have_distinct_contracts(
@@ -907,9 +956,7 @@ class EpisodePromptTests(unittest.TestCase):
             "long-user", result["metadata"]["past_context_omission"]["message_ids"]
         )
         self.assertEqual((past, context), original)
-        self.assertEqual(
-            reconstruct_input(result["metadata"], past), result["messages"]
-        )
+        self.assertEqual(rebuild_input(result, past), result["messages"])
 
     def test_reader_last_resort_drops_whole_past_but_never_current_question(self):
         text = "기존 약속의 긴 상세 자료 " * 30
@@ -1161,10 +1208,12 @@ class EpisodePromptTests(unittest.TestCase):
         self.engine.decision = "no_change"
 
         def budget(messages):
+            # Fits only system, the kept outbound texts as one turn and the
+            # current text, so every optional notice and old turn must go.
             return (
                 9000
                 if any("optional-" in m["content"] for m in messages)
-                or len(messages) > 2
+                or len(messages) > 3
                 else 100
             )
 
@@ -1331,14 +1380,12 @@ class EpisodePromptTests(unittest.TestCase):
         self.assertEqual(reader_payload["recent_timeline"][0]["role"], "assistant")
         self.assertEqual(
             [m["role"] for m in result["messages"]],
-            ["system", "user", "assistant", "user"],
+            ["system", "assistant", "user", "assistant", "user"],
         )
         self.assertIn('"sequence":1', writer_reference(result))
         self.assertEqual(called[0]["decision"], "cancel")
         self.assertEqual(result["metadata"]["episode_transition"], called[0])
-        self.assertEqual(
-            reconstruct_input(result["metadata"], past), result["messages"]
-        )
+        self.assertEqual(rebuild_input(result, past), result["messages"])
         self.assertEqual(
             {
                 h["id"]
@@ -1502,13 +1549,15 @@ class EpisodePromptTests(unittest.TestCase):
                 "notices": [],
             }
         )
-        self.assertEqual([m["role"] for m in result["messages"]], ["system", "user"])
+        self.assertEqual(
+            [m["role"] for m in result["messages"]], ["system", "assistant", "user"]
+        )
         self.assertEqual(result["metadata"]["request_kind"], "proactive_episode")
         self.assertEqual(result["metadata"]["input_message_ids"], [])
         self.assertEqual(result["metadata"]["input_envelope_kind"], "application-event")
         self.assertIn("니시다가", writer_reference(result))
         self.assertIn("IF", writer_reference(result))
-        self.assertEqual(reconstruct_input(result["metadata"], []), result["messages"])
+        self.assertEqual(rebuild_input(result, []), result["messages"])
         self.assertEqual(self.engine.calls, [])
         with self.assertRaises(ValueError):
             self.builder.build_episode(**self.kwargs)
@@ -1545,9 +1594,7 @@ class EpisodePromptTests(unittest.TestCase):
                 self.assertTrue(writer_reference(result).endswith(OUTBOUND_FACTS_RULES))
                 sources = result["metadata"]["outbound_fact_sources"]
                 self.assertEqual(sources["version"], OUTBOUND_FACTS_VERSION)
-                self.assertEqual(
-                    reconstruct_input(result["metadata"], []), result["messages"]
-                )
+                self.assertEqual(rebuild_input(result, []), result["messages"])
         self.assertEqual(followup["metadata"]["output_budget"], 96)
         self.assertEqual(self.engine.calls, [])
 
@@ -1607,9 +1654,7 @@ class EpisodePromptTests(unittest.TestCase):
                 )
                 self.assertTrue(any(text in m["content"] for m in result["messages"]))
                 self.assertNotIn("confirmed_date", sources)
-                self.assertEqual(
-                    reconstruct_input(result["metadata"], history), result["messages"]
-                )
+                self.assertEqual(rebuild_input(result, history), result["messages"])
 
     def test_outbound_keeps_latest_correction_and_cancel_with_original_date_evidence(
         self,

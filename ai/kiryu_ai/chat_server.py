@@ -39,11 +39,14 @@ from .chat_db import (
 from .chat_policy import POLICY_MESSAGE, explicit_request, output_allowed
 from .chat_queue import CancellableFIFO
 from .episodes import EPISODE_ID, EpisodeStore, validate_command
-from .phone_events import NO_PHONE_EVENTS, validate_phone_events
+from .phone_events import NO_PHONE_EVENTS, is_call_events, validate_phone_events
+from .reply_checks import judge_messages, parse_pick, select_reply
 from .web_server import ApiFailure, PrivacyMiddleware, WindowLimiter, json_body
 
 CHARACTERS = ("haruka", "majima")
 SCENARIO = "daily-if-v1"
+# Issue #133: the first invitation waits for this much silence in the Majima thread.
+INVITE_QUIET_SECONDS = 180
 PAGES_ORIGIN = "https://nam9nine.github.io"
 CHAT_ASSETS = Path(__file__).resolve().parents[1] / "chat"
 ERROR_TEXT = {
@@ -219,9 +222,16 @@ class ChatService:
         gateway_secret=None,
         push_sender=None,
         episodes_enabled=None,
+        reply_candidates=1,
     ):
         if not 1 <= queue_size <= 8:
             raise ValueError("queue_size must be 1–8")
+        if not 1 <= reply_candidates <= 5:
+            raise ValueError("reply_candidates must be 1–5")
+        # Issue #133: the served entry point draws several samples per reply and
+        # checks them before storing (quality over latency). Each sample keeps
+        # the per-call model limits; embedding callers default to one sample.
+        self.reply_candidates = reply_candidates
         self.root = Path(data_root)
         self.root.mkdir(parents=True, exist_ok=True, mode=0o700)
         self.db = ChatDB(self.root / "chat.sqlite3")
@@ -301,7 +311,6 @@ class ChatService:
         episode_ref=None,
     ):
         from .call_followups import validate_trigger
-        from .phone_events import is_call_events
 
         visitor = record["visitor_id"]
         if trigger is not None:
@@ -431,6 +440,12 @@ class ChatService:
         if not EpisodeStore.is_active(state, now) or state["interpretation_pending"]:
             return
         if state["contact_stage"] == "initial" and state["remaining_ms"] == 0:
+            # A new topic arriving seconds after the last exchange reads as an
+            # interruption; wait until the thread has been quiet for a while.
+            last = self.db.latest_message_time(visitor, "majima", SCENARIO)
+            current = time.time() if now is None else now
+            if last is not None and 0 <= current - last < INVITE_QUIET_SECONDS:
+                return
             stage, trigger = "invite", None
         elif state["contact_stage"] == "followup_due":
             stage = "followup"
@@ -661,8 +676,14 @@ class ChatService:
             run_started = True
 
         try:
+            # Each user turn carries the events it reported, so an authored
+            # local line is placed where the visitor first saw it.
             history = self.db.history(
-                job["visitor_id"], job["character"], SCENARIO, with_sequence=True
+                job["visitor_id"],
+                job["character"],
+                SCENARIO,
+                with_sequence=True,
+                with_events=True,
             )
             build = (
                 self.builder.build_followup
@@ -712,8 +733,34 @@ class ChatService:
                 on_stage=record_stage,
             )
             record_stage(assembled)
-            result = engine.reply(assembled["messages"], max_tokens=output_budget)
+            result, selection = select_reply(
+                lambda: engine.reply(assembled["messages"], max_tokens=output_budget),
+                character=job["character"],
+                user_message=job.get("message"),
+                previous=assembled.get("recent_replies", ()),
+                count=self._candidate_count(job),
+                allowed=output_allowed,
+                judge=self._judge(
+                    job,
+                    "episode_context" in request_input,
+                    assembled["messages"],
+                ),
+                seed=job["job_id"],
+                examples=assembled.get("example_replies", ()),
+                repair_complaints=self._ordinary(
+                    job, "episode_context" in request_input
+                ),
+                # A visitor's new text supersedes app-started work between samples.
+                keep_going=lambda: (
+                    not episode_job
+                    or (
+                        self.episodes_enabled
+                        and self.db.episode_job_current(job["job_id"])
+                    )
+                ),
+            )
             metrics = timings(result)
+            metrics["selection"] = selection
             if episode_job and (
                 not self.episodes_enabled
                 or not self.db.episode_job_current(job["job_id"])
@@ -769,6 +816,42 @@ class ChatService:
             self._fail_job(job, "context_limit", metrics=timings())
         except Exception:  # noqa: BLE001 -- never log private prompts or provider errors
             self._fail_job(job, "generation_failed", metrics=timings())
+
+    def _candidate_count(self, job):
+        """Ordinary texts get every sample; calls and app-started texts get two."""
+        live = is_call_events(job.get("phone_events", []))
+        if job.get("request_kind", "chat") != "chat" or live:
+            return min(2, self.reply_candidates)
+        return self.reply_candidates
+
+    @staticmethod
+    def _ordinary(job, episode):
+        """A reply to Kiryu's text outside an episode.
+
+        App-started texts end with an app event and episode replies follow a
+        turn task, so neither gets the tie-break judge (it reads only the thread)
+        nor complaint removal (the removed clause may carry the task).
+        """
+        return job.get("request_kind", "chat") == "chat" and not episode
+
+    def _judge(self, job, episode, messages):
+        """A tie-break judge for ordinary replies; elsewhere the first clean sample stands."""
+        if not self._ordinary(job, episode):
+            return None
+        return self._tiebreak(job["character"], messages)
+
+    def _tiebreak(self, character, messages):
+        """A judge that is only built and called when rule checks leave a tie."""
+        engine = getattr(self, "followup_engine", self.engine)
+
+        def judge(candidates):
+            card = self.builder.cards["characters"][character]
+            name = card.get("short_name") or card["display_name"]
+            prompt = judge_messages(name, card["prompt"], messages[1:], candidates)
+            reply = engine.reply(prompt, max_tokens=8).get("reply")
+            return parse_pick(reply, len(candidates))
+
+        return judge
 
     def _fail_job(self, job, code, output="", metrics=None):
         try:
@@ -1160,6 +1243,12 @@ def main():
     parser.add_argument("--api-key-file")
     parser.add_argument("--embedding-dir", required=True)
     parser.add_argument("--allow-origin", action="append", default=[])
+    parser.add_argument(
+        "--reply-candidates",
+        type=int,
+        default=int(os.environ.get("KIRYU_REPLY_CANDIDATES", "3")),
+        help="samples per reply before checks choose one (1-5)",
+    )
     args = parser.parse_args()
     app = create_app(
         args.data_root,
@@ -1169,6 +1258,7 @@ def main():
         embedding_dir=args.embedding_dir,
         allow_origins=args.allow_origin,
         gateway_secret=os.environ.get("KIRYU_GATEWAY_SECRET"),
+        reply_candidates=args.reply_candidates,
     )
     import uvicorn
 

@@ -169,7 +169,7 @@ test('다른 인물에게 즉시 전송하고 같은 순간 도착한 두 답장
   };
   await expect(page.locator('.message-ai-input textarea')).toHaveCount(0);
   await page
-    .getByRole('button', { name: '메모에 적힌 카레 재료는 다 샀다. 보내기', exact: true })
+    .getByRole('button', { name: '목록 다시 봤다. 빠진 건 없다. 보내기', exact: true })
     .click();
   await expect.poll(() => jobs.size).toBe(1);
   await page.getByRole('button', { name: '메시지 목록으로 돌아가기', exact: true }).click();

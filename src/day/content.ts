@@ -1,3 +1,6 @@
+import openings from './ai-openings.json' with { type: 'json' };
+import phoneCatalog from './phone-events.json' with { type: 'json' };
+
 /** Original fan fiction for this website. Not official dialogue or a canonical timeline. */
 export const demoDay = {
   date: '2026-10-24',
@@ -58,53 +61,21 @@ export interface StoryChoice {
   affinityDelta?: number;
   quest?: ReminderId;
 }
+/** The AI server reads the same opening so the model sees the thread the visitor sees. */
+function openingThread(
+  rows: readonly { id: string; speaker: string; text: string; time: string; noteId?: string }[],
+): DayMessage[] {
+  return rows.map(({ id, speaker, text, time, noteId }) => ({
+    id,
+    text,
+    outgoing: speaker === 'kiryu',
+    time,
+    ...(noteId ? { noteId } : {}),
+  }));
+}
 export const dayMessages: Record<ContactId, DayMessage[]> = {
-  haruka: [
-    { id: 'h1', text: '아저씨, 오늘 저녁은 카레 어때요?', outgoing: false, time: '16:25' },
-    { id: 'h2', text: '좋다. 장은 내가 봐 오겠다.', outgoing: true, time: '16:28' },
-    {
-      id: 'h-uniform',
-      text: '아이들 체육복 이름표가 또 풀렸어요. 아저씨 메모에 적어뒀어요. 제가 정리하는 동안 조금만 도와주실래요?',
-      outgoing: false,
-      time: '16:30',
-      noteId: 'gym',
-    },
-    {
-      id: 'h-evening',
-      text: '텃밭이랑 마메 밥은 미리 알림에 적어뒀어요. 한꺼번에 하지 말고 하나씩 해요.',
-      outgoing: false,
-      time: '16:32',
-    },
-    {
-      id: 'h3',
-      text: '아저씨, 카레 재료 메모에 적어뒀어요.\n당근은 아직 있어요!',
-      outgoing: false,
-      time: '16:40',
-      noteId: 'curry',
-    },
-  ],
-  majima: [
-    { id: 'm1', text: '키류쨩! 폰은 들고 다니는 기 맞나?', outgoing: false, time: '어제' },
-    {
-      id: 'm2',
-      text: '전화도 안 받고. 혼자 재밌는 거라도 찾았나 보네.',
-      outgoing: false,
-      time: '어제',
-    },
-    {
-      id: 'm3',
-      text: '못 봤다고 또 그러지 마라. 여기 남겨놓는다.',
-      outgoing: false,
-      time: '11:10',
-    },
-    {
-      id: 'm4',
-      text: '오늘은 한 판 받아줄 시간이 있겠제? 카무로쵸 올 거면 연락해라.',
-      outgoing: false,
-      time: '15:10',
-      noteId: 'majima-meet',
-    },
-  ],
+  haruka: openingThread(openings.threads.haruka),
+  majima: openingThread(openings.threads.majima),
   daigo: [
     {
       id: 'd1',
@@ -227,31 +198,35 @@ export const dayMessages: Record<ContactId, DayMessage[]> = {
     },
   ],
 };
-/** Authored IF choices. Three short exchanges, not fabricated model output. */
+/**
+ * Authored IF choices, not fabricated model output. Each set answers the line
+ * the contact sent just before it (an adjacency pair) in Kiryu's terse voice, and
+ * its options differ in attitude rather than being warm variants of one reply.
+ */
 export const storyRounds: Record<ContactId, StoryChoice[][]> = {
   daigo: [
     [
       {
         id: 'daigo-1a',
-        text: '네가 직접 보고 판단해라. 이야기는 듣겠다.',
-        response: '네. 먼저 제가 확인하겠습니다. 그 뒤에 말씀드리겠습니다.',
+        text: '물론이다. 용건이 없어도 연락해라.',
+        response: '감사합니다. …사실 그 말씀이 듣고 싶었습니다.',
       },
       {
         id: 'daigo-1b',
-        text: '지금 급한 일인가?',
-        response: '당장 결론 낼 일은 아닙니다. 시간을 내 주실 때 말씀드리겠습니다.',
+        text: '새삼스럽게 묻긴. 언제든 괜찮다.',
+        response: '…그렇군요. 앞으로는 편하게 연락드리겠습니다.',
       },
     ],
     [
       {
         id: 'daigo-2a',
-        text: '혼자 모든 걸 떠안을 필요는 없다.',
-        response: '알고 있습니다. 맡길 일과 제가 해야 할 일을 나눠 보겠습니다.',
+        text: '그래서, 직접 확인해야 한다던 일은 뭐지?',
+        response: '아직 말씀드릴 단계는 아닙니다. 제가 먼저 확인하고 정리되면 말씀드리겠습니다.',
       },
       {
         id: 'daigo-2b',
-        text: '확인하고 나서 다시 연락해라.',
-        response: '네. 추측만으로 말씀드리지 않겠습니다.',
+        text: '혼자 다 떠안지는 마라.',
+        response: '알고 있습니다. 맡길 일과 제가 해야 할 일을 나눠 보겠습니다.',
       },
     ],
     [
@@ -260,7 +235,11 @@ export const storyRounds: Record<ContactId, StoryChoice[][]> = {
         text: '그래. 기다리마.',
         response: '감사합니다, 키류 씨. 정리되면 연락드리겠습니다.',
       },
-      { id: 'daigo-3b', text: '무리하지 마라.', response: '키류 씨도요. 이따 뵙겠습니다.' },
+      {
+        id: 'daigo-3b',
+        text: '무리하지 마라.',
+        response: '키류 씨도요. 아이들에게도 안부 전해 주십시오.',
+      },
     ],
   ],
   saejima: [
@@ -425,36 +404,63 @@ export const storyRounds: Record<ContactId, StoryChoice[][]> = {
       { id: 'ichiban-3b', text: '그래. 나중에 보자.', response: '네, 키류 씨! 연락 기다릴게요.' },
     ],
   ],
+  // Each set answers Haruka's followup for that task (the shared to-do list shows
+  // her the check) and names the task, so it still reads right when several
+  // followups are waiting. One task at a time; see getStoryChoices.
   haruka: [
     [
       {
         id: 'haruka-shopping',
-        text: '메모에 적힌 카레 재료는 다 샀다.',
-        response: '고마워요. 돌아오시면 같이 정리해요.',
+        text: '목록 다시 봤다. 빠진 건 없다.',
+        response: '다행이에요. 조심히 들어오세요, 밥은 제가 먼저 안칠게요.',
+        quest: 'shopping',
+      },
+      {
+        id: 'haruka-shopping-mild',
+        text: '다 샀다. 카레는 순한 맛으로 골랐다.',
+        response: '역시 메모 보셨네요. 애들이 좋아하겠어요.',
         quest: 'shopping',
       },
     ],
     [
       {
         id: 'haruka-garden',
-        text: '오늘 할 일에 적힌 텃밭 물 주기는 끝냈다.',
-        response: '고마워요! 잎도 한 번 봐주세요. 저는 저녁 준비할게요.',
+        text: '텃밭 흙이 많이 말라 있더군. 넉넉히 줬다.',
+        response: '요즘 비가 안 와서 그런가 봐요. 고마워요, 아저씨.',
+        quest: 'garden',
+      },
+      {
+        id: 'haruka-garden-sunset',
+        text: '별것 아니다. 텃밭은 해 지기 전에 끝냈다.',
+        response: '그래도 고마워요. 이제 좀 쉬어요.',
         quest: 'garden',
       },
     ],
     [
       {
         id: 'haruka-mame',
-        text: '오늘 할 일에 적힌 마메 밥 주기도 끝냈다.',
-        response: '마메가 신났겠네요. 이제 아저씨도 잠깐 쉬세요.',
+        text: '마메 물그릇도 새로 채워 뒀다.',
+        response: '벌써요? 그럼 저는 손 안 대도 되겠네요.',
+        quest: 'mame',
+      },
+      {
+        id: 'haruka-mame-stay',
+        text: '마메 밥은 줬다. 다 먹을 때까지 옆에 있었다.',
+        response: '마메가 좋아했겠어요. 아저씨 옆이 제일 편한가 봐요.',
         quest: 'mame',
       },
     ],
     [
       {
         id: 'haruka-uniform',
-        text: '아이들 체육복에 풀린 이름표를 다시 달아뒀다.',
-        response: '고마워요. 내일 헷갈리지 않게 각자 챙겨둘게요.',
+        text: '그래, 이름표 달고 바늘은 상자에 넣어 뒀다.',
+        response: '고마워요. 이름표는 제가 내일 아침에 나눠 줄게요.',
+        quest: 'uniform',
+      },
+      {
+        id: 'haruka-uniform-tight',
+        text: '넣어 뒀다. 이름표는 단단히 꿰맸다.',
+        response: '든든하네요. 이번엔 애들이 오래 입겠어요.',
         quest: 'uniform',
       },
     ],
@@ -504,21 +510,54 @@ export const storyRounds: Record<ContactId, StoryChoice[][]> = {
     ],
   ],
 };
+/**
+ * Wording sent before Issue #133 under the same IDs: an already sent report still
+ * completes its task, and a reply still pending gets the response it was sent for.
+ */
+export const previousChoices: Readonly<Record<string, { id: string; response: string }>> = {
+  '메모에 적힌 카레 재료는 다 샀다.': {
+    id: 'haruka-shopping',
+    response: '고마워요. 돌아오시면 같이 정리해요.',
+  },
+  '오늘 할 일에 적힌 텃밭 물 주기는 끝냈다.': {
+    id: 'haruka-garden',
+    response: '고마워요! 잎도 한 번 봐주세요. 저는 저녁 준비할게요.',
+  },
+  '오늘 할 일에 적힌 마메 밥 주기도 끝냈다.': {
+    id: 'haruka-mame',
+    response: '마메가 신났겠네요. 이제 아저씨도 잠깐 쉬세요.',
+  },
+  '아이들 체육복에 풀린 이름표를 다시 달아뒀다.': {
+    id: 'haruka-uniform',
+    response: '고마워요. 내일 헷갈리지 않게 각자 챙겨둘게요.',
+  },
+  '네가 직접 보고 판단해라. 이야기는 듣겠다.': {
+    id: 'daigo-1a',
+    response: '네. 먼저 제가 확인하겠습니다. 그 뒤에 말씀드리겠습니다.',
+  },
+  '지금 급한 일인가?': {
+    id: 'daigo-1b',
+    response: '당장 결론 낼 일은 아닙니다. 시간을 내 주실 때 말씀드리겠습니다.',
+  },
+  '혼자 모든 걸 떠안을 필요는 없다.': {
+    id: 'daigo-2a',
+    response: '알고 있습니다. 맡길 일과 제가 해야 할 일을 나눠 보겠습니다.',
+  },
+  '확인하고 나서 다시 연락해라.': {
+    id: 'daigo-2b',
+    response: '네. 추측만으로 말씀드리지 않겠습니다.',
+  },
+};
 /** Compatibility for the one-choice story saved by earlier versions. */
 export const replyChoices = Object.fromEntries(
   contactIds.map((id) => [id, storyRounds[id][0][0]]),
 ) as Record<ContactId, StoryChoice>;
+// Haruka's lines live in the shared event catalog so the AI sees the exact text shown here.
 export const questFollowups: Record<ReminderId, { character: ContactId; text: string }> = {
-  shopping: {
-    character: 'haruka',
-    text: '목록 다 확인했어요? 빠진 게 없는지 한 번만 더 봐주세요.',
-  },
-  garden: { character: 'haruka', text: '텃밭 물 준 표시 봤어요. 저녁 전에 해주셔서 고마워요!' },
-  mame: { character: 'haruka', text: '마메 밥 챙겨주셨네요. 물그릇도 제가 확인할게요.' },
-  uniform: {
-    character: 'haruka',
-    text: '이름표는 제가 아이들별로 챙겨둘게요. 바늘은 상자에 넣어두셨죠?',
-  },
+  shopping: { character: 'haruka', text: phoneCatalog.events['haruka-shopping-checked'].message },
+  garden: { character: 'haruka', text: phoneCatalog.events['haruka-garden-checked'].message },
+  mame: { character: 'haruka', text: phoneCatalog.events['haruka-mame-checked'].message },
+  uniform: { character: 'haruka', text: phoneCatalog.events['haruka-uniform-checked'].message },
   parcel: {
     character: 'date',
     text: '받았구나. 잘 챙겨 둬. 네 물건을 언제까지 내가 맡고 있을 수는 없잖아.',

@@ -80,3 +80,19 @@ it('old stored state migrates without enabling episodes or changing messages', (
   expect(loaded.state.episodesEnabled).toBe(false);
   expect(loaded.state.pendingEpisodeOutcomes).toEqual([]);
 });
+it('finished shopping and its report survive reload when episodes replace the Majima call', () => {
+  let state = dayReducer(initialDay(), { type: 'set-episodes', enabled: true });
+  state = dayReducer(state, { type: 'reminder', id: 'shopping', done: true });
+  expect(state.missedCall).toBe(false);
+  expect(validDay(state)).toBe(true);
+  for (const choiceId of ['haruka-shopping', 'haruka-shopping-mild'])
+    for (const source of ['ai', undefined] as const) {
+      const sent = dayReducer(state, { type: 'story-choice', id: 'haruka', choiceId, source });
+      expect(sent.replySent).toBe(true);
+      expect(validDay(sent)).toBe(true);
+      expect(validDay(dayReducer(sent, { type: 'set-episodes', enabled: false }))).toBe(true);
+      expect(
+        loadDay({ getItem: () => JSON.stringify(sent) }).state.storyChoiceHistory.haruka,
+      ).toEqual([choiceId]);
+    }
+});

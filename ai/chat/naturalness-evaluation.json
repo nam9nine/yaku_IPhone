@@ -1,0 +1,145 @@
+{
+  "version": "naturalness-dev-v1",
+  "fixed_before_inference": "2026-11-03",
+  "scenario_version": "daily-if-v1",
+  "authorship": "Synthetic visitor turns written for Issue #133 from observed failure patterns. Not copied from visitor conversations.",
+  "fan_review": "pending",
+  "choice_sets": {
+    "before": "Kiryu choice texts before Issue #133",
+    "after": "Kiryu choice texts after Issue #133"
+  },
+  "scenarios": [
+    {
+      "id": "majima-opening-yes",
+      "character": "majima",
+      "focus": "a bare yes to the visible opening invitation",
+      "turns": [
+        { "text": "네" },
+        { "text": "오늘은 저녁에 시간이 됩니다." },
+        { "text": "알겠습니다." }
+      ]
+    },
+    {
+      "id": "majima-hello",
+      "character": "majima",
+      "focus": "ordinary greeting and small talk",
+      "turns": [
+        { "text": "안녕하십니까, 형님." },
+        { "text": "저는 장 보고 있습니다." },
+        { "text": "응" }
+      ]
+    },
+    {
+      "id": "majima-busy-short",
+      "character": "majima",
+      "focus": "busy visitor giving short answers",
+      "turns": [
+        { "text": "지금은 좀 바쁩니다." },
+        { "text": "네" },
+        { "text": "나중에 연락드리겠습니다." }
+      ]
+    },
+    {
+      "id": "majima-checkin-karaoke",
+      "character": "majima",
+      "focus": "reply to a visible local check-in line",
+      "turns": [
+        { "text": "좋습니다.", "events": ["majima-proactive-karaoke"] },
+        { "text": "형님이 먼저 부르시죠.", "events": ["majima-proactive-karaoke"] },
+        { "text": "ㅋㅋ", "events": ["majima-proactive-karaoke"] }
+      ]
+    },
+    {
+      "id": "majima-missed-call",
+      "character": "majima",
+      "focus": "texting back after a missed call",
+      "turns": [
+        { "text": "전화 못 받았습니다. 무슨 일이십니까?", "events": ["majima-call-missed"] },
+        { "text": "그렇군요.", "events": ["majima-call-missed"] },
+        { "text": "네", "events": ["majima-call-missed"] }
+      ]
+    },
+    {
+      "id": "majima-canon-saejima",
+      "character": "majima",
+      "focus": "a canon relationship question followed by small talk",
+      "turns": [
+        { "text": "사에지마는 형님과 어떤 사이입니까?" },
+        { "text": "요즘도 자주 보십니까?" },
+        { "text": "그렇군요." }
+      ]
+    },
+    {
+      "id": "majima-tease",
+      "character": "majima",
+      "focus": "light affection and a joke",
+      "turns": [{ "text": "형님 보고 싶었습니다." }, { "text": "농담입니다." }, { "text": "ㅎㅎ" }]
+    },
+    {
+      "id": "majima-rest",
+      "character": "majima",
+      "focus": "declining for today and offering later",
+      "turns": [
+        { "text": "오늘은 좀 쉬고 싶습니다." },
+        { "text": "네" },
+        { "text": "다음에 한 판 하시죠." }
+      ]
+    },
+    {
+      "id": "haruka-quests-a",
+      "character": "haruka",
+      "focus": "quest reports through Kiryu's choices",
+      "turns": [
+        {
+          "texts": {
+            "before": "메모에 적힌 카레 재료는 다 샀다.",
+            "after": "목록 다시 봤다. 빠진 건 없다."
+          },
+          "events": ["haruka-shopping-checked"]
+        },
+        {
+          "texts": {
+            "before": "오늘 할 일에 적힌 마메 밥 주기도 끝냈다.",
+            "after": "마메 물그릇도 새로 채워 뒀다."
+          },
+          "events": ["haruka-shopping-checked", "haruka-mame-checked"]
+        },
+        {
+          "texts": {
+            "before": "아이들 체육복에 풀린 이름표를 다시 달아뒀다.",
+            "after": "그래, 이름표 달고 바늘은 상자에 넣어 뒀다."
+          },
+          "events": ["haruka-shopping-checked", "haruka-mame-checked", "haruka-uniform-checked"]
+        }
+      ]
+    },
+    {
+      "id": "haruka-quests-b",
+      "character": "haruka",
+      "focus": "quest reports in another order with the second option",
+      "turns": [
+        {
+          "texts": {
+            "before": "오늘 할 일에 적힌 텃밭 물 주기는 끝냈다.",
+            "after": "텃밭 흙이 많이 말라 있더군. 넉넉히 줬다."
+          },
+          "events": ["haruka-garden-checked"]
+        },
+        {
+          "texts": {
+            "before": "메모에 적힌 카레 재료는 다 샀다.",
+            "after": "다 샀다. 카레는 순한 맛으로 골랐다."
+          },
+          "events": ["haruka-garden-checked", "haruka-shopping-checked"]
+        },
+        {
+          "texts": {
+            "before": "아이들 체육복에 풀린 이름표를 다시 달아뒀다.",
+            "after": "넣어 뒀다. 이름표는 단단히 꿰맸다."
+          },
+          "events": ["haruka-garden-checked", "haruka-shopping-checked", "haruka-uniform-checked"]
+        }
+      ]
+    }
+  ]
+}

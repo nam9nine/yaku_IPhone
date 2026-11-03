@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import functools
 import hashlib
+import itertools
 import json
 import os
 import time
@@ -59,6 +60,7 @@ def evaluate(args):
             fixtures["seed"],
         ),
         "cases": [case["id"] for case in cases],
+        "reply_candidates": args.reply_candidates,
         "fan_review": "pending",
         "setup_clock": "synthetic active heartbeats; not public timing validation",
     }
@@ -71,6 +73,7 @@ def evaluate(args):
         api_key_file=args.api_key_file,
         embedding_dir=args.embedding_dir,
         episodes_enabled=True,
+        reply_candidates=args.reply_candidates,
     )
     records = []
     with TestClient(app) as client:
@@ -87,8 +90,20 @@ def evaluate(args):
             service.followup_engine,
             service.episode_followup_engine,
         )
+        # Several candidates need different samples, so each call then takes the
+        # next seed of a fixed sequence; one candidate keeps the single seed.
+        calls = itertools.count()
         for engine in {id(value): value for value in engines}.values():
-            engine.reply = functools.partial(engine.reply, seed=fixtures["seed"])
+            engine.reply = (
+                functools.partial(engine.reply, seed=fixtures["seed"])
+                if args.reply_candidates == 1
+                else functools.partial(
+                    lambda reply, messages, **kwargs: reply(
+                        messages, seed=fixtures["seed"] + next(calls), **kwargs
+                    ),
+                    engine.reply,
+                )
+            )
         service.builder.reader.seed = fixtures["seed"]
         for case in cases:
             session = service.db.issue_session()
@@ -251,6 +266,7 @@ def main():
     parser.add_argument("--output", required=True)
     parser.add_argument("--limit", type=int, default=12)
     parser.add_argument("--cases", help="Comma-separated IDs from the frozen fixture")
+    parser.add_argument("--reply-candidates", type=int, default=1)
     args = parser.parse_args()
     if not 1 <= args.limit <= 12:
         parser.error("limit must be 1..12")

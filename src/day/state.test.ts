@@ -1,9 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { ingredients, reminders, historyOnlyContacts, type ContactId } from './content';
+import {
+  ingredients,
+  reminders,
+  historyOnlyContacts,
+  previousChoices,
+  storyRounds,
+  type ContactId,
+} from './content';
 import {
   DAY_STORAGE_KEY,
   dayReducer,
   getStoryChoices,
+  recordableStoryChoices,
   affinityTone,
   peerHangupDelay,
   peerHangupDue,
@@ -230,7 +238,10 @@ describe('인물별 선택형 문자와 퀘스트', () => {
     let state = initialDay();
     expect(getStoryChoices(state, 'haruka')).toEqual([]);
     state = dayReducer(state, { type: 'reminder', id: 'garden', done: true });
-    expect(getStoryChoices(state, 'haruka').map((c) => c.id)).toEqual(['haruka-garden']);
+    expect(getStoryChoices(state, 'haruka').map((c) => c.id)).toEqual([
+      'haruka-garden',
+      'haruka-garden-sunset',
+    ]);
     const count = state.storyMessages.haruka.length;
     state = choose(state, 'haruka', 0, 'ai');
     expect(state.storyMessages.haruka).toHaveLength(count);
@@ -244,6 +255,70 @@ describe('인물별 선택형 문자와 퀘스트', () => {
         source: 'ai',
       }),
     ).toBe(state);
+    expect(validDay(state)).toBe(true);
+  });
+  it('하루카 선택지는 가장 최근 후속 문자의 할 일부터 한 할 일씩 보이고 한쪽을 보내면 다른 쪽도 사라진다', () => {
+    let state = initialDay();
+    state = dayReducer(state, { type: 'reminder', id: 'mame', done: true });
+    state = dayReducer(state, { type: 'reminder', id: 'garden', done: true });
+    expect(getStoryChoices(state, 'haruka').map((c) => c.quest)).toEqual(['garden', 'garden']);
+    state = choose(state, 'haruka', 1, 'ai');
+    expect(getStoryChoices(state, 'haruka').map((c) => c.id)).toEqual([
+      'haruka-mame',
+      'haruka-mame-stay',
+    ]);
+    state = dayReducer(state, { type: 'reminder', id: 'mame', done: false });
+    expect(getStoryChoices(state, 'haruka')).toEqual([]);
+    expect(validDay(state)).toBe(true);
+  });
+  it('AI로 보낸 하루카 보고는 답장을 기다리는 사이 새 할 일이 생겨도 기록된다', () => {
+    let state = dayReducer(initialDay(), { type: 'set-episodes', enabled: true });
+    state = dayReducer(state, { type: 'reminder', id: 'shopping', done: true });
+    // The shopping report is in flight; the garden check shows the garden options.
+    state = dayReducer(state, { type: 'reminder', id: 'garden', done: true });
+    expect(getStoryChoices(state, 'haruka').map((c) => c.quest)).toEqual(['garden', 'garden']);
+    expect(recordableStoryChoices(state, 'haruka').map((c) => c.id)).toContain('haruka-shopping');
+    state = dayReducer(state, {
+      type: 'story-choice',
+      id: 'haruka',
+      choiceId: 'haruka-shopping',
+      source: 'ai',
+    });
+    expect(state.storyChoiceHistory.haruka).toEqual(['haruka-shopping']);
+    expect(state.replySent).toBe(true);
+    expect(getStoryChoices(state, 'haruka').map((c) => c.quest)).toEqual(['garden', 'garden']);
+    expect(validDay(state)).toBe(true);
+  });
+  it('하루카 선택지는 UI 표현 없이 그 할 일을 직접 말한다', () => {
+    const texts = storyRounds.haruka.flat().map((choice) => choice.text);
+    for (const text of texts) expect(text).not.toMatch(/메모에 적힌|할 일에 적힌|앱|체크/);
+    const names = { shopping: /목록|카레/, garden: /텃밭/, mame: /마메/, uniform: /이름표/ };
+    for (const choice of storyRounds.haruka.flat())
+      expect(choice.text).toMatch(names[choice.quest as keyof typeof names]);
+    expect(new Set(texts).size).toBe(texts.length);
+    const ids = Object.values(storyRounds).flat(2);
+    for (const [text, { id }] of Object.entries(previousChoices)) {
+      const choice = ids.find((item) => item.id === id);
+      expect(choice?.text).not.toBe(text);
+    }
+  });
+  it('a reply pending from earlier wording arrives as the response it was sent for', () => {
+    let state = dayReducer(initialDay(), { type: 'read-thread', id: 'daigo' });
+    state = dayReducer(state, { type: 'story-choice', id: 'daigo', choiceId: 'daigo-1b' });
+    const rows = state.storyMessages.daigo;
+    state = {
+      ...state,
+      storyMessages: {
+        ...state.storyMessages,
+        daigo: [...rows.slice(0, -1), { ...rows[rows.length - 1], text: '지금 급한 일인가?' }],
+      },
+    };
+    state = dayReducer(state, { type: 'tick', elapsedMs: 1000, allowCalls: false });
+    while (state.storyPending.daigo)
+      state = dayReducer(state, { type: 'tick', elapsedMs: 1000, allowCalls: false });
+    expect(state.storyMessages.daigo.at(-1)?.text).toBe(
+      previousChoices['지금 급한 일인가?'].response,
+    );
     expect(validDay(state)).toBe(true);
   });
   it('모든 퀘스트는 완료 후 문자를 한 번만 만들고 체크 해제/재체크로 반복하지 않는다', () => {

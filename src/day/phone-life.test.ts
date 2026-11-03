@@ -30,13 +30,16 @@ it('하루카의 네 퀘스트 답장을 모두 마쳐도 재접속에 진행이
   state = dayReducer(state, { type: 'end-call' });
   for (const id of ['garden', 'mame', 'uniform'] as const)
     state = dayReducer(state, { type: 'reminder', id, done: true });
-  for (const choice of getStoryChoices(state, 'haruka'))
+  // One task's options at a time; sending either moves on to the next task.
+  for (let choices = getStoryChoices(state, 'haruka'); choices.length;) {
     state = dayReducer(state, {
       type: 'story-choice',
       id: 'haruka',
-      choiceId: choice.id,
+      choiceId: choices[0].id,
       source: 'ai',
     });
+    choices = getStoryChoices(state, 'haruka');
+  }
   expect(state.storyChoiceHistory.haruka).toHaveLength(4);
   expect(validDay(state)).toBe(true);
   expect(loadDay({ getItem: () => JSON.stringify(state) }).state).toEqual(state);

@@ -90,17 +90,15 @@ for (const width of [360, 390, 430]) {
     await home(page);
     await launchHomeApp(page, 'messages');
     await page
-      .getByRole('button', { name: '메모에 적힌 카레 재료는 다 샀다. 보내기', exact: true })
+      .getByRole('button', { name: '목록 다시 봤다. 빠진 건 없다. 보내기', exact: true })
       .tap();
     await finishAiReply(page, 'haruka');
     await expect(page.getByText('검증용 하루카 답장', { exact: true })).toBeVisible();
     await expect(
-      page
-        .locator('.message-bubble')
-        .getByText('메모에 적힌 카레 재료는 다 샀다.', { exact: true }),
+      page.locator('.message-bubble').getByText('목록 다시 봤다. 빠진 건 없다.', { exact: true }),
     ).toHaveCount(1);
     await expect(
-      page.getByRole('button', { name: '메모에 적힌 카레 재료는 다 샀다. 보내기', exact: true }),
+      page.getByRole('button', { name: '목록 다시 봤다. 빠진 건 없다. 보내기', exact: true }),
     ).toHaveCount(0);
     await lock(page);
     await expect(page.getByRole('button', { name: '남은 할 일 4개', exact: true })).toBeVisible();
@@ -123,9 +121,7 @@ for (const width of [360, 390, 430]) {
     await launchHomeApp(page, 'messages');
     await page.locator('[data-conversation=haruka]').tap();
     await expect(
-      page
-        .locator('.message-bubble')
-        .getByText('메모에 적힌 카레 재료는 다 샀다.', { exact: true }),
+      page.locator('.message-bubble').getByText('목록 다시 봤다. 빠진 건 없다.', { exact: true }),
     ).toHaveCount(1);
     await expect(page.getByText('검증용 하루카 답장', { exact: true })).toHaveCount(1);
     await home(page);
@@ -148,7 +144,7 @@ test('확인 전 초기화는 취소되고 확인 후 로컬 체크·배경을 �
   await page.getByRole('button', { name: '전화 거절' }).tap();
   await home(page);
   await launchHomeApp(page, 'messages');
-  await page.getByRole('button', { name: '메모에 적힌 카레 재료는 다 샀다. 보내기' }).tap();
+  await page.getByRole('button', { name: '목록 다시 봤다. 빠진 건 없다. 보내기' }).tap();
   await home(page);
   await launchHomeApp(page, 'settings');
   await page.getByRole('button', { name: '배경화면', exact: true }).tap();
@@ -210,7 +206,7 @@ test('저장소 읽기와 쓰기가 거부되어도 현재 세션의 카레 흐�
         message.role === 'assistant' && message.content === '검증용 하루카 답장',
     );
   });
-  await page.getByRole('button', { name: '메모에 적힌 카레 재료는 다 샀다. 보내기' }).tap();
+  await page.getByRole('button', { name: '목록 다시 봤다. 빠진 건 없다. 보내기' }).tap();
   const [sent] = await Promise.all([request, reply]);
   await settleAiRequests(page);
   // Storage denial hides the receipt from finishAiReply. Respect this request's
